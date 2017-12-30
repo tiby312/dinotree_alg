@@ -1,4 +1,17 @@
 use std;
+use std::marker::PhantomData;
+
+
+///A phantom data type that unsafely implements send,sync.
+pub struct PhantomSendSync<T>(pub PhantomData<T>);
+unsafe impl<T> Send for PhantomSendSync<T>{}
+unsafe impl<T> Sync for PhantomSendSync<T>{}
+impl<T> Copy for PhantomSendSync<T>{}
+impl<T> Clone for PhantomSendSync<T>{
+    fn clone(&self) -> PhantomSendSync<T> {
+        *self
+    }
+}
 
 
 pub mod par{

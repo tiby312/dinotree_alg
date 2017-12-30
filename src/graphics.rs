@@ -1,26 +1,15 @@
-
 use axgeom;
-//use ordered_float::NotNaN;
 use axgeom::Axis;
-
 use compt;
-//use kdtree::KdTreeReal;
-
 use compt::GenTree;
 use std;
 use compt::CTreeIterator;
-//use kdtree::colfind::NodeTrait;
 use axgeom::Rect;
 use axgeom::Range;
-//use compt::LevelDesc;
 use base_kdtree::DivNode;
-
 use base_kdtree::TreeCache;
-//use base_kdtree::div_axis::DivAxisIter;
 use support::Numf32;
 use compt::LevelIter;
-//use base_kdtree::div_axis::DivAxis;
-//use kdtree::base_kdtree::div_axis::stat::AxisTrait;
 use axgeom::AxisTrait;
 
 pub trait Vertex: std::default::Default+std::clone::Clone+Send{

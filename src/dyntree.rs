@@ -17,10 +17,10 @@ use tree_alloc::NodeDyn;
 //use kdtree::base_kdtree::div_axis::stat::AxisTrait;
 use axgeom::AxisTrait;
 use std::marker::PhantomData;
-use colfind::LL;
+use TreeTimer;
 //use oned::sup::BleekBF;
 use base_kdtree::Node2;
-use base_kdtree::TreeCache;
+use TreeCache;
 //use kdtree::base_kdtree::div_axis::stat::AxisPair;
 
 /*
@@ -167,12 +167,12 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
         colfind::for_all_in_rect(self,rect,fu);
    }
    fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>>
-        (&mut self,clos:&mut F,timer:&mut LL){
+        (&mut self,clos:&mut F,timer:&mut TreeTimer){
        colfind::for_every_col_pair_seq::<A,T,H,F>(self,clos,timer);
     
    }
    fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>>
-        (&mut self,clos:&F,timer:&mut LL){
+        (&mut self,clos:&F,timer:&mut TreeTimer){
         colfind::for_every_col_pair::<A,T,H,F>(self,clos,timer);
     }
 }

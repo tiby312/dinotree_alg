@@ -5,7 +5,7 @@ use ColPair;
 use ColSingle;
 use rayon;
 use compt::CTreeIterator;
-use tools;
+//use tools;
 
 use tools::par;
 use compt::WrapGen;
@@ -19,7 +19,7 @@ use BleekSync;
 use Bleek;
 use SweepTrait;
 use DefaultDepthLevel;
-
+use TreeTimer;
 //use axgeom::XAXIS_S;
 //use axgeom::YAXIS_S;
 
@@ -48,57 +48,7 @@ impl<'a,B:BleekSync+'a> Bleek for BleekS<'a,B>{
 
 
 
-//internally,index 0 represents the bottom of the tree. or the heighest depth.
-//the last index is the depth 0.
-//this reverse ordering is used so that smaller and smaller vecs
-//can be allocated and added back together for children nodes.
-pub struct LL{
-    height:usize,
-    a:Vec<(f64,usize)>
-}
 
-impl LL{
-
-    fn create_timer()->tools::Timer2{
-        tools::Timer2::new()
-    }
-    pub fn new(height:usize)->LL{
-        let mut a=Vec::new();
-        a.resize(height,(0.0,0));
-        LL{a:a,height:height}
-    }
-    fn add_to_depth(&mut self,depth:usize,time_and_bots:(f64,usize)){
-        let height=self.height;
-        let k=&mut self.a[height-1-depth];
-        k.0+=time_and_bots.0;
-        k.1+=time_and_bots.1;
-    }
-
-    ///Returns the time each level of the tree took to compute.
-    pub fn into_time_and_bots(mut self)->Vec<(f64,usize)>{
-        self.a.reverse();
-        self.a
-    }
-    fn combine_one_less(&mut self,v:LL){
-        assert!(self.a.len()==1+v.a.len());
-
-        let a=self.a.split_last_mut().unwrap().1;
-        let b=&v.a;
-        for (i,j) in a.iter_mut().zip(b.iter()){
-            i.0+=j.0;
-            i.1+=j.1;
-        }
-    }
-    fn clone_one_less_depth(&mut self)->LL{
-        let mut v=Vec::new();
-        let ln=self.a.len()-1;
-        v.extend_from_slice(&self.a[0..ln]);
-        for i in v.iter_mut(){
-            *i=(0.0,0);
-        }
-        LL{a:v,height:self.height}
-    }
-}
 
 
 
@@ -153,9 +103,9 @@ fn recurse<'x,
         >(
         sweeper:&mut Sweeper<F::T>,
         m:LevelIter<C>,
-        clos:&F,timer_log:&mut LL){
+        clos:&F,timer_log:&mut TreeTimer){
        
-    let timer=LL::create_timer();
+    let timer=TreeTimer::create_timer();
     let ((level,mut nn),rest)=m.next();
  
     let depth=level.get_depth(); 
@@ -235,11 +185,11 @@ fn sweeper_find_parallel_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots
     let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
       
     //let blee=Blee::new(axis);
-    sweeper.find_bijective_parallel2::<A,_>((bots1, bots2),&mut b );
+    sweeper.find_bijective_parallel::<A,_>((bots1, bots2),&mut b );
 }
 
 pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek<T=T>>
-        (kdtree:&mut DynTree<A,T>,clos:&mut F,timer:&mut LL){
+        (kdtree:&mut DynTree<A,T>,clos:&mut F,timer:&mut TreeTimer){
            
 
     pub struct BleekSF2<T:SweepTrait+Copy,B:Bleek<T=T>>{
@@ -269,13 +219,13 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek
 }
 
 pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>>
-        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut LL)
+        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut TreeTimer)
 {
     self::for_every_col_pair2::<A,par::Parallel,_,DefaultDepthLevel,_>(kdtree,clos,timer);    
 }
 
 fn for_every_col_pair2<A:AxisTrait,JJ:par::Joiner,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>>
-        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut LL){
+        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut TreeTimer){
 
     let level=kdtree.get_level_desc();
     let dt=kdtree.get_iter_mut();

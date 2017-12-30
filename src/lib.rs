@@ -17,10 +17,11 @@ pub mod tools;
 pub mod support;
 pub mod multirect;
 
-pub use colfind::LL;
+//The TreeCache object is updated during the base kd tree construction.
+//So TreeCache and KdTree are tied together.
+//On the otherhand, we dont expose KdTree since it is only used
+//intermediately in order to construct a DynTree.
 pub use base_kdtree::TreeCache;
-
-
 
 use compt::LevelDesc;
 use axgeom::Rect;
@@ -81,20 +82,18 @@ pub trait SweepTrait:Send{
 }
 
 
-
-//use multirect::MultiRectTrait;
 ///This is the functionality that the collision systems in this crate provide.
 ///Trait that hides the Axis trait specialization
 pub trait DynTreeTrait{
-    type T:SweepTrait<Num=Self::Num>;
-    type Num:NumTrait;
+   type T:SweepTrait<Num=Self::Num>;
+   type Num:NumTrait;
    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
 
    fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>>
-        (&mut self,clos:&mut F,timer:&mut LL);
+        (&mut self,clos:&mut F,timer:&mut TreeTimer);
    
    fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>>
-        (&mut self,clos:&F,timer:&mut LL);
+        (&mut self,clos:&F,timer:&mut TreeTimer);
 }
 
 
@@ -109,6 +108,67 @@ pub struct ColPair<'a,T:SweepTrait+'a>{
 
 ///Similar to ColPair, but for only one SweepTrait
 pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a Rect<T::Num>,pub &'a mut T::Inner);
+
+
+
+//internally,index 0 represents the bottom of the tree. or the heighest depth.
+//the last index is the depth 0.
+//this reverse ordering is used so that smaller and smaller vecs
+//can be allocated and added back together for children nodes.
+//TODO no need to reverse!!!
+///This is used to measure the real time taken to process each level of the tree.
+pub struct TreeTimer{
+    height:usize,
+    a:Vec<(f64,usize)>
+}
+
+
+
+impl TreeTimer{
+    
+    fn create_timer()->tools::Timer2{
+        tools::Timer2::new()
+    }
+    fn add_to_depth(&mut self,depth:usize,time_and_bots:(f64,usize)){
+        let height=self.height;
+        let k=&mut self.a[height-1-depth];
+        k.0+=time_and_bots.0;
+        k.1+=time_and_bots.1;
+    }
+    fn combine_one_less(&mut self,v:TreeTimer){
+        assert!(self.a.len()==1+v.a.len());
+
+        let a=self.a.split_last_mut().unwrap().1;
+        let b=&v.a;
+        for (i,j) in a.iter_mut().zip(b.iter()){
+            i.0+=j.0;
+            i.1+=j.1;
+        }
+    }
+    fn clone_one_less_depth(&mut self)->TreeTimer{
+        let mut v=Vec::new();
+        let ln=self.a.len()-1;
+        v.extend_from_slice(&self.a[0..ln]);
+        for i in v.iter_mut(){
+            *i=(0.0,0);
+        }
+        TreeTimer{a:v,height:self.height}
+    }
+    pub fn new(height:usize)->TreeTimer{
+        let mut a=Vec::new();
+        a.resize(height,(0.0,0));
+        TreeTimer{a:a,height:height}
+    }
+    
+    ///Returns the time each level of the tree took to compute.
+    pub fn into_time_and_bots(mut self)->Vec<(f64,usize)>{
+        self.a.reverse();
+        self.a
+    }
+    
+}
+
+
 
 
 

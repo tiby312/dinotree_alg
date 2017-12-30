@@ -177,6 +177,6 @@ pub fn collide_two_rect_parallel<'a:'b,'b,A:AxisTrait,K:DynTreeTrait,F:FnMut(Col
         //println!("{:?}",(r1,r2));
         //let r3=&r1.get_intersection(r2).unwrap(); //TODO dont special case this
         let mut b=BleekSF::new(&mut func2);
-        sweeper.find_bijective_parallel2::<A,_>(cols,&mut b);
+        sweeper.find_bijective_parallel::<A,_>(cols,&mut b);
     }
 }

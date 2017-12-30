@@ -1,58 +1,45 @@
 
 //!A collection of 1d functions that operate on lists of 2d objects.
 
-//TODO put this in on crate?
-
 use std;
 use axgeom::Range;
-//use axgeom::PRIMT;
 use axgeom::Rect;
 use tools::PreVec;
-//use axgeom::Axis;
-
-
 use SweepTrait;
 use ColPair;
-//use ColSingle;
 use BleekSync;
 use Bleek;
-//use kdtree::*;
-
+use NumTrait;
+use axgeom::AxisTrait;
+use std::marker::PhantomData;
 
 ///Provides contains that support converting a closure to a struct that implements Bleek.
+///Working with closures, you have to be carful with the recursion limit. This avoids
+///having to be careful of how many wrapper closures you make.
 pub mod sup{
     use super::*;
     use std::marker::PhantomData;
+    use tools::PhantomSendSync;
 
 
-    struct Bo<T>(PhantomData<T>);
-    unsafe impl<T> Send for Bo<T>{}
-    unsafe impl<T> Sync for Bo<T>{}
-    impl<T> Copy for Bo<T>{}
-    impl<T> Clone for Bo<T>{
-        fn clone(&self) -> Bo<T> {
-            *self
-        }
-    }
-
-    pub struct BleekBF<'a,T:SweepTrait+Send+'a,F:Fn(ColPair<T>)+Sync+'a>{
+    pub struct BleekBF<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a>{
         a:&'a F,
-        _p:Bo<T>
+        _p:PhantomSendSync<T>
     }
-    impl<'a,T:SweepTrait+Send+'a,F:Fn(ColPair<T>)+Sync+'a> Copy for BleekBF<'a,T,F> { }
-    impl<'a,T:SweepTrait+Send+'a,F:Fn(ColPair<T>)+Sync+'a> Clone for BleekBF<'a,T,F> { 
+    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> Copy for BleekBF<'a,T,F> { }
+    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> Clone for BleekBF<'a,T,F> { 
         fn clone(&self) -> BleekBF<'a,T,F> {
             *self
         }
     }
 
-    impl<'a,T:SweepTrait+Send+'a,F:Fn(ColPair<T>)+Sync+'a> BleekBF<'a,T,F>{
+    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> BleekBF<'a,T,F>{
         pub fn new(a:&'a F)->BleekBF<'a,T,F>{
-            BleekBF{a:a,_p:Bo(PhantomData)}
+            BleekBF{a:a,_p:PhantomSendSync(PhantomData)}
         }
     }
 
-    impl<'a,T:SweepTrait+Send+'a,F:Fn(ColPair<T>)+Sync+'a> BleekSync for BleekBF<'a,T,F>{
+    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> BleekSync for BleekBF<'a,T,F>{
         type T=T;
         fn collide(&self,cc:ColPair<Self::T>){
             (self.a)(cc);
@@ -84,29 +71,8 @@ unsafe fn swap_unchecked<T>(list:&mut [T],a:usize,b:usize){
 }
 
 
-use NumTrait;
-//use kdtree::base_kdtree::div_axis::stat::AxisTrait;
-use axgeom::AxisTrait;
 
-use std::marker::PhantomData;
-
-
-
-
-
-
-///This is used by these 1d functions to extract the value of the relevant 1d segment from a 2d rect.
-
-/*
-impl Blee{
-
-    pub fn new(axis:Axis)->Blee{
-        Blee{axis:axis}
-    }
-}
-*/
 pub struct Accessor<X:AxisTrait>{
-    //axis:Axis,    
     _p:PhantomData<X>
 }
 impl<X:AxisTrait> Accessor<X>{
@@ -256,7 +222,7 @@ impl<I:SweepTrait> Sweeper<I>{
     }
 
 
-    pub fn find_bijective_parallel2<A:AxisTrait,F: Bleek<T=I>>(
+    pub fn find_bijective_parallel<A:AxisTrait,F: Bleek<T=I>>(
             &mut self,
             cols: (&mut [I], &mut [I]),
             func:&mut F) {
@@ -303,71 +269,6 @@ impl<I:SweepTrait> Sweeper<I>{
         }
     }
     
-/*
-    //Find all bots within two intersecting ranges. //TODO This might be able to be condensed into another function in this libray?
-    pub fn find_bijective_parallel<F: Bleek<T=I>>(
-            &mut self,
-            cols: (&mut [I], &mut [I]),
-            accessor:&Blee,
-            func:&mut F) {
-        
-        let circles = cols.0;
-        let triangles = cols.1;
-        
-        let mut counter = 0;
-        
-        /* remove for performance
-        if triangles.len()==0{
-            return;
-        }
-        */
-        //[   ] [   ]   [   []   ]
-        //   < >  <>  <   <    >
-
-        for circle in circles.iter_mut() {
-            let (circle_rect,circle_val)=circle.get_mut();
-            let crr=accessor.get(circle_rect);    
-            
-            for triangle in triangles[counter..].iter_mut() {
-                let (triangle_rect,triangle_val)=triangle.get_mut();
-                
-                let trr=accessor.get(triangle_rect);  
-                
-
-                if trr.left()>crr.right() {
-                    break;
-                }
-
-                if !(trr.right()<crr.left()) {
-                    func.collide(  ColPair{a:(circle_rect,circle_val),b:(triangle_rect,triangle_val)}); 
-                }
-            }      
-
-            //Exclude as many triangles as we can.
-            //Before we can exclude a triangle, all the triangles to the left of it must be excluded.
-            //This means that if the first triangle is extremely large, then nothing will be excluded 
-            //until that large triangle is excluded. So this algorithm has a bad worst case.
-            //But on the flip side it does not need any kind of data structure or active list.
-            //And the worst case scenario is rare if most bots are the same size 
-            //or if the bots rarely intersect.
-
-            //TODO do this in the above loop???? indexing is bad!!!!
-            
-            for triangle in triangles[counter..].iter(){
-                if accessor.get(triangle.get().0).right()<crr.left(){
-                    counter+=1;
-                    if counter==triangles.len(){
-                        return;
-                    }
-                    continue;
-                }
-                break;
-            }
-        }   
-    }
-*/
-
-
     /*
     fn assert_sorted<T:Accessor<T=I>>(col: &[I], accessor:&T)->bool {
         let mut last_val = -999999999999999999.0;
