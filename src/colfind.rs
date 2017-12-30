@@ -1,0 +1,486 @@
+use axgeom::Rect;
+use oned::Sweeper;
+use super::DepthLevel;
+use ColPair;
+use ColSingle;
+use rayon;
+use compt::CTreeIterator;
+use tools;
+
+use tools::par;
+use compt::WrapGen;
+use dyntree::DynTree;
+use compt::LevelIter;
+use axgeom::AxisTrait;
+//use compt::LevelDesc;
+use tree_alloc::NodeDyn;
+use compt;
+use BleekSync;
+use Bleek;
+use SweepTrait;
+use DefaultDepthLevel;
+
+//use axgeom::XAXIS_S;
+//use axgeom::YAXIS_S;
+
+
+//use kdtree::base_kdtree::div_axis::stat::XAXIS;
+
+//use kdtree::base_kdtree::div_axis::stat::YAXIS;
+//use super::base_kdtree::div_axis::*;
+
+struct BleekS<'a,B:BleekSync+'a>(
+    pub &'a B
+);
+
+impl<'a,B:BleekSync+'a> Bleek for BleekS<'a,B>{
+    type T=B::T;
+    fn collide(&mut self,cc:ColPair<Self::T>){
+        self.0.collide(cc);
+    }
+}
+
+
+
+
+
+
+
+
+
+//internally,index 0 represents the bottom of the tree. or the heighest depth.
+//the last index is the depth 0.
+//this reverse ordering is used so that smaller and smaller vecs
+//can be allocated and added back together for children nodes.
+pub struct LL{
+    height:usize,
+    a:Vec<(f64,usize)>
+}
+
+impl LL{
+
+    fn create_timer()->tools::Timer2{
+        tools::Timer2::new()
+    }
+    pub fn new(height:usize)->LL{
+        let mut a=Vec::new();
+        a.resize(height,(0.0,0));
+        LL{a:a,height:height}
+    }
+    fn add_to_depth(&mut self,depth:usize,time_and_bots:(f64,usize)){
+        let height=self.height;
+        let k=&mut self.a[height-1-depth];
+        k.0+=time_and_bots.0;
+        k.1+=time_and_bots.1;
+    }
+
+    ///Returns the time each level of the tree took to compute.
+    pub fn into_time_and_bots(mut self)->Vec<(f64,usize)>{
+        self.a.reverse();
+        self.a
+    }
+    fn combine_one_less(&mut self,v:LL){
+        assert!(self.a.len()==1+v.a.len());
+
+        let a=self.a.split_last_mut().unwrap().1;
+        let b=&v.a;
+        for (i,j) in a.iter_mut().zip(b.iter()){
+            i.0+=j.0;
+            i.1+=j.1;
+        }
+    }
+    fn clone_one_less_depth(&mut self)->LL{
+        let mut v=Vec::new();
+        let ln=self.a.len()-1;
+        v.extend_from_slice(&self.a[0..ln]);
+        for i in v.iter_mut(){
+            *i=(0.0,0);
+        }
+        LL{a:v,height:self.height}
+    }
+}
+
+
+
+fn go_down<'x,
+    A:AxisTrait, //this axis
+    B:AxisTrait, //parent axis
+    C:CTreeIterator<Item=&'x mut NodeDyn<X>>,
+    X:SweepTrait+'x,F:Bleek<T=X>>
+    (
+        sweeper:&mut Sweeper<F::T>,
+        anchor:&mut &mut NodeDyn<X>,
+        m:WrapGen<LevelIter<C>>,
+        func:&mut F) {
+    
+    {
+        let (mut bo,rest) = m.next();
+        let &mut (_level,ref mut nn)=bo.get_mut();
+        
+        self::for_every_bijective_pair::<A,B,_>(nn,anchor,sweeper,func);       
+        
+
+
+        match rest{
+            Some((left,right))=>{
+                
+                let div=*nn.divider();
+
+                if B::get()==A::get(){
+                    if !(div<anchor.get_container().start){
+                        self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,left,func);
+                    };
+                    if !(div>anchor.get_container().end){
+                        self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,right,func);
+                    };
+                }else{
+                    self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,left,func);
+                    self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,right,func);
+                }               
+            },
+            _=>{}
+        };
+    }
+}
+
+fn recurse<'x,
+        A:AxisTrait,
+        JJ:par::Joiner,
+        X:SweepTrait+'x,
+        H:DepthLevel,
+        F:BleekSync<T=X>,
+        C:CTreeIterator<Item=&'x mut NodeDyn<X>>+Send,
+        >(
+        sweeper:&mut Sweeper<F::T>,
+        m:LevelIter<C>,
+        clos:&F,timer_log:&mut LL){
+       
+    let timer=LL::create_timer();
+    let ((level,mut nn),rest)=m.next();
+ 
+    let depth=level.get_depth(); 
+    let mut b=BleekS(clos);
+
+    self::sweeper_find_2d::<A::Next,_>(sweeper,nn.get_bots(),&mut b); 
+
+    match rest{
+        None=>{
+            let elapsed=timer.elapsed();
+            timer_log.add_to_depth(depth,(elapsed,0));  
+        },
+        Some((mut left,mut right))=>{
+            
+            {
+                let left=compt::WrapGen::new(&mut left);
+                let right=compt::WrapGen::new(&mut right);
+                
+                self::go_down::<A::Next,A,_,_,_>(sweeper,&mut nn,left,&mut b);
+                self::go_down::<A::Next,A,_,_,_>(sweeper,&mut nn,right,&mut b); 
+            }
+
+            let elapsed=timer.elapsed();
+            timer_log.add_to_depth(depth,(elapsed,0));
+                    
+            {
+                if JJ::is_parallel() && !H::switch_to_sequential(level){
+                    
+                    let mut ll2=timer_log.clone_one_less_depth(); 
+                    {            
+                        let af=|| {   
+                            self::recurse::<A::Next,par::Parallel,_,H,_,_>(sweeper,left,clos,timer_log);
+                        };
+                        let bf= || {
+                            let mut sweeper=Sweeper::new();  
+                            self::recurse::<A::Next,par::Parallel,_,H,_,_>(&mut sweeper,right,clos,&mut ll2)
+                        };
+                        rayon::join(af,bf);
+                    }
+                    timer_log.combine_one_less(ll2);  
+                }else{
+                    self::recurse::<A::Next,par::Sequential,_,H,_,_>(sweeper,left,clos,timer_log);
+                    self::recurse::<A::Next,par::Sequential,_,H,_,_>(sweeper,right,clos,timer_log);
+                }
+            }
+        }
+    }
+}
+
+
+use std::marker::PhantomData;
+struct Bl<'a,A:AxisTrait,F:Bleek+'a>{
+    a:&'a mut F,
+    _p:PhantomData<A>
+}
+impl<'a,A:AxisTrait,F:Bleek+'a> Bleek for Bl<'a,A,F>{
+    type T=F::T;
+    fn collide(&mut self,cc:ColPair<F::T>){
+        //only check if the opoosite axis intersects.
+        //already know they intersect
+        let a2=A::Next::get();//self.axis.next();
+        if cc.a.0.get_range(a2).intersects(cc.b.0.get_range(a2)){
+            self.a.collide(cc);
+        }
+    }
+}
+
+//Bots a sorted along the axis.
+fn sweeper_find_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots:&mut [F::T],clos2:&mut F){
+          
+    let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
+
+    //let blee=Blee::new(axis);
+    sweeper.find::<A,_>(bots,&mut b);   
+}
+fn sweeper_find_parallel_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots1:&mut [F::T],bots2:&mut [F::T],clos2:&mut F){
+    let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
+      
+    //let blee=Blee::new(axis);
+    sweeper.find_bijective_parallel2::<A,_>((bots1, bots2),&mut b );
+}
+
+pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek<T=T>>
+        (kdtree:&mut DynTree<A,T>,clos:&mut F,timer:&mut LL){
+           
+
+    pub struct BleekSF2<T:SweepTrait+Copy,B:Bleek<T=T>>{
+        a:*mut B,
+    }
+    
+    unsafe impl<T:SweepTrait+Copy,B:Bleek<T=T>> Send for BleekSF2<T,B>{}
+    unsafe impl<T:SweepTrait+Copy,B:Bleek<T=T>> Sync for BleekSF2<T,B>{}
+    impl<T:SweepTrait+Copy,B:Bleek<T=T>> Copy for BleekSF2<T,B>{}
+    impl<T:SweepTrait+Copy,B:Bleek<T=T>> Clone for BleekSF2<T,B>{
+        fn clone(&self) -> Self {
+            *self
+        }
+    }
+    impl<T:SweepTrait+Copy,B:Bleek<T=T>> BleekSync for BleekSF2<T,B>{
+        type T=B::T;
+        fn collide(&self,cc:ColPair<Self::T>){
+            unsafe{(*self.a).collide(cc)};
+        }
+    }
+
+    let b=BleekSF2{a:clos};
+
+    //All of the above is okay because we start with SEQUENTIAL
+    self::for_every_col_pair2::<A,par::Sequential,_,DefaultDepthLevel,_>(kdtree,&b,timer);
+            
+}
+
+pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>>
+        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut LL)
+{
+    self::for_every_col_pair2::<A,par::Parallel,_,DefaultDepthLevel,_>(kdtree,clos,timer);    
+}
+
+fn for_every_col_pair2<A:AxisTrait,JJ:par::Joiner,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>>
+        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut LL){
+
+    let level=kdtree.get_level_desc();
+    let dt=kdtree.get_iter_mut();
+    let dt=compt::LevelIter::new(dt,level);
+    let mut sweeper=Sweeper::new();  
+    
+    self::recurse::<A,JJ,_,H,_,_>(&mut sweeper,dt,clos,timer);   
+}
+
+
+
+fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
+    
+    this: &mut NodeDyn<F::T>,
+    parent:&mut &mut NodeDyn<F::T>,
+    sweeper:&mut Sweeper<F::T>,
+    func:&mut F){
+    let this_axis=A::get();
+    let parent_axis=B::get();
+
+    if this_axis != parent_axis {
+        let r1 = Sweeper::get_section::<B>(&mut this.range,
+                         &parent.container_box);
+        let r2 = Sweeper::get_section::<A>(&mut parent.range,
+                        &this.container_box);
+
+        for inda in r1.iter_mut() {
+            let (rect_a,aval)=inda.get_mut();
+            for indb in r2.iter_mut() {
+                let (rect_b,bval)=indb.get_mut();
+                if rect_a.intersects_rect(rect_b){
+                    func.collide(ColPair{a:(rect_a,aval),b:(rect_b,bval)});
+                }
+            }
+        }
+    
+    } else {
+
+        self::sweeper_find_parallel_2d::<A::Next,_>(sweeper,this.get_bots(),parent.get_bots(),func);
+    }
+}
+
+
+fn rect_recurse<'x,
+    A:AxisTrait,
+    T:SweepTrait+Copy+'x,
+    C:CTreeIterator<Item=&'x mut NodeDyn<T>>,
+    F:FnMut(ColSingle<T>)>(
+     m:C,rect:&Rect<T::Num>,func:&mut F){
+
+
+    //let div_axis=A::get();
+
+    let (nn,rest)=m.next();
+    {
+        let sl=Sweeper::get_section::<A::Next>(nn.get_bots(),rect.get_range2::<A::Next>());
+        
+        for i in sl{
+            let a = i.get_mut();
+            func(ColSingle(a.0,a.1)); 
+        }
+        
+    }
+    match rest{
+        Some((left,right))=>{
+            let div=nn.divider();
+
+            //let div=nn.get_divider();
+            let rr=rect.get_range2::<A>();
+     
+            if !(*div<rr.start){
+                self::rect_recurse::<A::Next,_,_,_>(left,rect,func);
+            }
+            if !(*div>rr.end){
+                self::rect_recurse::<A::Next,_,_,_>(right,rect,func);
+            }
+        },
+        _=>{}
+    }
+
+}
+
+pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait+Copy,F:FnMut(ColSingle<T>)>(
+        tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure: &mut F) {
+    
+    let mut fu=|a:ColSingle<T>|{
+                if rect.contains_rect(a.0){
+                    closure(a);
+                }
+            };
+    
+    let ta=tree.get_iter_mut();
+    self::rect_recurse::<A,_,_,_>(ta,rect,&mut fu);
+}
+/*
+fn assert_correctness(&self,tree:&KdTree,botman:&BotMan)->bool{
+    for (level,axis) in kd_axis::AxisIter::with_axis(tree.tree.get_level_iter()) {
+        if level.get_depth()!=tree.tree.get_height()-1{
+            for n in level.iter(){
+                let no=tree.tree.get_node(n);
+                let cont_box=&no.container_box;// no.get_divider_box(&botman.prop,axis);
+
+                let arr=&tree.collision_botids[no.container.get_range().as_int_range()];
+                for b in arr{
+                    let bot=botman.cont.get_bot(*b);
+                    let circle=&botman.as_circle(bot);
+                    assert!(cont_box.contains_circle(circle),"{:?}\n{:?}\n{:?}\n{:?}",no,(level,axis),cont_box,circle);
+                }
+            }
+        }
+        
+    }
+     
+
+    let arr=&tree.collision_botids[tree.no_fit.end.0..];
+    let mut cols=0;
+    for (i, el1) in arr.iter().enumerate() {
+        for el2 in arr[i + 1..].iter() {
+            let bb=(*el1,*el2);
+            let bots = botman.cont.get_bbotpair(bb);
+
+            match bot::is_colliding(&botman.prop, bots) {
+                Some(_) => {
+                    cols+=1;
+                }
+                None => {
+                }
+            }
+        }
+    }
+
+    let mut cls=0;
+    for k in self.binner_helps.iter(){
+        cls+=k.cols_found.len();
+    }
+
+    let lookup=|a:(BotIndex, BotIndex)|{
+        for k in self.binner_helps.iter(){
+            for j in k.cols_found.iter(){
+                let aa=( (j.inds.0).0 ,(j.inds.1).0);
+                let bb=((a.0).0,(a.1).0);
+                if aa.0==bb.0 &&aa.1==bb.1{
+                    return true;
+                }
+                if aa.0==bb.1 && aa.1==bb.0{
+                    return true;
+                }
+            }
+        }
+        false            
+    };
+    if cols!=cls{
+        println!("Cols fail! num collision exp:{:?},  calculated:{:?}",cols,cls);
+
+        for (i, el1) in arr.iter().enumerate() {
+            for el2 in arr[i + 1..].iter() {
+                let bb=(*el1,*el2);
+                let bots = botman.cont.get_bbotpair(bb);
+
+                match bot::is_colliding(&botman.prop, bots) {
+                    Some(_) => {
+                        if !lookup(bb){
+                            println!("Couldnt find {:?}",(bb,bots));
+
+                            println!("in node:{:?}",(lookup_in_tree(tree,bb.0),lookup_in_tree(tree,bb.1)));
+                            let n1=lookup_in_tree(tree,bb.0).unwrap();
+                            let n2=lookup_in_tree(tree,bb.1).unwrap();
+                            let no1=tree.tree.get_node(n1);
+                            let no2=tree.tree.get_node(n2);
+                            
+                            println!("INTERSECTS={:?}",no1.cont.border.intersects_rect(&no2.cont.border));
+
+                        }
+                    }
+                    None => {
+                    }
+                }
+            }
+        }
+        assert!(false);
+    }
+    
+    fn lookup_in_tree(tree:&BaseTree,b:BotIndex)->Option<NodeIndex>{
+        for level in tree.tree.get_level_iter(){
+            for nodeid in level.iter().rev() {
+                
+                let n = tree.tree.get_node(nodeid);
+            
+                let k=n.container.get_range().as_int_range();
+
+                let arr=&tree.collision_botids[k];
+                for i in arr{
+                    if b.0==i.0{
+                        return Some(nodeid);
+                    }
+                }
+            }
+        }
+        return None
+    }
+    true
+}*/
+
+
+
+
+
+
