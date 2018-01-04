@@ -124,8 +124,13 @@ pub struct TreeTimer{
 
 
 
+
+pub struct Bag{
+    a:Vec<f64>
+}
 pub struct TreeTimer2{
     a:Vec<f64>,
+    index:usize,
     timer:tools::Timer2
 }
 impl TreeTimer2{
@@ -133,30 +138,27 @@ impl TreeTimer2{
     pub fn new(height:usize)->TreeTimer2{
         let v=(0..height).map(|_|0.0).collect();
         let timer=tools::Timer2::new();
-        TreeTimer2{a:v,timer}
+        TreeTimer2{a:v,index:0,timer}
     }
 
-    pub fn next(self)->Option<(TreeTimer2,TreeTimer2)>{
-        let TreeTimer2{mut a,timer}=self;
-        a[0]+=timer.elapsed();
-
-        match a.pop(){
-            Some(_)=>{
-                let b=(0..a.len()).map(|_|0.0).collect();
-                Some((
-                    TreeTimer2{a:a,timer:tools::Timer2::new()},
-                    TreeTimer2{a:b,timer:tools::Timer2::new()}
-                ))
-            },
-            None=>{
-                None
-            }
-        }
+    pub fn leaf_finish(self)->Bag{
+       let TreeTimer2{mut a,index,timer}=self;
+        a[index]+=timer.elapsed();
+        Bag{a:a}
     }
 
-    pub fn combine(mut a:TreeTimer2,b:TreeTimer2)->TreeTimer2{
-        assert!(a.a.len()==b.a.len());
+    pub fn next(self)->(TreeTimer2,TreeTimer2){
+        let TreeTimer2{mut a,index,timer}=self;
+        a[index]+=timer.elapsed();
+    
+        let b=(0..a.len()).map(|_|0.0).collect();
+        (
+            TreeTimer2{a:a,index:index+1,timer:tools::Timer2::new()},
+            TreeTimer2{a:b,index:index+1,timer:tools::Timer2::new()}
+        )
+    }
 
+    pub fn combine(mut a:Bag,b:Bag)->Bag{
         for (i,j) in a.a.iter_mut().zip(b.a.iter()){
             *i+=j;
         }
