@@ -90,10 +90,10 @@ pub trait DynTreeTrait{
    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
 
    fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>>
-        (&mut self,clos:&mut F,timer:&mut TreeTimer);
+        (&mut self,clos:&mut F)->Bag;
    
    fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>>
-        (&mut self,clos:&F,timer:&mut TreeTimer);
+        (&mut self,clos:&F)->Bag;
 }
 
 
@@ -128,44 +128,81 @@ pub struct TreeTimer{
 pub struct Bag{
     a:Vec<f64>
 }
+impl Bag{
+    pub fn into_vec(self)->Vec<f64>{
+        self.a
+    }
+}
+
+//TODO use this
+pub trait TreeTimerTrait:Sized+Send{
+    type Bag:Send+Sized;
+    fn combine(a:Self::Bag,b:Self::Bag)->Self::Bag;
+    fn new(height:usize)->Self;
+    fn leaf_finish(self)->Self::Bag;
+    fn start(&mut self);
+    fn next(self)->(Self,Self);
+}
+
 pub struct TreeTimer2{
     a:Vec<f64>,
     index:usize,
-    timer:tools::Timer2
+    timer:Option<tools::Timer2>
 }
-impl TreeTimer2{
-    
-    pub fn new(height:usize)->TreeTimer2{
-        let v=(0..height).map(|_|0.0).collect();
-        let timer=tools::Timer2::new();
-        TreeTimer2{a:v,index:0,timer}
-    }
 
-    pub fn leaf_finish(self)->Bag{
-       let TreeTimer2{mut a,index,timer}=self;
-        a[index]+=timer.elapsed();
-        Bag{a:a}
-    }
 
-    pub fn next(self)->(TreeTimer2,TreeTimer2){
-        let TreeTimer2{mut a,index,timer}=self;
-        a[index]+=timer.elapsed();
-    
-        let b=(0..a.len()).map(|_|0.0).collect();
-        (
-            TreeTimer2{a:a,index:index+1,timer:tools::Timer2::new()},
-            TreeTimer2{a:b,index:index+1,timer:tools::Timer2::new()}
-        )
-    }
-
-    pub fn combine(mut a:Bag,b:Bag)->Bag{
+impl TreeTimerTrait for TreeTimer2{
+    type Bag=Bag;
+    fn combine(mut a:Bag,b:Bag)->Bag{
         for (i,j) in a.a.iter_mut().zip(b.a.iter()){
             *i+=j;
         }
         a
     }
+    fn new(height:usize)->TreeTimer2{
+        let v=(0..height).map(|_|0.0).collect();
+        
+        TreeTimer2{a:v,index:0,timer:None}
+    }
+
+    fn leaf_finish(self)->Bag{
+       let TreeTimer2{mut a,index,timer}=self;
+        a[index]+=timer.unwrap().elapsed();
+        Bag{a:a}
+    }
+
+    fn start(&mut self){
+        self.timer=Some(tools::Timer2::new())
+    }
+
+    fn next(self)->(TreeTimer2,TreeTimer2){
+        let TreeTimer2{mut a,index,timer}=self;
+        a[index]+=timer.unwrap().elapsed();
+
+        let b=(0..a.len()).map(|_|0.0).collect();
+        (
+            TreeTimer2{a:a,index:index+1,timer:None},
+            TreeTimer2{a:b,index:index+1,timer:
+                None}
+        )
+    }
+
+  
 }
 
+
+
+/*
+//internally,index 0 represents the bottom of the tree. or the heighest depth.
+//the last index is the depth 0.
+//this reverse ordering is used so that smaller and smaller vecs
+//can be allocated and added back together for children nodes.
+//TODO no need to reverse!!!
+///This is used to measure the real time taken to process each level of the tree.
+pub struct TreeTimer{
+    height:usize,
+    a:Vec<f64>
+}
 
 impl TreeTimer{
     
@@ -206,6 +243,7 @@ impl TreeTimer{
     }
     
 }
+*/
 
 
 

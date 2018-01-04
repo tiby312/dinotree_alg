@@ -157,13 +157,13 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
    }
    
    fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>>
-        (&mut self,clos:&mut F,timer:&mut TreeTimer){
-       colfind::for_every_col_pair_seq::<A,T,H,F>(self,clos,timer);
+        (&mut self,clos:&mut F)->Bag{
+       colfind::for_every_col_pair_seq::<A,T,H,F>(self,clos)
     
    }
    fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>>
-        (&mut self,clos:&F,timer:&mut TreeTimer){
-        colfind::for_every_col_pair::<A,T,H,F>(self,clos,timer);
+        (&mut self,clos:&F)->Bag{
+        colfind::for_every_col_pair::<A,T,H,F>(self,clos)
     }
 }
 
@@ -171,7 +171,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
 
 
     pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>>(
-        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,timer_log:&mut TreeTimer) -> DynTree<'a,A,T> {
+        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (DynTree<'a,A,T>,Bag) {
 
         //let height=tc.get_tree().get_height()+1;
 
@@ -180,37 +180,37 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
         let bb=(&rest as &[T]) as *const [T];
         let bbr=&unsafe{&*bb}[0] as *const T;
                
-        let (fb,move_vector)={
+        let (fb,move_vector,bag)={
             let mut pointers:Vec<Cont<T>>=Vec::with_capacity(rest.len());
             for (_,k) in (0..rest.len()).zip(rest.iter_mut()){
                 pointers.push(Cont{a:k});
             }
             
             {
-                let mut tree2=self::new_tree::<A,JJ,_,H,Z>(&mut pointers,tc,timer_log);
+                let (mut tree2,bag)=self::new_tree::<A,JJ,_,H,Z>(&mut pointers,tc);
 
-                    // 12345
-                    // 42531     //vector:41302
-                    let mut move_vector=Vec::with_capacity(num_bots);    
-                    {
-                        let t=tree2.get_tree().create_down();
-                        t.dfs_preorder(|a:&Node2<Cont<T>>|{
-                            for bot in a.range.iter(){
-                                let target_ind:usize=bbr.offset_to(bot.a).unwrap() as usize;
-                                move_vector.push(target_ind);
+                // 12345
+                // 42531     //vector:41302
+                let mut move_vector=Vec::with_capacity(num_bots);    
+                {
+                    let t=tree2.get_tree().create_down();
+                    t.dfs_preorder(|a:&Node2<Cont<T>>|{
+                        for bot in a.range.iter(){
+                            let target_ind:usize=bbr.offset_to(bot.a).unwrap() as usize;
+                            move_vector.push(target_ind);
 
-                            }
-                        });
-                    }
+                        }
+                    });
+                }
                 //let level=tree2.get_tree().get_level_desc();
                 let fb=DynTreeRaw::new(tree2.into_tree(),num_bots);
                 
                 //let KdTree{total_slice,tree,tc}=tree2;
-                (fb,move_vector)
+                (fb,move_vector,bag)
             }
         };
         //TODO PLUS ONE IMPORTANT!
-        DynTree{orig:rest,tree:fb,vec:move_vector,_p:PhantomData}
+        (DynTree{orig:rest,tree:fb,vec:move_vector,_p:PhantomData},bag)
     }
    
     pub fn get_height(&self)->usize{

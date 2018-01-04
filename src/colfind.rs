@@ -20,6 +20,9 @@ use Bleek;
 use SweepTrait;
 use DefaultDepthLevel;
 use TreeTimer;
+use TreeTimerTrait;
+use TreeTimer2;
+use Bag;
 //use axgeom::XAXIS_S;
 //use axgeom::YAXIS_S;
 
@@ -100,12 +103,13 @@ fn recurse<'x,
         H:DepthLevel,
         F:BleekSync<T=X>,
         C:CTreeIterator<Item=&'x mut NodeDyn<X>>+Send,
+        K:TreeTimerTrait
         >(
         sweeper:&mut Sweeper<F::T>,
         m:LevelIter<C>,
-        clos:&F,timer_log:&mut TreeTimer){
-       
-    let timer=TreeTimer::create_timer();
+        clos:&F,mut timer_log:K)->K::Bag{
+    timer_log.start();
+    //let timer=TreeTimer::create_timer();
     let ((level,mut nn),rest)=m.next();
  
     let depth=level.get_depth(); 
@@ -115,8 +119,7 @@ fn recurse<'x,
 
     match rest{
         None=>{
-            let elapsed=timer.elapsed();
-            timer_log.add_to_depth(depth,elapsed);  
+            timer_log.leaf_finish()
         },
         Some((mut left,mut right))=>{
             
@@ -128,29 +131,26 @@ fn recurse<'x,
                 self::go_down::<A::Next,A,_,_,_>(sweeper,&mut nn,right,&mut b); 
             }
 
-            let elapsed=timer.elapsed();
-            timer_log.add_to_depth(depth,elapsed);
-                    
-            {
-                if JJ::is_parallel() && !H::switch_to_sequential(level){
-                    
-                    let mut ll2=timer_log.clone_one_less_depth(); 
-                    {            
-                        let af=|| {   
-                            self::recurse::<A::Next,par::Parallel,_,H,_,_>(sweeper,left,clos,timer_log);
-                        };
-                        let bf= || {
-                            let mut sweeper=Sweeper::new();  
-                            self::recurse::<A::Next,par::Parallel,_,H,_,_>(&mut sweeper,right,clos,&mut ll2)
-                        };
-                        rayon::join(af,bf);
-                    }
-                    timer_log.combine_one_less(ll2);  
-                }else{
-                    self::recurse::<A::Next,par::Sequential,_,H,_,_>(sweeper,left,clos,timer_log);
-                    self::recurse::<A::Next,par::Sequential,_,H,_,_>(sweeper,right,clos,timer_log);
-                }
-            }
+            let (ta,tb)=timer_log.next();      
+            
+            let (ta,tb)=if JJ::is_parallel() && !H::switch_to_sequential(level)
+            {             
+                let af=|| {   
+                    self::recurse::<A::Next,par::Parallel,_,H,_,_,_>(sweeper,left,clos,ta)
+                };
+                let bf= || {
+                    let mut sweeper=Sweeper::new();  
+                    self::recurse::<A::Next,par::Parallel,_,H,_,_,_>(&mut sweeper,right,clos,tb)
+                };
+                rayon::join(af,bf)
+            }else{
+                (
+                    self::recurse::<A::Next,par::Sequential,_,H,_,_,_>(sweeper,left,clos,ta),
+                    self::recurse::<A::Next,par::Sequential,_,H,_,_,_>(sweeper,right,clos,tb)
+                )
+            };
+        
+            K::combine(ta,tb)
         }
     }
 }
@@ -189,7 +189,7 @@ fn sweeper_find_parallel_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots
 }
 
 pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek<T=T>>
-        (kdtree:&mut DynTree<A,T>,clos:&mut F,timer:&mut TreeTimer){
+        (kdtree:&mut DynTree<A,T>,clos:&mut F)->Bag{
            
 
     pub struct BleekSF2<T:SweepTrait+Copy,B:Bleek<T=T>>{
@@ -214,25 +214,27 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek
     let b=BleekSF2{a:clos};
 
     //All of the above is okay because we start with SEQUENTIAL
-    self::for_every_col_pair2::<A,par::Sequential,_,DefaultDepthLevel,_>(kdtree,&b,timer);
+    self::for_every_col_pair2::<A,par::Sequential,_,DefaultDepthLevel,_>(kdtree,&b)
             
 }
 
 pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>>
-        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut TreeTimer)
+        (kdtree:&mut DynTree<A,T>,clos:&F)->Bag
 {
-    self::for_every_col_pair2::<A,par::Parallel,_,DefaultDepthLevel,_>(kdtree,clos,timer);    
+    self::for_every_col_pair2::<A,par::Parallel,_,DefaultDepthLevel,_>(kdtree,clos)    
 }
 
 fn for_every_col_pair2<A:AxisTrait,JJ:par::Joiner,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>>
-        (kdtree:&mut DynTree<A,T>,clos:&F,timer:&mut TreeTimer){
+        (kdtree:&mut DynTree<A,T>,clos:&F)->Bag{
 
+    let height=kdtree.get_height();
     let level=kdtree.get_level_desc();
     let dt=kdtree.get_iter_mut();
     let dt=compt::LevelIter::new(dt,level);
     let mut sweeper=Sweeper::new();  
     
-    self::recurse::<A,JJ,_,H,_,_>(&mut sweeper,dt,clos,timer);   
+    let h=TreeTimer2::new(height);
+    self::recurse::<A,JJ,_,H,_,_,_>(&mut sweeper,dt,clos,h) 
 }
 
 
