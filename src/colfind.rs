@@ -116,7 +116,7 @@ fn recurse<'x,
     match rest{
         None=>{
             let elapsed=timer.elapsed();
-            timer_log.add_to_depth(depth,(elapsed,0));  
+            timer_log.add_to_depth(depth,elapsed);  
         },
         Some((mut left,mut right))=>{
             
@@ -129,7 +129,7 @@ fn recurse<'x,
             }
 
             let elapsed=timer.elapsed();
-            timer_log.add_to_depth(depth,(elapsed,0));
+            timer_log.add_to_depth(depth,elapsed);
                     
             {
                 if JJ::is_parallel() && !H::switch_to_sequential(level){

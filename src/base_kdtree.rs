@@ -14,7 +14,7 @@ use compt::DownTMut;
 use compt::LevelIter;
 //use axgeom::Axis;
 //use DefaultDepthLevel;
-
+use TreeTimer;
 //use tools;
 use NumTrait;
 use tools::par::Joiner;
@@ -24,7 +24,7 @@ use axgeom::AxisTrait;
 use std::marker::PhantomData;
 //use self::div_axis::*;
 use DepthLevel;
-
+use rayon;
 /*
 pub mod div_axis{
     use compt::CTreeIterator;
@@ -237,32 +237,11 @@ pub struct Node2<'a,T:SweepTrait+'a>{
 
     pub range:&'a mut [T]
 }
-/*
-impl<'a,T:SweepTrait+'a> Node2<'a,T>{
-    /*
-    pub fn divider(&self)->&T::Num{
-        &self.divider
-    }
-    */
-
-    /*
-    pub fn get_container(&self)->&axgeom::Range<T::Num>{
-        &self.container_box
-    }
-    */
-    /*
-    pub fn get_bots(&mut self)->&mut [T]{
-        &mut self.range
-    }
-    */
-}
-*/
-
 
 //TODO move to kdtree
 //The border Rect is used purely for graphics!!!!!!!!!!!!!!!!!!!!!!!
 //TODO not true. it is used by the relax median to bound the meds. Consider passing two rects.
-pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>>(rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> KdTree<'a,A,T> {
+pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>>(rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,timer_log:&mut TreeTimer) -> KdTree<'a,A,T> {
     
     let height=tc.height;
     
@@ -284,7 +263,7 @@ pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:Median
         let level=ttree.get_level_desc();
         let m=tc.medtree.create_down_mut();
         let j=LevelIter::new(ttree.create_down_mut(),level);
-        self::recurse_rebal::<A,T,H,Z,JJ>(rest,j,Some(m));
+        self::recurse_rebal::<A,T,H,Z,JJ>(rest,j,Some(m),timer_log);
     }
     KdTree{tree:ttree,_p:PhantomData}
 }
@@ -293,14 +272,13 @@ pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:Median
 fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,JJ:par::Joiner>(
     rest:&'b mut [T],
     down:LevelIter<DownTMut<Node2<'b,T>>>,
-    down2:Option<DownTMut<DivNode<T::Num>>>){
+    down2:Option<DownTMut<DivNode<T::Num>>>,timer_log:&mut TreeTimer){
 
-    let ((level,nn),restt)=down.next();
-    //let div_axis=A::get();
-    //let line_axis=A::Next::get();//div_axis.get_line();    
+    let timer=TreeTimer::create_timer();
     
+    let ((level,nn),restt)=down.next();
+    let depth=level.get_depth();
     fn create_node<A:AxisTrait,T:SweepTrait>(divider:T::Num,range:&mut [T])->Node2<T>{
-        //let blee2=Blee::new(A::get().get_line().get()); 
         Sweeper::update::<A::Next>(range);
             
         let container_box=self::create_container_rect::<A,_>(range);
@@ -309,7 +287,13 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
 
     match restt{
         None=>{
+            debug_assert!(down2.is_none());
+            //println!("sorting size={} depth={}",rest.len(),depth);
             *nn=create_node::<A,_>(std::default::Default::default(),rest);
+
+            let elapsed=timer.elapsed();
+            timer_log.add_to_depth(depth,elapsed);
+            
         },
         Some((lleft,rright))=>{
             let (div,div_rest)=down2.unwrap().next();
@@ -332,23 +316,33 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
             let binned_middile=binned.middile;
             let binned_right=binned.right;                
 
+            let elapsed=timer.elapsed();
+            timer_log.add_to_depth(depth,elapsed);
             
 
             let nj=if JJ::is_parallel() && !H::switch_to_sequential(level){
-                let af=move || {
-                    let nj=create_node::<A,_>(med,binned_middile);
-                    self::recurse_rebal::<A::Next,T,H,Z,par::Parallel>(binned_left,lleft,divl);
-                    nj
+                let mut ll2=timer_log.clone_one_less_depth(); 
+                
+                let ((nj,ll2),timer_log)={
+                    let af=move || {
+                        let nj=create_node::<A,_>(med,binned_middile);
+                        self::recurse_rebal::<A::Next,T,H,Z,par::Parallel>(binned_left,lleft,divl,&mut ll2);
+                        (nj,ll2)
+                    };
+
+                    let bf=move || {
+                        self::recurse_rebal::<A::Next,T,H,Z,par::Parallel>(binned_right,rright,divr,timer_log);
+                        timer_log
+                    };
+                    rayon::join(af,bf)
                 };
 
-                let bf=move || self::recurse_rebal::<A::Next,T,H,Z,par::Parallel>(binned_right,rright,divr);
-                let (nj,_)=JJ::join(af,bf);
+                timer_log.combine_one_less(ll2);  
                 nj
             }else{
                 let nj=create_node::<A,_>(med,binned_middile);
-                let af=move || self::recurse_rebal::<A::Next,T,H,Z,par::Sequential>(binned_left,lleft,divl);
-                let bf=move || self::recurse_rebal::<A::Next,T,H,Z,par::Sequential>(binned_right,rright,divr);
-                JJ::join(af,bf);
+                self::recurse_rebal::<A::Next,T,H,Z,par::Sequential>(binned_left,lleft,divl,timer_log);
+                self::recurse_rebal::<A::Next,T,H,Z,par::Sequential>(binned_right,rright,divr,timer_log);
                 nj
             };
 
@@ -360,7 +354,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
 
 
 fn create_container_rect<A:AxisTrait,T:SweepTrait>(middile:&[T])->axgeom::Range<T::Num>{
-    //let div_axis=A::get();
+    
     let container_rect=match middile.split_first(){
         Some((first,rest))=>{
             let mut container_rect=first.get().0.get_range2::<A>().clone();

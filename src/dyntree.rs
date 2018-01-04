@@ -145,27 +145,17 @@ pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
 }
 
 
-/*
-use multirect::MultiRectTrait;
-impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> MultiRectTrait for DynTree<'a,A,T>{
-    type T=T;
-    type Num=T::Num;
-    
-    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
-        colfind::for_all_in_rect(self,rect,fu);
-    }
-}
-*/
 
 
 use super::DynTreeTrait;
 impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
-    type T=T;
-    type Num=T::Num;
+   type T=T;
+   type Num=T::Num;
     
-    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
+   fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
         colfind::for_all_in_rect(self,rect,fu);
    }
+   
    fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>>
         (&mut self,clos:&mut F,timer:&mut TreeTimer){
        colfind::for_every_col_pair_seq::<A,T,H,F>(self,clos,timer);
@@ -181,7 +171,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
 
 
     pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>>(
-        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> DynTree<'a,A,T> {
+        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,timer_log:&mut TreeTimer) -> DynTree<'a,A,T> {
 
         //let height=tc.get_tree().get_height()+1;
 
@@ -197,7 +187,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
             }
             
             {
-                let mut tree2=self::new_tree::<A,JJ,_,H,Z>(&mut pointers,tc);
+                let mut tree2=self::new_tree::<A,JJ,_,H,Z>(&mut pointers,tc,timer_log);
 
                     // 12345
                     // 42531     //vector:41302

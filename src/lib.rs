@@ -119,9 +119,50 @@ pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a Rect<T::Num>,pub &'a mut T::Inn
 ///This is used to measure the real time taken to process each level of the tree.
 pub struct TreeTimer{
     height:usize,
-    a:Vec<(f64,usize)>
+    a:Vec<f64>
 }
 
+
+
+pub struct TreeTimer2{
+    a:Vec<f64>,
+    timer:tools::Timer2
+}
+impl TreeTimer2{
+    
+    pub fn new(height:usize)->TreeTimer2{
+        let v=(0..height).map(|_|0.0).collect();
+        let timer=tools::Timer2::new();
+        TreeTimer2{a:v,timer}
+    }
+
+    pub fn next(self)->Option<(TreeTimer2,TreeTimer2)>{
+        let TreeTimer2{mut a,timer}=self;
+        a[0]+=timer.elapsed();
+
+        match a.pop(){
+            Some(_)=>{
+                let b=(0..a.len()).map(|_|0.0).collect();
+                Some((
+                    TreeTimer2{a:a,timer:tools::Timer2::new()},
+                    TreeTimer2{a:b,timer:tools::Timer2::new()}
+                ))
+            },
+            None=>{
+                None
+            }
+        }
+    }
+
+    pub fn combine(mut a:TreeTimer2,b:TreeTimer2)->TreeTimer2{
+        assert!(a.a.len()==b.a.len());
+
+        for (i,j) in a.a.iter_mut().zip(b.a.iter()){
+            *i+=j;
+        }
+        a
+    }
+}
 
 
 impl TreeTimer{
@@ -129,11 +170,10 @@ impl TreeTimer{
     fn create_timer()->tools::Timer2{
         tools::Timer2::new()
     }
-    fn add_to_depth(&mut self,depth:usize,time_and_bots:(f64,usize)){
+    fn add_to_depth(&mut self,depth:usize,time:f64){
         let height=self.height;
         let k=&mut self.a[height-1-depth];
-        k.0+=time_and_bots.0;
-        k.1+=time_and_bots.1;
+        *k+=time;
     }
     fn combine_one_less(&mut self,v:TreeTimer){
         assert!(self.a.len()==1+v.a.len());
@@ -141,27 +181,24 @@ impl TreeTimer{
         let a=self.a.split_last_mut().unwrap().1;
         let b=&v.a;
         for (i,j) in a.iter_mut().zip(b.iter()){
-            i.0+=j.0;
-            i.1+=j.1;
+            *i+=j;
         }
     }
     fn clone_one_less_depth(&mut self)->TreeTimer{
         let mut v=Vec::new();
         let ln=self.a.len()-1;
-        v.extend_from_slice(&self.a[0..ln]);
-        for i in v.iter_mut(){
-            *i=(0.0,0);
-        }
+        v.resize(ln,0.0);
+
         TreeTimer{a:v,height:self.height}
     }
     pub fn new(height:usize)->TreeTimer{
         let mut a=Vec::new();
-        a.resize(height,(0.0,0));
+        a.resize(height,0.0);
         TreeTimer{a:a,height:height}
     }
     
     ///Returns the time each level of the tree took to compute.
-    pub fn into_time_and_bots(mut self)->Vec<(f64,usize)>{
+    pub fn into_time_and_bots(mut self)->Vec<f64>{
         self.a.reverse();
         self.a
     }
