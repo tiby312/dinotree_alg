@@ -241,13 +241,9 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> Drop for DynTree<'a,A,T>{
             for b in a.range.iter(){
                 let i=move_iter.next().unwrap();
 
-                //let sl=a.range.len();
-                //let (_,aa)=orig[*i].get_mut();
-                //let (_,bb)=b.get();
+                //TODO do in unsafe block hid by a module
                 orig[*i]=*b;
-                //*aa=*bb;
-                //func(aa,bb);
-                //aa.add(b)  
+            
             }
         });
     }
@@ -266,7 +262,6 @@ mod alloc{
     pub struct DynTreeRaw<'a,T:SweepTrait+Send+Copy+'a>{
         height:usize,
         level:LevelDesc,
-        //alloc:ManuallyDrop<TreeAlloc<'a,NodeDst<'a,T>,T>>,
         alloc:ManuallyDrop<TreeAllocDst<'a,T>>,
         root:ManuallyDrop<NodeDstDynCont<'a,T>>
     }
@@ -321,7 +316,7 @@ mod alloc{
             )->NodeDstDynCont<'a,T>{
             
             let num_nodes=tree.get_nodes().len();
-            let mut queue:Vec<NodeDstDynCont<'a,T>>=Vec::new();
+            let mut queue:Vec<NodeDstDynCont<'a,T>>=Vec::with_capacity(num_nodes);
             
             let mut v=tree.into_nodes();
 

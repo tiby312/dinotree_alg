@@ -71,7 +71,7 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
 
     pub fn new()->TreeAllocDst<'a,T>{
         let (alignment,node_size)=Self::compute_alignment_and_size();
-        //println!("align and node size={:?}",(alignment,node_size));
+        
         TreeAllocDst{v:Vec::new(),capacity:0,_p:PhantomData,alignment,node_size}
     }
     pub fn allocate(&mut self,numt1:usize,numt2:usize){
@@ -107,9 +107,11 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
 
 
         let dst:&mut NodeDstDyn<T>=unsafe{std::mem::transmute(ReprMut{ptr:ll,size:n.num_bots})};
+        
         for _ in 0..std::mem::size_of_val(dst){
             self.v.push(0)
         }
+        
         dst.c=None;
         dst.n.divider=n.divider;
         dst.n.container_box=n.container_box;
@@ -117,16 +119,10 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
         assert!(dst.n.range.len()==n.num_bots);
 
         for (a,b) in dst.n.range.iter_mut().zip(n.i){
-            
-            //println!("yo={:?}",b.get().0);
             *a=b;
         }
 
-        
-
-        //println!("moved up node");
-        assert!(self.v.len()<=self.capacity);
-        
+        assert!(self.v.len()<=self.capacity);        
         dst
     }
     fn move_to_align_to(&mut self){

@@ -293,11 +293,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
     match restt{
         None=>{
             debug_assert!(down2.is_none());
-            //println!("sorting size={} depth={}",rest.len(),depth);
             *nn=create_node::<A,_>(std::default::Default::default(),rest);
-
-            //let elapsed=timer.elapsed();
-            //timer_log.add_to_depth(depth,elapsed);
             timer_log.leaf_finish()
         },
         Some((lleft,rright))=>{
