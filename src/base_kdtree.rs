@@ -31,54 +31,6 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> KdTree<'a,A,T>{
     pub fn get_tree(&self)->&compt::GenTree<Node2<'a,T>>{
         &self.tree
     }
-    ///Construct new tree by swapping the elements of the passed slice.
-    //TODO use impl trait for these
-    /*
-    pub fn new<JJ:Joiner,M:MedianStrat<Num=T::Num>>(tc:&mut TreeCache<A,T::Num>,bots:&'a mut [T])->KdTree<'a,A,T>{
-        new_tree::<A,JJ,T,DefaultDepthLevel,M>(bots,tc)
-    }
-    */
-
-    
-    
-    //not this
-    //   |-------------------|===|----------------------------|
-    //   |--------|===|------|   |-----------|=====|----------|
-    //   |--|==|--|   |-|=|--|   |---|====|--|     |--|===|---|
-    //   |==|  |==|   |=| |==|   |===|    |==|     |==|   |===|
-
-    //pre order has better space locality as you traverse down the tree
-    //   |===|-------------------|----------------------------|
-    //       |===|--------|------|=====|-----------|----------|
-    //           |==|--|--|=|-|--|     |====|---|--|===|--|---|
-    //              |==|==| |=|==|          |===|==|   |==|===|
-    ///Order of the bots will be in bfs
-    
-
-
-    ///This will traverse the tree in dfs and rejoin all the slices to return the original slice.
-    ///This is normally redundant since one could simply let the KdTree exit scope to be able to use the original slice.
-    ///TODO test
-    /*
-    pub fn deconstruct(self)->&'a mut [T]{
-
-        let mut head=None;
-        self.tree.into_dfs_preorder(&mut |n:Node2<'a,T>|{
-            
-            match head.take(){
-                Some(x)=>{
-                    head=Some(tools::join_mut(x,n.range));
-                },
-                None=>{
-                    head=Some(n.range);
-                }
-            }
-        });
-        
-        //tree necessailty has a root.
-        head.unwrap()
-    }
-    */
 
     pub fn into_tree(self)->compt::GenTree<Node2<'a,T>>{
         let KdTree{tree,_p}=self;

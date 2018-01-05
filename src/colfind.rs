@@ -49,8 +49,6 @@ fn go_down<'x,
         
         self::for_every_bijective_pair::<A,B,_>(nn,anchor,sweeper,func);       
         
-
-
         match rest{
             Some((left,right))=>{
                 
