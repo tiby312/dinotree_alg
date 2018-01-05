@@ -1,7 +1,6 @@
 use std;
 use std::marker::PhantomData;
 
-
 ///A phantom data type that unsafely implements send,sync.
 pub struct PhantomSendSync<T>(pub PhantomData<T>);
 unsafe impl<T> Send for PhantomSendSync<T>{}

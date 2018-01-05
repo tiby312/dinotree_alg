@@ -1,14 +1,9 @@
 use oned;
-//use oned::Blee;
 use oned::Binned;
 use std;
-//use axgeom::Axis;
 use SweepTrait;
 use NumTrait;
 use std::marker::PhantomData;
-
-//use base_kdtree::div_axis::*;
-//use kdtree::base_kdtree::div_axis::stat::AxisTrait;
 use axgeom::AxisTrait;
 
 pub trait MedianStrat{
@@ -42,18 +37,8 @@ impl<N:NumTrait,D:DivMoveStrat<N=N>> MedianStrat for MedianRelax<N,D>{
         divider:&mut T::Num)->(T::Num,Binned<'a,T>){
         let div_axis=A::get();
 
-        //let blee=Blee::new(div_axis.get());
-
         let med=*divider;
-
         let binned=oned::bin::<A,_>(&med,rest);
-        /*
-        let diff=|a:&&T,b:&&T|->Ordering{
-            let a=a.get().0.get_range(axis).left();
-            let b=b.get().0.get_range(axis).left();
-            a.cmp(&b)
-        };
-        */
 
         //At this point we have binned into 3 bins. middile,left, and right.
         //In order to know just how many bots are to the left or right of the divider,
@@ -202,7 +187,6 @@ impl<N:NumTrait> MedianStrat for MedianStrict<N>{
         rest:&'a mut [T],
         mmm:&mut T::Num)->(T::Num,Binned<'a,T>){
         let div_axis=A::get();
-        //let blee=Blee::new(div_axis.get());
 
         let med={
         
@@ -210,16 +194,14 @@ impl<N:NumTrait> MedianStrat for MedianStrict<N>{
 
             let m = if rest.len() == 0{
                         std::default::Default::default()
-                        //println!("depth={} empty!\n",depth);
-                        //self::create_middile_div(&rect,axis)
                         //TODO what to do here?
                 }
                 else
                 {
                      let closure = |a: &T, b: &T| -> std::cmp::Ordering {
     
-                        let arr=a.get().0.get_range(div_axis);//blee.get(a.get().0);
-                        let brr=b.get().0.get_range(div_axis);//blee.get(b.get().0);
+                        let arr=a.get().0.get_range(div_axis);
+                        let brr=b.get().0.get_range(div_axis);
                   
                         if arr.left() > brr.left(){
                             return std::cmp::Ordering::Greater;
@@ -233,20 +215,14 @@ impl<N:NumTrait> MedianStrat for MedianStrict<N>{
                     use pdqselect;
                     pdqselect::select_by(rest, mm, closure);
                     
-
                     let k=&rest[mm];
-
-                    //let b=sweep::compute_median(&blee,rest)  ;
                     k.get().0.get_range(div_axis).start
-                    //blee.get(k.get().0).start
-                    
                 };
             *mmm=m;
             m
             
         };
 
-        //let rest_len=rest.len();
         let binned=oned::bin::<A,_>(&med,rest);
 
         (med,binned)

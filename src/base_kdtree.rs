@@ -1,105 +1,23 @@
 use axgeom;
 use oned::Sweeper;
-//use super::Blee;
 use super::median::MedianStrat;
 use compt;
 use SweepTrait;
-//use kdtree::base_kdtree::kd_axis::AxisIter;
-//use kdtree::colfind::NodeTrait;
 use compt::CTreeIterator;
-//use compt::LevelDesc;
 use std;
-//use std::fmt::Debug;
 use compt::DownTMut;
 use compt::LevelIter;
-//use axgeom::Axis;
-//use DefaultDepthLevel;
-//use TreeTimer;
-//use tools;
 use NumTrait;
 use tools::par::Joiner;
 use tools::par;
 use axgeom::AxisTrait;
-//use compt::LevelDesc;
 use std::marker::PhantomData;
-//use self::div_axis::*;
 use DepthLevel;
 use rayon;
 use Bag;
 use TreeTimer2;
 use TreeTimerTrait;
-/*
-pub mod div_axis{
-    use compt::CTreeIterator;
-    use axgeom::Axis;
-    use std::marker::PhantomData;
-    //use compt::CTreeIterator;
-    use axgeom;
-
-   
-    /*
-    //Signify's that this axis that the divider is splitting.
-    //so for example if the axis was the xaxis, then the divider
-    //would be imagined as a vertical line.
-    #[derive(Copy,Clone,Debug,PartialEq)]
-    pub struct DivAxis(Axis);
-
-    impl DivAxis{
-        pub fn new(a:Axis)->DivAxis{
-            DivAxis(a)
-        }
-        pub fn get(&self)->Axis{
-            self.0
-        }
-        pub fn get_line(&self)->LineAxis{
-            LineAxis(self.0.next())
-        }
-    }
-
-    //Signifies the axis perpendicular to the axis the divider is partitioning against.
-    #[derive(Copy,Clone,Debug,PartialEq)]
-    pub struct LineAxis(Axis);
-    impl LineAxis{
-        pub fn get(&self)->Axis{
-            self.0
-        }
-    }
-
-    pub struct DivAxisIter<C:CTreeIterator>{
-        c:C,
-        a:DivAxis
-    }
-    impl<C:CTreeIterator> DivAxisIter<C>{
-        pub fn new(a:DivAxis,c:C)->DivAxisIter<C>{
-            DivAxisIter{c,a}
-        }
-    }
-
-    impl<C:CTreeIterator> CTreeIterator for DivAxisIter<C>{
-        type Item=(DivAxis,C::Item);
-        fn next(self)->(Self::Item,Option<(Self,Self)>){
-            let (nn,rest)=self.c.next();
-
-            let newrest=match rest{
-                Some((left,right))=>{
-                    let n=DivAxis(self.a.0.next());
-                    Some((DivAxisIter{c:left,a:n},DivAxisIter{c:right,a:n}))
-                },
-                None=>{
-                    None
-                }
-            };
-            ((self.a,nn),newrest)
-        }
-    }
-    */
-}
-*/
-
-
-
-
-
+use compt::Zip;
 
 
 ///A KdTree construction
@@ -108,21 +26,8 @@ pub struct KdTree<'a,A:AxisTrait,T:SweepTrait+'a> {
     _p:PhantomData<A>
 }
 
-/*
 impl<'a,A:AxisTrait,T:SweepTrait+'a> KdTree<'a,A,T>{
 
-    pub fn get_height(&self)->usize{
-        self.tree.get_height()
-    }
-}
-*/
-
-impl<'a,A:AxisTrait,T:SweepTrait+'a> KdTree<'a,A,T>{
-    /*
-    pub fn get_tree_mut(&mut self)->&mut compt::GenTree<Node2<'a,T>>{
-        &mut self.tree
-    }
-    */
     pub fn get_tree(&self)->&compt::GenTree<Node2<'a,T>>{
         &self.tree
     }
@@ -208,9 +113,7 @@ impl<A:AxisTrait,Nu:NumTrait> TreeCache<A,Nu>{
     pub fn new<JJ:Joiner>(height:usize)->TreeCache<A,Nu>{
         let num_nodes=compt::compute_num_nodes(height);
         
-        //HEIGHT IS ONE LESS
-        let treecache_height=height-1;
-        let t= compt::GenTree::from_bfs(&mut ||{DivNode{divider:std::default::Default::default()}},treecache_height);
+        let t= compt::GenTree::from_bfs(&mut ||{DivNode{divider:std::default::Default::default()}},height);
 
         TreeCache{medtree:t,num_nodes:num_nodes,height:height,_p:PhantomData}
     }
@@ -245,13 +148,8 @@ pub struct Node2<'a,T:SweepTrait+'a>{
 //The border Rect is used purely for graphics!!!!!!!!!!!!!!!!!!!!!!!
 //TODO not true. it is used by the relax median to bound the meds. Consider passing two rects.
 pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (KdTree<'a,A,T>,K::Bag) {
-    
     let height=tc.height;
     
-    
-    //let ptrs=rest as *mut [T];//(&mut rest[0] as *mut T,rest.len());
-    
-
     let mut ttree=compt::GenTree::from_bfs(&mut ||{
         //let rect=axgeom::Rect::new(0.0,0.0,0.0,0.0);
         let rest=&mut [];
@@ -266,9 +164,9 @@ pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:Median
 
         let level=ttree.get_level_desc();
         let m=tc.medtree.create_down_mut();
-        let j=LevelIter::new(ttree.create_down_mut(),level);
+        let j=LevelIter::new(m.zip(ttree.create_down_mut()),level);
         let t=K::new(height);
-        self::recurse_rebal::<A,T,H,Z,JJ,K>(rest,j,Some(m),t)
+        self::recurse_rebal::<A,T,H,Z,JJ,K>(rest,j,t)
     };
     (KdTree{tree:ttree,_p:PhantomData},bag)
 }
@@ -276,12 +174,12 @@ pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:Median
 
 fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,JJ:par::Joiner,K:TreeTimerTrait>(
     rest:&'b mut [T],
-    down:LevelIter<DownTMut<Node2<'b,T>>>,
-    down2:Option<DownTMut<DivNode<T::Num>>>,mut timer_log:K)->K::Bag{
+    down:LevelIter<Zip<DownTMut<DivNode<T::Num>>,DownTMut<Node2<'b,T>>>>,
+    mut timer_log:K)->K::Bag{
 
     timer_log.start();
     
-    let ((level,nn),restt)=down.next();
+    let ((level,(div,nn)),restt)=down.next();
     let depth=level.get_depth();
     fn create_node<A:AxisTrait,T:SweepTrait>(divider:T::Num,range:&mut [T])->Node2<T>{
         Sweeper::update::<A::Next>(range);
@@ -292,26 +190,15 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
 
     match restt{
         None=>{
-            debug_assert!(down2.is_none());
+            //debug_assert!(down2.is_none());
             *nn=create_node::<A,_>(std::default::Default::default(),rest);
             timer_log.leaf_finish()
         },
         Some((lleft,rright))=>{
-            let (div,div_rest)=down2.unwrap().next();
-
-            let (divl,divr)=match div_rest{
-                Some((l,r))=>{
-                    (Some(l),Some(r))
-                },
-                None=>{
-                    (None,None)
-                }
-            };
 
             let depth=level.get_depth();
             
             let (med,binned)=Z::compute::<A,_>(depth,rest,&mut div.divider);
-            
 
             let binned_left=binned.left;
             let binned_middile=binned.middile;
@@ -327,12 +214,12 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 let ((nj,ba),bb)={
                     let af=move || {
                         let nj=create_node::<A,_>(med,binned_middile);
-                        let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_left,lleft,divl,ta);
+                        let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_left,lleft,ta);
                         (nj,ba)
                     };
 
                     let bf=move || {
-                        self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_right,rright,divr,tb)
+                        self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_right,rright,tb)
                     };
                     rayon::join(af,bf)
                 };
@@ -340,8 +227,8 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 (nj,ba,bb)
             }else{
                 let nj=create_node::<A,_>(med,binned_middile);
-                let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_left,lleft,divl,ta);
-                let bb=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_right,rright,divr,tb);
+                let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_left,lleft,ta);
+                let bb=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_right,rright,tb);
                 (nj,ba,bb)
             };
 

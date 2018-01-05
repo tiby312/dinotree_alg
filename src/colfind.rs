@@ -5,32 +5,21 @@ use ColPair;
 use ColSingle;
 use rayon;
 use compt::CTreeIterator;
-//use tools;
-
 use tools::par;
 use compt::WrapGen;
 use dyntree::DynTree;
 use compt::LevelIter;
 use axgeom::AxisTrait;
-//use compt::LevelDesc;
 use tree_alloc::NodeDyn;
 use compt;
 use BleekSync;
 use Bleek;
 use SweepTrait;
 use DefaultDepthLevel;
-//use TreeTimer;
 use TreeTimerTrait;
 use TreeTimer2;
 use Bag;
-//use axgeom::XAXIS_S;
-//use axgeom::YAXIS_S;
 
-
-//use kdtree::base_kdtree::div_axis::stat::XAXIS;
-
-//use kdtree::base_kdtree::div_axis::stat::YAXIS;
-//use super::base_kdtree::div_axis::*;
 
 struct BleekS<'a,B:BleekSync+'a>(
     pub &'a B
@@ -42,18 +31,6 @@ impl<'a,B:BleekSync+'a> Bleek for BleekS<'a,B>{
         self.0.collide(cc);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 fn go_down<'x,
     A:AxisTrait, //this axis
@@ -156,37 +133,6 @@ fn recurse<'x,
 }
 
 
-use std::marker::PhantomData;
-struct Bl<'a,A:AxisTrait,F:Bleek+'a>{
-    a:&'a mut F,
-    _p:PhantomData<A>
-}
-impl<'a,A:AxisTrait,F:Bleek+'a> Bleek for Bl<'a,A,F>{
-    type T=F::T;
-    fn collide(&mut self,cc:ColPair<F::T>){
-        //only check if the opoosite axis intersects.
-        //already know they intersect
-        let a2=A::Next::get();//self.axis.next();
-        if cc.a.0.get_range(a2).intersects(cc.b.0.get_range(a2)){
-            self.a.collide(cc);
-        }
-    }
-}
-
-//Bots a sorted along the axis.
-fn sweeper_find_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots:&mut [F::T],clos2:&mut F){
-          
-    let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
-
-    //let blee=Blee::new(axis);
-    sweeper.find::<A,_>(bots,&mut b);   
-}
-fn sweeper_find_parallel_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots1:&mut [F::T],bots2:&mut [F::T],clos2:&mut F){
-    let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
-      
-    //let blee=Blee::new(axis);
-    sweeper.find_bijective_parallel::<A,_>((bots1, bots2),&mut b );
-}
 
 pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,clos:&mut F)->K::Bag{
@@ -214,17 +160,17 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek
     let b=BleekSF2{a:clos};
 
     //All of the above is okay because we start with SEQUENTIAL
-    self::for_every_col_pair2::<A,par::Sequential,_,DefaultDepthLevel,_,K>(kdtree,&b)
+    self::for_every_col_pair_inner::<A,par::Sequential,_,DefaultDepthLevel,_,K>(kdtree,&b)
             
 }
 
 pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,clos:&F)->K::Bag
 {
-    self::for_every_col_pair2::<A,par::Parallel,_,DefaultDepthLevel,_,K>(kdtree,clos)    
+    self::for_every_col_pair_inner::<A,par::Parallel,_,DefaultDepthLevel,_,K>(kdtree,clos)    
 }
 
-fn for_every_col_pair2<A:AxisTrait,JJ:par::Joiner,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
+fn for_every_col_pair_inner<A:AxisTrait,JJ:par::Joiner,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,clos:&F)->K::Bag{
 
     let height=kdtree.get_height();
@@ -265,7 +211,6 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
         }
     
     } else {
-
         self::sweeper_find_parallel_2d::<A::Next,_>(sweeper,this.get_bots(),parent.get_bots(),func);
     }
 }
@@ -276,10 +221,7 @@ fn rect_recurse<'x,
     T:SweepTrait+Copy+'x,
     C:CTreeIterator<Item=&'x mut NodeDyn<T>>,
     F:FnMut(ColSingle<T>)>(
-     m:C,rect:&Rect<T::Num>,func:&mut F){
-
-
-    //let div_axis=A::get();
+    m:C,rect:&Rect<T::Num>,func:&mut F){
 
     let (nn,rest)=m.next();
     {
@@ -295,7 +237,6 @@ fn rect_recurse<'x,
         Some((left,right))=>{
             let div=nn.divider();
 
-            //let div=nn.get_divider();
             let rr=rect.get_range2::<A>();
      
             if !(*div<rr.start){
@@ -322,6 +263,42 @@ pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait+Copy,F:FnMut(ColSingle<T>)>(
     let ta=tree.get_iter_mut();
     self::rect_recurse::<A,_,_,_>(ta,rect,&mut fu);
 }
+
+use colfind::bl::sweeper_find_2d;
+use colfind::bl::sweeper_find_parallel_2d;
+mod bl{
+    use super::*;
+    use std::marker::PhantomData;
+    struct Bl<'a,A:AxisTrait,F:Bleek+'a>{
+        a:&'a mut F,
+        _p:PhantomData<A>
+    }
+
+    impl<'a,A:AxisTrait,F:Bleek+'a> Bleek for Bl<'a,A,F>{
+        type T=F::T;
+        fn collide(&mut self,cc:ColPair<F::T>){
+            //only check if the opoosite axis intersects.
+            //already know they intersect
+            let a2=A::Next::get();//self.axis.next();
+            if cc.a.0.get_range(a2).intersects(cc.b.0.get_range(a2)){
+                self.a.collide(cc);
+            }
+        }
+    }
+
+    //Bots a sorted along the axis.
+    pub fn sweeper_find_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots:&mut [F::T],clos2:&mut F){
+
+        let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
+        sweeper.find::<A,_>(bots,&mut b);   
+    }
+    pub fn sweeper_find_parallel_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots1:&mut [F::T],bots2:&mut [F::T],clos2:&mut F){
+        let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
+          
+        sweeper.find_bijective_parallel::<A,_>((bots1, bots2),&mut b );
+    }
+}
+
 /*
 fn assert_correctness(&self,tree:&KdTree,botman:&BotMan)->bool{
     for (level,axis) in kd_axis::AxisIter::with_axis(tree.tree.get_level_iter()) {

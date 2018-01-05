@@ -1,119 +1,95 @@
 use compt::CTreeIterator;
-//use compt::LevelIter;
 use median::MedianStrat;
-//use super::tree_alloc::TreeAlloc;
-//use std::marker::PhantomData;
-//use super::*;
 use compt::LevelIter;
 use axgeom::Range;
 use compt::GenTree;
 use compt::LevelDesc;
 use base_kdtree::new_tree;
 use tools::par;
-//use base_kdtree::div_axis::DivAxis;
-
-//use tree_alloc::NodeDstDyn;
 use tree_alloc::NodeDstDynCont;
 use tree_alloc::NodeDyn;
-//use kdtree::base_kdtree::div_axis::stat::AxisTrait;
 use axgeom::AxisTrait;
 use std::marker::PhantomData;
-//use TreeTimer;
-//use oned::sup::BleekBF;
 use base_kdtree::Node2;
 use TreeCache;
-//use kdtree::base_kdtree::div_axis::stat::AxisPair;
+use super::*;
 
-/*
-struct NodeDstCont<'a,T:SweepTrait+'a>(
-    pub &'a mut NodeDstDyn<'a,T> 
-    );
-
-
-struct NodeDst<'a,T:SweepTrait+'a>{
-    c:Option<(NodeDstCont<'a,T>,NodeDstCont<'a,T>)>,
-    n:Node2<'a,T>
+pub struct NdIterMut<'a:'b,'b,T:SweepTrait+'a>{
+    c:&'b mut NodeDstDynCont<'a,T>
 }
-*/
 
-    use super::*;
-
-    pub struct NdIterMut<'a:'b,'b,T:SweepTrait+'a>{
-        c:&'b mut NodeDstDynCont<'a,T>
+impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for NdIterMut<'a,'b,T>{
+    type Item=&'b mut NodeDyn<T>;
+    fn next(self)->(Self::Item,Option<(Self,Self)>){
+        let i=&mut self.c.0.n;
+        let o=match self.c.0.c{
+            Some((ref mut a,ref mut b))=>{
+                Some((NdIterMut{c:a},NdIterMut{c:b}))
+            },
+            None=>{
+                None
+            }
+        };
+        (i,o)
     }
+}
 
-    impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for NdIterMut<'a,'b,T>{
-        type Item=&'b mut NodeDyn<T>;
-        fn next(self)->(Self::Item,Option<(Self,Self)>){
-            let i=&mut self.c.0.n;
-            let o=match self.c.0.c{
-                Some((ref mut a,ref mut b))=>{
-                    Some((NdIterMut{c:a},NdIterMut{c:b}))
-                },
-                None=>{
-                    None
-                }
-            };
-            (i,o)
-        }
+pub struct NdIter<'a:'b,'b,T:SweepTrait+'a>{
+    c:&'b NodeDstDynCont<'a,T>
+}
+
+impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for NdIter<'a,'b,T>{
+    type Item=&'b NodeDyn<T>;
+    fn next(self)->(Self::Item,Option<(Self,Self)>){
+        let i=&self.c.0.n;
+        let o=match self.c.0.c{
+            Some((ref a,ref b))=>{
+                Some((NdIter{c:a},NdIter{c:b}))
+            },
+            None=>{
+                None
+            }
+        };
+        (i,o)
     }
+}
 
-    pub struct NdIter<'a:'b,'b,T:SweepTrait+'a>{
-        c:&'b NodeDstDynCont<'a,T>
+
+///Allows to traverse down from a visitor twice by creating a new visitor that borrows the other.
+pub struct Wrap<'a:'b,'b,T:SweepTrait+'a>{
+    a:LevelIter<NdIterMut<'a,'b,T>>
+}
+impl<'a:'b,'b,T:SweepTrait+'a> Wrap<'a,'b,T>{
+    #[inline(always)]
+    pub fn new(a:&'a mut LevelIter<NdIterMut<'a,'b,T>>)->Wrap<'a,'b,T>{
+        let ff=unsafe{
+            let mut ff=std::mem::uninitialized();
+            std::ptr::copy(a, &mut ff, 1);
+            ff
+        };
+        Wrap{a:ff}
     }
+}
 
-    impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for NdIter<'a,'b,T>{
-        type Item=&'b NodeDyn<T>;
-        fn next(self)->(Self::Item,Option<(Self,Self)>){
-            let i=&self.c.0.n;
-            let o=match self.c.0.c{
-                Some((ref a,ref b))=>{
-                    Some((NdIter{c:a},NdIter{c:b}))
-                },
-                None=>{
-                    None
-                }
-            };
-            (i,o)
-        }
-    }
+impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for Wrap<'a,'b,T>{
+    type Item=(LevelDesc,&'b mut NodeDyn<T>);
+    fn next(self)->(Self::Item,Option<(Self,Self)>){
+        let Wrap{a}=self;
 
+        let (item,mm)=a.next();
 
-    ///Allows to traverse down from a visitor twice by creating a new visitor that borrows the other.
-    pub struct Wrap<'a:'b,'b,T:SweepTrait+'a>{
-        a:LevelIter<NdIterMut<'a,'b,T>>
-    }
-    impl<'a:'b,'b,T:SweepTrait+'a> Wrap<'a,'b,T>{
-        #[inline(always)]
-        pub fn new(a:&'a mut LevelIter<NdIterMut<'a,'b,T>>)->Wrap<'a,'b,T>{
-            let ff=unsafe{
-                let mut ff=std::mem::uninitialized();
-                std::ptr::copy(a, &mut ff, 1);
-                ff
-            };
-            Wrap{a:ff}
-        }
-    }
-    
-    impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for Wrap<'a,'b,T>{
-        type Item=(LevelDesc,&'b mut NodeDyn<T>);
-        fn next(self)->(Self::Item,Option<(Self,Self)>){
-            let Wrap{a}=self;
-  
-            let (item,mm)=a.next();
-
-            match mm{
-                Some((left,right))=>{
-                    let left=Wrap{a:left};
-                    let right=Wrap{a:right};
-                    return (item,Some((left,right)));
-                },
-                None=>{
-                    return (item,None);
-                }
+        match mm{
+            Some((left,right))=>{
+                let left=Wrap{a:left};
+                let right=Wrap{a:right};
+                return (item,Some((left,right)));
+            },
+            None=>{
+                return (item,None);
             }
         }
     }
+}
 
 
 
@@ -243,7 +219,6 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> Drop for DynTree<'a,A,T>{
 
                 //TODO do in unsafe block hid by a module
                 orig[*i]=*b;
-            
             }
         });
     }
@@ -298,17 +273,6 @@ mod alloc{
         pub(super) fn get_root_mut(&mut self)->&mut NodeDstDynCont<'a,T>{
             &mut self.root
         }
-        fn add_node<I:Iterator<Item=T>>(
-            alloc:&mut TreeAllocDst<'a,T>,
-            divider:T::Num,container_box:Range<T::Num>,bots:I,num_bots:usize)->&'a mut NodeDstDyn<'a,T>{
-
-            let n=NodeDynBuilder{divider,container_box,num_bots,i:bots};
-            let ndst:&'a mut NodeDstDyn<'a,T>=alloc.add(n);
-            
-            ndst
-        }
-
-
 
         fn construct_flat_tree(
             alloc:&mut TreeAllocDst<'a,T>,
@@ -323,8 +287,9 @@ mod alloc{
             for node in v.drain(..){
                 let Node2{divider,container_box,range}=node;
                 let num_bots=range.len();
-                let n=Self::add_node(alloc,divider,container_box,range.iter().map(|c:&Cont<T>|{*c.a}),num_bots);
-
+                //let n=Self::add_node(alloc,divider,container_box,range.iter().map(|c:&Cont<T>|{*c.a}),num_bots);
+                let nn=NodeDynBuilder{divider,container_box,num_bots,i:range.iter().map(|c:&Cont<T>|{*c.a})};
+                let n=alloc.add(nn);
                 queue.push(NodeDstDynCont(n));
             }
 
@@ -338,12 +303,10 @@ mod alloc{
                 queue[parent].0.c=Some((c1,c2));
                 
             }
+
             assert_eq!(queue.len(),1);
-
             queue.pop().unwrap()
-
         }
-
     }
 }
 

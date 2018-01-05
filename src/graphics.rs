@@ -25,7 +25,7 @@ pub struct GenTreeGraphics {
 impl GenTreeGraphics {
 
     pub fn get_num_verticies(height:usize)->usize{
-        let num_nodes=compt::compute_num_nodes(height-1);
+        let num_nodes=compt::compute_num_nodes(height);
         (num_nodes/2)*6
     }
 
@@ -43,7 +43,7 @@ impl GenTreeGraphics {
             a:&'a mut [V]
         };
 
-        let a=Self::get_num_verticies(gentree.get_tree().get_height()+1);
+        let a=Self::get_num_verticies(gentree.get_tree().get_height());
         let b=verticies.len();
         assert!( a==b,"tree requires {} verticies. received {} verticies",a,b);
 

@@ -1,23 +1,9 @@
 use super::*;
-
 use oned::sup::BleekSF;
 use oned::Sweeper;
 use SweepTrait;
 use ColSingle;
 use axgeom::AxisTrait;
-
-
-
-//Public so that users can make their own collision systems besides the included DynTree
-//and still take advantage of the functionality this module provides.
-/*
-pub trait MultiRectTrait{
-    type T:SweepTrait<Num=Self::Num>+Send;
-    type Num:NumTrait;
-    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
-}
-*/
-
 
 ///A construct to allow querying non-intersecting rectangles to retrive mutable references to what is inside them.
 ///
