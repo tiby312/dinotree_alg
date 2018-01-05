@@ -89,11 +89,11 @@ pub trait DynTreeTrait{
    type Num:NumTrait;
    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
 
-   fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>>
-        (&mut self,clos:&mut F)->Bag;
+   fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>,K:TreeTimerTrait>
+        (&mut self,clos:&mut F)->K::Bag;
    
-   fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>>
-        (&mut self,clos:&F)->Bag;
+   fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>,K:TreeTimerTrait>
+        (&mut self,clos:&F)->K::Bag;
 }
 
 
@@ -111,28 +111,7 @@ pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a Rect<T::Num>,pub &'a mut T::Inn
 
 
 
-//internally,index 0 represents the bottom of the tree. or the heighest depth.
-//the last index is the depth 0.
-//this reverse ordering is used so that smaller and smaller vecs
-//can be allocated and added back together for children nodes.
-//TODO no need to reverse!!!
-///This is used to measure the real time taken to process each level of the tree.
-pub struct TreeTimer{
-    height:usize,
-    a:Vec<f64>
-}
 
-
-
-
-pub struct Bag{
-    a:Vec<f64>
-}
-impl Bag{
-    pub fn into_vec(self)->Vec<f64>{
-        self.a
-    }
-}
 
 //TODO use this
 pub trait TreeTimerTrait:Sized+Send{
@@ -144,11 +123,46 @@ pub trait TreeTimerTrait:Sized+Send{
     fn next(self)->(Self,Self);
 }
 
+
+pub struct TreeTimerEmpty;
+pub struct BagEmpty;
+impl TreeTimerTrait for TreeTimerEmpty{
+    type Bag=BagEmpty;
+    fn combine(mut a:BagEmpty,b:BagEmpty)->BagEmpty{
+        BagEmpty
+    }
+
+    fn new(height:usize)->TreeTimerEmpty{
+        TreeTimerEmpty
+    }
+
+    fn leaf_finish(self)->BagEmpty{
+        BagEmpty
+    }
+
+    fn start(&mut self){
+
+    }
+    fn next(self)->(Self,Self){
+        (TreeTimerEmpty,TreeTimerEmpty)
+    }
+
+}
+pub struct Bag{
+    a:Vec<f64>
+}
+impl Bag{
+    pub fn into_vec(self)->Vec<f64>{
+        self.a
+    }
+}
+
 pub struct TreeTimer2{
     a:Vec<f64>,
     index:usize,
     timer:Option<tools::Timer2>
 }
+
 
 
 impl TreeTimerTrait for TreeTimer2{
@@ -189,61 +203,6 @@ impl TreeTimerTrait for TreeTimer2{
 
   
 }
-
-
-
-/*
-//internally,index 0 represents the bottom of the tree. or the heighest depth.
-//the last index is the depth 0.
-//this reverse ordering is used so that smaller and smaller vecs
-//can be allocated and added back together for children nodes.
-//TODO no need to reverse!!!
-///This is used to measure the real time taken to process each level of the tree.
-pub struct TreeTimer{
-    height:usize,
-    a:Vec<f64>
-}
-
-impl TreeTimer{
-    
-    fn create_timer()->tools::Timer2{
-        tools::Timer2::new()
-    }
-    fn add_to_depth(&mut self,depth:usize,time:f64){
-        let height=self.height;
-        let k=&mut self.a[height-1-depth];
-        *k+=time;
-    }
-    fn combine_one_less(&mut self,v:TreeTimer){
-        assert!(self.a.len()==1+v.a.len());
-
-        let a=self.a.split_last_mut().unwrap().1;
-        let b=&v.a;
-        for (i,j) in a.iter_mut().zip(b.iter()){
-            *i+=j;
-        }
-    }
-    fn clone_one_less_depth(&mut self)->TreeTimer{
-        let mut v=Vec::new();
-        let ln=self.a.len()-1;
-        v.resize(ln,0.0);
-
-        TreeTimer{a:v,height:self.height}
-    }
-    pub fn new(height:usize)->TreeTimer{
-        let mut a=Vec::new();
-        a.resize(height,0.0);
-        TreeTimer{a:a,height:height}
-    }
-    
-    ///Returns the time each level of the tree took to compute.
-    pub fn into_time_and_bots(mut self)->Vec<f64>{
-        self.a.reverse();
-        self.a
-    }
-    
-}
-*/
 
 
 

@@ -1,9 +1,10 @@
 use compt::CTreeIterator;
-use compt::LevelIter;
+//use compt::LevelIter;
 use median::MedianStrat;
 //use super::tree_alloc::TreeAlloc;
 //use std::marker::PhantomData;
 //use super::*;
+use compt::LevelIter;
 use axgeom::Range;
 use compt::GenTree;
 use compt::LevelDesc;
@@ -17,7 +18,7 @@ use tree_alloc::NodeDyn;
 //use kdtree::base_kdtree::div_axis::stat::AxisTrait;
 use axgeom::AxisTrait;
 use std::marker::PhantomData;
-use TreeTimer;
+//use TreeTimer;
 //use oned::sup::BleekBF;
 use base_kdtree::Node2;
 use TreeCache;
@@ -156,22 +157,22 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
         colfind::for_all_in_rect(self,rect,fu);
    }
    
-   fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>>
-        (&mut self,clos:&mut F)->Bag{
-       colfind::for_every_col_pair_seq::<A,T,H,F>(self,clos)
+   fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>,K:TreeTimerTrait>
+        (&mut self,clos:&mut F)->K::Bag{
+       colfind::for_every_col_pair_seq::<A,T,H,F,K>(self,clos)
     
    }
-   fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>>
-        (&mut self,clos:&F)->Bag{
-        colfind::for_every_col_pair::<A,T,H,F>(self,clos)
+   fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>,K:TreeTimerTrait>
+        (&mut self,clos:&F)->K::Bag{
+        colfind::for_every_col_pair::<A,T,H,F,K>(self,clos)
     }
 }
 
 impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
 
 
-    pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>>(
-        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (DynTree<'a,A,T>,Bag) {
+    pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
+        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (DynTree<'a,A,T>,K::Bag) {
 
         //let height=tc.get_tree().get_height()+1;
 
@@ -187,7 +188,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
             }
             
             {
-                let (mut tree2,bag)=self::new_tree::<A,JJ,_,H,Z>(&mut pointers,tc);
+                let (mut tree2,bag)=self::new_tree::<A,JJ,_,H,Z,K>(&mut pointers,tc);
 
                 // 12345
                 // 42531     //vector:41302
