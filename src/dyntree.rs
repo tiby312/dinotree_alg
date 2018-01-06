@@ -150,8 +150,6 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
     pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
         rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (DynTree<'a,A,T>,K::Bag) {
 
-        //let height=tc.get_tree().get_height()+1;
-
         let num_bots=rest.len();
 
         let bb=(&rest as &[T]) as *const [T];
@@ -159,13 +157,12 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
                
         let (fb,move_vector,bag)={
             let mut pointers:Vec<Cont<T>>=Vec::with_capacity(rest.len());
-            for (_,k) in (0..rest.len()).zip(rest.iter_mut()){
+            for k in rest.iter_mut(){
                 pointers.push(Cont{a:k});
             }
-            
             {
                 let (mut tree2,bag)=self::new_tree::<A,JJ,_,H,Z,K>(&mut pointers,tc);
-
+                
                 // 12345
                 // 42531     //vector:41302
                 let mut move_vector=Vec::with_capacity(num_bots);    
@@ -179,10 +176,9 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
                         }
                     });
                 }
-                //let level=tree2.get_tree().get_level_desc();
+                
                 let fb=DynTreeRaw::new(tree2.into_tree(),num_bots);
                 
-                //let KdTree{total_slice,tree,tc}=tree2;
                 (fb,move_vector,bag)
             }
         };
@@ -251,11 +247,11 @@ mod alloc{
 
     impl<'a,T:SweepTrait+'a+Send+Copy> DynTreeRaw<'a,T>{
         pub(super) fn new(tree:GenTree<Node2<Cont<T>>>,num_bots:usize)->DynTreeRaw<'a,T>{
+            let t1=tools::Timer2::new();
+
             let height=tree.get_height();
             let level=tree.get_level_desc();
-            let mut alloc=TreeAllocDst::new();
-
-            alloc.allocate(tree.get_nodes().len(),num_bots);
+            let mut alloc=TreeAllocDst::new(tree.get_nodes().len(),num_bots);
 
             let root=Self::construct_flat_tree(&mut alloc,tree);    
 
@@ -278,7 +274,7 @@ mod alloc{
             alloc:&mut TreeAllocDst<'a,T>,
             tree:GenTree<Node2<Cont<T>>>
             )->NodeDstDynCont<'a,T>{
-            
+
             let num_nodes=tree.get_nodes().len();
             let mut queue:Vec<NodeDstDynCont<'a,T>>=Vec::with_capacity(num_nodes);
             
