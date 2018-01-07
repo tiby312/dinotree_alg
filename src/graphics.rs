@@ -14,7 +14,6 @@ use axgeom::AxisTrait;
 
 pub trait Vertex: std::default::Default+std::clone::Clone+Send{
     fn set_pos(&mut self,x:f32,y:f32);
-    fn set_alpha(&mut self,val:f32);
 }
 
 

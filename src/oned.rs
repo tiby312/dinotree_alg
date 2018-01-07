@@ -168,7 +168,6 @@ impl<I:SweepTrait> Sweeper<I>{
 
         //debug_assert!(Self::assert_sorted(collision_botids,accessor));
     }
- 
 
     ///Find colliding pairs using the mark and sweep algorithm.
     pub fn find<'a,A:AxisTrait,F: Bleek<T=I>>(

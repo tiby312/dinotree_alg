@@ -9,7 +9,7 @@ extern crate ordered_float;
 mod base_kdtree;
 mod tree_alloc;
 mod colfind;
-pub mod dyntree;
+mod dyntree;
 pub mod graphics;
 pub mod median;
 pub mod oned;
@@ -17,6 +17,8 @@ pub mod tools;
 pub mod support;
 pub mod multirect;
 
+
+pub use dyntree::DynTree;
 //The TreeCache object is updated during the base kd tree construction.
 //So TreeCache and KdTree are tied together.
 //On the otherhand, we dont expose KdTree since it is only used
@@ -89,11 +91,19 @@ pub trait DynTreeTrait{
    type Num:NumTrait;
    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
 
+
+   fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
+        (&mut self,clos:F)->K::Bag;
+   fn for_every_col_pair_seq<H:DepthLevel,F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
+        (&mut self,mut clos:F)->K::Bag;
+
+        /*
    fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>,K:TreeTimerTrait>
         (&mut self,clos:&mut F)->K::Bag;
    
    fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>,K:TreeTimerTrait>
         (&mut self,clos:&F)->K::Bag;
+        */
 }
 
 

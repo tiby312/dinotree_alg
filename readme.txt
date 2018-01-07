@@ -1,13 +1,5 @@
-
-
-
-
 [![Build Status](https://travis-ci.org/tiby312/collie.svg?branch=master)](https://travis-ci.org/tiby312/collie)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/tiby312/collie)
-
-
-
-
 
 
 
@@ -20,33 +12,19 @@
 	pppppppp
 #step2 - perform the element swap intensive creation a kdtree using the pointers.
 
-#step3 - create the dynamic tree.
+#step3 - construct the dynamic tree in one contiguous block of memory.
+		 copy all the bots belonging to each node into the dyn tree.
 
 
-
-
-# collie
-
-.
 
 # KdTree Algorithm Overview
 
 An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
 
 
-# KdTree Construction
-
-The bot vec is binned and sorted so that logically is laid out like this:
-   
-    //pre order has better space locality as you traverse down the tree
-    //   |===|-------------------|----------------------------|
-    //       |===|--------|------|=====|-----------|----------|
-    //           |==|--|--|=|-|--|     |====|---|--|===|--|---|
-    //              |==|==| |=|==|          |===|==|   |==|===|
-The bots in each node are also sorted alone alternative axises.
-
-
-
+# Goal
+Create a fast broad-phase collision system whose running time did not depend on the size of the space
+in which the collision finding functionality was being provided. 
 
 
 # Colliding pairs querying
@@ -61,44 +39,12 @@ The bots in each node are also sorted alone alternative axises.
 
 
 # Extensions
-The limitation of the current design is the level of indirection between the tree,
-and the slices of bots in each node. Currently it is a reference to a slice in a seperate vec.
-
-Currently, the bots are allocated once, and then every iteration the tree is allocated. 
-This means that depending on where the tree gets allocated on that particular tick, you might get different performance, since the tree will had references to the bots. 
-
-One thing that can be done to alleviate this is make sure that the bot vec is as close as possible to the tree in memory. This isnt done in this implementation. 
 
 
 Another limitation is the amount of dead memory that is allocated in the leaf nodes.
-Many of the fields in the node struct, are uneeded for the child nodes. This wouldn't be so bad 
-if it wernt for the fact that this is a complete tree, so there are a LOT of leaf nodes.
-Allocation of a seperate tree that has one less height is appealing, but it introduces a level
-of indirection. Ideally, there would be a tree data structure that took as type arguments a Node
+Many of the fields in the node struct, are uneeded for the leaf nodes. This wouldn't be so bad 
+if it wernt for the fact that this is a complete tree, so there are many leaf nodes. Ideally, there would be a tree data structure that took as type arguments a Node
 and a LeafNode type. 
-
-
-In order to speed up collision finding, the bots could be stored directly in the tree.
-This would mean that every node might have a different size. 
-The nodes would be dst's like this:
-struct Node{
-	divider:f32,
-	bots[Bot] //Not a pointer to a slice of bots, or a pointer to a slice of bot references.
-}
-Constructing this tree would have some downsides. It would have to be done sequentially. 
-The starting position of every node would depend on constructing all the ones behind it
-(in bfs order). It would also require a lot of manual pointer manipulation in order to create
-&Nodes.
-
-So while querying would be faster, constructing would be slower. But since construction
-takes a less time that query, it may be worth it. 
-In this impl, on my laptop, with 100,000 bots. seq rebal and parallel query take about the same time. par rebal on the other hand is about 5 times as fast as par query. Eventually 
-the sequential rebal would dominate for very large N.
-
-
-There is performance improvement if we only allowed bots of the same size to be inserted into the tree. Then we would not need to maintain a range for each node to indicate the range within which all the bots that touch that nodes divider are contained in, because we could just assume
-it is the max size. Also the bots themselves wouldnt need to maining a Rect. But of course
-you loose generality. Being able to insert bots of arbitrary sizes was a goal of mine.
 
 
 
@@ -109,6 +55,8 @@ I chose not to do this. For one thing, I did not want to bound the bots by a max
 I also didnt want the system's performance to be tied to how fast bots were moving.
 Currently the performance of the system is tied to how many bots are colliding.
 This is the benefit of the naive method in that it has very consistent performance.
+
+
 
 
 Actual invariants of the tree:
@@ -144,6 +92,9 @@ Another reason sweep and prune is well suited here is that the algorithm does no
 The design decision was made that the axis at each level of the tree be known at compile time. There is an XAXIS struct and a YAXIS struct that are passed as type parameters recursively. The benefit of this is that branches that are made based off of the axis can be eliminated at compile time. Specilaized versions of these functions can be generated by the compiler that do not have to branch based off of different axis comparisons. The downside of this is that you have to pick a starting axis statically. This means that if the space that you are partitioning can vary in dimension, you may not be picking the best starting axis to partition against. So if this is a problem for you, you can wrap the collision system behind a trait that does NOT take the starting axis as a type parameter. Then you you can have some dynamic code that will create either a XAXIS, or YAXIS starting collision system that is then returned as a Box of that trait. The downside to this, however, is that two whole versions of your collision system will be monomorphized by the compiler, one for each axis. So this might lead to a big jump in the size of the program. 
 
 A good multi-crate project is setup so that the interface between crates is very simple compared to the complexity contained within each one. 
+
+
+What about 3d? Making this multi dimensional would have added to the complexity, so the design desision was made to only target 2d. That's not to say one couldn't still take advantage of this system in a 3d simulation. Every bot could store a height field that you do an extra check against in the collision function. The downside is that imagine if there were many bots stacked on top of each other, but you only wanted to query a small cube. Then doing it this way, your query function would have to consider all those bots that were stacked. If there are only a few different height values, one could maintain a seperte 2d dinotree for each level.
 
 
 

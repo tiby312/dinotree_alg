@@ -125,6 +125,8 @@ pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
 
 
 use super::DynTreeTrait;
+use  oned::sup::BleekSF;
+use  oned::sup::BleekBF;
 impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
    type T=T;
    type Num=T::Num;
@@ -133,14 +135,15 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
         colfind::for_all_in_rect(self,rect,fu);
    }
    
-   fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>,K:TreeTimerTrait>
-        (&mut self,clos:&mut F)->K::Bag{
-       colfind::for_every_col_pair_seq::<A,T,H,F,K>(self,clos)
-    
+   fn for_every_col_pair_seq<H:DepthLevel,F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
+        (&mut self,mut clos:F)->K::Bag{
+        let mut bb=BleekSF::new(&mut clos);            
+        colfind::for_every_col_pair_seq::<A,T,H,_,K>(self,&mut bb)
    }
-   fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>,K:TreeTimerTrait>
-        (&mut self,clos:&F)->K::Bag{
-        colfind::for_every_col_pair::<A,T,H,F,K>(self,clos)
+   fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
+        (&mut self,clos:F)->K::Bag{
+        let bb=BleekBF::new(&clos);                            
+        colfind::for_every_col_pair::<A,T,H,_,K>(self,&bb)
     }
 }
 
@@ -182,21 +185,21 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
                 (fb,move_vector,bag)
             }
         };
-        //TODO PLUS ONE IMPORTANT!
+
         (DynTree{orig:rest,tree:fb,vec:move_vector,_p:PhantomData},bag)
     }
    
-    pub fn get_height(&self)->usize{
+    pub(super) fn get_height(&self)->usize{
         self.tree.get_height()
     }
 
-    pub fn get_iter<'b>(&'b self)->NdIter<'a,'b,T>{
+    pub(super) fn get_iter<'b>(&'b self)->NdIter<'a,'b,T>{
         NdIter{c:&self.tree.get_root()}
     }
-    pub fn get_level_desc(&self)->LevelDesc{
+    pub(super) fn get_level_desc(&self)->LevelDesc{
         self.tree.get_level()
     }
-    pub fn get_iter_mut<'b>(&'b mut self)->NdIterMut<'a,'b,T>{
+    pub(super) fn get_iter_mut<'b>(&'b mut self)->NdIterMut<'a,'b,T>{
         NdIterMut{c:self.tree.get_root_mut()}
     }
 

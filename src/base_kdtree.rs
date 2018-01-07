@@ -143,7 +143,10 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
     match restt{
         None=>{
             //debug_assert!(down2.is_none());
+            //println!("num_nodes={:?}",rest.len());
+            
             *nn=create_node::<A,_>(std::default::Default::default(),rest);
+            
             timer_log.leaf_finish()
         },
         Some((lleft,rright))=>{
