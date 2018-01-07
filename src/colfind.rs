@@ -14,7 +14,7 @@ use tree_alloc::NodeDyn;
 use compt;
 
 use SweepTrait;
-use DefaultDepthLevel;
+use support::DefaultDepthLevel;
 use treetimer::*;
 
 

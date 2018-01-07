@@ -13,6 +13,7 @@ use std::marker::PhantomData;
 use base_kdtree::Node2;
 use TreeCache;
 use treetimer::*;
+use support::DefaultDepthLevel;
 use super::*;
 
 pub struct NdIterMut<'a:'b,'b,T:SweepTrait+'a>{
@@ -136,10 +137,10 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
         colfind::for_all_in_rect(self,rect,fu);
    }
    
-   fn for_every_col_pair_seq<H:DepthLevel,F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
+   fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
         (&mut self,mut clos:F)->K::Bag{
         let mut bb=BleekSF::new(&mut clos);            
-        colfind::for_every_col_pair_seq::<A,T,H,_,K>(self,&mut bb)
+        colfind::for_every_col_pair_seq::<A,T,DefaultDepthLevel,_,K>(self,&mut bb)
    }
    fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
         (&mut self,clos:F)->K::Bag{
@@ -150,7 +151,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
 
 impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
 
-
+    ///Create the tree.
     pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
         rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (DynTree<'a,A,T>,K::Bag) {
 

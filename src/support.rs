@@ -3,6 +3,8 @@ use SweepTrait;
 use axgeom;
 use NumTrait;
 use ordered_float::NotNaN;
+use DepthLevel;
+use compt::LevelDesc;
 
 //A convenience wrapper that implements the NumTrait around any number that implements the 
 //required traits for a NumTrait.
@@ -51,5 +53,16 @@ impl<Nu:NumTrait,T:Send> BBox<Nu,T>{
     #[inline(always)]
     pub fn update_box(&mut self,rect:axgeom::Rect<Nu>){
         self.rect=rect;
+    }
+}
+
+
+
+///A default depth level from which to switch to sequential.
+pub struct DefaultDepthLevel;
+
+impl DepthLevel for DefaultDepthLevel{
+    fn switch_to_sequential(a:LevelDesc)->bool{
+        a.get_depth()>4
     }
 }

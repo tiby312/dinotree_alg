@@ -31,38 +31,23 @@ use compt::LevelDesc;
 use axgeom::Rect;
 use treetimer::*;
 
-
-
-
 ///Returns the level at which a parallel divide and conqur algorithm will switch to sequential
 pub trait DepthLevel{
     ///Switch to sequential at this height.
-    ///This is highly system dependant of what a "good" level it would be to switch over.
     fn switch_to_sequential(a:LevelDesc)->bool;
 }
 
-
-///A default depth level from which to switch to sequential.
-pub struct DefaultDepthLevel;
-
-impl DepthLevel for DefaultDepthLevel{
-    fn switch_to_sequential(a:LevelDesc)->bool{
-        a.get_depth()>4
-    }
-}
-
-
-//The underlying numbers used for the bounding boxes,
-//and for the dividers. 
+///The underlying number type used for the bounding boxes,
+///and for the dividers. 
 pub trait NumTrait:Ord+Copy+Send+Sync+std::fmt::Debug+Default{}
 
-///Provides a way to destructure an object into a
-///reference to a read only bounding box, and a mutable inner struct.
+///The interface through which the tree interacts with the objects being inserted into it.
 pub trait SweepTrait:Send{
-    ///The part of the struct that is allowed to be mutated
+    ///The part of the object that is allowed to be mutated
     ///during the querying of the tree. It is important that
     ///the bounding boxes not be mutated during querying of the tree
-    ///as that would break the invariants of the tree.
+    ///as that would break the invariants of the tree. (it might need to be moved
+    ///to a different node)
     type Inner:Send;
 
     ///The number trait used to compare rectangles to
@@ -72,22 +57,24 @@ pub trait SweepTrait:Send{
     ///Destructure into the bounding box and mutable parts.
     fn get_mut<'a>(&'a mut self)->(&'a Rect<Self::Num>,&'a mut Self::Inner);
 
-    ///Just get the bounding box.
+    ///Destructue into the bounding box and inner part.
     fn get<'a>(&'a self)->(&'a Rect<Self::Num>,&'a Self::Inner);
 }
 
-
-///This is the functionality that the collision systems in this crate provide.
-///Trait that hides the Axis trait specialization
+///The interface through which users can use the tree for what it is for, querying.
 pub trait DynTreeTrait{
    type T:SweepTrait<Num=Self::Num>;
    type Num:NumTrait;
+
+   ///Finds all objects strictly within the specified rectangle.
    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
 
-
+   ///Find all objects who's bounding boxes intersect in parallel.
    fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
         (&mut self,clos:F)->K::Bag;
-   fn for_every_col_pair_seq<H:DepthLevel,F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
+
+   ///Find all objects who's bounding boxes intersect sequentially. 
+   fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
         (&mut self,mut clos:F)->K::Bag;
 }
 
