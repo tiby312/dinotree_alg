@@ -14,9 +14,7 @@ use axgeom::AxisTrait;
 use std::marker::PhantomData;
 use DepthLevel;
 use rayon;
-use Bag;
-use TreeTimer2;
-use TreeTimerTrait;
+use treetimer::*;
 use compt::Zip;
 
 

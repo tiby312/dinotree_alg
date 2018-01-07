@@ -7,11 +7,22 @@ use axgeom::Rect;
 use tools::PreVec;
 use SweepTrait;
 use ColPair;
-use BleekSync;
-use Bleek;
 use NumTrait;
 use axgeom::AxisTrait;
 use std::marker::PhantomData;
+
+
+pub trait Bleek{
+    type T:SweepTrait;
+    fn collide(&mut self,cc:ColPair<Self::T>);
+}
+
+pub trait BleekSync:Sync+Copy+Clone{
+    type T:SweepTrait+Send;
+    fn collide(&self,cc:ColPair<Self::T>);
+}
+
+
 
 ///Provides contains that support converting a closure to a struct that implements Bleek.
 ///Working with closures, you have to be carful with the recursion limit. This avoids

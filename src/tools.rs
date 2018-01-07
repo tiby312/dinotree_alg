@@ -105,62 +105,6 @@ pub fn join<'a,T>(first: &'a [T],second:&'a [T])->&'a [T]{
 
 
 
-pub mod log{
-
-    
-    use std::fs::File;
-    use std::io::Write;
-    
-
-
-    pub struct Logger{
-        file:File,
-        counter:usize
-    }
-    impl Logger{
-
-        pub fn new(str:&'static str)->Logger{
-            
-            let file = File::create(str).unwrap();
-            Logger{file:file,counter:0}
-        }
-
-        pub fn with_names(str:&'static str,names:&[&'static str])->Logger{
-            
-            let mut file = File::create(str).unwrap();
-           
-            write!(file,"Iteration,").unwrap();
-            for k in names{
-                write!(file,"{},",k).unwrap();    
-            }
-            writeln!(file,"").unwrap();
-            Logger{file:file,counter:0}
-        }
-
-        pub fn write_str(&mut self,strf:&'static str,slice:&[String]){
-
-            write!(self.file,"{},",strf).unwrap();
-            for k in slice{
-                write!(self.file,"{},",k).unwrap();    
-            }
-            writeln!(self.file,"").unwrap();
-            
-        }
-        pub fn write_data(&mut self,slice:&[f64]){
-            
-            write!(self.file,"{},",self.counter).unwrap();
-            for k in slice{
-                write!(self.file,"{},",k).unwrap();    
-            }
-            writeln!(self.file,"").unwrap();
-            self.counter+=1;
-            
-        }
-    }
-}
-
-
-
 
 
 use std::time::Instant;

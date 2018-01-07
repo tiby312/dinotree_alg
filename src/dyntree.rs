@@ -12,6 +12,7 @@ use axgeom::AxisTrait;
 use std::marker::PhantomData;
 use base_kdtree::Node2;
 use TreeCache;
+use treetimer::*;
 use super::*;
 
 pub struct NdIterMut<'a:'b,'b,T:SweepTrait+'a>{

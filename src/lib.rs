@@ -10,12 +10,14 @@ mod base_kdtree;
 mod tree_alloc;
 mod colfind;
 mod dyntree;
+mod oned;
+
 pub mod graphics;
 pub mod median;
-pub mod oned;
 pub mod tools;
 pub mod support;
 pub mod multirect;
+pub mod treetimer;
 
 
 pub use dyntree::DynTree;
@@ -27,16 +29,7 @@ pub use base_kdtree::TreeCache;
 
 use compt::LevelDesc;
 use axgeom::Rect;
-
-pub trait Bleek{
-    type T:SweepTrait;
-    fn collide(&mut self,cc:ColPair<Self::T>);
-}
-
-pub trait BleekSync:Sync+Copy+Clone{
-    type T:SweepTrait+Send;
-    fn collide(&self,cc:ColPair<Self::T>);
-}
+use treetimer::*;
 
 
 
@@ -96,18 +89,7 @@ pub trait DynTreeTrait{
         (&mut self,clos:F)->K::Bag;
    fn for_every_col_pair_seq<H:DepthLevel,F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
         (&mut self,mut clos:F)->K::Bag;
-
-        /*
-   fn for_every_col_pair_seq<H:DepthLevel,F:Bleek<T=Self::T>,K:TreeTimerTrait>
-        (&mut self,clos:&mut F)->K::Bag;
-   
-   fn for_every_col_pair<H:DepthLevel,F:BleekSync<T=Self::T>,K:TreeTimerTrait>
-        (&mut self,clos:&F)->K::Bag;
-        */
 }
-
-
-
 
 ///This contains the destructured SweepTrait for a colliding pair.
 ///The rect is read only while T::Inner is allowed to be mutated.
@@ -118,105 +100,6 @@ pub struct ColPair<'a,T:SweepTrait+'a>{
 
 ///Similar to ColPair, but for only one SweepTrait
 pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a Rect<T::Num>,pub &'a mut T::Inner);
-
-
-
-
-
-//TODO use this
-pub trait TreeTimerTrait:Sized+Send{
-    type Bag:Send+Sized;
-    fn combine(a:Self::Bag,b:Self::Bag)->Self::Bag;
-    fn new(height:usize)->Self;
-    fn leaf_finish(self)->Self::Bag;
-    fn start(&mut self);
-    fn next(self)->(Self,Self);
-}
-
-
-pub struct TreeTimerEmpty;
-pub struct BagEmpty;
-impl TreeTimerTrait for TreeTimerEmpty{
-    type Bag=BagEmpty;
-    fn combine(mut a:BagEmpty,b:BagEmpty)->BagEmpty{
-        BagEmpty
-    }
-
-    fn new(height:usize)->TreeTimerEmpty{
-        TreeTimerEmpty
-    }
-
-    fn leaf_finish(self)->BagEmpty{
-        BagEmpty
-    }
-
-    fn start(&mut self){
-
-    }
-    fn next(self)->(Self,Self){
-        (TreeTimerEmpty,TreeTimerEmpty)
-    }
-
-}
-pub struct Bag{
-    a:Vec<f64>
-}
-impl Bag{
-    pub fn into_vec(self)->Vec<f64>{
-        self.a
-    }
-}
-
-pub struct TreeTimer2{
-    a:Vec<f64>,
-    index:usize,
-    timer:Option<tools::Timer2>
-}
-
-
-
-impl TreeTimerTrait for TreeTimer2{
-    type Bag=Bag;
-    fn combine(mut a:Bag,b:Bag)->Bag{
-        for (i,j) in a.a.iter_mut().zip(b.a.iter()){
-            *i+=j;
-        }
-        a
-    }
-    fn new(height:usize)->TreeTimer2{
-        let v=(0..height).map(|_|0.0).collect();
-        
-        TreeTimer2{a:v,index:0,timer:None}
-    }
-
-    fn leaf_finish(self)->Bag{
-       let TreeTimer2{mut a,index,timer}=self;
-        a[index]+=timer.unwrap().elapsed();
-        Bag{a:a}
-    }
-
-    fn start(&mut self){
-        self.timer=Some(tools::Timer2::new())
-    }
-
-    fn next(self)->(TreeTimer2,TreeTimer2){
-        let TreeTimer2{mut a,index,timer}=self;
-        a[index]+=timer.unwrap().elapsed();
-
-        let b=(0..a.len()).map(|_|0.0).collect();
-        (
-            TreeTimer2{a:a,index:index+1,timer:None},
-            TreeTimer2{a:b,index:index+1,timer:
-                None}
-        )
-    }
-
-  
-}
-
-
-
-
 
 #[cfg(test)]
 mod tests {
