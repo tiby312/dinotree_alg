@@ -51,8 +51,8 @@ Here are some additional properties that are more about the practical layout:
 Here is algorithm to create the above described tree.
 1. Have a list of bots
 2. Create a list of pointers to those bots
-3. Perform the element swap intensive creation a kdtree using the list of pointers.
-4. Construct the dynamic tree in one contiguous block of memory from the tree of pointers.
+3. Perform the element swap intensive construction a kdtree using the list of pointers.
+4. Convert the tree of pointers into a tree of raw objects.
 5. Query the tree for colliding pairs.
 6. Optionally query the tree for rectangle colliding sections.
 
@@ -72,10 +72,9 @@ Step 5 (the querying of the tree) is done recursively using this algorithm:
 3. Recurse left, and right potentially in parallel.
 
 
+Everything is done in the name of speeding up the querying. This is the algorithm that could dominate very easily depending on how many bots are intersecting each other. Every bot will be copied twice. Once into the dyntree, and once out. I believe the cost of two copies is worth the benefit from removing a layer of indirection when querying a tree. In cases where few objects intersect and/or the objects in the tree are very very large, this may not be the case. But in any case, the performance hit is a steady hit that does not vary depending on how many bots are colliding.
 
-
-
-Every bot will be copied twice. Once into the dyntree, and once out. I believe the cost of two copiess is worth the benefit from removing a layer of indirection when querying a tree. Note that there is a layer of indirection when rebalancing the tree. The algorithms have different properties. Rebalancing requires a lot of swapping, Query requires a lot of reading and iterating through the tree.
+Note that there is a layer of indirection when rebalancing the tree. The algorithms have different properties. Rebalancing requires a lot of swapping, Query requires a lot of reading and iterating through the tree.
 
 Important property of rebal vs query algorithms. The load of the query algorithm will vary depending on how many of the bots are colliding with each other. On the other hand the rebal algorithm should be more consistent. It may speed up and slow down based on how the bots happen to be arranged going into the algorithm. 
 
