@@ -56,19 +56,19 @@ Here is algorithm to create the above described tree.
 5. Query the tree for colliding pairs.
 6. Optionally query the tree for rectangle colliding sections.
 
-Step 3 is done recursively using this algorithm:
+Step 3 (the construction of the tree) is done recursively using this algorithm:
 1. Place the divider where the median bot is in the current list.
 2. Bin the list of bots into 3 categories, left,right and middle, (middle implying it intersects the divider). There is an alternative divider finding strategy where the divider is found after this step instead of before.
 3. Sort the middle list along the axis that is orthoganal to the axis the divider is splititing.
 4. Recurse left and recurse right potentially in parallel.
 
-Step 4 can further be broken down into these steps:
+Step 4 (the conversion of the tree to remove a level of indirection) can further be broken down into these steps:
 1. Iterate through all the nodes in bfs order and copy the bots that are being pointed to for each node into a new node type.
 2. Connect all the parent nodes to their children, by iterating backwards.
 
-Step 5 is done recursively using this algorithm:
+Step 5 (the querying of the tree) is done recursively using this algorithm:
 1. For the bots beloning to the current node check for collision using sweep and prune.
-2. Recursively, find all nodes who's bounding containers intersects the current node. Finding colliding pairs between the current nodes boths and those node's bots. If the two nodes are the same axis, use sweep and prune. If they are different, first find the subset of each lists that intersect with the other node's bounding rectangle. Then naively check every pair.
+2. Recursively, find all nodes who's bounding containers intersects the current node. Find colliding pairs between the current node's bots and those node's bots. If the two nodes are the same axis, use sweep and prune. If they are different, first find the subset of each lists that intersect with the other node's bounding rectangle. Then naively check every pair.
 3. Recurse left, and right potentially in parallel.
 
 
