@@ -34,21 +34,27 @@ in which the collision finding functionality was being provided.
 
 
 ## The Data Structure
+Here are the properties of the constructed tree.
+* Theory
+..* Every bot belongs to only one node. 
+..* All the bots in a node are sorted along an axis that alternates with each level in the tree
+..* All the bots in a node intersect with its divider (except for leafs that dont have a divider).
+..* All the bots to the left of a node's divider can be found somewhere in its left child, and ditto for right.
+..* Every node keeps track of the range within which all its bots live in along its partitioning axis.
 
-Here is the outline of the usecase of this crate.
-#step0   - have a list of bots
-	xxxxxxxx
-#step1  - create a list of pointers to those bots
-	xxxxxxxx
-	^^^^^^^^
-	pppppppp
-#step2 - perform the element swap intensive creation a kdtree using the pointers.
+*Practical
+..* Each node of the tree is laid out in memory in bfs order in contiguous memory.
+..*	Each node has variable size. it contains the divider, and the containing range, and also all the bots within that node, all in contiguous memory.
+..* Each node's children are pointed to via mutable references.
 
-#step3 - construct the dynamic tree in one contiguous block of memory.
-		 copy all the bots belonging to each node into the dyn tree.
-		 now the tree is laid out in memory for fast querying.
 
-#step4 - query the tree for colliding pairs
+## The Algorithm
+Here is algorithm to create the above described tree.
+1. Have a list of bots
+2. Create a list of pointers to those bots
+3. Perform the element swap intensive creation a kdtree using the list of pointers.
+4. Construct the dynamic tree in one contiguous block of memory from the tree of pointers.
+5. Query the tree for colliding pairs
 
 
 
@@ -90,17 +96,6 @@ The tailor inputs is important. For example, a case where two bounding boxes col
 So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit. It is also useful to come up with a "upholding invariant" function that can be called at any time on the tree after it has been constructed to be sure that it has all the properties that it needs to perform querying on. The actual invariants of the tree are as follows:
 
 ### Actual invariants of the tree:
-	#### theoretical properties:
-	every bot belongs to only one node. 
-	all the bots in a node are sorted along an axis that alternates with each level in the tree
-	all the bots in a node intersect with its divider (except for leafs that dont have a divider).
-	all the bots to the left of a node's divider can be found somewhere in its left child, and ditto for right.
-	every node keeps track of the range within which all its bots live in along its partitioning axis.
-
-	#### non-theoretical properties:
-	each node of the tree is laid out in memory in bfs order in contiguous memory.
-	each node has variable size. it contains the divider, and the containing range, and also all the bots within that node, all in contiguous memory.
-	each node's children are pointed to via mutable references.
 
 
 
