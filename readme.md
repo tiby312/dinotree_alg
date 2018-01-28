@@ -3,24 +3,6 @@
 
 
 
-Here is the outline of the usecase of this crate.
-#step0   - have a list of bots
-	xxxxxxxx
-#step1  - create a list of pointers to those bots
-	xxxxxxxx
-	^^^^^^^^
-	pppppppp
-#step2 - perform the element swap intensive creation a kdtree using the pointers.
-
-#step3 - construct the dynamic tree in one contiguous block of memory.
-		 copy all the bots belonging to each node into the dyn tree.
-		 now the tree is laid out in memory for fast querying.
-
-#step4 - query the tree for colliding pairs
-
-
-
-
 
 
 
@@ -51,18 +33,25 @@ in which the collision finding functionality was being provided.
 
 
 
+## The Data Structure
 
-Actual invariants of the tree:
-	every bot belongs to only one node. 
-	every node is sorted along an axis that alternates with each level in the tree
-	all the bots in a node intersect with its divider.
-	all the bots to the left of a node's divider can be found somewhere in its left child, and ditto for right.
-	every node keeps track of the range within which all its bots live in along its partitioning axis.
+Here is the outline of the usecase of this crate.
+#step0   - have a list of bots
+	xxxxxxxx
+#step1  - create a list of pointers to those bots
+	xxxxxxxx
+	^^^^^^^^
+	pppppppp
+#step2 - perform the element swap intensive creation a kdtree using the pointers.
 
-	technical:
-	each node of the tree is laid out in memory in bfs order in contiguous memory.
-	each node has variable size. it contains the divider, and the containing range, and also all the bots within that node, all in contiguous memory.
-	each node's children are pointed to via mutable references.
+#step3 - construct the dynamic tree in one contiguous block of memory.
+		 copy all the bots belonging to each node into the dyn tree.
+		 now the tree is laid out in memory for fast querying.
+
+#step4 - query the tree for colliding pairs
+
+
+
 
 Every bot will be copied twice. Once into the dyntree, and once out. I believe the cost of two copiess is worth the benefit from removing a layer of indirection when querying a tree. Note that there is a layer of indirection when rebalancing the tree. The algorithms have different properties. Rebalancing requires a lot of swapping, Query requires a lot of reading and iterating through the tree.
 
@@ -92,19 +81,39 @@ The design decision was made that the axis at each level of the tree be known at
 Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible baths that the produced program can take. Ideally you want your program to be as static as possible and still satisfy whatever function it is supposed to serve.
 
 A good test is a test that tests with good certainty that a large portion of code is working properly.
-Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to maintain themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
+Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to be maintained themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
 
 So lets look at this crate. This crate's sole purpose is to provide a method of providing collision detection. So a good high level test would be to compare the query results from using this crate to the naive method (which is much easier to verify is correct). This one test can be performed on many different inputs of lists of bots to try to expose any corner cases. So this one test when fed with both random and specifically tailed inputs to expose corner cases, can show with a lot of certainty that the crate is satisfying the api. 
 
-The tailed inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
+The tailor inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
 
-So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit.
+So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit. It is also useful to come up with a "upholding invariant" function that can be called at any time on the tree after it has been constructed to be sure that it has all the properties that it needs to perform querying on. The actual invariants of the tree are as follows:
+
+### Actual invariants of the tree:
+	#### theoretical properties:
+	every bot belongs to only one node. 
+	all the bots in a node are sorted along an axis that alternates with each level in the tree
+	all the bots in a node intersect with its divider (except for leafs that dont have a divider).
+	all the bots to the left of a node's divider can be found somewhere in its left child, and ditto for right.
+	every node keeps track of the range within which all its bots live in along its partitioning axis.
+
+	#### non-theoretical properties:
+	each node of the tree is laid out in memory in bfs order in contiguous memory.
+	each node has variable size. it contains the divider, and the containing range, and also all the bots within that node, all in contiguous memory.
+	each node's children are pointed to via mutable references.
+
+
+
 
 So up until now we have only verified the correctness of this algorithm. We still need to verify that it is worth using. So we have to bench it. The crate api provides a way to get the time taken at each level of the tree. This information is given to the user since finding the right hight of the tree is very usecase specific. It also serves the purpose of proving that the crate is behaving like a tree and is properly dividing and conquering the problem. So by comparing the performance against the naive approach, and possibly other crates, we can prove that is is worth using.
 
-Simply proving that it is better than the naive approach isnt very impressive. We want to prove that the design constructs and complexity used in the crate are actually accomplishing something. Otherwise you're just maintaining complexity for the sake of complexity. In order to show this, the user has the option of turning off an on certain features of the system using generic parameters. The user can turn off and on multithreading and bench them seperately. The user can specify the median finding strategy and bench them seperately. Exactly how good these features are, one could argue is up to the crate to prove itself in part of its bench suite. 
+Simply proving that it is better than the naive approach isnt very impressive. We want to prove that the design constructs and complexity used in the crate are actually accomplishing something. Otherwise you're just maintaining complexity for the sake of complexity. In order to show this, the user has the option of turning off an on certain features of the system using generic parameters. The user can turn off and on multithreading and bench them seperately. The user can specify the median finding strategy and bench them seperately. 
+
+Not all features can be turned off however. How can I show that, for example, using sweep and prune within each node, actually sped things up? This is hard to show. I have a pretty good feeling because I can comment out the the code and notice a speed difference, but then the user has to take my word for it. Should all these features we able to turn off via generic parameters? If you did this, you'd eventually end up with the one high level function with a whole mess of generic parameters. At this point I decided that the user can modify the code and test things out on his own if he wants. It would be nice if there could be automated benching to show the performance improvements (would be interesting to see how they vary on different target platforms) brought upon by every single idea in this crate, but the added complexity, doesnt seem worth it. 
 
 
+
+# Data
 
 # Extensions
 
