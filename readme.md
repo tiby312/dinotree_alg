@@ -20,24 +20,6 @@ Here is the outline of the usecase of this crate.
 
 
 
-#Testing Strategy
-
-Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible baths that the produced program can take. Ideally you want your program to be as static as possible and still satisfy whatever function it is supposed to serve.
-
-A good test is a test that tests with good certainty that a large portion of code is working properly.
-Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to maintain themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
-
-So lets look at this crate. This crate's sole purpose is to provide a method of providing collision detection. So a good high level test would be to compare the query results from using this crate to the naive method (which is much easier to verify is correct). This one test can be performed on many different inputs of lists of bots to try to expose any corner cases. So this one test when fed with both random and specifically tailed inputs to expose corner cases, can show with a lot of certainty that the crate is satisfying the api. 
-
-The tailed inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
-
-So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit.
-
-So up until now we have only verified the correctness of this algorithm. We still need to verify that it is worth using. So we have to bench it. The crate api provides a way to get the time taken at each level of the tree. This information is given to the user since finding the right hight of the tree is very usecase specific. It also serves the purpose of proving that the crate is behaving like a tree and is properly dividing and conquering the problem. So by comparing the performance against the naive approach, and possibly other crates, we can prove that is is worth using.
-
-Simply proving that it is better than the naive approach isnt very impressive. We want to prove that the design constructs and complexity used in the crate are actually accomplishing something. Otherwise you're just maintaining complexity for the sake of complexity. In order to show this, the user has the option of turning off an on certain features of the system using generic parameters. The user can turn off and on multithreading and bench them seperately. The user can specify the median finding strategy and bench them seperately. Exactly how good these features are, one could argue is up to the crate to prove itself in part of its bench suite. 
-
-
 
 
 
@@ -65,23 +47,7 @@ in which the collision finding functionality was being provided.
 
 
 
-# Extensions
-
-
-Another limitation is the amount of dead memory that is allocated in the leaf nodes.
-Many of the fields in the node struct, are uneeded for the leaf nodes. This wouldn't be so bad 
-if it wernt for the fact that this is a complete tree, so there are many leaf nodes. Ideally, there would be a tree data structure that took as type arguments a Node
-and a LeafNode type. 
-
-
-
-So the dividers are cached and iterated upon. Coliding pairs could also be cached.
-All the bots could be given a loose bounding box that is only updated when then leave it,
-or after a set number of iterations.
-I chose not to do this. For one thing, I did not want to bound the bots by a maximum speed.
-I also didnt want the system's performance to be tied to how fast bots were moving.
-Currently the performance of the system is tied to how many bots are colliding.
-This is the benefit of the naive method in that it has very consistent performance.
+# Detailed Design
 
 
 
@@ -119,6 +85,46 @@ This eliminates a lot of nodes that dont need to be considered since there is no
 Another reason sweep and prune is well suited here is that the algorithm does not need any kind of data structure besides a stack. It also works on a variable amount of bots. The number of bots in one node could change wildly. At one point I had a oned version of the kdtree inside of each node to do this, but this required dynamically allocating a specialized kdtree with a particular height for each indiviual node. 
 
 The design decision was made that the axis at each level of the tree be known at compile time. There is an XAXIS struct and a YAXIS struct that are passed as type parameters recursively. The benefit of this is that branches that are made based off of the axis can be eliminated at compile time. Specilaized versions of these functions can be generated by the compiler that do not have to branch based off of different axis comparisons. The downside of this is that you have to pick a starting axis statically. This means that if the space that you are partitioning can vary in dimension, you may not be picking the best starting axis to partition against. So if this is a problem for you, you can wrap the collision system behind a trait that does NOT take the starting axis as a type parameter. Then you you can have some dynamic code that will create either a XAXIS, or YAXIS starting collision system that is then returned as a Box of that trait. The downside to this, however, is that two whole versions of your collision system will be monomorphized by the compiler, one for each axis. So this might lead to a big jump in the size of the program. 
+
+
+# Testing Strategy
+
+Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible baths that the produced program can take. Ideally you want your program to be as static as possible and still satisfy whatever function it is supposed to serve.
+
+A good test is a test that tests with good certainty that a large portion of code is working properly.
+Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to maintain themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
+
+So lets look at this crate. This crate's sole purpose is to provide a method of providing collision detection. So a good high level test would be to compare the query results from using this crate to the naive method (which is much easier to verify is correct). This one test can be performed on many different inputs of lists of bots to try to expose any corner cases. So this one test when fed with both random and specifically tailed inputs to expose corner cases, can show with a lot of certainty that the crate is satisfying the api. 
+
+The tailed inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
+
+So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit.
+
+So up until now we have only verified the correctness of this algorithm. We still need to verify that it is worth using. So we have to bench it. The crate api provides a way to get the time taken at each level of the tree. This information is given to the user since finding the right hight of the tree is very usecase specific. It also serves the purpose of proving that the crate is behaving like a tree and is properly dividing and conquering the problem. So by comparing the performance against the naive approach, and possibly other crates, we can prove that is is worth using.
+
+Simply proving that it is better than the naive approach isnt very impressive. We want to prove that the design constructs and complexity used in the crate are actually accomplishing something. Otherwise you're just maintaining complexity for the sake of complexity. In order to show this, the user has the option of turning off an on certain features of the system using generic parameters. The user can turn off and on multithreading and bench them seperately. The user can specify the median finding strategy and bench them seperately. Exactly how good these features are, one could argue is up to the crate to prove itself in part of its bench suite. 
+
+
+
+# Extensions
+
+
+Another limitation is the amount of dead memory that is allocated in the leaf nodes.
+Many of the fields in the node struct, are uneeded for the leaf nodes. This wouldn't be so bad 
+if it wernt for the fact that this is a complete tree, so there are many leaf nodes. Ideally, there would be a tree data structure that took as type arguments a Node
+and a LeafNode type. 
+
+
+
+So the dividers are cached and iterated upon. Coliding pairs could also be cached.
+All the bots could be given a loose bounding box that is only updated when then leave it,
+or after a set number of iterations.
+I chose not to do this. For one thing, I did not want to bound the bots by a maximum speed.
+I also didnt want the system's performance to be tied to how fast bots were moving.
+Currently the performance of the system is tied to how many bots are colliding.
+This is the benefit of the naive method in that it has very consistent performance.
+
+
 
 A good multi-crate project is setup so that the interface between crates is very simple compared to the complexity contained within each one. 
 
