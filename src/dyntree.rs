@@ -114,7 +114,7 @@ impl<'b,T:'b+SweepTrait+Send> SweepTrait for Cont<'b,T>{
 }
 
 
-
+///The struct that this crate revolves around.
 pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
     orig:&'b mut [T],
     tree:DynTreeRaw<'b,T>,
@@ -129,7 +129,7 @@ pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
 use super::DynTreeTrait;
 use  oned::sup::BleekSF;
 use  oned::sup::BleekBF;
-impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
+impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTreeTrait for DynTree<'a,A,T>{
    type T=T;
    type Num=T::Num;
     
@@ -149,16 +149,19 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTreeTrait for DynTree<'a,A,T>{
     }
 }
 
-impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
+impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
 
     ///Create the tree.
+    ///Specify whether it is done in parallel or sequential.
+    ///If parallel, also specify the depth at which to switch to sequential.
+    ///Also specify the median finding strategy to use.
+    ///Also specify whether to use collect timing dat.a
     pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
-        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (DynTree<'a,A,T>,K::Bag) {
+        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,medianstrat:&Z) -> (DynTree<'a,A,T>,K::Bag) {
 
         let num_bots=rest.len();
 
         let bb=(&rest as &[T]) as *const [T];
-        let bbr=&unsafe{&*bb}[0] as *const T;
                
         let (fb,move_vector,bag)={
             let mut pointers:Vec<Cont<T>>=Vec::with_capacity(rest.len());
@@ -166,7 +169,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
                 pointers.push(Cont{a:k});
             }
             {
-                let (mut tree2,bag)=self::new_tree::<A,JJ,_,H,Z,K>(&mut pointers,tc);
+                let (mut tree2,bag)=self::new_tree::<A,JJ,_,H,_,K>(&mut pointers,tc,medianstrat);
                 
                 // 12345
                 // 42531     //vector:41302
@@ -175,7 +178,19 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> DynTree<'a,A,T>{
                     let t=tree2.get_tree().create_down();
                     t.dfs_preorder(|a:&Node2<Cont<T>>|{
                         for bot in a.range.iter(){
-                            let target_ind:usize=bbr.offset_to(bot.a).unwrap() as usize;
+                            let bbr=&unsafe{&*bb}[0] as *const T;
+        
+                            #[inline]
+                            pub fn offset_to<T>(s: *const T, other: *const T) -> Option<isize> where T: Sized {
+                                 let size = std::mem::size_of::<T>();
+                                 if size == 0 {
+                                     None
+                                 } else {
+                                     let diff = (other as isize).wrapping_sub(s as isize);
+                                     Some(diff / size as isize)
+                                 }
+                            }
+                            let target_ind:usize=offset_to(bbr,bot.a).unwrap() as usize;
                             move_vector.push(target_ind);
 
                         }

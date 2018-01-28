@@ -60,7 +60,7 @@ pub struct TreeCache<A:AxisTrait,Nu:NumTrait>{
 impl<A:AxisTrait,Nu:NumTrait> TreeCache<A,Nu>{
     ///The tree cache contains within it a tree to keep a persistant state between construction of the kdtree.
     ///So the height of the kdtree is decided here, before the creation of the tree.
-    pub fn new<JJ:Joiner>(height:usize)->TreeCache<A,Nu>{
+    pub fn new(height:usize)->TreeCache<A,Nu>{
         let num_nodes=compt::compute_num_nodes(height);
         
         let t= compt::GenTree::from_bfs(&mut ||{DivNode{divider:std::default::Default::default()}},height);
@@ -97,7 +97,7 @@ pub struct Node2<'a,T:SweepTrait+'a>{
 //TODO move to kdtree
 //The border Rect is used purely for graphics!!!!!!!!!!!!!!!!!!!!!!!
 //TODO not true. it is used by the relax median to bound the meds. Consider passing two rects.
-pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>) -> (KdTree<'a,A,T>,K::Bag) {
+pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,medianstrat:&Z) -> (KdTree<'a,A,T>,K::Bag) {
     let height=tc.height;
     
     let mut ttree=compt::GenTree::from_bfs(&mut ||{
@@ -116,7 +116,7 @@ pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:Median
         let m=tc.medtree.create_down_mut();
         let j=LevelIter::new(m.zip(ttree.create_down_mut()),level);
         let t=K::new(height);
-        self::recurse_rebal::<A,T,H,Z,JJ,K>(rest,j,t)
+        self::recurse_rebal::<A,T,H,_,JJ,K>(rest,j,t,medianstrat)
     };
     (KdTree{tree:ttree,_p:PhantomData},bag)
 }
@@ -125,7 +125,7 @@ pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:Median
 fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,JJ:par::Joiner,K:TreeTimerTrait>(
     rest:&'b mut [T],
     down:LevelIter<Zip<DownTMut<DivNode<T::Num>>,DownTMut<Node2<'b,T>>>>,
-    mut timer_log:K)->K::Bag{
+    mut timer_log:K,medianstrat:&Z)->K::Bag{
 
     timer_log.start();
     
@@ -151,7 +151,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
 
             let depth=level.get_depth();
             
-            let (med,binned)=Z::compute::<A,_>(depth,rest,&mut div.divider);
+            let (med,binned)=medianstrat.compute::<A,_>(depth,rest,&mut div.divider);
 
             let binned_left=binned.left;
             let binned_middile=binned.middile;
@@ -167,12 +167,12 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 let ((nj,ba),bb)={
                     let af=move || {
                         let nj=create_node::<A,_>(med,binned_middile);
-                        let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_left,lleft,ta);
+                        let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_left,lleft,ta,medianstrat);
                         (nj,ba)
                     };
 
                     let bf=move || {
-                        self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_right,rright,tb)
+                        self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_right,rright,tb,medianstrat)
                     };
                     rayon::join(af,bf)
                 };
@@ -180,8 +180,8 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 (nj,ba,bb)
             }else{
                 let nj=create_node::<A,_>(med,binned_middile);
-                let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_left,lleft,ta);
-                let bb=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_right,rright,tb);
+                let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_left,lleft,ta,medianstrat);
+                let bb=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_right,rright,tb,medianstrat);
                 (nj,ba,bb)
             };
 

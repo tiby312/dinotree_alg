@@ -44,7 +44,7 @@ impl GenTreeGraphics {
 
         let a=Self::get_num_verticies(gentree.get_tree().get_height());
         let b=verticies.len();
-        assert!( a==b,"tree requires {} verticies. received {} verticies",a,b);
+        assert_eq!( a,b);
 
         let height=gentree.get_tree().get_height();
         let mut vert_tree={

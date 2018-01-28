@@ -135,7 +135,7 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
     pub fn add<I:Iterator<Item=T>>(&mut self,n:NodeDynBuilder<T,I>)->&'a mut NodeDstDyn<'a,T>{
         self.move_to_align_to();
 
-        assert!((self.counter as usize) < (self.max_counter as usize),"{:?}",(self.counter,self.max_counter));
+        //assert_lt!((self.counter as usize) ,(self.max_counter as usize));
       
         let ll=self.counter;
 

@@ -1,4 +1,4 @@
-#![feature(offset_to)]
+//#![feature(offset_to)]
 
 extern crate axgeom;
 extern crate compt;
@@ -12,13 +12,18 @@ mod colfind;
 mod dyntree;
 mod oned;
 
+///Provides functionality to draw the dividers of a dinotree.
 pub mod graphics;
+///Contains the different median finding strategies.
 pub mod median;
-pub mod tools;
+///Contains conveniance structs.
 pub mod support;
+///Contains code to query multiple non intersecting rectangles.
 pub mod multirect;
+///Contains tree level by level timing collection code. 
 pub mod treetimer;
-
+///Contains misc tools
+pub mod tools;
 
 pub use dyntree::DynTree;
 //The TreeCache object is updated during the base kd tree construction.

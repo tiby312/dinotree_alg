@@ -57,7 +57,6 @@ impl<Nu:NumTrait,T:Send> BBox<Nu,T>{
 }
 
 
-
 ///A default depth level from which to switch to sequential.
 pub struct DefaultDepthLevel;
 

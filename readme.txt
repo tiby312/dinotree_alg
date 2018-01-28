@@ -3,7 +3,7 @@
 
 
 
-
+Here is the outline of the usecase of this crate.
 #step0   - have a list of bots
 	xxxxxxxx
 #step1  - create a list of pointers to those bots
@@ -14,6 +14,24 @@
 
 #step3 - construct the dynamic tree in one contiguous block of memory.
 		 copy all the bots belonging to each node into the dyn tree.
+		 now the tree is laid out in memory for fast querying.
+
+#step4 - query the tree for colliding pairs
+
+
+
+#Testing Strategy
+A good test is a test that tests with good certainty that a large portion of code is working properly.
+Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to maintain themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
+
+So lets look at this crate. This crate's sole purpose is to provide a method of providing collision detection. So a good high level test would be to compare the query results from using this crate to the naive method (which is much easier to verify is correct). This one test can be performed on many different inputs of lists of bots to try to expose any corner cases. So this one test when fed with both random and specifically tailed inputs to expose corner cases, can show with a lot of certainty that the crate is satisfying the api. 
+
+The tailed inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
+
+So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. 
+
+So up until now we have only verified the correctness of this algorithm. We still need to verify that it is worth using. So we have to bench it. The crate api provides a way to get the time taken at each level of the tree. This information is given to the user since finding the right hight of the tree is very usecase specific. 
+
 
 
 
@@ -60,6 +78,7 @@ This is the benefit of the naive method in that it has very consistent performan
 
 
 Actual invariants of the tree:
+	every bot belongs to only one node. 
 	every node is sorted along an axis that alternates with each level in the tree
 	all the bots in a node intersect with its divider.
 	all the bots to the left of a node's divider can be found somewhere in its left child, and ditto for right.
@@ -80,8 +99,9 @@ Important property of rebal vs query algorithms. The load of the query algorithm
 Pair finding within one node is done via sweep and prune. The bots within a node are sorted
 alone the dividing line. This axis is the opposite axis to the one the divider is diving against.
 This is done because all the bots in a node are necessarily colliding with the diving line. If they
-didn't, they wouldn't live in this node and would live in one of the children nodes. So all the bots
-line somewhere on this one line. This made using sweep and prune a good algorithm to choose.
+didn't, they wouldn't live in this node and would live in one of the decendants nodes. So all the bots
+live somewhere on this one line. This made using sweep and prune a good algorithm to choose.
+
 
 Pair finding between nodes is a different problem from normal pair finding in that we dont need to find the colliding pairs of the bots within one node, only the pairs that collide with bots from the other node. This algorithm is split up into two cases. In the cases where the nodes happen to be sorted on the same axis, it is solved in a mark and sweep manner. In the case where they are along differnt axis, we first get the ranges within both sorted list that actually intersect with the other node's line. 
 This eliminates a lot of nodes that dont need to be considered since there is no hope of them colliding with any of the boths in the other node. Unfortunately, finding the pairs within these smaller lists has to be done naively. 

@@ -6,10 +6,11 @@ use NumTrait;
 use std::marker::PhantomData;
 use axgeom::AxisTrait;
 
-pub trait MedianStrat{
+pub trait MedianStrat:Sync{
     type Num:NumTrait;
     //updates median and bins
     fn compute<'a,A:AxisTrait,T:SweepTrait<Num=Self::Num>>(
+        &self,
         depth:usize,
         rest:&'a mut [T],
         mmm:&mut T::Num)->(T::Num,Binned<'a,T>);
@@ -17,21 +18,28 @@ pub trait MedianStrat{
 
 
 
-pub trait DivMoveStrat{
+pub trait DivMoveStrat:Sync{
     type N:NumTrait;
-    fn move_divider(a:&mut Self::N,total:usize,b:f32);
+    fn move_divider(&self,a:&mut Self::N,total:usize,b:f32);
 }
 
+
 pub struct MedianRelax<N:NumTrait,D:DivMoveStrat<N=N>>{
-    _a:PhantomData<D>,
+    a:D,
     _p:PhantomData<N>
 }
 
+impl<N:NumTrait,D:DivMoveStrat<N=N>> MedianRelax<N,D>{
+    pub fn new(a:D)->MedianRelax<N,D>{
+        MedianRelax{a,_p:PhantomData}
+    }
+}
 
 
 impl<N:NumTrait,D:DivMoveStrat<N=N>> MedianStrat for MedianRelax<N,D>{
     type Num=N;
     fn compute<'a,A:AxisTrait,T:SweepTrait<Num=N>>(
+        &self,
         _depth:usize,
         rest:&'a mut [T],
         divider:&mut T::Num)->(T::Num,Binned<'a,T>){
@@ -70,7 +78,7 @@ impl<N:NumTrait,D:DivMoveStrat<N=N>> MedianStrat for MedianRelax<N,D>{
                     //the performance benefits of a tree are lost.
                     
                     //*divider=*divider+
-                    D::move_divider(divider,total,mag);
+                    self.a.move_divider(divider,total,mag);
                 }
             }            
             
@@ -122,6 +130,7 @@ pub struct MedianRelax2<N:NumTrait>{
 impl<N:NumTrait> MedianStrat for MedianRelax2<N>{
     type Num=N;
     fn compute<'a,A:AxisTrait,T:SweepTrait<Num=N>>(
+        &self,
         _depth:usize,
         rest:&'a mut [T],
         divider:&mut T::Num)->(T::Num,Binned<'a,T>){
@@ -176,13 +185,21 @@ impl<N:NumTrait> MedianStrat for MedianRelax2<N>{
 
 
 ///This median finding strategy revolves around using quickselect to find the median without use of the previous state.
+
 pub struct MedianStrict<N:NumTrait>{
     _p:PhantomData<N>
+}
+
+impl<N:NumTrait> MedianStrict<N>{
+    pub fn new()->MedianStrict<N>{
+        MedianStrict{_p:PhantomData}
+    }
 }
 impl<N:NumTrait> MedianStrat for MedianStrict<N>{
     type Num=N;
     
     fn compute<'a,A:AxisTrait,T:SweepTrait<Num=N>>(
+        &self,
         _depth:usize,
         rest:&'a mut [T],
         mmm:&mut T::Num)->(T::Num,Binned<'a,T>){
