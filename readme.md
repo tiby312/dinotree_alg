@@ -21,6 +21,9 @@ Here is the outline of the usecase of this crate.
 
 
 #Testing Strategy
+
+Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible baths that the produced program can take. Ideally you want your program to be as static as possible and still satisfy whatever function it is supposed to serve.
+
 A good test is a test that tests with good certainty that a large portion of code is working properly.
 Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to maintain themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
 
@@ -28,9 +31,15 @@ So lets look at this crate. This crate's sole purpose is to provide a method of 
 
 The tailed inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
 
-So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. 
+So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit.
 
-So up until now we have only verified the correctness of this algorithm. We still need to verify that it is worth using. So we have to bench it. The crate api provides a way to get the time taken at each level of the tree. This information is given to the user since finding the right hight of the tree is very usecase specific. 
+So up until now we have only verified the correctness of this algorithm. We still need to verify that it is worth using. So we have to bench it. The crate api provides a way to get the time taken at each level of the tree. This information is given to the user since finding the right hight of the tree is very usecase specific. It also serves the purpose of proving that the crate is behaving like a tree and is properly dividing and conquering the problem. So by comparing the performance against the naive approach, and possibly other crates, we can prove that is is worth using.
+
+Simply proving that it is better than the naive approach isnt very impressive. We want to prove that the design constructs and complexity used in the crate are actually accomplishing something. Otherwise you're just maintaining complexity for the sake of complexity. In order to show this, the user has the option of turning off an on certain features of the system using generic parameters. The user can turn off and on multithreading and bench them seperately. The user can specify the median finding strategy and bench them seperately. Exactly how good these features are, one could argue is up to the crate to prove itself in part of its bench suite. 
+
+
+
+
 
 
 
