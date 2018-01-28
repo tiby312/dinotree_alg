@@ -36,16 +36,16 @@ in which the collision finding functionality was being provided.
 ## The Data Structure
 Here are the properties of the constructed tree.
 1. Theory
-..* Every bot belongs to only one node. 
-..* All the bots in a node are sorted along an axis that alternates with each level in the tree
-..* All the bots in a node intersect with its divider (except for leafs that dont have a divider).
-..* All the bots to the left of a node's divider can be found somewhere in its left child, and ditto for right.
-..* Every node keeps track of the range within which all its bots live in along its partitioning axis.
+  * Every bot belongs to only one node. 
+  * All the bots in a node are sorted along an axis that alternates with each level in the tree
+  * All the bots in a node intersect with its divider (except for leafs that dont have a divider).
+  * All the bots to the left of a node's divider can be found somewhere in its left child, and ditto for right.
+  * Every node keeps track of the range within which all its bots live in along its partitioning axis.
 
 2. Practical
-..* Each node of the tree is laid out in memory in bfs order in contiguous memory.
-..*	Each node has variable size. it contains the divider, and the containing range, and also all the bots within that node, all in contiguous memory.
-..* Each node's children are pointed to via mutable references.
+  * Each node of the tree is laid out in memory in bfs order in contiguous memory.
+  *	Each node has variable size. it contains the divider, and the containing range, and also all the bots within that node, all in contiguous memory.
+  * Each node's children are pointed to via mutable references.
 
 
 ## The Algorithm
