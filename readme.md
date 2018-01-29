@@ -77,14 +77,20 @@ The design decision was made that the axis at each level of the tree be known at
 
 # Testing Strategy
 
-Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible baths that the produced program can take. Ideally you want your program to be as static as possible and still satisfy whatever function it is supposed to serve.
+## Testing correctness
+
+Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible paths that the produced program can take. Ideally you want your program to be as static as possible and still satisfy whatever function it is supposed to serve.
 
 A good test is a test that tests with good certainty that a large portion of code is working properly.
 Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to be maintained themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
 
-So lets look at this crate. This crate's sole purpose is to provide a method of providing collision detection. So a good high level test would be to compare the query results from using this crate to the naive method (which is much easier to verify is correct). This one test can be performed on many different inputs of lists of bots to try to expose any corner cases. So this one test when fed with both random and specifically tailed inputs to expose corner cases, can show with a lot of certainty that the crate is satisfying the api. 
+This crate's sole purpose is to provide a method of providing collision detection. So a good high level test would be to compare the query results from using this crate to the naive method (which is much easier to verify is correct). This one test can be performed on many different inputs of lists of bots to try to expose any corner cases. So this one test when fed with both random and specifically tailed inputs to expose corner cases, can show with a lot of certainty that the crate is satisfying the api. 
 
-The tailor inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
+The tailored inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
+
+At this point one could say that we were done. We have a pretty good case that the algorithms that this crate provide are correct and satisfy the api. But there is another expectation/design goal that is hard to show. The point of this crate is that it is a very fast collison detection system. So there is the problem of define how fast is fast enough? If I were simply to show that it was faster than the naive method would that be enough? Or do I have to prove it against some other metric?
+
+## Benching
 
 So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit. It is also useful to come up with a "upholding invariant" function that can be called at any time on the tree after it has been constructed to be sure that it has all the properties that it needs to perform querying on. 
 
@@ -93,8 +99,6 @@ So up until now we have only verified the correctness of this algorithm. We stil
 Simply proving that it is better than the naive approach isnt very impressive. We want to prove that the design constructs and complexity used in the crate are actually accomplishing something. Otherwise you're just maintaining complexity for the sake of complexity. In order to show this, the user has the option of turning off an on certain features of the system using generic parameters. The user can turn off and on multithreading and bench them seperately. The user can specify the median finding strategy and bench them seperately. 
 
 Not all features can be turned off however. How can I show that, for example, using sweep and prune within each node, actually sped things up? This is hard to show. I have a pretty good feeling because I can comment out the the code and notice a speed difference, but then the user has to take my word for it. Should all these features we able to turn off via generic parameters? If you did this, you'd eventually end up with the one high level function with a whole mess of generic parameters. At this point I decided that the user can modify the code and test things out on his own if he wants. It would be nice if there could be automated benching to show the performance improvements (would be interesting to see how they vary on different target platforms) brought upon by every single idea in this crate, but the added complexity, doesnt seem worth it. 
-
-
 
 # Extensions and Improvements
 
