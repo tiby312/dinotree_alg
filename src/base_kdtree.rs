@@ -2,41 +2,13 @@ use axgeom;
 use oned::Sweeper;
 use super::median::MedianStrat;
 use compt;
-use SweepTrait;
 use compt::CTreeIterator;
-use std;
-use compt::DownTMut;
-use compt::LevelIter;
-use NumTrait;
-use tools::par::Joiner;
 use tools::par;
 use axgeom::AxisTrait;
+
 use std::marker::PhantomData;
-use DepthLevel;
-use rayon;
 use treetimer::*;
-use compt::Zip;
-
-
-///A KdTree construction
-pub struct KdTree<'a,A:AxisTrait,T:SweepTrait+'a> {
-    tree: compt::GenTree<Node2<'a,T>>,
-    _p:PhantomData<A>
-}
-
-impl<'a,A:AxisTrait,T:SweepTrait+'a> KdTree<'a,A,T>{
-
-    pub fn get_tree(&self)->&compt::GenTree<Node2<'a,T>>{
-        &self.tree
-    }
-
-    pub fn into_tree(self)->compt::GenTree<Node2<'a,T>>{
-        let KdTree{tree,_p}=self;
-        tree
-    }
-}
-
-
+use *;
 
 
 
@@ -81,7 +53,47 @@ impl<A:AxisTrait,Nu:NumTrait> TreeCache<A,Nu>{
 }
 
 
+///A KdTree construction
+pub struct KdTree<'a,A:AxisTrait,T:SweepTrait+'a> {
+    tree: compt::GenTree<Node2<'a,T>>,
+    _p:PhantomData<A>
+}
 
+impl<'a,A:AxisTrait,T:SweepTrait+'a> KdTree<'a,A,T>{
+
+    pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,medianstrat:&Z) -> (KdTree<'a,A,T>,K::Bag) {
+        let height=tc.height;
+        
+        let mut ttree=compt::GenTree::from_bfs(&mut ||{
+            //let rect=axgeom::Rect::new(0.0,0.0,0.0,0.0);
+            let rest=&mut [];
+            use std;
+
+            let co=self::create_container_rect::<A,_>(rest);
+            
+            Node2{divider:std::default::Default::default(),container_box:co,range:rest}
+        },height);
+
+        let bag={
+
+            let level=ttree.get_level_desc();
+            let m=tc.medtree.create_down_mut();
+            let j=compt::LevelIter::new(m.zip(ttree.create_down_mut()),level);
+            let t=K::new(height);
+            self::recurse_rebal::<A,T,H,_,JJ,K>(rest,j,t,medianstrat)
+        };
+        (KdTree{tree:ttree,_p:PhantomData},bag)
+    }
+
+    pub fn get_tree(&self)->&compt::GenTree<Node2<'a,T>>{
+        &self.tree
+    }
+
+    pub fn into_tree(self)->compt::GenTree<Node2<'a,T>>{
+        let KdTree{tree,_p}=self;
+        tree
+    }
+}
 
 
 pub struct Node2<'a,T:SweepTrait+'a>{ 
@@ -94,37 +106,10 @@ pub struct Node2<'a,T:SweepTrait+'a>{
     pub range:&'a mut [T]
 }
 
-//TODO move to kdtree
-//The border Rect is used purely for graphics!!!!!!!!!!!!!!!!!!!!!!!
-//TODO not true. it is used by the relax median to bound the meds. Consider passing two rects.
-pub fn new_tree<'a,A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,medianstrat:&Z) -> (KdTree<'a,A,T>,K::Bag) {
-    let height=tc.height;
-    
-    let mut ttree=compt::GenTree::from_bfs(&mut ||{
-        //let rect=axgeom::Rect::new(0.0,0.0,0.0,0.0);
-        let rest=&mut [];
-        use std;
-
-        let co=self::create_container_rect::<A,_>(rest);
-        
-        Node2{divider:std::default::Default::default(),container_box:co,range:rest}
-    },height);
-
-    let bag={
-
-        let level=ttree.get_level_desc();
-        let m=tc.medtree.create_down_mut();
-        let j=LevelIter::new(m.zip(ttree.create_down_mut()),level);
-        let t=K::new(height);
-        self::recurse_rebal::<A,T,H,_,JJ,K>(rest,j,t,medianstrat)
-    };
-    (KdTree{tree:ttree,_p:PhantomData},bag)
-}
-
 
 fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::Num>,JJ:par::Joiner,K:TreeTimerTrait>(
     rest:&'b mut [T],
-    down:LevelIter<Zip<DownTMut<DivNode<T::Num>>,DownTMut<Node2<'b,T>>>>,
+    down:compt::LevelIter<compt::Zip<compt::DownTMut<DivNode<T::Num>>,compt::DownTMut<Node2<'b,T>>>>,
     mut timer_log:K,medianstrat:&Z)->K::Bag{
 
     timer_log.start();
@@ -140,9 +125,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
 
     match restt{
         None=>{
-            //debug_assert!(down2.is_none());
-            //println!("num_nodes={:?}",rest.len());
-            
+ 
             *nn=create_node::<A,_>(std::default::Default::default(),rest);
             
             timer_log.leaf_finish()

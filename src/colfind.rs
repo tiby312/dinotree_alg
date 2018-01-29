@@ -1,8 +1,7 @@
 use axgeom::Rect;
 use oned::Sweeper;
 use super::DepthLevel;
-use ColPair;
-use ColSingle;
+
 use rayon;
 use compt::CTreeIterator;
 use tools::par;
@@ -13,7 +12,9 @@ use axgeom::AxisTrait;
 use tree_alloc::NodeDyn;
 use compt;
 
-use SweepTrait;
+
+use *;
+
 use support::DefaultDepthLevel;
 use treetimer::*;
 

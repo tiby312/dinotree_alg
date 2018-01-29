@@ -62,6 +62,6 @@ pub struct DefaultDepthLevel;
 
 impl DepthLevel for DefaultDepthLevel{
     fn switch_to_sequential(a:LevelDesc)->bool{
-        a.get_depth()>4
+        a.get_depth()>5
     }
 }

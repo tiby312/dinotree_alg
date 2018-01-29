@@ -8,7 +8,7 @@ An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadp
 
 # Goal
 Create a fast broad-phase collision system whose running time did not depend on the size of the space
-in which the collision finding functionality was being provided. 
+in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
 
 # Detailed Design
 
@@ -121,6 +121,7 @@ Pipelining. It might be possible to pipeline the process so that rebalancing and
 
 Another possible improvement. Instead of each node in the dyntree storing pointers to its children, store pointer offsets to the children.
 
+Smaller memory footprint if stored position+radius instead of AABB, but less versatile.
 
 # Use of Rust
 
@@ -130,6 +131,13 @@ NumTrait. Use of generics.
 
 The multirect example. 
 split_at_mut()
+
+
+# General thoughts on optimizing
+
+Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
+Dynamic allocation is fast. Dynamically allocate large vecs in one allocation is fast. Its only when you're dynamically allocte thousands of small objects does it become bad.
+
 
 
 

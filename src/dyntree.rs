@@ -4,7 +4,7 @@ use compt::LevelIter;
 use axgeom::Range;
 use compt::GenTree;
 use compt::LevelDesc;
-use base_kdtree::new_tree;
+use base_kdtree::KdTree;
 use tools::par;
 use tree_alloc::NodeDstDynCont;
 use tree_alloc::NodeDyn;
@@ -55,7 +55,6 @@ impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for NdIter<'a,'b,T>{
         (i,o)
     }
 }
-
 
 ///Allows to traverse down from a visitor twice by creating a new visitor that borrows the other.
 pub struct Wrap<'a:'b,'b,T:SweepTrait+'a>{
@@ -119,7 +118,7 @@ pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
     orig:&'b mut [T],
     tree:DynTreeRaw<'b,T>,
     //vector to where the bots should be put back to
-    vec:Vec<usize>, //TODO use this
+    vec:Vec<usize>,
     _p:PhantomData<A>
 }
 
@@ -169,7 +168,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
                 pointers.push(Cont{a:k});
             }
             {
-                let (mut tree2,bag)=self::new_tree::<A,JJ,_,H,_,K>(&mut pointers,tc,medianstrat);
+                let (mut tree2,bag)=KdTree::new::<JJ,H,_,K>(&mut pointers,tc,medianstrat);
                 
                 // 12345
                 // 42531     //vector:41302
@@ -365,10 +364,6 @@ fn testy(){
         for (a,i) in copy.iter().zip(vecc.iter()){
             assert_eq!(a.get().1.id,i.get().1.id);
         }               
-        //println!("align x={}",std::mem::align_of::<NodeDst<BBox<Numf32,Bot>>>());
-        //println!("align y={}",std::mem::align_of::<BBox<Numf32,Bot>>());
-        //println!("len={}  withoutpad={}",DynTreeRaw.alloc.len(),packed_len);        
-        
     }
 
     let _v=black_box(&mut vecc);

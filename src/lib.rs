@@ -36,6 +36,7 @@ use compt::LevelDesc;
 use axgeom::Rect;
 use treetimer::*;
 
+
 ///Returns the level at which a parallel divide and conqur algorithm will switch to sequential
 pub trait DepthLevel{
     ///Switch to sequential at this height.
