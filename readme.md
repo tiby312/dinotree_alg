@@ -113,12 +113,21 @@ This is the one benefit of the naive method in that it has very consistent perfo
 
 What about 3d? Making this multi dimensional would have added to the complexity, so the design desision was made to only target 2d. That's not to say one couldn't still take advantage of this system in a 3d simulation. Every bot could store a height field that you do an extra check against in the collision function. The downside is that imagine if there were many bots stacked on top of each other, but you only wanted to query a small cube. Then doing it this way, your query function would have to consider all those bots that were stacked. If there are only a few different height values, one could maintain a seperte 2d dinotree for each level.
 
+Pipelining. It might be possible to pipeline the process so that rebalancing and querying happen at the same time with the only downside being that bots react to their collisions one step later.
+
 Another possible improvement. Instead of each node in the dyntree storing pointers to its children, store pointer offsets to the children.
 
 
-# Use of Unsafe
+# Use of Rust
+
+NumTrait. Use of generics.
+
+## Use of Unsafe
 
 The multirect example. 
+split_at_mut()
+
+
 
 
 
