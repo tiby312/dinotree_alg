@@ -90,7 +90,7 @@ fn recurse<'x,
     
     let ((level,mut nn),rest)=m.next();
  
-    let depth=level.get_depth(); 
+    //let depth=level.get_depth(); 
     let mut b=BleekS(clos);
 
     self::sweeper_find_2d::<A::Next,_>(sweeper,nn.get_bots(),&mut b); 

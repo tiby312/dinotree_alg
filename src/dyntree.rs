@@ -1,7 +1,6 @@
 use compt::CTreeIterator;
 use median::MedianStrat;
-use compt::LevelIter;
-use axgeom::Range;
+//use compt::LevelIter;
 use compt::GenTree;
 use compt::LevelDesc;
 use base_kdtree::KdTree;
@@ -55,7 +54,7 @@ impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for NdIter<'a,'b,T>{
         (i,o)
     }
 }
-
+/*
 ///Allows to traverse down from a visitor twice by creating a new visitor that borrows the other.
 pub struct Wrap<'a:'b,'b,T:SweepTrait+'a>{
     a:LevelIter<NdIterMut<'a,'b,T>>
@@ -91,7 +90,7 @@ impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for Wrap<'a,'b,T>{
         }
     }
 }
-
+*/
 
 
 
@@ -209,9 +208,11 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
         self.tree.get_height()
     }
 
+    /*
     pub(super) fn get_iter<'b>(&'b self)->NdIter<'a,'b,T>{
         NdIter{c:&self.tree.get_root()}
     }
+    */
     pub(super) fn get_level_desc(&self)->LevelDesc{
         self.tree.get_level()
     }
@@ -246,8 +247,6 @@ mod alloc{
     use std::mem::ManuallyDrop;
     use tree_alloc::TreeAllocDst;
     use tree_alloc::NodeDynBuilder; 
-    use tree_alloc::NodeDstDyn;
-
 
     pub struct DynTreeRaw<'a,T:SweepTrait+Send+Copy+'a>{
         height:usize,
@@ -266,7 +265,7 @@ mod alloc{
 
     impl<'a,T:SweepTrait+'a+Send+Copy> DynTreeRaw<'a,T>{
         pub(super) fn new(tree:GenTree<Node2<Cont<T>>>,num_bots:usize)->DynTreeRaw<'a,T>{
-            let t1=tools::Timer2::new();
+            //let t1=tools::Timer2::new();
 
             let height=tree.get_height();
             let level=tree.get_level_desc();
@@ -307,6 +306,8 @@ mod alloc{
                 let n=alloc.add(nn);
                 queue.push(NodeDstDynCont(n));
             }
+
+            assert!(alloc.is_full(),"Buffer overrun. Alignment/Size issue with generic type?");
 
             assert_eq!(queue.len(),num_nodes);
 

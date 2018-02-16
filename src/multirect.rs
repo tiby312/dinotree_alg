@@ -4,6 +4,7 @@ use oned::Sweeper;
 use SweepTrait;
 use ColSingle;
 use axgeom::AxisTrait;
+use tools::par;
 
 ///A construct to allow querying non-intersecting rectangles to retrive mutable references to what is inside them.
 ///
@@ -149,8 +150,8 @@ pub fn collide_two_rect_parallel<'a:'b,'b,A:AxisTrait,K:DynTreeTrait,F:FnMut(Col
     {
         //let blee=Blee::new(axis);
 
-        Sweeper::update::<A>(cols.0);
-        Sweeper::update::<A>(cols.1);
+        Sweeper::update::<A,par::Parallel>(cols.0);
+        Sweeper::update::<A,par::Parallel >(cols.1);
 
         let mut func2=|cc:ColPair<Ba<K::T>>|{
             let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};

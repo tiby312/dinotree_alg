@@ -115,9 +115,9 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
     timer_log.start();
     
     let ((level,(div,nn)),restt)=down.next();
-    let depth=level.get_depth();
-    fn create_node<A:AxisTrait,T:SweepTrait>(divider:T::Num,range:&mut [T])->Node2<T>{
-        Sweeper::update::<A::Next>(range);
+    //let depth=level.get_depth();
+    fn create_node<A:AxisTrait,T:SweepTrait,JJ:par::Joiner>(divider:T::Num,range:&mut [T])->Node2<T>{
+        Sweeper::update::<A::Next,JJ>(range);
             
         let container_box=self::create_container_rect::<A,_>(range);
         Node2{divider,container_box,range}
@@ -126,7 +126,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
     match restt{
         None=>{
  
-            *nn=create_node::<A,_>(std::default::Default::default(),rest);
+            *nn=create_node::<A,_,JJ>(std::default::Default::default(),rest);
             
             timer_log.leaf_finish()
         },
@@ -149,7 +149,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 
                 let ((nj,ba),bb)={
                     let af=move || {
-                        let nj=create_node::<A,_>(med,binned_middile);
+                        let nj=create_node::<A,_,JJ>(med,binned_middile);
                         let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_left,lleft,ta,medianstrat);
                         (nj,ba)
                     };
@@ -162,7 +162,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 //timer_log.combine_one_less(ll2);  
                 (nj,ba,bb)
             }else{
-                let nj=create_node::<A,_>(med,binned_middile);
+                let nj=create_node::<A,_,JJ>(med,binned_middile);
                 let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_left,lleft,ta,medianstrat);
                 let bb=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_right,rright,tb,medianstrat);
                 (nj,ba,bb)

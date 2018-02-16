@@ -81,7 +81,7 @@ pub trait DynTreeTrait{
 
    ///Find all objects who's bounding boxes intersect sequentially. 
    fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
-        (&mut self,mut clos:F)->K::Bag;
+        (&mut self,clos:F)->K::Bag;
 }
 
 ///This contains the destructured SweepTrait for a colliding pair.

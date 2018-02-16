@@ -74,6 +74,11 @@ impl<T> PreVec<T>{
 
 
 
+pub fn slice_adjacent<'a,T>(first:&'a [T],second:&'a [T])->bool{
+     let f1=first.len();
+     first[f1..].as_ptr() == second.as_ptr()
+}
+
 
 ///Returns a combined slice given two slices that are next to each other in memory.
 ///Panics if they are not next to each other.

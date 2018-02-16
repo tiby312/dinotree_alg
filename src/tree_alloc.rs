@@ -60,83 +60,70 @@ pub struct NodeDynBuilder<T:SweepTrait,I:Iterator<Item=T>>{
 }
 
 
-/*
-mod alloc{
-    pub struct Alloc<'a>{
-        v:Vec<u8>,
-        counter:*mut u8,
-        _p:PhantomData<&'a mut u8>
-    }
-
-    impl<'a> Alloc<'a>{
-        pub fn new(alignment:usize, num_bytes:usize)->Alloc{
-            let mut v=Vec::with_capacity(alignment+num_bytes);
-            v.push(0);
-            let k=&mut v[0] as *mut u8;
-            Alloc{v:v,counter:k,_p:PhantomData}
-        }
-
-        pub fn alloc(&mut self, num_bytes:usize)->&'a mut [u8]{
-            let k=unsafe{from_raw_parts(self.counter,num_bytes)};
-            self.counter+=num_bytes;
-            k
-        }
-
-    }
-}
-*/
-
-
 pub struct TreeAllocDst<'a,T:SweepTrait+'a>{
-    v:Vec<u8>,
-    capacity:usize,
+    _vec:Vec<u8>,
     counter:*mut u8,
     max_counter:*const u8,
-    alignment:usize,
-    node_size:usize,
     _p:PhantomData<(&'a mut NodeDstDyn<'a,T>)>
 }
 
 impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{   
 
     pub fn new(num_nodes:usize,num_bots:usize)->TreeAllocDst<'a,T>{
+
         let (alignment,node_size)=Self::compute_alignment_and_size();
 
-
-        let c=node_size*num_nodes+std::mem::size_of::<T>()*num_bots;
-        //TODO lower upper bound
-        let cap=c*2;
-
-        let mut v=Vec::with_capacity(cap);
+        let cap=node_size*num_nodes+std::mem::size_of::<T>()*num_bots;
         
-        v.push(0);
-        let counter=(&mut v[0]) as *mut u8;
-        v.pop();
-        let max_counter=unsafe{counter.offset(cap as isize)};
+        let (start_addr,vec)={
 
-        //println!("node={:?}  bot={:?}",(alignment,node_size),(std::mem::align_of::<T>(),std::mem::size_of::<T>()));
-        //nnnnxx--nnnnxxxxnnnnxxxxx---nnnn
+            let mut v=Vec::with_capacity(alignment+cap);
+        
+            v.push(0);
+            let mut counter=(&mut v[0]) as *mut u8;
+            v.pop();
+            
 
+            for _ in 0..alignment{
+                let k=counter as *const u8;
+                if k as usize % alignment == 0{
+                    break;
+                }
+                counter=unsafe{counter.offset(1)};
+            } 
+            (counter,v)
+        };
 
-        TreeAllocDst{v:v,capacity:cap,counter:counter,max_counter,_p:PhantomData,alignment,node_size}
+        let max_counter=unsafe{start_addr.offset(cap as isize)};
+
+        TreeAllocDst{_vec:vec,counter:start_addr,max_counter,_p:PhantomData,}
     }
+
 
     fn compute_alignment_and_size()->(usize,usize){
-         //TODO fix this
-        let k:&NodeDstDyn<T>=unsafe{
-            let mut vec:Vec<u8>=Vec::with_capacity(500);
-            vec.push(0);
-            let x:&[u8]= std::slice::from_raw_parts(&vec[0], 200+std::mem::size_of::<T>()); 
-            std::mem::transmute(Repr{ptr:&x[0],size:0})
+        
+        let (alignment,siz)={
+            let k:&NodeDstDyn<T>=unsafe{
+            //let mut vec:Vec<u8>=Vec::with_capacity(500);
+            //vec.push(0);
+            //let x:&[u8]= std::slice::from_raw_parts(&vec[0], 200+std::mem::size_of::<T>()); 
+            //TODO safe to do this??????????????
+            let k:*const u8=std::mem::transmute(0x10 as usize);//std::ptr::null::<T>();
+            std::mem::transmute(Repr{ptr:k,size:0})
+            };
+            (std::mem::align_of_val(k),std::mem::size_of_val(k))
         };
-        (std::mem::align_of_val(k),std::mem::size_of_val(k))
+
+        assert!(std::mem::size_of::<T>() % alignment==0);
+
+        (alignment,siz)
     }
-
+    pub fn is_full(&self)->bool{
+        self.counter as *const u8== self.max_counter
+    }
     pub fn add<I:Iterator<Item=T>>(&mut self,n:NodeDynBuilder<T,I>)->&'a mut NodeDstDyn<'a,T>{
-        self.move_to_align_to();
-
-        //assert_lt!((self.counter as usize) ,(self.max_counter as usize));
-      
+        
+    
         let ll=self.counter;
 
 
@@ -156,14 +143,5 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
 
         //assert!(self.v.len()<=self.capacity);        
         dst
-    }
-    fn move_to_align_to(&mut self){
-        for _ in 0..{
-            self.counter=unsafe{self.counter.offset(1)};
-            let k=self.counter as *const u8;
-            if k as usize % self.alignment == 0{
-                return;
-            }
-        }        
     }
 }

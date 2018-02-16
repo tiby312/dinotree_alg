@@ -90,7 +90,7 @@ That said bounding it by the worst case is easy, because in the worst case every
 
 Simliarily bounding it by the best case should also be easy. Best case, all the bots live in only leaf nodes, and none of the bots intersect. Interestingly by the pigeon principle, if you have more bots than there are leaf nodes then this best case scenario isnt possible. 
 
-So realy, the best and worst case scenario really tell you nothing useful. 
+So really, the best and worst case scenario really tell you nothing useful. 
 
 
 The space complexity, on the other hand, is much easier to figure out.
@@ -161,7 +161,13 @@ Always measure code before investing time in optimizing. As you design your prog
 Dynamic allocation is fast. Dynamically allocate large vecs in one allocation is fast. Its only when you're dynamically allocte thousands of small objects does it become bad.
 
 
+# Android
 
+talk about ByteBuffer
+talk about android NDK.
+talk about thread safety
+talk about targeting android that uses ART vs Dalvik
+talk about avoiding copying and ByteBuffer
 
 
 

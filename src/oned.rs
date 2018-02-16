@@ -10,7 +10,8 @@ use ColPair;
 use NumTrait;
 use axgeom::AxisTrait;
 use std::marker::PhantomData;
-
+use tools::par;
+use rayon::prelude::*;
 
 pub trait Bleek{
     type T:SweepTrait;
@@ -98,10 +99,18 @@ impl<X:AxisTrait> Accessor<X>{
 
 ///The results of the binning process.
 pub struct Binned<'a,T:'a>{
-    pub left:&'a mut [T],
     pub middile:&'a mut [T],
+    pub left:&'a mut [T],
     pub right:&'a mut [T],
 }
+
+/*
+pub fn merge<'a,'b,A:AxisTrait,X:SweepTrait>(a:Binned<'a,X:'a>,b:Binned<'a,X:'a>)->Binned<'a,X:'a>{
+    assert!(tools::slice_adjacent(a.right,b.middile));
+    //TODO is this actually usefull??
+}
+*/
+
 
 /// Sorts the bots into three bins. Those to the left of the divider, those that intersect with the divider, and those to the right.
 /// They will be laid out in memory s.t.  middile<left<right
@@ -164,7 +173,7 @@ impl<I:SweepTrait> Sweeper<I>{
     }
 
     ///Sorts the bots.
-    pub fn update<A:AxisTrait>(collision_botids: &mut [I]) {
+    pub fn update<A:AxisTrait,JJ:par::Joiner>(collision_botids: &mut [I]) {
 
         let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
             let (p1,p2)=(Accessor::<A>::get(a.get().0).left(),Accessor::<A>::get(b.get().0).left());
@@ -174,9 +183,22 @@ impl<I:SweepTrait> Sweeper<I>{
             std::cmp::Ordering::Less
         };
 
+        if JJ::is_parallel(){
+            //let p=collision_botids.par_iter_mut();
+            //p.par_sort_unstable_by(sclosure);
+            struct Bo<'a,I:SweepTrait+'a>(&'a mut [I]);
 
-        collision_botids.sort_unstable_by(sclosure);
+            impl<'a,I:SweepTrait+'a> ParallelSliceMut<I> for Bo<'a,I>{
+                fn as_parallel_slice_mut(&mut self) -> &mut [I]{
+                    self.0
+                }
+            }
 
+            Bo(collision_botids).par_sort_unstable_by(sclosure);
+
+        }else{
+            collision_botids.sort_unstable_by(sclosure);
+        }
         //debug_assert!(Self::assert_sorted(collision_botids,accessor));
     }
 

@@ -14,11 +14,11 @@ pub struct TreeTimerEmpty;
 pub struct BagEmpty;
 impl TreeTimerTrait for TreeTimerEmpty{
     type Bag=BagEmpty;
-    fn combine(mut a:BagEmpty,b:BagEmpty)->BagEmpty{
+    fn combine(_a:BagEmpty,_b:BagEmpty)->BagEmpty{
         BagEmpty
     }
 
-    fn new(height:usize)->TreeTimerEmpty{
+    fn new(_height:usize)->TreeTimerEmpty{
         TreeTimerEmpty
     }
 
