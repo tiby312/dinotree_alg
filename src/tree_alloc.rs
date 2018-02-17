@@ -123,6 +123,7 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
     }
     pub fn add<I:Iterator<Item=T>>(&mut self,n:NodeDynBuilder<T,I>)->&'a mut NodeDstDyn<'a,T>{
         
+        assert!((self.counter as *const u8) < self.max_counter);
     
         let ll=self.counter;
 
@@ -140,8 +141,7 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
         };
 
         self.counter=unsafe{self.counter.offset(std::mem::size_of_val(dst) as isize)};
-
-        //assert!(self.v.len()<=self.capacity);        
+       
         dst
     }
 }

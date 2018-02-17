@@ -174,6 +174,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
                 let mut move_vector=Vec::with_capacity(num_bots);    
                 {
                     let t=tree2.get_tree().create_down();
+
                     t.dfs_preorder(|a:&Node2<Cont<T>>|{
                         for bot in a.range.iter(){
                             let bbr=&unsafe{&*bb}[0] as *const T;
@@ -208,18 +209,12 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
         self.tree.get_height()
     }
 
-    /*
-    pub(super) fn get_iter<'b>(&'b self)->NdIter<'a,'b,T>{
-        NdIter{c:&self.tree.get_root()}
-    }
-    */
     pub(super) fn get_level_desc(&self)->LevelDesc{
         self.tree.get_level()
     }
     pub(super) fn get_iter_mut<'b>(&'b mut self)->NdIterMut<'a,'b,T>{
         NdIterMut{c:self.tree.get_root_mut()}
     }
-
 }
 
 
@@ -234,7 +229,8 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> Drop for DynTree<'a,A,T>{
                 let i=move_iter.next().unwrap();
 
                 //TODO do in unsafe block hid by a module
-                orig[*i]=*b;
+                *unsafe{orig.get_unchecked_mut(*i)}=*b;
+                //orig[*i]=*b;
             }
         });
     }
@@ -265,8 +261,6 @@ mod alloc{
 
     impl<'a,T:SweepTrait+'a+Send+Copy> DynTreeRaw<'a,T>{
         pub(super) fn new(tree:GenTree<Node2<Cont<T>>>,num_bots:usize)->DynTreeRaw<'a,T>{
-            //let t1=tools::Timer2::new();
-
             let height=tree.get_height();
             let level=tree.get_level_desc();
             let mut alloc=TreeAllocDst::new(tree.get_nodes().len(),num_bots);
@@ -288,6 +282,7 @@ mod alloc{
             &mut self.root
         }
 
+
         fn construct_flat_tree(
             alloc:&mut TreeAllocDst<'a,T>,
             tree:GenTree<Node2<Cont<T>>>
@@ -301,13 +296,12 @@ mod alloc{
             for node in v.drain(..){
                 let Node2{divider,container_box,range}=node;
                 let num_bots=range.len();
-                //let n=Self::add_node(alloc,divider,container_box,range.iter().map(|c:&Cont<T>|{*c.a}),num_bots);
                 let nn=NodeDynBuilder{divider,container_box,num_bots,i:range.iter().map(|c:&Cont<T>|{*c.a})};
                 let n=alloc.add(nn);
                 queue.push(NodeDstDynCont(n));
             }
 
-            assert!(alloc.is_full(),"Buffer overrun. Alignment/Size issue with generic type?");
+            assert!(alloc.is_full());
 
             assert_eq!(queue.len(),num_nodes);
 
@@ -316,8 +310,7 @@ mod alloc{
                 let c1=queue.pop().unwrap();
                 let j=2*i;
                 let parent=(j-1)/2;
-                queue[parent].0.c=Some((c1,c2));
-                
+                queue[parent].0.c=Some((c1,c2)); 
             }
 
             assert_eq!(queue.len(),1);
