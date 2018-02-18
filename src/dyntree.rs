@@ -95,8 +95,8 @@ impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for Wrap<'a,'b,T>{
 
 
 
-
-struct Cont<'b,T:'b+SweepTrait+Send>{
+//SweepTrait+Send
+pub struct Cont<'b,T:'b>{
     a:&'b mut T
 }
 
@@ -112,12 +112,10 @@ impl<'b,T:'b+SweepTrait+Send> SweepTrait for Cont<'b,T>{
 }
 
 
-///The struct that this crate revolves around.
 pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
     orig:&'b mut [T],
     tree:DynTreeRaw<'b,T>,
-    //vector to where the bots should be put back to
-    vec:Vec<usize>,
+    mover:Mover,
     _p:PhantomData<A>
 }
 
@@ -127,25 +125,29 @@ pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
 use super::DynTreeTrait;
 use  oned::sup::BleekSF;
 use  oned::sup::BleekBF;
+
+/*
 impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTreeTrait for DynTree<'a,A,T>{
-   type T=T;
-   type Num=T::Num;
+    type T=T;
+    type Num=T::Num;
     
-   fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
+
+    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
         colfind::for_all_in_rect(self,rect,fu);
-   }
+    }
    
-   fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
+    fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
         (&mut self,mut clos:F)->K::Bag{
         let mut bb=BleekSF::new(&mut clos);            
         colfind::for_every_col_pair_seq::<A,T,DefaultDepthLevel,_,K>(self,&mut bb)
-   }
-   fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
+    }
+    fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
         (&mut self,clos:F)->K::Bag{
         let bb=BleekBF::new(&clos);                            
         colfind::for_every_col_pair::<A,T,H,_,K>(self,&bb)
     }
 }
+*/
 
 impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
 
@@ -159,9 +161,11 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
 
         let num_bots=rest.len();
 
-        let bb=(&rest as &[T]) as *const [T];
-               
-        let (fb,move_vector,bag)={
+
+        //Pointer to the bot. Used to calculate offsets
+        let start_pointer=mover::get_start_pointer(rest);
+
+        let (fb,mover,bag)={
             let mut pointers:Vec<Cont<T>>=Vec::with_capacity(rest.len());
             for k in rest.iter_mut(){
                 pointers.push(Cont{a:k});
@@ -171,68 +175,99 @@ impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
                 
                 // 12345
                 // 42531     //vector:41302
-                let mut move_vector=Vec::with_capacity(num_bots);    
-                {
+                //let mut move_vector=Vec::with_capacity(num_bots);    
+                let mover={
                     let t=tree2.get_tree().create_down();
 
-                    t.dfs_preorder(|a:&Node2<Cont<T>>|{
-                        for bot in a.range.iter(){
-                            let bbr=&unsafe{&*bb}[0] as *const T;
-        
-                            #[inline]
-                            pub fn offset_to<T>(s: *const T, other: *const T) -> Option<isize> where T: Sized {
-                                 let size = std::mem::size_of::<T>();
-                                 if size == 0 {
-                                     None
-                                 } else {
-                                     let diff = (other as isize).wrapping_sub(s as isize);
-                                     Some(diff / size as isize)
-                                 }
-                            }
-                            let target_ind:usize=offset_to(bbr,bot.a).unwrap() as usize;
-                            move_vector.push(target_ind);
-
-                        }
+                    let k=t.dfs_preorder_iter().flat_map(|a:&Node2<Cont<T>>|{
+                        a.range.iter()
                     });
-                }
+
+                    Mover::new(num_bots,start_pointer,k)
+                };
                 
                 let fb=DynTreeRaw::new(tree2.into_tree(),num_bots);
                 
-                (fb,move_vector,bag)
+                (fb,mover,bag)
             }
         };
 
-        (DynTree{orig:rest,tree:fb,vec:move_vector,_p:PhantomData},bag)
+        (DynTree{orig:rest,tree:fb,mover,_p:PhantomData},bag)
     }
    
-    pub(super) fn get_height(&self)->usize{
+    pub fn get_height(&self)->usize{
         self.tree.get_height()
     }
 
-    pub(super) fn get_level_desc(&self)->LevelDesc{
+    pub fn get_level_desc(&self)->LevelDesc{
         self.tree.get_level()
     }
-    pub(super) fn get_iter_mut<'b>(&'b mut self)->NdIterMut<'a,'b,T>{
+    pub fn get_iter_mut<'b>(&'b mut self)->NdIterMut<'a,'b,T>{
         NdIterMut{c:self.tree.get_root_mut()}
     }
 }
 
 
+
+use self::mover::Mover;
+mod mover{
+    use std;
+    use super::Cont;
+
+    pub struct Mover(
+        Vec<usize>
+    );
+
+    pub fn get_start_pointer<T>(rest:&[T])->*const T{
+        struct Repr<T>{
+            ptr:*const T,
+            size:usize
+        }
+        let j:Repr<T>=unsafe{std::mem::transmute(rest)};
+        j.ptr
+    }
+    impl Mover{
+        pub fn new<'a:'b,'b,T:'a,I:Iterator<Item=&'b Cont<'a,T>>>(num_bots:usize,start_pointer:*const T,iter:I)->Mover{
+            let mut move_vector=Vec::with_capacity(num_bots);    
+                       
+            #[inline]
+            pub fn offset_to<T>(s: *const T, other: *const T) -> Option<isize> where T: Sized {
+                 let size = std::mem::size_of::<T>();
+                 if size == 0 {
+                     None
+                 } else {
+                     let diff = (other as isize).wrapping_sub(s as isize);
+                     Some(diff / size as isize)
+                 }
+            }
+
+            for bot in iter {
+                let target_ind:usize=offset_to(start_pointer,bot.a).unwrap() as usize;
+                move_vector.push(target_ind);
+            }
+
+            Mover(move_vector)
+        }
+
+        pub fn finish<'a,T:Copy+'a,I:Iterator<Item=&'a T>>(&mut self,tree_bots:I,orig:&mut [T]){
+            for (mov,b) in self.0.iter().zip(tree_bots){
+                *unsafe{orig.get_unchecked_mut(*mov)}=*b;
+            }
+        }
+    }
+}
+
 impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> Drop for DynTree<'a,A,T>{
     fn drop(&mut self){
-        let mut move_iter=self.vec.iter();
         let orig=&mut self.orig;
 
         let i=NdIter{c:&self.tree.get_root()};
-        i.dfs_preorder(|a:&NodeDyn<T>|{
-            for b in a.range.iter(){
-                let i=move_iter.next().unwrap();
 
-                //TODO do in unsafe block hid by a module
-                *unsafe{orig.get_unchecked_mut(*i)}=*b;
-                //orig[*i]=*b;
-            }
+        let k=i.dfs_preorder_iter().flat_map(|a:&NodeDyn<T>|{
+            a.range.iter()
         });
+
+        self.mover.finish(k,orig);
     }
 }
 
@@ -260,7 +295,7 @@ mod alloc{
     }
 
     impl<'a,T:SweepTrait+'a+Send+Copy> DynTreeRaw<'a,T>{
-        pub(super) fn new(tree:GenTree<Node2<Cont<T>>>,num_bots:usize)->DynTreeRaw<'a,T>{
+        pub fn new(tree:GenTree<Node2<Cont<T>>>,num_bots:usize)->DynTreeRaw<'a,T>{
             let height=tree.get_height();
             let level=tree.get_level_desc();
             let mut alloc=TreeAllocDst::new(tree.get_nodes().len(),num_bots);
@@ -275,10 +310,10 @@ mod alloc{
         pub fn get_height(&self)->usize{
             self.height
         }
-        pub(super) fn get_root(&self)->&NodeDstDynCont<'a,T>{
+        pub fn get_root(&self)->&NodeDstDynCont<'a,T>{
             &self.root
         }
-        pub(super) fn get_root_mut(&mut self)->&mut NodeDstDynCont<'a,T>{
+        pub fn get_root_mut(&mut self)->&mut NodeDstDynCont<'a,T>{
             &mut self.root
         }
 

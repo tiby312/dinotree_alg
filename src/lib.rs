@@ -25,7 +25,7 @@ pub mod treetimer;
 ///Contains misc tools
 pub mod tools;
 
-pub use dyntree::DynTree;
+//pub use dyntree::DynTree;
 //The TreeCache object is updated during the base kd tree construction.
 //So TreeCache and KdTree are tied together.
 //On the otherhand, we dont expose KdTree since it is only used
@@ -83,6 +83,54 @@ pub trait DynTreeTrait{
    fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
         (&mut self,clos:F)->K::Bag;
 }
+
+
+
+use axgeom::AxisTrait;
+use dyntree::DynTree;
+use median::MedianStrat;
+use support::DefaultDepthLevel;
+use oned::sup::BleekBF;
+use oned::sup::BleekSF;
+use tools::par;
+
+
+
+///The struct that this crate revolves around.
+pub struct DinoTree<'a,A:AxisTrait,T:SweepTrait+Copy+'a>(
+  DynTree<'a,A,T>
+  );
+
+impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DinoTree<'a,A,T>{
+   pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
+        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,medianstrat:&Z) -> (DinoTree<'a,A,T>,K::Bag) {
+      let k=DynTree::new::<JJ,H,Z,K>(rest,tc,medianstrat);
+      (DinoTree(k.0),k.1)
+  }
+}
+
+impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTreeTrait for DinoTree<'a,A,T>{
+    type T=T;
+    type Num=T::Num;
+    
+
+    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
+        colfind::for_all_in_rect(&mut self.0,rect,fu);
+    }
+   
+    fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
+        (&mut self,mut clos:F)->K::Bag{
+        let mut bb=BleekSF::new(&mut clos);            
+        colfind::for_every_col_pair_seq::<A,T,DefaultDepthLevel,_,K>(&mut self.0,&mut bb)
+    }
+    fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
+        (&mut self,clos:F)->K::Bag{
+        let bb=BleekBF::new(&clos);                            
+        colfind::for_every_col_pair::<A,T,H,_,K>(&mut self.0,&bb)
+    }
+}
+
+
 
 ///This contains the destructured SweepTrait for a colliding pair.
 ///The rect is read only while T::Inner is allowed to be mutated.

@@ -265,6 +265,15 @@ pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait+Copy,F:FnMut(ColSingle<T>)>(
     self::rect_recurse::<A,_,_,_>(ta,rect,&mut fu);
 }
 
+
+///UNIMPLEMENTED
+pub fn nearest_k<A:AxisTrait,T:SweepTrait+Copy,F:FnMut(ColSingle<T>)>(
+     tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure: &mut F) {
+    unimplemented!()
+}
+
+
+
 use colfind::bl::sweeper_find_2d;
 use colfind::bl::sweeper_find_parallel_2d;
 mod bl{
