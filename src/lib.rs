@@ -135,41 +135,40 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTreeTrait for DinoTree<'a,A,T>{
 mod test_support{
   use axgeom;
   use support::Numisize;
-      use std;
-      use rand;
-    use rand::{ SeedableRng, StdRng};
-    use rand::distributions::{IndependentSample, Range};
+  use std;
+  use rand;
+  use rand::{ SeedableRng, StdRng};
+  use rand::distributions::{IndependentSample, Range};
     
 
-   #[derive(Clone,Debug)]
-    pub struct Bot{
-        pub id:usize,
-        pub col:Vec<usize>
-    }
-
-    pub fn make_rect(a:(isize,isize),b:(isize,isize))->axgeom::Rect<Numisize>{
-        axgeom::Rect::new(
-          Numisize(a.0),
-          Numisize(a.1),
-          Numisize(b.0),
-          Numisize(b.1),
-        )
-    }
-
-    pub fn create_rect_from_point(a:(Numisize,Numisize))->axgeom::Rect<Numisize>{
-        let r:isize=10;
-        let x=a.0;
-        let y=a.1;
-        make_rect((x.0-r,x.0+r),(y.0-r,y.0+r))
-    }
-  pub fn create_unordered(a:&Bot,b:&Bot)->(usize,usize){
-      if a.id<b.id{
-          (a.id,b.id)
-      }else{
-          (b.id,a.id)
-      }
+  #[derive(Clone,Debug)]
+  pub struct Bot{
+    pub id:usize,
+    pub col:Vec<usize>
   }
 
+  pub fn make_rect(a:(isize,isize),b:(isize,isize))->axgeom::Rect<Numisize>{
+    axgeom::Rect::new(
+      Numisize(a.0),
+      Numisize(a.1),
+      Numisize(b.0),
+      Numisize(b.1),
+     )
+  }
+
+  pub fn create_rect_from_point(a:(Numisize,Numisize))->axgeom::Rect<Numisize>{
+    let r:isize=10;
+    let x=a.0;
+    let y=a.1;
+    make_rect((x.0-r,x.0+r),(y.0-r,y.0+r))
+  }
+  pub fn create_unordered(a:&Bot,b:&Bot)->(usize,usize){
+    if a.id<b.id{
+      (a.id,b.id)
+    }else{
+      (b.id,a.id)
+    }
+  }
   pub fn compair_bot_pair(a:&(usize,usize),b:&(usize,usize))->std::cmp::Ordering{
       if a.0<b.0{
           std::cmp::Ordering::Less
@@ -221,8 +220,8 @@ fn test_dinotree_drop(){
     use test_support::*;
     use support::BBox;
     use support::Numisize;
-    use test_support::make_rect;
-    use test_support::create_rect_from_point;
+    //use test_support::make_rect;
+    //use test_support::create_rect_from_point;
     use median::strict::MedianStrict;
     //use test::black_box;
     struct Bot<'a>{
@@ -265,7 +264,7 @@ fn test_dinotree_drop(){
         let (mut dyntree,_bag)=DinoTree::new::<par::Parallel,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
                         (&mut bots,&mut treecache,&k);
         
-        
+
         let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
             //let a=cc.a;
             //let b=cc.b;
@@ -290,114 +289,102 @@ fn test_dinotree(){
     use axgeom::XAXIS_S;
     use axgeom::YAXIS_S;
     
-  use support::Numisize;
+    use support::Numisize;
     use support::BBox;
     use median::strict::MedianStrict;
-
-    fn make_rect(a:(isize,isize),b:(isize,isize))->axgeom::Rect<Numisize>{
-        axgeom::Rect::new(
-          Numisize(a.0),
-          Numisize(a.1),
-          Numisize(b.0),
-          Numisize(b.1),
-        )
-    }
-
-    fn create_rect_from_point(a:(Numisize,Numisize))->axgeom::Rect<Numisize>{
-        let r:isize=10;
-        let x=a.0;
-        let y=a.1;
-        make_rect((x.0-r,x.0+r),(y.0-r,y.0+r))
-    }
-
+    
     let world=make_rect((-1000,1000),(-100,100));
-
 
     let spawn_world=make_rect((-990,990),(-90,90));
 
     let mut p=PointGenerator::new(&spawn_world,&[1,2,3,4,5]);
 
-    
-    let mut bots:Vec<BBox<Numisize,Bot>>={
-        (0..10000).map(|id|{
-            let rect=create_rect_from_point(p.random_point());
-            BBox::new(Bot{id,col:Vec::new()},rect)
-        }).collect()  
-    };
-    
-    
-    let mut control_result={
-        let mut src:Vec<(usize,usize)>=Vec::new();
-        
-        let control_bots=bots.clone();
-        for (i, el1) in control_bots.iter().enumerate() {
-            for el2 in control_bots[i + 1..].iter() {
-              
-                let a=el1;
-                let b=el2;
-                let ax=a.get().0.get_range2::<XAXIS_S>();     
-                let ay=a.get().0.get_range2::<YAXIS_S>();     
-                let bx=b.get().0.get_range2::<XAXIS_S>();     
-                let by=b.get().0.get_range2::<YAXIS_S>();     
-              
-                if ax.intersects(bx) && ay.intersects(by){
-                    src.push(test_support::create_unordered(&a.val,&b.val));
-                }
-            }
-        }
-        src
-    };
-    
 
-    let mut test_result={
-        let mut src:Vec<(usize,usize)>=Vec::new();
-        
-        let height=12;
-        use axgeom::XAXIS_S;
-        use axgeom::YAXIS_S;
-        let mut treecache:TreeCache<XAXIS_S,_>=TreeCache::new(height);
+    for _ in 0..1{
 
-        {
-          let k=MedianStrict::<Numisize>::new();
-          let (mut dyntree,_bag)=DinoTree::new::<par::Parallel,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
-                          (&mut bots,&mut treecache,&k);
-          
-          let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
-              let a=cc.a;
-              let b=cc.b;
-              src.push(test_support::create_unordered(&a.1,&b.1));
-              //a.1.col.push(b.1.id);
-              //b.1.col.push(a.1.id);
-          };
-
-          let _v=dyntree.for_every_col_pair_seq::<_,treetimer::TreeTimer2>(clos);
-        }       
-
-        //println!("{:?}",bots);
-        src
-    };
-
-    control_result.sort_by(&test_support::compair_bot_pair);
-    test_result.sort_by(&test_support::compair_bot_pair);
-   
-    {      
-      use std::collections::HashSet;
-      println!("control vs test len={:?}",(control_result.len(),test_result.len()));
+      let mut bots:Vec<BBox<Numisize,Bot>>={
+          (0..10000).map(|id|{
+              let rect=create_rect_from_point(p.random_point());
+              BBox::new(Bot{id,col:Vec::new()},rect)
+          }).collect()  
+      };
       
-      let mut control_hash=HashSet::new();
-      for k in control_result.iter(){
-          control_hash.insert(k);
-      }
+      
+      let mut control_result={
+          let mut src:Vec<(usize,usize)>=Vec::new();
+          
+          let control_bots=bots.clone();
+          for (i, el1) in control_bots.iter().enumerate() {
+              for el2 in control_bots[i + 1..].iter() {
+                
+                  let a=el1;
+                  let b=el2;
+                  let ax=a.get().0.get_range2::<XAXIS_S>();     
+                  let ay=a.get().0.get_range2::<YAXIS_S>();     
+                  let bx=b.get().0.get_range2::<XAXIS_S>();     
+                  let by=b.get().0.get_range2::<YAXIS_S>();     
+                
+                  if ax.intersects(bx) && ay.intersects(by){
+                      src.push(test_support::create_unordered(&a.val,&b.val));
+                  }
+              }
+          }
+          src
+      };
+      
 
-      let mut test_hash=HashSet::new();
-      for k in test_result.iter(){
-          test_hash.insert(k);
-      }
+      let mut test_result={
+          let mut src:Vec<(usize,usize)>=Vec::new();
+          
+          let height=12;
+          use axgeom::XAXIS_S;
+          use axgeom::YAXIS_S;
+          let mut treecache:TreeCache<XAXIS_S,_>=TreeCache::new(height);
 
-      let diff=control_hash.symmetric_difference(&test_hash).collect::<Vec<_>>();
-      println!("diff={:?}",diff.len());
-      assert!(diff.len()==0);
-    }
+          {
+            let k=MedianStrict::<Numisize>::new();
+            let (mut dyntree,_bag)=DinoTree::new::<par::Parallel,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
+                            (&mut bots,&mut treecache,&k);
+            
+            let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
+                let a=cc.a;
+                let b=cc.b;
+                src.push(test_support::create_unordered(&a.1,&b.1));
+                //a.1.col.push(b.1.id);
+                //b.1.col.push(a.1.id);
+            };
+
+            let _v=dyntree.for_every_col_pair_seq::<_,treetimer::TreeTimer2>(clos);
+          }       
+
+          //println!("{:?}",bots);
+          src
+      };
+
+      control_result.sort_by(&test_support::compair_bot_pair);
+      test_result.sort_by(&test_support::compair_bot_pair);
+     
+      {      
+        use std::collections::HashSet;
+        println!("control vs test len={:?}",(control_result.len(),test_result.len()));
+        
+        let mut control_hash=HashSet::new();
+        for k in control_result.iter(){
+            control_hash.insert(k);
+        }
+
+        let mut test_hash=HashSet::new();
+        for k in test_result.iter(){
+            test_hash.insert(k);
+        }
+
+        let diff=control_hash.symmetric_difference(&test_hash).collect::<Vec<_>>();
+        println!("diff={:?}",diff.len());
+        assert!(diff.len()==0);
+      }
+    }    
+    
+    
 
 
 }

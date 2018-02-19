@@ -10,7 +10,7 @@ pub struct Bot{
     pub id:usize,
     pub col:usize
 }
-
+    
 impl Bot{
     pub fn new(a:usize)->Bot{
         Bot{id:a,col:0}
