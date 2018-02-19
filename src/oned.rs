@@ -1,6 +1,4 @@
 
-//!A collection of 1d functions that operate on lists of 2d objects.
-
 use std;
 use axgeom::Range;
 use axgeom::Rect;

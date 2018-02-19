@@ -1,3 +1,6 @@
+
+
+
 use axgeom::Rect;
 use oned::Sweeper;
 use super::DepthLevel;
@@ -135,23 +138,23 @@ fn recurse<'x,
 
 
 
-pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek<T=T>,K:TreeTimerTrait>
+pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:Bleek<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,clos:&mut F)->K::Bag{
            
 
-    pub struct BleekSF2<T:SweepTrait+Copy,B:Bleek<T=T>>{
+    pub struct BleekSF2<T:SweepTrait,B:Bleek<T=T>>{
         a:*mut B,
     }
     
-    unsafe impl<T:SweepTrait+Copy,B:Bleek<T=T>> Send for BleekSF2<T,B>{}
-    unsafe impl<T:SweepTrait+Copy,B:Bleek<T=T>> Sync for BleekSF2<T,B>{}
-    impl<T:SweepTrait+Copy,B:Bleek<T=T>> Copy for BleekSF2<T,B>{}
-    impl<T:SweepTrait+Copy,B:Bleek<T=T>> Clone for BleekSF2<T,B>{
+    unsafe impl<T:SweepTrait,B:Bleek<T=T>> Send for BleekSF2<T,B>{}
+    unsafe impl<T:SweepTrait,B:Bleek<T=T>> Sync for BleekSF2<T,B>{}
+    impl<T:SweepTrait,B:Bleek<T=T>> Copy for BleekSF2<T,B>{}
+    impl<T:SweepTrait,B:Bleek<T=T>> Clone for BleekSF2<T,B>{
         fn clone(&self) -> Self {
             *self
         }
     }
-    impl<T:SweepTrait+Copy,B:Bleek<T=T>> BleekSync for BleekSF2<T,B>{
+    impl<T:SweepTrait,B:Bleek<T=T>> BleekSync for BleekSF2<T,B>{
         type T=B::T;
         fn collide(&self,cc:ColPair<Self::T>){
             unsafe{(*self.a).collide(cc)};
@@ -165,13 +168,13 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:Bleek
             
 }
 
-pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
+pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,clos:&F)->K::Bag
 {
     self::for_every_col_pair_inner::<A,par::Parallel,_,DefaultDepthLevel,_,K>(kdtree,clos)    
 }
 
-fn for_every_col_pair_inner<A:AxisTrait,JJ:par::Joiner,T:SweepTrait+Copy,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
+fn for_every_col_pair_inner<A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,clos:&F)->K::Bag{
 
     let height=kdtree.get_height();
@@ -219,7 +222,7 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
 
 fn rect_recurse<'x,
     A:AxisTrait,
-    T:SweepTrait+Copy+'x,
+    T:SweepTrait+'x,
     C:CTreeIterator<Item=&'x mut NodeDyn<T>>,
     F:FnMut(ColSingle<T>)>(
     m:C,rect:&Rect<T::Num>,func:&mut F){
@@ -252,7 +255,7 @@ fn rect_recurse<'x,
 
 }
 
-pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait+Copy,F:FnMut(ColSingle<T>)>(
+pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:FnMut(ColSingle<T>)>(
         tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure: &mut F) {
     
     let mut fu=|a:ColSingle<T>|{
@@ -267,8 +270,8 @@ pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait+Copy,F:FnMut(ColSingle<T>)>(
 
 
 ///UNIMPLEMENTED
-pub fn nearest_k<A:AxisTrait,T:SweepTrait+Copy,F:FnMut(ColSingle<T>)>(
-     tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure: &mut F) {
+pub fn nearest_k<A:AxisTrait,T:SweepTrait,F:FnMut(ColSingle<T>)>(
+     _tree:&mut DynTree<A,T>,_rect: &Rect<T::Num>, _closure: &mut F) {
     unimplemented!()
 }
 

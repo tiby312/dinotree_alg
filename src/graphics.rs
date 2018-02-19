@@ -1,3 +1,5 @@
+//!Provides capability to draw the dividers of each node. 
+
 use axgeom;
 use axgeom::Axis;
 use compt;

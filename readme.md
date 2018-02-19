@@ -111,6 +111,9 @@ The tailored inputs is important. For example, a case where two bounding boxes c
 
 At this point one could say that we were done. We have a pretty good case that the algorithms that this crate provide are correct and satisfy the api. But there is another expectation/design goal that is hard to show. The point of this crate is that it is a very fast collison detection system. So there is the problem of define how fast is fast enough? If I were simply to show that it was faster than the naive method would that be enough? Or do I have to prove it against some other metric?
 
+Also, talk about how we can just test it for isize, and not float since works over anything that implements NumTrait.
+
+
 ## Benching
 
 So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit. It is also useful to come up with a "upholding invariant" function that can be called at any time on the tree after it has been constructed to be sure that it has all the properties that it needs to perform querying on. 
@@ -151,6 +154,7 @@ NumTrait. Use of generics.
 
 ## Use of Unsafe
 
+moving objects that dont implement copy.
 The multirect example. 
 split_at_mut()
 

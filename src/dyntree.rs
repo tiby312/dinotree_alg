@@ -1,6 +1,7 @@
+
+
 use compt::CTreeIterator;
 use median::MedianStrat;
-//use compt::LevelIter;
 use compt::GenTree;
 use compt::LevelDesc;
 use base_kdtree::KdTree;
@@ -12,7 +13,6 @@ use std::marker::PhantomData;
 use base_kdtree::Node2;
 use TreeCache;
 use treetimer::*;
-use support::DefaultDepthLevel;
 use super::*;
 
 pub struct NdIterMut<'a:'b,'b,T:SweepTrait+'a>{
@@ -97,7 +97,7 @@ impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for Wrap<'a,'b,T>{
 
 //SweepTrait+Send
 pub struct Cont<'b,T:'b>{
-    a:&'b mut T
+    pub a:&'b mut T
 }
 
 impl<'b,T:'b+SweepTrait+Send> SweepTrait for Cont<'b,T>{
@@ -112,7 +112,7 @@ impl<'b,T:'b+SweepTrait+Send> SweepTrait for Cont<'b,T>{
 }
 
 
-pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
+pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Send+'b>{
     orig:&'b mut [T],
     tree:DynTreeRaw<'b,T>,
     mover:Mover,
@@ -122,34 +122,13 @@ pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Copy+Send+'b>{
 
 
 
-use super::DynTreeTrait;
-use  oned::sup::BleekSF;
-use  oned::sup::BleekBF;
+//use  oned::sup::BleekSF;
+//use  oned::sup::BleekBF;
 
-/*
-impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTreeTrait for DynTree<'a,A,T>{
-    type T=T;
-    type Num=T::Num;
-    
 
-    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
-        colfind::for_all_in_rect(self,rect,fu);
-    }
-   
-    fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
-        (&mut self,mut clos:F)->K::Bag{
-        let mut bb=BleekSF::new(&mut clos);            
-        colfind::for_every_col_pair_seq::<A,T,DefaultDepthLevel,_,K>(self,&mut bb)
-    }
-    fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
-        (&mut self,clos:F)->K::Bag{
-        let bb=BleekBF::new(&clos);                            
-        colfind::for_every_col_pair::<A,T,H,_,K>(self,&bb)
-    }
-}
-*/
 
-impl<'a,A:AxisTrait,T:SweepTrait+Copy+'a> DynTree<'a,A,T>{
+
+impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTree<'a,A,T>{
 
     ///Create the tree.
     ///Specify whether it is done in parallel or sequential.
@@ -221,7 +200,7 @@ mod mover{
     pub fn get_start_pointer<T>(rest:&[T])->*const T{
         struct Repr<T>{
             ptr:*const T,
-            size:usize
+            _size:usize
         }
         let j:Repr<T>=unsafe{std::mem::transmute(rest)};
         j.ptr
@@ -249,15 +228,20 @@ mod mover{
             Mover(move_vector)
         }
 
-        pub fn finish<'a,T:Copy+'a,I:Iterator<Item=&'a T>>(&mut self,tree_bots:I,orig:&mut [T]){
+        pub fn finish<'a,T:'a,I:Iterator<Item=&'a T>>(&mut self,tree_bots:I,orig:&mut [T]){
             for (mov,b) in self.0.iter().zip(tree_bots){
-                *unsafe{orig.get_unchecked_mut(*mov)}=*b;
+
+                let cp=unsafe{orig.get_unchecked_mut(*mov)};
+
+                let k=unsafe{std::ptr::copy(b,cp,1)};
+                    
+                //*unsafe{orig.get_unchecked_mut(*mov)}=*b;
             }
         }
     }
 }
 
-impl<'a,A:AxisTrait,T:SweepTrait+Copy+Send+'a> Drop for DynTree<'a,A,T>{
+impl<'a,A:AxisTrait,T:SweepTrait+Send+'a> Drop for DynTree<'a,A,T>{
     fn drop(&mut self){
         let orig=&mut self.orig;
 
@@ -279,13 +263,13 @@ mod alloc{
     use tree_alloc::TreeAllocDst;
     use tree_alloc::NodeDynBuilder; 
 
-    pub struct DynTreeRaw<'a,T:SweepTrait+Send+Copy+'a>{
+    pub struct DynTreeRaw<'a,T:SweepTrait+Send+'a>{
         height:usize,
         level:LevelDesc,
         alloc:ManuallyDrop<TreeAllocDst<'a,T>>,
         root:ManuallyDrop<NodeDstDynCont<'a,T>>
     }
-    impl<'a,T:SweepTrait+'a+Send+Copy> Drop for DynTreeRaw<'a,T> {
+    impl<'a,T:SweepTrait+'a+Send> Drop for DynTreeRaw<'a,T> {
         fn drop(&mut self) {
             unsafe {
                 ManuallyDrop::drop(&mut self.root);
@@ -294,7 +278,7 @@ mod alloc{
         }
     }
 
-    impl<'a,T:SweepTrait+'a+Send+Copy> DynTreeRaw<'a,T>{
+    impl<'a,T:SweepTrait+'a+Send> DynTreeRaw<'a,T>{
         pub fn new(tree:GenTree<Node2<Cont<T>>>,num_bots:usize)->DynTreeRaw<'a,T>{
             let height=tree.get_height();
             let level=tree.get_level_desc();
@@ -331,7 +315,7 @@ mod alloc{
             for node in v.drain(..){
                 let Node2{divider,container_box,range}=node;
                 let num_bots=range.len();
-                let nn=NodeDynBuilder{divider,container_box,num_bots,i:range.iter().map(|c:&Cont<T>|{*c.a})};
+                let nn=NodeDynBuilder{divider,container_box,num_bots,range};
                 let n=alloc.add(nn);
                 queue.push(NodeDstDynCont(n));
             }
@@ -354,46 +338,3 @@ mod alloc{
     }
 }
 
-
-#[test]
-fn testy(){
-    use kdtree::median::MedianStrict;
-    use compt::LevelDesc;
-    use ordered_float::NotNaN;
-    use test_support;
-    use super::*;
-    use std::sync::Mutex;
-    use test_support::Bot;
-    use support::BBox;
-    use test::Bencher;
-    use test::black_box;
-    use extensions::Rects;
-    use kdtree::base_kdtree;
-    use tools::par;
-    use support::Numf32;
-    let world=test_support::create_word();
-    let mut vecc=black_box(test_support::create_bots(&world,300,&[5,1,3,6,1,8]));
-
-    let copy=vecc.clone();
-    {
-        let mut treecache=TreeCache::new::<par::Parallel>(axgeom::XAXIS,4);
-
-        {
-
-            let mut fl=dyntree::DynTreeRaw::new();
-            let mut dyntree=fl.new_tree::<par::Parallel,DefaultDepthLevel,MedianStrict<Numf32>>
-                        (&mut vecc,&mut treecache);
-
-            use oned::sup::BleekBF;
-            //let mut bb=BleekBF::new(&clos);
-                    
-            //colfind::for_every_col_pair::<_,DefaultDepthLevel,_>(&mut dyntree,&bb,&mut t);
-        }   
-
-        for (a,i) in copy.iter().zip(vecc.iter()){
-            assert_eq!(a.get().1.id,i.get().1.id);
-        }               
-    }
-
-    let _v=black_box(&mut vecc);
-}

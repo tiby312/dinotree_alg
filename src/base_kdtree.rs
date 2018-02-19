@@ -132,9 +132,9 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
         },
         Some((lleft,rright))=>{
 
-            let depth=level.get_depth();
+            //let depth=level.get_depth();
             
-            let (med,binned)=medianstrat.compute::<A,_>(depth,rest,&mut div.divider);
+            let (med,binned)=medianstrat.compute::<A,_>(rest,&mut div.divider);
 
             let binned_left=binned.left;
             let binned_middile=binned.middile;

@@ -1,5 +1,6 @@
 use super::*;
 use std::marker::PhantomData;
+use dyntree::Cont;
 
 
 #[repr(C)]
@@ -52,11 +53,11 @@ impl<T:SweepTrait> NodeDyn<T>{
     }
 }
 
-pub struct NodeDynBuilder<T:SweepTrait,I:Iterator<Item=T>>{
+pub struct NodeDynBuilder<'a,'b:'a,T:SweepTrait+'b>{
     pub divider:T::Num,
     pub container_box:axgeom::Range<T::Num>,
     pub num_bots:usize,
-    pub i:I
+    pub range:&'a [Cont<'b,T>]
 }
 
 
@@ -121,7 +122,7 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
     pub fn is_full(&self)->bool{
         self.counter as *const u8== self.max_counter
     }
-    pub fn add<I:Iterator<Item=T>>(&mut self,n:NodeDynBuilder<T,I>)->&'a mut NodeDstDyn<'a,T>{
+    pub fn add<'b,'c:'b>(&mut self,n:NodeDynBuilder<'b,'c,T>)->&'a mut NodeDstDyn<'a,T>{
         
         assert!((self.counter as *const u8) < self.max_counter);
     
@@ -134,8 +135,13 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
             dst.n.divider=n.divider;
             dst.n.container_box=n.container_box;
 
-            for (a,b) in dst.n.range.iter_mut().zip(n.i){
-                *a=b;
+            for (a,b) in dst.n.range.iter_mut().zip(n.range){
+
+                //we cant just move it into here.
+                //then rust will try and call the destructor of the uninitialized object
+                let k=unsafe{std::ptr::copy(b.a,a,1)};
+                   
+                //*a=b;
             }
             dst
         };
