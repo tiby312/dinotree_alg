@@ -101,14 +101,27 @@ pub struct Cont<'b,T:'b>{
 }
 
 impl<'b,T:'b+SweepTrait+Send> SweepTrait for Cont<'b,T>{
+    type InnerRect=T::InnerRect;
     type Inner=T::Inner;
     type Num=T::Num;
+
+    ///Destructure into the bounding box and mutable parts.
+    fn get_mut<'a>(&'a mut self)->(&'a Self::InnerRect,&'a mut Self::Inner){
+        self.a.get_mut()
+    }
+
+    ///Destructue into the bounding box and inner part.
+    fn get<'a>(&'a self)->(&'a Self::InnerRect,&'a Self::Inner){
+        self.a.get()
+    }
+    /*
     fn get_mut<'c>(&'c mut self)->(&'c axgeom::Rect<T::Num>,&'c mut Self::Inner){
         self.a.get_mut()
     }
     fn get<'c>(&'c self)->(&'c axgeom::Rect<T::Num>,&'c Self::Inner){
         self.a.get()
     }
+    */
 }
 
 
@@ -183,6 +196,9 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTree<'a,A,T>{
     }
     pub fn get_iter_mut<'b>(&'b mut self)->NdIterMut<'a,'b,T>{
         NdIterMut{c:self.tree.get_root_mut()}
+    }
+    pub fn get_iter<'b>(&'b self)->NdIter<'a,'b,T>{
+        NdIter{c:self.tree.get_root()}
     }
 }
 

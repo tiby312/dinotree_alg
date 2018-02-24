@@ -10,7 +10,9 @@ use axgeom::AxisTrait;
 use std::marker::PhantomData;
 use tools::par;
 use rayon::prelude::*;
-
+use smallvec::SmallVec;
+use tools;
+use InnerRect;
 pub trait Bleek{
     type T:SweepTrait;
     fn collide(&mut self,cc:ColPair<Self::T>);
@@ -102,14 +104,102 @@ pub struct Binned<'a,T:'a>{
     pub right:&'a mut [T],
 }
 
-/*
-pub fn merge<'a,'b,A:AxisTrait,X:SweepTrait>(a:Binned<'a,X:'a>,b:Binned<'a,X:'a>)->Binned<'a,X:'a>{
-    assert!(tools::slice_adjacent(a.right,b.middile));
-    //TODO is this actually usefull??
+
+pub fn bin_par<'a,'b,A:AxisTrait,X:SweepTrait+'b>(med:&X::Num,bots:&'b mut [X])->Binned<'b,X>{
+    let ff1=tools::create_empty_slice_at_start_mut(bots);
+    let ff2=tools::create_empty_slice_at_start_mut(bots);
+    let ff3=tools::create_empty_slice_at_start_mut(bots);
+    
+    let chunks:Vec<&'b mut [X]>=bots.chunks_mut(2000).collect();
+    
+    let bins:Vec<Binned<'b,X>>=chunks.into_par_iter().map(|a:&'b mut [X]|bin::<A,_>(med,a)).collect();
+    
+    let mut last=Binned{middile:ff1,left:ff2,right:ff3};
+
+    for i in bins.into_iter(){
+        last=merge::<A,_>(last,i);
+    }
+    last
 }
-*/
 
 
+fn merge<'a,A:AxisTrait,X:SweepTrait+'a>(a:Binned<'a,X>,b:Binned<'a,X>)->Binned<'a,X>{
+    //assert!(tools::slice_adjacent(a.right,b.middile));
+
+    let amed_len=a.middile.len();
+    let aleft_len=a.left.len();
+    let aright_len=a.right.len();
+    
+
+
+    let bmed_len=b.middile.len();
+    let bleft_len=b.left.len();
+    let bright_len=b.right.len();
+
+    let new_med_len=a.middile.len()+b.middile.len();
+    let new_left_len=a.left.len()+b.left.len();
+    let new_right_len=a.right.len()+b.right.len();
+
+    let a_slice=tools::join_mut(tools::join_mut(a.middile,a.left),a.right);
+    let a_slice_len=a_slice.len();
+    let b_slice=tools::join_mut(tools::join_mut(b.middile,b.left),b.right);
+    let b_slice_len=b_slice.len();
+    let total=tools::join_mut(a_slice,b_slice);
+
+    //let mut total_med=amed;
+    //let mut rr_med=b_slice_len;
+    
+    //swap_slices(total,amed_len,b_slice_len,bmed_len);
+    //let amed_len=amed_len+bmed_len;
+    
+    //   |    amiddile   |#    aleft    |   aright     |
+    //                                                 |#   bmiddile   |   bleft   |    bright   |
+    //                    ^                            ^
+    //                  target                      b_counter
+
+    let mut b_counter=a_slice_len;
+    let mut target=amed_len;
+    //append b middiles and shift aleft and aright
+    for i in (0..bmed_len){
+        //total.swap(amed_len,amed_len+aleft_len);
+        total.swap(b_counter,target);
+        total.swap(b_counter,target+aleft_len);
+        target+=1;
+        b_counter+=1;
+    }
+    
+    //   |    amiddile   |  bmiddile   |#  aleft    |   aright     |
+    //                                                             |#  bleft   |    bright   |
+    //                                  ^                           ^
+    //                                target                    b_counter
+    
+    target=target+aleft_len;
+    
+    //   |    amiddile   |  bmiddile   |  aleft    |#   aright     |
+    //                                                             |#  bleft   |    bright   |
+    //                                              ^               ^
+    //                                           target          b_counter
+    
+    for i in (0..bleft_len){
+        total.swap(b_counter,target);
+        total.swap(b_counter,target+aright_len);
+        target+=1;
+        b_counter+=1;
+    }
+
+
+    //   |    amiddile   |  bmiddile   |  aleft    | bleft  |#   aright     |
+    //                                                                      |#    bright   |
+    //                                                       ^               ^
+    //                                                     target          b_counter
+    
+    assert_eq!(target,total.len()-bright_len-aright_len);
+    assert_eq!(b_counter,total.len()-bright_len);
+
+    let (rest,right)=total.split_at_mut(new_med_len+new_left_len);
+    let (middile,left)=rest.split_at_mut(new_med_len);
+    Binned{middile,left,right}
+}
 /// Sorts the bots into three bins. Those to the left of the divider, those that intersect with the divider, and those to the right.
 /// They will be laid out in memory s.t.  middile<left<right
 pub fn bin<'a,'b,A:AxisTrait,X:SweepTrait>(med:&X::Num,bots:&'b mut [X])->Binned<'b,X>{
@@ -125,7 +215,8 @@ pub fn bin<'a,'b,A:AxisTrait,X:SweepTrait>(med:&X::Num,bots:&'b mut [X])->Binned
 
     for index_at in 0..bot_len{
         unsafe{
-            match Accessor::<A>::get(bots.get_unchecked(index_at).get().0).left_or_right_or_contain(med){
+            
+            match Accessor::<A>::get(bots.get_unchecked(index_at).get().0.get() ).left_or_right_or_contain(med){
                 
                 //If the divider is less than the bot
                 std::cmp::Ordering::Equal=>{
@@ -159,6 +250,24 @@ pub fn bin<'a,'b,A:AxisTrait,X:SweepTrait>(med:&X::Num,bots:&'b mut [X])->Binned
 }
 
 
+pub fn is_sorted<A:AxisTrait,I:SweepTrait>(collision_botids:&[I]){
+    
+    if collision_botids.len()==0{
+        return;
+    }
+
+    let mut last=&collision_botids[0];
+    
+    for i in &collision_botids[1..]{
+         let (a,b)=(i,last);
+         use InnerRect;
+            let (p1,p2)=(Accessor::<A>::get(a.get().0.get()).left(),Accessor::<A>::get(b.get().0.get()).left());
+        
+        assert!(p1>=p2);
+        last=i;
+    }
+}
+
 ///Provides 1d collision detection.
 pub struct Sweeper<T:SweepTrait>{
     helper: PreVec<T>
@@ -167,14 +276,14 @@ pub struct Sweeper<T:SweepTrait>{
 impl<I:SweepTrait> Sweeper<I>{
 
     pub fn new()->Sweeper<I>{
-        Sweeper{helper:PreVec::with_capacity(32)} //TODO make callers decide?
+        Sweeper{helper:PreVec::new()} //TODO make callers decide?
     }
 
     ///Sorts the bots.
     pub fn update<A:AxisTrait,JJ:par::Joiner>(collision_botids: &mut [I]) {
 
         let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
-            let (p1,p2)=(Accessor::<A>::get(a.get().0).left(),Accessor::<A>::get(b.get().0).left());
+            let (p1,p2)=(Accessor::<A>::get(a.get().0.get()).left(),Accessor::<A>::get(b.get().0.get()).left());
             if p1 > p2 {
                 return std::cmp::Ordering::Greater;
             }
@@ -225,12 +334,12 @@ impl<I:SweepTrait> Sweeper<I>{
            
             {
                 let (curr_rect,curr_bot_id_val)=curr_bot_id.get_mut();
-                let crr=Accessor::<A>::get(curr_rect);
+                let crr=Accessor::<A>::get(curr_rect.get());
 
                 //change this to do retain and then iter
                 active.retain(|that_bot_ind| {
                     let (that_rect,_)=that_bot_ind.get();
-                    let brr=Accessor::<A>::get(that_rect);
+                    let brr=Accessor::<A>::get(that_rect.get());
 
                     if brr.right()<crr.left() {
                         false
@@ -261,6 +370,7 @@ impl<I:SweepTrait> Sweeper<I>{
         let mut xs=cols.0.iter_mut().peekable();
         let ys=cols.1.iter_mut();
         
+        use smallvec;
         let active_x=self.helper.get_empty_vec_mut();
 
         for y in ys
@@ -268,7 +378,7 @@ impl<I:SweepTrait> Sweeper<I>{
             while xs.peek().is_some(){
                 let v={
                     let x=xs.peek().unwrap();
-                    Accessor::<A>::get(x.get().0).left()>Accessor::<A>::get(y.get().0).right()
+                    Accessor::<A>::get(x.get().0.get()).left()>Accessor::<A>::get(y.get().0.get()).right()
                 };
                 if v{
                     break;
@@ -280,8 +390,8 @@ impl<I:SweepTrait> Sweeper<I>{
 
             
 
-            active_x.retain(|x:&&mut I|{
-                if Accessor::<A>::get(x.get().0).right()<Accessor::<A>::get(y.get().0).left(){
+            active_x.retain(|x:&mut &mut I|{
+                if Accessor::<A>::get(x.get().0.get()).right()<Accessor::<A>::get(y.get().0.get()).left(){
                     false
                 }else{
                     true
@@ -320,7 +430,7 @@ impl<I:SweepTrait> Sweeper<I>{
 
         let mut start=0;
         for (e,i) in arr.iter().enumerate(){
-            let rr=Accessor::<A>::get(i.get().0);
+            let rr=Accessor::<A>::get(i.get().0.get());
             if rr.right()>=range.left(){
                 start=e;
                 break;
@@ -329,7 +439,7 @@ impl<I:SweepTrait> Sweeper<I>{
         
         let mut end=arr.len();
         for (e,i) in arr[start..].iter().enumerate(){
-            let rr=Accessor::<A>::get(i.get().0);
+            let rr=Accessor::<A>::get(i.get().0.get());
             if rr.left()>range.right(){
                 end=start+e;
                 break;

@@ -69,7 +69,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> KdTree<'a,A,T>{
             let rest=&mut [];
             use std;
 
-            let co=self::create_container_rect::<A,_>(rest);
+            let co=self::create_container_rect_par::<A,_>(rest);
             
             Node2{divider:std::default::Default::default(),container_box:co,range:rest}
         },height);
@@ -115,26 +115,40 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
     timer_log.start();
     
     let ((level,(div,nn)),restt)=down.next();
+
+    /*
+    let a = std::time::Duration::from_millis(300);
+    if level.get_depth()==0{
+        println!("sleepin!");
+        std::thread::sleep(a);
+    }
+    */
+
     //let depth=level.get_depth();
+    /*
     fn create_node<A:AxisTrait,T:SweepTrait,JJ:par::Joiner>(divider:T::Num,range:&mut [T])->Node2<T>{
         Sweeper::update::<A::Next,JJ>(range);
             
         let container_box=self::create_container_rect::<A,_>(range);
         Node2{divider,container_box,range}
     }
-
+    */
+    let mut tot_time=[0.0f64;3];
     match restt{
         None=>{
- 
-            *nn=create_node::<A,_,JJ>(std::default::Default::default(),rest);
+            Sweeper::update::<A::Next,JJ>(rest);
+            let container_box=self::create_container_rect_par::<A,_>(rest);
+            let divider=std::default::Default::default();
+            *nn=Node2{divider,container_box,range:rest};
+            //*nn=create_node::<A,_,JJ>(std::default::Default::default(),rest);
             
             timer_log.leaf_finish()
         },
         Some((lleft,rright))=>{
 
-            //let depth=level.get_depth();
-            
-            let (med,binned)=medianstrat.compute::<A,_>(rest,&mut div.divider);
+            let tt0=tools::Timer2::new();
+            let (med,binned)=medianstrat.compute::<A,_>(level,rest,&mut div.divider);
+            tot_time[0]=tt0.elapsed();
 
             let binned_left=binned.left;
             let binned_middile=binned.middile;
@@ -149,7 +163,10 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 
                 let ((nj,ba),bb)={
                     let af=move || {
-                        let nj=create_node::<A,_,JJ>(med,binned_middile);
+                        Sweeper::update::<A::Next,JJ>(binned_middile);
+                        let container_box=self::create_container_rect_par::<A,_>(binned_middile);
+                        let nj=Node2{divider:med,container_box,range:binned_middile};
+                        //let nj=create_node::<A,_,JJ>(med,binned_middile);
                         let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Parallel,K>(binned_left,lleft,ta,medianstrat);
                         (nj,ba)
                     };
@@ -162,7 +179,27 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 //timer_log.combine_one_less(ll2);  
                 (nj,ba,bb)
             }else{
-                let nj=create_node::<A,_,JJ>(med,binned_middile);
+
+                let tt=tools::Timer2::new();
+                
+                Sweeper::update::<A::Next,JJ>(binned_middile);
+                tot_time[1]=tt.elapsed();
+
+
+                let ll=binned_middile.len();
+                let tt2=tools::Timer2::new();
+
+                let container_box=self::create_container_rect_par::<A,_>(binned_middile);
+                tot_time[2]=tt2.elapsed();
+
+                if level.get_depth()==0{
+                    println!("container box={:?}",container_box);
+                    println!("time dist={:?}",tot_time);
+                }
+                let nj=Node2{divider:med,container_box,range:binned_middile};
+                
+
+                //let nj=create_node::<A,_,JJ>(med,binned_middile);
                 let ba=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_left,lleft,ta,medianstrat);
                 let bb=self::recurse_rebal::<A::Next,T,H,Z,par::Sequential,K>(binned_right,rright,tb,medianstrat);
                 (nj,ba,bb)
@@ -177,23 +214,71 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
 }
 
 
+use self::bla::create_container_rect;
+use self::bla::create_container_rect_par;
+mod bla{
+    use super::*;
+    pub fn create_container_rect<A:AxisTrait,T:SweepTrait>(middile:&[T])->axgeom::Range<T::Num>{
+        use rayon::prelude::*;
 
-fn create_container_rect<A:AxisTrait,T:SweepTrait>(middile:&[T])->axgeom::Range<T::Num>{
-    
-    let container_rect=match middile.split_first(){
-        Some((first,rest))=>{
-            let mut container_rect=first.get().0.get_range2::<A>().clone();
-            for i in rest{
-                container_rect.grow_to_fit(i.get().0.get_range2::<A>());
+        {
+            let res=middile.split_first();
+
+            match res{
+                Some((first,rest))=>{
+
+                    let first_ra=first.get().0.get().get_range2::<A>().clone();
+                    
+                    create_container::<A,T>(rest,first_ra)
+                },
+                None=>{
+                    
+                    let d=std::default::Default::default();
+                    axgeom::Range{start:d,end:d}
+                }
+
             }
-            container_rect
-        },
-        None=>{
-            //TODO this wont accidentaly collide with anything?
-            
-            let d=std::default::Default::default();
-            axgeom::Range{start:d,end:d}
         }
-    };
-    container_rect
+    }
+    pub fn create_container_rect_par<A:AxisTrait,T:SweepTrait>(middile:&[T])->axgeom::Range<T::Num>{
+        use rayon::prelude::*;
+
+        {
+            let res=middile.split_first();
+
+            match res{
+                Some((first,rest))=>{
+
+                    let first_ra=first.get().0.get().get_range2::<A>().clone();
+                    
+                    use smallvec::SmallVec;
+                    let mut vecs:SmallVec<[&[T];16]> =middile.chunks(1000).collect();
+
+                    let res:axgeom::Range<T::Num>=
+                        vecs.par_iter().map(|a|{create_container::<A,T>(a,first_ra)}).
+                        reduce(||first_ra,|a,b|merge(a,b));
+                    res
+                },
+                None=>{
+                    
+                    let d=std::default::Default::default();
+                    axgeom::Range{start:d,end:d}
+                }
+
+            }
+        }
+    }
+
+    fn merge<T:NumTrait>(mut a:axgeom::Range<T>,b:axgeom::Range<T>)->axgeom::Range<T>{
+        a.grow_to_fit(&b);
+        a
+    }
+    fn create_container<A:AxisTrait,T:SweepTrait>(rest:&[T],mut container_rect:axgeom::Range<T::Num>)->axgeom::Range<T::Num>{
+        
+        for i in rest{
+            container_rect.grow_to_fit(i.get().0.get().get_range2::<A>());
+        }
+        container_rect
+   
+    }
 }

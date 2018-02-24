@@ -158,6 +158,11 @@ moving objects that dont implement copy.
 The multirect example. 
 split_at_mut()
 
+#talk about parallilizing node bounding box
+
+#talk about parallilizing binning
+
+# talk about determinism. floating point additive
 
 # General thoughts on optimizing
 

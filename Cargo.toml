@@ -13,3 +13,4 @@ rand = "0.3"
 compt = {path="../compt"}
 #axgeom = "0.1.0"
 axgeom = {path="../axgeom"}
+smallvec = "0.6.0"

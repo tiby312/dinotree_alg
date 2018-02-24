@@ -7,6 +7,11 @@ use support::Numisize;
 use support::BBox;
 use median::strict::MedianStrict;
 
+
+
+
+
+
 #[test]
 fn test_dinotree_drop(){
 
@@ -62,6 +67,65 @@ fn test_dinotree_drop(){
     println!("{:?}",drop_counter);
     assert!(drop_counter.iter().fold(true,|acc,&x|acc&(x==0)));
 }
+
+
+
+
+#[test]
+fn test_corners_touch(){
+    
+    let world=make_rect((-1010,1010),(-110,110));
+    let spawn_world=make_rect((-1000,1000),(-100,100));
+
+    //# # # #
+    // # # #
+    //# # # #
+    let mut bots=Vec::new();
+    let mut id_counter=(0..);
+    let mut a=false;
+    for y in (-100..200).step_by(20){
+        if a{
+          for x in (-1000..2000).step_by(20).step_by(2){
+            let id=id_counter.next().unwrap();
+            let rect=create_rect_from_point((Numisize(x),Numisize(y)));
+            bots.push(BBox::new(Bot{id,col:Vec::new()},rect));
+          }   
+        }else{
+          
+          for x in (-1000..2000).step_by(20).skip(1).step_by(2){
+            let id=id_counter.next().unwrap();
+            let rect=create_rect_from_point((Numisize(x),Numisize(y)));
+            bots.push(BBox::new(Bot{id,col:Vec::new()},rect));
+          }
+        }
+        a=!a;
+    }
+
+    
+    test_bot_layout(bots); 
+    //assert!(false);
+}
+
+
+#[test]
+fn test_1_apart(){
+    
+    let world=make_rect((-1010,1010),(-110,110));
+    let spawn_world=make_rect((-1000,1000),(-100,100));
+
+    let mut bots=Vec::new();
+    let mut id_counter=(0..);
+    for x in (-1000..2000).step_by(21){
+      for y in (-100..200).step_by(21){
+          let id=id_counter.next().unwrap();
+          let rect=create_rect_from_point((Numisize(x),Numisize(y)));
+          bots.push(BBox::new(Bot{id,col:Vec::new()},rect));
+      }   
+    }
+
+    test_bot_layout(bots); 
+}
+
 
 #[test]
 fn test_mesh(){
@@ -164,6 +228,7 @@ fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
   control_result.sort_by(&test_support::compair_bot_pair);
   test_result.sort_by(&test_support::compair_bot_pair);
  
+  println!("control length={} test length={}",control_result.len(),test_result.len());
   {      
     use std::collections::HashSet;
     println!("control vs test len={:?}",(control_result.len(),test_result.len()));
@@ -223,14 +288,10 @@ fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
             };
 
             println!("debug={:?}",(first,second));
-              //let id1=at_depth(&mut kd,i.0).unwrap();
-              //let id2=at_depth(&mut kd,i.1).unwrap();
-              
+ 
             let first_bot=bots_copy.iter().find(|a|a.get().1.id==i.0).unwrap();
             let second_bot=bots_copy.iter().find(|a|a.get().1.id==i.1).unwrap();
             println!("{:?}",(first_bot.get().0,second_bot.get().0));
-              //println!("{:?}\n{:?}\n\n",(id1,b1),(id2,b2));
-            //(i.0,i.1)
         }
       
 
@@ -254,7 +315,7 @@ fn test_dinotree(){
     for _ in 0..1{
 
       let mut bots:Vec<BBox<Numisize,Bot>>={
-          (0..10000).map(|id|{
+          (0..2000).map(|id|{
               let rect=create_rect_from_point(p.random_point());
               BBox::new(Bot{id,col:Vec::new()},rect)
           }).collect()  

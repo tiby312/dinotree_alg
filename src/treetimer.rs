@@ -38,7 +38,8 @@ pub struct Bag{
     a:Vec<f64>
 }
 impl Bag{
-    pub fn into_vec(self)->Vec<f64>{
+    pub fn into_vec(mut self)->Vec<f64>{
+        self.a.reverse();  //TODO whats this?
         self.a
     }
 }
@@ -66,7 +67,9 @@ impl TreeTimerTrait for TreeTimer2{
     }
 
     fn leaf_finish(self)->Bag{
+
        let TreeTimer2{mut a,index,timer}=self;
+        debug_assert!(index==a.len()-1);
         a[index]+=timer.unwrap().elapsed();
         Bag{a:a}
     }

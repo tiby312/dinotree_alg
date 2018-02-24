@@ -90,7 +90,8 @@ impl<'a,C:DynTreeTrait+'a> Rects<'a,C>{
 
         {
             let mut fu=|c:ColSingle<C::T>|{
-                let a=unsafe{&*(c.0 as *const axgeom::Rect<C::Num>)};
+                //axgeom::Rect<C::Num>
+                let a=unsafe{&*(c.0 as *const <C::T as SweepTrait>::InnerRect)};
                 let b=unsafe{&mut *(c.1 as *mut <C::T as SweepTrait>::Inner)};               
                 let cn=ColSingle(a,b);
                 //let a=unsafe{(&*(r as *const geom::Rect),&mut *(a as *mut <C::T as BBoxTrait>::Inner))};
@@ -113,20 +114,22 @@ pub fn collide_two_rect_parallel<'a:'b,'b,A:AxisTrait,K:DynTreeTrait,F:FnMut(Col
 {
     struct Ba<'z,J:SweepTrait+Send+'z>(ColSingle<'z,J>);
     impl<'z,J:SweepTrait+Send+'z> SweepTrait for Ba<'z,J>{
-
+        type InnerRect=J::InnerRect;
         type Inner=J::Inner;
         type Num=J::Num;
 
-        fn get_mut<'a>(&'a mut self)->(&'a axgeom::Rect<J::Num>,&'a mut Self::Inner){
+        ///Destructure into the bounding box and mutable parts.
+        fn get_mut<'a>(&'a mut self)->(&'a Self::InnerRect,&'a mut Self::Inner){
             let r=&mut self.0;
             (r.0,r.1)
         }
 
-
-        fn get<'a>(&'a self)->(&'a axgeom::Rect<J::Num>,&'a Self::Inner){
+        ///Destructue into the bounding box and inner part.
+        fn get<'a>(&'a self)->(&'a Self::InnerRect,&'a Self::Inner){
             let r=&self.0;
             (r.0,r.1)
         }
+        
     }
 
     let mut buffer1:Vec<Ba<'b,K::T>>=Vec::new();

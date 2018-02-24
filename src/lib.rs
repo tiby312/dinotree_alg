@@ -6,6 +6,8 @@ extern crate rayon;
 extern crate pdqselect;
 extern crate ordered_float;
 extern crate rand;
+extern crate smallvec;
+
 
 ///Contains rebalancing code.
 mod base_kdtree;
@@ -50,24 +52,47 @@ pub trait DepthLevel{
 ///and for the dividers. 
 pub trait NumTrait:Ord+Copy+Send+Sync+std::fmt::Debug+Default{}
 
+
+//TODO move this to a closure passed to ColFind i think.
+pub trait ColFindAdd:Send+Sync{
+    fn identity()->Self;
+    fn add(&mut self,&Self);
+}
+
+pub trait InnerRect:Send+Sync{
+  type Num:NumTrait;
+  fn get(&self)->&Rect<Self::Num>;
+}
+
 ///The interface through which the tree interacts with the objects being inserted into it.
-pub trait SweepTrait:Send{
+pub trait SweepTrait:Send+Sync{
+
+    type InnerRect:InnerRect<Num=Self::Num>;
     ///The part of the object that is allowed to be mutated
     ///during the querying of the tree. It is important that
     ///the bounding boxes not be mutated during querying of the tree
     ///as that would break the invariants of the tree. (it might need to be moved
     ///to a different node)
-    type Inner:Send;
+    type Inner:ColFindAdd;
 
     ///The number trait used to compare rectangles to
     ///find colliding pairs.
     type Num:NumTrait;
 
+
+    ///Destructure into the bounding box and mutable parts.
+    fn get_mut<'a>(&'a mut self)->(&'a Self::InnerRect,&'a mut Self::Inner);
+
+    ///Destructue into the bounding box and inner part.
+    fn get<'a>(&'a self)->(&'a Self::InnerRect,&'a Self::Inner);
+    
+    /*
     ///Destructure into the bounding box and mutable parts.
     fn get_mut<'a>(&'a mut self)->(&'a Rect<Self::Num>,&'a mut Self::Inner);
 
     ///Destructue into the bounding box and inner part.
     fn get<'a>(&'a self)->(&'a Rect<Self::Num>,&'a Self::Inner);
+    */
 }
 
 ///The interface through which users can use the tree for what it is for, querying.
@@ -99,6 +124,45 @@ use tools::par;
 
 
 
+
+//Note this doesnt check all invariants.
+//e.g. doesnt check that every bot is in the tree only once.
+pub fn assert_invariant<A:AxisTrait,T:SweepTrait>(d:&DinoTree<A,T>){
+    
+    let level=d.0.get_level_desc();
+    let ll=compt::LevelIter::new(d.0.get_iter(),level);
+    use compt::CTreeIterator;
+    for (level,node) in ll.dfs_preorder_iter(){
+       
+       //println!("level={:?}",level.get_depth());
+       if level.get_depth()%2==0{
+          oned::is_sorted::<A::Next,_>(&node.range);
+
+
+          let kk=node.container_box;
+          for a in node.range.iter(){
+             let (p1,p2)=(
+                  a.get().0.get().get_range2::<A>().left(),
+                  a.get().0.get().get_range2::<A>().right());
+              assert!(kk.left()<=p1);
+              assert!(p2<=kk.right());
+          }
+       }else{
+          oned::is_sorted::<A,_>(&node.range);
+          
+          let kk=node.container_box;
+          for a in node.range.iter(){
+             let (p1,p2)=(
+                  a.get().0.get().get_range2::<A::Next>().left(),
+                  a.get().0.get().get_range2::<A::Next>().right());
+              assert!(kk.left()<=p1);
+              assert!(p2<=kk.right());
+          }
+       }
+    }       
+    
+}
+
 ///The struct that this crate revolves around.
 pub struct DinoTree<'a,A:AxisTrait,T:SweepTrait+'a>(
   DynTree<'a,A,T>
@@ -108,9 +172,17 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DinoTree<'a,A,T>{
    pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
         rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,medianstrat:&Z) -> (DinoTree<'a,A,T>,K::Bag) {
       let k=DynTree::new::<JJ,H,Z,K>(rest,tc,medianstrat);
-      (DinoTree(k.0),k.1)
+      
+      let d=DinoTree(k.0);
+
+      //TODO remove this
+      //assert_invariant(&d);
+
+      (d,k.1)
+
   }
 }
+
 
 impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTreeTrait for DinoTree<'a,A,T>{
     type T=T;
@@ -120,16 +192,16 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTreeTrait for DinoTree<'a,A,T>{
     fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
         colfind::for_all_in_rect(&mut self.0,rect,fu);
     }
-   
+
     fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
         (&mut self,mut clos:F)->K::Bag{
         let mut bb=BleekSF::new(&mut clos);            
-        colfind::for_every_col_pair_seq::<A,T,DefaultDepthLevel,_,K>(&mut self.0,&mut bb)
+        colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(&mut self.0,&mut bb)
     }
     fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
         (&mut self,clos:F)->K::Bag{
         let bb=BleekBF::new(&clos);                            
-        colfind::for_every_col_pair::<A,T,H,_,K>(&mut self.0,&bb)
+        colfind::for_every_col_pair::<_,T,H,_,K>(&mut self.0,&bb)
     }
 }
 
@@ -218,13 +290,14 @@ mod test_support{
 
 ///This contains the destructured SweepTrait for a colliding pair.
 ///The rect is read only while T::Inner is allowed to be mutated.
+//TODO change name to stat and dyn.
 pub struct ColPair<'a,T:SweepTrait+'a>{
-    pub a:(&'a Rect<T::Num>,&'a mut T::Inner),
-    pub b:(&'a Rect<T::Num>,&'a mut T::Inner)
+    pub a:(&'a T::InnerRect,&'a mut T::Inner),
+    pub b:(&'a T::InnerRect,&'a mut T::Inner)
 }
 
 ///Similar to ColPair, but for only one SweepTrait
-pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a Rect<T::Num>,pub &'a mut T::Inner);
+pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a T::InnerRect,pub &'a mut T::Inner);
 
 
 
