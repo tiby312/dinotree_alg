@@ -9,12 +9,13 @@ use axgeom::AxisTrait;
 use compt::LevelDesc;
 use tools;
 use InnerRect;
+use tools::par;
 
 ///Defines what divider-placement strategy to use.
 pub trait MedianStrat:Sync{
     type Num:NumTrait;
     ///updates median and bins.
-    fn compute<'a,A:AxisTrait,T:SweepTrait<Num=Self::Num>>(
+    fn compute<'a,JJ:par::Joiner,A:AxisTrait,T:SweepTrait<Num=Self::Num>>(
         &self,
         level:LevelDesc,
         rest:&'a mut [T],
@@ -60,7 +61,7 @@ pub mod relax{
 
     impl<N:NumTrait,D:DivMoveStrat<N=N>> MedianStrat for MedianRelax<N,D>{
         type Num=N;
-        fn compute<'a,A:AxisTrait,T:SweepTrait<Num=N>>(
+        fn compute<'a,JJ:par::Joiner,A:AxisTrait,T:SweepTrait<Num=N>>(
             &self,
             level:LevelDesc,
             rest:&'a mut [T],
@@ -73,7 +74,12 @@ pub mod relax{
             let tt0=tools::Timer2::new();
 
             //TODO only do this at upper levels??
-            let binned=oned::bin_par::<A,_>(&med,rest);
+            let binned=if JJ::is_parallel(){
+                oned::bin_par::<A,_>(&med,rest)
+            }else{
+                oned::bin::<A,_>(&med,rest)
+            };
+            
             times[0]=tt0.elapsed();
 
             //At this point we have binned into 3 bins. middile,left, and right.
@@ -114,9 +120,11 @@ pub mod relax{
             }
             times[1]=tt0.elapsed();
 
+            /*
             if level.get_depth()==0{
                 println!("med times={:?}",times);
             }
+            */
 
             //Return the divider before we moved it.
             //This is the version of the divider that was actually used to
@@ -234,7 +242,7 @@ pub mod strict{
     impl<N:NumTrait> MedianStrat for MedianStrict<N>{
         type Num=N;
         
-        fn compute<'a,A:AxisTrait,T:SweepTrait<Num=N>>(
+        fn compute<'a,JJ:par::Joiner,A:AxisTrait,T:SweepTrait<Num=N>>(
             &self,
             level:LevelDesc,
             rest:&'a mut [T],
@@ -276,8 +284,12 @@ pub mod strict{
                 
             };
 
-            let binned=oned::bin_par::<A,_>(&med,rest);
-
+            let binned=if JJ::is_parallel(){
+                oned::bin_par::<A,_>(&med,rest)
+            }else{
+                oned::bin::<A,_>(&med,rest)
+            };
+            
             (med,binned)
         }
     } 

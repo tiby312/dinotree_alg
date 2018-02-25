@@ -95,6 +95,28 @@ pub trait SweepTrait:Send+Sync{
     */
 }
 
+
+///This contains the destructured SweepTrait for a colliding pair.
+///The rect is read only while T::Inner is allowed to be mutated.
+//TODO change name to stat and dyn.
+pub struct ColPair<'a,T:SweepTrait+'a>{
+    pub a:(&'a T::InnerRect,&'a mut T::Inner),
+    pub b:(&'a T::InnerRect,&'a mut T::Inner)
+}
+
+///Similar to ColPair, but for only one SweepTrait
+pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a T::InnerRect,pub &'a mut T::Inner);
+
+
+trait ColMulti{
+    type T:SweepTrait<Inner=Self::Inner>;
+    type Inner:ColFindAdd;
+    fn identity()->Self::Inner;
+    fn add(a:&mut Self::Inner,&Self::Inner);
+    fn collide(a:ColPair<Self::T>);
+}
+
+
 ///The interface through which users can use the tree for what it is for, querying.
 pub trait DynTreeTrait{
    type T:SweepTrait<Num=Self::Num>;
@@ -204,7 +226,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTreeTrait for DinoTree<'a,A,T>{
         colfind::for_every_col_pair::<_,T,H,_,K>(&mut self.0,&bb)
     }
 }
-
+/*
 mod test_support{
   use axgeom;
   use support::Numisize;
@@ -286,18 +308,7 @@ mod test_support{
       }
     }
 }
-
-
-///This contains the destructured SweepTrait for a colliding pair.
-///The rect is read only while T::Inner is allowed to be mutated.
-//TODO change name to stat and dyn.
-pub struct ColPair<'a,T:SweepTrait+'a>{
-    pub a:(&'a T::InnerRect,&'a mut T::Inner),
-    pub b:(&'a T::InnerRect,&'a mut T::Inner)
-}
-
-///Similar to ColPair, but for only one SweepTrait
-pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a T::InnerRect,pub &'a mut T::Inner);
+*/
 
 
 

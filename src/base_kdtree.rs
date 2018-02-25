@@ -69,7 +69,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> KdTree<'a,A,T>{
             let rest=&mut [];
             use std;
 
-            let co=self::create_container_rect_par::<A,_>(rest);
+            let co=self::create_container_rect::<A,_>(rest);
             
             Node2{divider:std::default::Default::default(),container_box:co,range:rest}
         },height);
@@ -137,7 +137,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
     match restt{
         None=>{
             Sweeper::update::<A::Next,JJ>(rest);
-            let container_box=self::create_container_rect_par::<A,_>(rest);
+            let container_box=self::create_container_rect::<A,_>(rest);
             let divider=std::default::Default::default();
             *nn=Node2{divider,container_box,range:rest};
             //*nn=create_node::<A,_,JJ>(std::default::Default::default(),rest);
@@ -147,7 +147,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
         Some((lleft,rright))=>{
 
             let tt0=tools::Timer2::new();
-            let (med,binned)=medianstrat.compute::<A,_>(level,rest,&mut div.divider);
+            let (med,binned)=medianstrat.compute::<JJ,A,_>(level,rest,&mut div.divider);
             tot_time[0]=tt0.elapsed();
 
             let binned_left=binned.left;
@@ -189,7 +189,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 let ll=binned_middile.len();
                 let tt2=tools::Timer2::new();
 
-                let container_box=self::create_container_rect_par::<A,_>(binned_middile);
+                let container_box=self::create_container_rect::<A,_>(binned_middile);
                 tot_time[2]=tt2.elapsed();
 
                 if level.get_depth()==0{
@@ -252,7 +252,7 @@ mod bla{
                     let first_ra=first.get().0.get().get_range2::<A>().clone();
                     
                     use smallvec::SmallVec;
-                    let mut vecs:SmallVec<[&[T];16]> =middile.chunks(1000).collect();
+                    let mut vecs:SmallVec<[&[T];16]> =middile.chunks(2000).collect();
 
                     let res:axgeom::Range<T::Num>=
                         vecs.par_iter().map(|a|{create_container::<A,T>(a,first_ra)}).
