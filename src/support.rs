@@ -5,7 +5,6 @@ use NumTrait;
 use ordered_float::NotNaN;
 use DepthLevel;
 use compt::LevelDesc;
-use ColFindAdd;
 use InnerRect;
 
 //A convenience wrapper that implements the NumTrait around any number that implements the 
@@ -36,13 +35,13 @@ struct InnerR<X,Nu:NumTrait>{
 
 ///A generic container that implements the kdtree trait.
 #[derive(Copy,Clone,Debug)]
-pub struct BBox<Nu:NumTrait,X:InnerRect<Num=Nu>+Send+Sync,T:ColFindAdd>{
+pub struct BBox<Nu:NumTrait,X:InnerRect<Num=Nu>+Send+Sync,T:Send+Sync>{
     //rect:axgeom::Rect<Nu>,
     pub stuff:X,
     pub val:T
 }
 
-impl<Nu:NumTrait,X:InnerRect<Num=Nu>+Send+Sync,T:ColFindAdd> SweepTrait for BBox<Nu,X,T>{
+impl<Nu:NumTrait,X:InnerRect<Num=Nu>+Send+Sync,T:Send+Sync> SweepTrait for BBox<Nu,X,T>{
     type InnerRect=X;
     type Inner=T;
     type Num=Nu;
@@ -67,7 +66,7 @@ impl<Nu:NumTrait,X:InnerRect<Num=Nu>+Send+Sync,T:ColFindAdd> SweepTrait for BBox
     */
 }
 
-impl<Nu:NumTrait,X:InnerRect<Num=Nu>+Send+Sync,T:ColFindAdd> BBox<Nu,X,T>{
+impl<Nu:NumTrait,X:InnerRect<Num=Nu>+Send+Sync,T:Send+Sync> BBox<Nu,X,T>{
 
     #[inline(always)]
     pub fn new(val:T,r:X)->BBox<Nu,X,T>{
@@ -89,4 +88,89 @@ impl DepthLevel for DefaultDepthLevel{
     fn switch_to_sequential(a:LevelDesc)->bool{
         a.get_depth()>=5
     }
+}
+
+
+pub mod closure_struct{
+    use super::*;
+    use ColPair;
+    use std::marker::PhantomData;
+    use ColSeq;
+    use ColSingle;
+    use ColSing;
+    use ColMulti;
+
+    pub struct ColSeqStruct<T:SweepTrait,F:FnMut(ColPair<T>)>{
+        d:F,
+        p:PhantomData<T>
+    }
+    impl<T:SweepTrait,F:FnMut(ColPair<T>)> ColSeqStruct<T,F>{
+        pub fn new(a:F)->ColSeqStruct<T,F>{
+            ColSeqStruct{d:a,p:PhantomData}
+        }
+    }
+    impl<T:SweepTrait,F:FnMut(ColPair<T>)> ColSeq for ColSeqStruct<T,F>{
+        type T=T;
+        fn collide(&mut self,a:ColPair<Self::T>){
+            (self.d)(a);
+        }
+    }
+
+    pub struct ColSingStruct<T:SweepTrait,F:FnMut(ColSingle<T>)>{
+        d:F,
+        p:PhantomData<T>
+    }
+    impl<T:SweepTrait,F:FnMut(ColSingle<T>)> ColSingStruct<T,F>{
+        pub fn new(a:F)->ColSingStruct<T,F>{
+            ColSingStruct{d:a,p:PhantomData}
+        }
+    }
+    impl<T:SweepTrait,F:FnMut(ColSingle<T>)> ColSing for ColSingStruct<T,F>{
+        type T=T;
+        fn collide(&mut self,a:ColSingle<Self::T>){
+            (self.d)(a);
+        }
+    }
+
+    /*
+    #[derive(Copy,Clone)]
+    pub struct ColMultiStruct<
+        T:SweepTrait<Inner=I>,
+        I:Send+Sync,
+        F:Fn(ColPair<T>)+Copy+Clone,
+        F2:Fn()->I+Copy,
+        F3:Fn(&mut I,&I)+Copy
+        >{
+        a:F,
+        b:F2,
+        c:F3,
+        p:PhantomData<T>
+    }
+
+   
+
+    impl
+    <
+        T:SweepTrait<Inner=I>,
+        I:Send+Sync,
+        F:Fn(ColPair<T>)+Copy+Clone,
+        F2:Fn()->I+Copy+Clone,
+        F3:Fn(&mut I,&I)+Copy+Clone
+        >
+         ColMulti for ColMultiStruct<T,I,F,F2,F3>{
+
+        type T=T;
+        fn identity(&self)->I{
+            (self.b)();
+        }
+        fn add(&self,a:&mut I,b:&I){
+            (self.c)(a,b);
+        }
+        fn collide(&self,a:ColPair<T>){
+            (self.a)(a);
+        }
+
+    }
+    */
+    
 }

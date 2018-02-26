@@ -1,7 +1,7 @@
 
 
 use super::*;
-use oned::sup::BleekSF;
+//use oned::sup::BleekSF;
 use oned::Sweeper;
 use SweepTrait;
 use ColSingle;
@@ -78,8 +78,8 @@ impl<'a,C:DynTreeTrait+'a> Rects<'a,C>{
     ///Note the lifetime of the mutable reference in the passed function.
     ///The user is allowed to move this reference out and hold on to it for 
     ///the lifetime of this struct.
-    pub fn for_all_in_rect<F>(&mut self,rect:&axgeom::Rect<C::Num>,func:&mut F)
-        where F:FnMut(ColSingle<'a,C::T>){
+    pub fn for_all_in_rect<F:ColSing<T=C::T>>(&mut self,rect:&axgeom::Rect<C::Num>,func:&mut F)
+    {
 
         
         for k in self.rects.iter(){
@@ -89,6 +89,23 @@ impl<'a,C:DynTreeTrait+'a> Rects<'a,C>{
         }
 
         {
+            struct Wrapper<'a,F:ColSing+'a>{
+                closure:&'a mut F
+            };
+
+            impl<'a,F:ColSing+'a> ColSing for Wrapper<'a,F>{
+                type T=F::T;
+                fn collide(&mut self,c:ColSingle<Self::T>){
+                    //axgeom::Rect<C::Num>
+                    let a=unsafe{&*(c.0 as *const <F::T as SweepTrait>::InnerRect)};
+                    let b=unsafe{&mut *(c.1 as *mut <F::T as SweepTrait>::Inner)};               
+                    let cn=ColSingle(a,b);
+                    //let a=unsafe{(&*(r as *const geom::Rect),&mut *(a as *mut <C::T as BBoxTrait>::Inner))};
+                    self.closure.collide(cn);
+    
+                }
+            }
+            /*
             let mut fu=|c:ColSingle<C::T>|{
                 //axgeom::Rect<C::Num>
                 let a=unsafe{&*(c.0 as *const <C::T as SweepTrait>::InnerRect)};
@@ -97,8 +114,9 @@ impl<'a,C:DynTreeTrait+'a> Rects<'a,C>{
                 //let a=unsafe{(&*(r as *const geom::Rect),&mut *(a as *mut <C::T as BBoxTrait>::Inner))};
                 func(cn);
             };
-
-            self.tree.for_all_in_rect(rect,&mut fu);
+            */
+            let mut wrapper=Wrapper{closure:func};
+            self.tree.for_all_in_rect(rect,&mut wrapper);
         }
         
         self.rects.push(*rect);
@@ -110,8 +128,9 @@ impl<'a,C:DynTreeTrait+'a> Rects<'a,C>{
 ///Find all bots that collide along the specified axis only between two rectangles.
 ///So the bots may not actually collide in 2d space, but collide alone the x or y axis.
 ///This is useful when implementing "wrap around" behavior of bots that pass over a rectangular border.
-pub fn collide_two_rect_parallel<'a:'b,'b,A:AxisTrait,K:DynTreeTrait,F:FnMut(ColPair<K::T>)>(rects:&mut Rects<'b,K>,rect1:&Rect<K::Num>,rect2:&Rect<K::Num>,func:&mut F)
+pub fn collide_two_rect_parallel<'a:'b,'b,A:AxisTrait,K:DynTreeTrait<T=T,Num=Num>,Num:NumTrait,T:SweepTrait<Num=Num>+'b,F:ColSeq<T=T>>(rects:&mut Rects<'b,K>,rect1:&Rect<T::Num>,rect2:&Rect<T::Num>,func:&mut F)
 {
+    
     struct Ba<'z,J:SweepTrait+Send+'z>(ColSingle<'z,J>);
     impl<'z,J:SweepTrait+Send+'z> SweepTrait for Ba<'z,J>{
         type InnerRect=J::InnerRect;
@@ -132,43 +151,79 @@ pub fn collide_two_rect_parallel<'a:'b,'b,A:AxisTrait,K:DynTreeTrait,F:FnMut(Col
         
     }
 
-    let mut buffer1:Vec<Ba<'b,K::T>>=Vec::new();
-    {
-        let mut f=|cc:ColSingle<'b,K::T>|{
-            buffer1.push(Ba(cc));
-        };
-        rects.for_all_in_rect(rect1,&mut f);
+
+    struct Wrap<'c,T:SweepTrait+'c>{
+        a:Vec<Ba<'c,T>>
     }
 
-    let mut buffer2:Vec<Ba<'b,K::T>>=Vec::new();
-    {
-        let mut f=|cc:ColSingle<'b,K::T>|{
-            buffer2.push(Ba(cc));
-        };
-        rects.for_all_in_rect(rect2,&mut f);
+    impl<'c,T:SweepTrait> ColSing for Wrap<'c,T>{
+        type T=T;
+        fn collide(&mut self,cc:ColSingle<T>){
+            //TODO remove this!!!
+            let cc=unsafe{std::mem::transmute(cc)};
+            self.a.push(Ba(cc));
+        }
     }
 
+    
+    let mut buffer1={
+        let mut buffer1:Vec<Ba<'b,T>>=Vec::new();
+        let mut wrap=Wrap{a:buffer1};
+        rects.for_all_in_rect(rect1,&mut wrap);
+        wrap.a
+    };
+
+    let mut buffer2={
+        let mut buffer2:Vec<Ba<'b,T>>=Vec::new();
+        let mut wrap=Wrap{a:buffer2};
+        rects.for_all_in_rect(rect2,&mut wrap);
+        wrap.a
+    };
 
 
-    let cols:(&mut [Ba<K::T>],&mut [Ba<K::T>])=(&mut buffer1,&mut buffer2);
+    let cols:(&mut [Ba<T>],&mut [Ba<T>])=(&mut buffer1,&mut buffer2);
 
     {
         //let blee=Blee::new(axis);
 
         Sweeper::update::<A,par::Parallel>(cols.0);
         Sweeper::update::<A,par::Parallel >(cols.1);
-
+        /*
         let mut func2=|cc:ColPair<Ba<K::T>>|{
             let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};
-            func(c);
+            func.collide(c);
         };
-        let mut sweeper=Sweeper::new();
+        */
+
+
+        use std::marker::PhantomData;
+        use oned::Bleek;
+        struct Bo<T:SweepTrait,F:FnMut(ColPair<T>)>(
+            F,
+            PhantomData<T>
+        );
+
+        impl<T:SweepTrait,F:FnMut(ColPair<T>)> Bleek for Bo<T,F>{
+            type T=T;
+            fn collide(&mut self,cc:ColPair<Self::T>){
+                self.0(cc);
+            }
+        }
+        
+        let mut func2=|cc:ColPair<Ba<K::T>>|{
+            let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};
+            func.collide(c);
+        };
+        
 
         //let r1=rect1.get_range(axis);
         //let r2=rect2.get_range(axis);
         //println!("{:?}",(r1,r2));
         //let r3=&r1.get_intersection(r2).unwrap(); //TODO dont special case this
-        let mut b=BleekSF::new(&mut func2);
-        sweeper.find_bijective_parallel::<A,_>(cols,&mut b);
+        //let mut b=BleekSF::new(&mut func2);
+        let mut sweeper=Sweeper::new();
+
+        let b=Bo(func2,PhantomData);
+        sweeper.find_bijective_parallel::<A,_>(cols,b);
     }
 }

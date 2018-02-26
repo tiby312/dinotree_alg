@@ -21,12 +21,24 @@ use *;
 use support::DefaultDepthLevel;
 use treetimer::*;
 
-
-use oned::BleekSync;
+//use oned::ColMultiWrapper;
+//use oned::BleekSync;
 use oned::Bleek;
 
 
+pub struct ColMultiWrapper<C:ColMulti>(
+    pub C
+);
 
+impl<C:ColMulti> Bleek for ColMultiWrapper<C>{
+    type T=C::T;
+    fn collide(&mut self,cc:ColPair<Self::T>){
+        self.0.collide(cc);
+    }
+}
+
+
+/*
 struct BleekS<'a,B:BleekSync+'a>(
     pub &'a B
 );
@@ -37,6 +49,7 @@ impl<'a,B:BleekSync+'a> Bleek for BleekS<'a,B>{
         self.0.collide(cc);
     }
 }
+*/
 
 fn go_down<'x,
     JJ:par::Joiner,
@@ -44,20 +57,21 @@ fn go_down<'x,
     A:AxisTrait, //this axis
     B:AxisTrait, //parent axis
     C:CTreeIterator<Item=&'x mut NodeDyn<X>>+Send,
-    X:SweepTrait+'x,F:BleekSync<T=X>>
+    X:SweepTrait+'x,
+    F:ColMulti<T=X>>
     (
         sweeper:&mut Sweeper<F::T>,
         anchor:&mut &mut NodeDyn<X>,
         m:WrapGen<LevelIter<C>>,
-        func:&F) {
+        func:F) {
     
     {
         let (mut bo,rest) = m.next();
         let &mut (level,ref mut nn)=bo.get_mut();
         
         {
-            let mut b=BleekS(func);
-            self::for_every_bijective_pair::<A,B,_>(nn,anchor,sweeper,&mut b);       
+            let b=ColMultiWrapper(func.clone());
+            self::for_every_bijective_pair::<A,B,_>(nn,anchor,sweeper,b);       
         }
         match rest{
             Some((left,right))=>{
@@ -66,18 +80,18 @@ fn go_down<'x,
 
                 if B::get()==A::get(){
                     if !(div<anchor.get_container().start){
-                        self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,left,func);
+                        self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,left,func.clone());
                     };
                     if !(div>anchor.get_container().end){
-                        self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
+                        self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,right,func.clone());
                     };
                 }else{
                     if JJ::is_parallel() && !H::switch_to_sequential(level){ 
-                        self::go_down_in_parallel::<H,A::Next,B,_,_,_>(sweeper,anchor,left,right,func);
+                        self::go_down_in_parallel::<H,A::Next,B,_,_,_>(sweeper,anchor,left,right,func.clone());
                         
                     }else{
-                        self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,left,func);
-                        self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
+                        self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,left,func.clone());
+                        self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,right,func.clone());
                     }
                 }               
             },
@@ -92,13 +106,13 @@ fn go_down_in_parallel<'x,
     A:AxisTrait, //this axis
     B:AxisTrait, //parent axis
     C:CTreeIterator<Item=&'x mut NodeDyn<X>>+Send,
-    X:SweepTrait+'x,F:BleekSync<T=X>>
+    X:SweepTrait+'x,F:ColMulti<T=X>>
     (
         sweeper:&mut Sweeper<F::T>,
         anchor:&mut &mut NodeDyn<X>,
         left:WrapGen<LevelIter<C>>,
         right:WrapGen<LevelIter<C>>,
-        clos:&F) 
+        clos:F) 
 {
     //unsafely make a copy of the anchor
     //so that we can pass one to the other thread.
@@ -124,18 +138,18 @@ fn go_down_in_parallel<'x,
         let mut anchor_copy:&mut NodeDyn<X>=std::mem::transmute(Repr{start:ptr,len:lenn});
 
         for i in anchor_copy.range.iter_mut(){
-            *(i.get_mut().1)=X::Inner::identity();
+            *(i.get_mut().1)=clos.identity();
         }
         (space,anchor_copy)
     };
 
     {
         let af=||{
-            self::go_down::<par::Parallel,H,A,B,_,_,_>(sweeper,anchor,left,clos);
+            self::go_down::<par::Parallel,H,A,B,_,_,_>(sweeper,anchor,left,clos.clone());
         };
         let bf=||{
             let mut sweeper=Sweeper::new(); 
-            self::go_down::<par::Parallel,H,A,B,_,_,_>(&mut sweeper,&mut anchor_copy,right,clos);
+            self::go_down::<par::Parallel,H,A,B,_,_,_>(&mut sweeper,&mut anchor_copy,right,clos.clone());
         };
 
         //println!("doi ");
@@ -144,7 +158,7 @@ fn go_down_in_parallel<'x,
 
     for (a,b) in anchor.range.iter_mut().zip(anchor_copy.range.iter()){
         //ColFindAdd
-        a.get_mut().1.add(b.get().1);
+        clos.add(a.get_mut().1,b.get().1);
     }
 }
 
@@ -153,12 +167,12 @@ fn recurse<'x,
         JJ:par::Joiner,
         X:SweepTrait+'x,
         H:DepthLevel,
-        F:BleekSync<T=X>,
+        F:ColMulti<T=X>,
         C:CTreeIterator<Item=&'x mut NodeDyn<X>>+Send,
         K:TreeTimerTrait>(
         sweeper:&mut Sweeper<F::T>,
         m:LevelIter<C>,
-        clos:&F,mut timer_log:K) -> K::Bag{
+        clos:F,mut timer_log:K) -> K::Bag{
     
     timer_log.start();
     
@@ -170,8 +184,8 @@ fn recurse<'x,
 
     let tt0=tools::Timer2::new();     
     {
-        let mut b=BleekS(clos);
-        self::sweeper_find_2d::<A::Next,_>(sweeper,nn.get_bots(),&mut b); 
+        let mut b=ColMultiWrapper(clos.clone());
+        self::sweeper_find_2d::<A::Next,_>(sweeper,nn.get_bots(),b); 
     }
     tot_time[0]=tt0.elapsed();
 
@@ -188,10 +202,10 @@ fn recurse<'x,
                 let right=compt::WrapGen::new(&mut right);
                 
                 if JJ::is_parallel() && !H::switch_to_sequential(level){
-                    self::go_down_in_parallel::<H,A::Next,A,_,_,_>(sweeper,&mut nn,left,right,clos);
+                    self::go_down_in_parallel::<H,A::Next,A,_,_,_>(sweeper,&mut nn,left,right,clos.clone());
                 }else{
-                    self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,left,clos);
-                    self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,right,clos);
+                    self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,left,clos.clone());
+                    self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,right,clos.clone());
                 }
 
             }
@@ -201,17 +215,17 @@ fn recurse<'x,
             let (ta,tb)=if JJ::is_parallel() && !H::switch_to_sequential(level)
             {             
                 let af=|| {   
-                    self::recurse::<A::Next,par::Parallel,_,H,_,_,_>(sweeper,left,clos,ta)
+                    self::recurse::<A::Next,par::Parallel,_,H,_,_,_>(sweeper,left,clos.clone(),ta)
                 };
                 let bf= || {
                     let mut sweeper=Sweeper::new();  
-                    self::recurse::<A::Next,par::Parallel,_,H,_,_,_>(&mut sweeper,right,clos,tb)
+                    self::recurse::<A::Next,par::Parallel,_,H,_,_,_>(&mut sweeper,right,clos.clone(),tb)
                 };
                 rayon::join(af,bf)
             }else{
                 (
-                    self::recurse::<A::Next,par::Sequential,_,H,_,_,_>(sweeper,left,clos,ta),
-                    self::recurse::<A::Next,par::Sequential,_,H,_,_,_>(sweeper,right,clos,tb)
+                    self::recurse::<A::Next,par::Sequential,_,H,_,_,_>(sweeper,left,clos.clone(),ta),
+                    self::recurse::<A::Next,par::Sequential,_,H,_,_,_>(sweeper,right,clos.clone(),tb)
                 )
             };
         
@@ -219,54 +233,70 @@ fn recurse<'x,
         }
     };
     tot_time[1]=tt1.elapsed();
-    /*
-    if level.get_depth()==0{
-        println!("colfind={:?}",tot_time);
-    }
-    */
+
     k
 }
 
 
 
-pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:Bleek<T=T>,K:TreeTimerTrait>
+pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,clos:&mut F)->K::Bag{
-           
-
-    pub struct BleekSF2<T:SweepTrait,B:Bleek<T=T>>{
-        a:*mut B,
-    }
     
-    unsafe impl<T:SweepTrait,B:Bleek<T=T>> Send for BleekSF2<T,B>{}
-    unsafe impl<T:SweepTrait,B:Bleek<T=T>> Sync for BleekSF2<T,B>{}
-    impl<T:SweepTrait,B:Bleek<T=T>> Copy for BleekSF2<T,B>{}
-    impl<T:SweepTrait,B:Bleek<T=T>> Clone for BleekSF2<T,B>{
-        fn clone(&self) -> Self {
-            *self
-        }
-    }
-    impl<T:SweepTrait,B:Bleek<T=T>> BleekSync for BleekSF2<T,B>{
-        type T=B::T;
-        fn collide(&self,cc:ColPair<Self::T>){
-            unsafe{(*self.a).collide(cc)};
+    use std::marker::PhantomData;
+    use std::cell::UnsafeCell;
+
+
+    //#[derive(Copy,Clone)]
+    pub struct Wrapper<'a,F:ColSeq+'a>(
+        UnsafeCell<&'a mut F>
+    );
+
+    impl<'a,F:ColSeq+'a> Clone for Wrapper<'a,F> {
+        fn clone(&self) -> Wrapper<'a,F> {
+            unimplemented!()
         }
     }
 
-    let b=BleekSF2{a:clos};
+    impl<'a,F:ColSeq+'a> ColMulti for Wrapper<'a,F> {
+        type T=F::T;
+        fn identity(&self)-> <Self::T as SweepTrait>::Inner{
+            unimplemented!()
+        }
+        fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,b:&<Self::T as SweepTrait>::Inner){
+            unimplemented!()
+        }
+        fn collide(&self,a:ColPair<Self::T>){
+            //TODO fix this
+            //let k:&mut Wrapper<F>=unsafe{std::mem::transmute(self)};
+            let k=unsafe{&mut *self.0.get()};
+            k.collide(a);
+        }
+    }
 
+    //Unsafely implement send and Sync
+    //Safe to do since our algorithms do not do anything parallel,
+    //Since we are starting it as sequential.
+    //This is an invariant that we have to manuall uphold.
+    unsafe impl<'a,F:ColSeq+'a> Send for Wrapper<'a,F>{}
+    unsafe impl<'a,F:ColSeq+'a> Sync for Wrapper<'a,F>{}
+    
+
+    let wrapper=Wrapper(UnsafeCell::new(clos));
+    
     //All of the above is okay because we start with SEQUENTIAL
-    self::for_every_col_pair_inner::<_,par::Sequential,_,DefaultDepthLevel,_,K>(kdtree,&b)
+    self::for_every_col_pair_inner::<_,par::Sequential,_,DefaultDepthLevel,_,K>(kdtree,wrapper)
             
 }
 
-pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
-        (kdtree:&mut DynTree<A,T>,clos:&F)->K::Bag
+
+pub fn for_every_col_pair<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColMulti<T=T>,K:TreeTimerTrait>
+        (kdtree:&mut DynTree<A,T>,clos:F)->K::Bag
 {
     self::for_every_col_pair_inner::<_,par::Parallel,_,DefaultDepthLevel,_,K>(kdtree,clos)    
 }
 
-fn for_every_col_pair_inner<A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,F:BleekSync<T=T>,K:TreeTimerTrait>
-        (kdtree:&mut DynTree<A,T>,clos:&F)->K::Bag{
+fn for_every_col_pair_inner<A:AxisTrait,JJ:par::Joiner,T:SweepTrait,H:DepthLevel,F:ColMulti<T=T>,K:TreeTimerTrait>
+        (kdtree:&mut DynTree<A,T>,clos:F)->K::Bag{
 
     let height=kdtree.get_height();
     let level=kdtree.get_level_desc();
@@ -285,7 +315,7 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
     this: &mut NodeDyn<F::T>,
     parent:&mut &mut NodeDyn<F::T>,
     sweeper:&mut Sweeper<F::T>,
-    func:&mut F){
+    mut func:F){
     let this_axis=A::get();
     let parent_axis=B::get();
 
@@ -317,8 +347,8 @@ fn rect_recurse<'x,
     A:AxisTrait,
     T:SweepTrait+'x,
     C:CTreeIterator<Item=&'x mut NodeDyn<T>>,
-    F:FnMut(ColSingle<T>)>(
-    m:C,rect:&Rect<T::Num>,func:&mut F){
+    F:ColSing<T=T>>
+    (m:C,rect:&Rect<T::Num>,func:&mut F){
 
     let (nn,rest)=m.next();
     {
@@ -326,7 +356,7 @@ fn rect_recurse<'x,
         
         for i in sl{
             let a = i.get_mut();
-            func(ColSingle(a.0,a.1)); 
+            func.collide(ColSingle(a.0,a.1)); 
         }
         
     }
@@ -348,25 +378,38 @@ fn rect_recurse<'x,
 
 }
 
-pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:FnMut(ColSingle<T>)>(
+pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
         tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure: &mut F) {
     
-    let mut fu=|a:ColSingle<T>|{
-                if rect.contains_rect(a.0.get()){
-                    closure(a);
-                }
-            };
+    struct Wrapper<'a,F:ColSing+'a>{
+        rect:&'a Rect<<F::T as SweepTrait>::Num>,
+        closure:&'a mut F
+    };
+
+
+    impl<'a,F:ColSing+'a> ColSing for Wrapper<'a,F>{
+        type T=F::T;
+        fn collide(&mut self,a:ColSingle<Self::T>){
+            if self.rect.contains_rect(a.0.get()){
+                self.closure.collide(a);
+            }
+        }
+    }
+
+    let mut wrapper=Wrapper{rect,closure};
     
     let ta=tree.get_iter_mut();
-    self::rect_recurse::<A,_,_,_>(ta,rect,&mut fu);
+    self::rect_recurse::<A,_,_,_>(ta,rect,&mut wrapper);
 }
 
 
 ///UNIMPLEMENTED
+/*
 pub fn nearest_k<A:AxisTrait,T:SweepTrait,F:FnMut(ColSingle<T>)>(
      _tree:&mut DynTree<A,T>,_rect: &Rect<T::Num>, _closure: &mut F) {
     unimplemented!()
 }
+*/
 
 
 
@@ -375,12 +418,12 @@ use colfind::bl::sweeper_find_parallel_2d;
 mod bl{
     use super::*;
     use std::marker::PhantomData;
-    struct Bl<'a,A:AxisTrait,F:Bleek+'a>{
-        a:&'a mut F,
+    struct Bl<A:AxisTrait,F:Bleek>{
+        a:F,
         _p:PhantomData<A>
     }
 
-    impl<'a,A:AxisTrait,F:Bleek+'a> Bleek for Bl<'a,A,F>{
+    impl<A:AxisTrait,F:Bleek> Bleek for Bl<A,F>{
         type T=F::T;
         fn collide(&mut self,cc:ColPair<F::T>){
             //only check if the opoosite axis intersects.
@@ -393,15 +436,15 @@ mod bl{
     }
 
     //Bots a sorted along the axis.
-    pub fn sweeper_find_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots:&mut [F::T],clos2:&mut F){
+    pub fn sweeper_find_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots:&mut [F::T],clos2:F){
 
-        let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
-        sweeper.find::<A,_>(bots,&mut b);   
+        let b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
+        sweeper.find::<A,_>(bots,b);   
     }
-    pub fn sweeper_find_parallel_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots1:&mut [F::T],bots2:&mut [F::T],clos2:&mut F){
-        let mut b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
+    pub fn sweeper_find_parallel_2d<A:AxisTrait,F:Bleek>(sweeper:&mut Sweeper<F::T>,bots1:&mut [F::T],bots2:&mut [F::T],clos2:F){
+        let b:Bl<A,_>=Bl{a:clos2,_p:PhantomData};
           
-        sweeper.find_bijective_parallel::<A,_>((bots1, bots2),&mut b );
+        sweeper.find_bijective_parallel::<A,_>((bots1, bots2), b );
     }
 }
 

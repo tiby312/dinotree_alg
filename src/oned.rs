@@ -13,18 +13,15 @@ use rayon::prelude::*;
 use smallvec::SmallVec;
 use tools;
 use InnerRect;
+
+
 pub trait Bleek{
     type T:SweepTrait;
     fn collide(&mut self,cc:ColPair<Self::T>);
 }
 
-pub trait BleekSync:Sync+Copy+Clone{
-    type T:SweepTrait+Send;
-    fn collide(&self,cc:ColPair<Self::T>);
-}
 
-
-
+/*
 ///Provides contains that support converting a closure to a struct that implements Bleek.
 ///Working with closures, you have to be carful with the recursion limit. This avoids
 ///having to be careful of how many wrapper closures you make.
@@ -34,29 +31,6 @@ pub mod sup{
     use tools::PhantomSendSync;
 
 
-    pub struct BleekBF<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a>{
-        a:&'a F,
-        _p:PhantomSendSync<T>
-    }
-    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> Copy for BleekBF<'a,T,F> { }
-    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> Clone for BleekBF<'a,T,F> { 
-        fn clone(&self) -> BleekBF<'a,T,F> {
-            *self
-        }
-    }
-
-    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> BleekBF<'a,T,F>{
-        pub fn new(a:&'a F)->BleekBF<'a,T,F>{
-            BleekBF{a:a,_p:PhantomSendSync(PhantomData)}
-        }
-    }
-
-    impl<'a,T:SweepTrait+'a,F:Fn(ColPair<T>)+Sync+'a> BleekSync for BleekBF<'a,T,F>{
-        type T=T;
-        fn collide(&self,cc:ColPair<Self::T>){
-            (self.a)(cc);
-        }
-    }
 
     pub struct BleekSF<'a,T:SweepTrait+'a,F:FnMut(ColPair<T>)+'a>{
         a:&'a mut F,
@@ -75,6 +49,7 @@ pub mod sup{
         }
     }
 }
+*/
 
 unsafe fn swap_unchecked<T>(list:&mut [T],a:usize,b:usize){
     let x=list.get_unchecked_mut(a) as *mut T;
@@ -312,7 +287,7 @@ impl<I:SweepTrait> Sweeper<I>{
     ///Find colliding pairs using the mark and sweep algorithm.
     pub fn find<'a,A:AxisTrait,F: Bleek<T=I>>(
          &mut self,
-         collision_botids: &'a mut[I],func:&mut F) {
+         collision_botids: &'a mut[I],mut func:F) {
 
         //    Create a new temporary list called “activeList”.
         //    You begin on the left of your axisList, adding the first item to the activeList.
@@ -364,7 +339,7 @@ impl<I:SweepTrait> Sweeper<I>{
     pub fn find_bijective_parallel<A:AxisTrait,F: Bleek<T=I>>(
             &mut self,
             cols: (&mut [I], &mut [I]),
-            func:&mut F) {
+            mut func:F) {
     
 
         let mut xs=cols.0.iter_mut().peekable();

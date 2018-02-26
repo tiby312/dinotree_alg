@@ -1,5 +1,6 @@
 #![feature(iterator_step_by)]
 
+
 extern crate axgeom;
 extern crate compt;
 extern crate rayon;
@@ -53,12 +54,6 @@ pub trait DepthLevel{
 pub trait NumTrait:Ord+Copy+Send+Sync+std::fmt::Debug+Default{}
 
 
-//TODO move this to a closure passed to ColFind i think.
-pub trait ColFindAdd:Send+Sync{
-    fn identity()->Self;
-    fn add(&mut self,&Self);
-}
-
 pub trait InnerRect:Send+Sync{
   type Num:NumTrait;
   fn get(&self)->&Rect<Self::Num>;
@@ -68,12 +63,13 @@ pub trait InnerRect:Send+Sync{
 pub trait SweepTrait:Send+Sync{
 
     type InnerRect:InnerRect<Num=Self::Num>;
+
     ///The part of the object that is allowed to be mutated
     ///during the querying of the tree. It is important that
     ///the bounding boxes not be mutated during querying of the tree
     ///as that would break the invariants of the tree. (it might need to be moved
     ///to a different node)
-    type Inner:ColFindAdd;
+    type Inner:Send+Sync;
 
     ///The number trait used to compare rectangles to
     ///find colliding pairs.
@@ -85,14 +81,6 @@ pub trait SweepTrait:Send+Sync{
 
     ///Destructue into the bounding box and inner part.
     fn get<'a>(&'a self)->(&'a Self::InnerRect,&'a Self::Inner);
-    
-    /*
-    ///Destructure into the bounding box and mutable parts.
-    fn get_mut<'a>(&'a mut self)->(&'a Rect<Self::Num>,&'a mut Self::Inner);
-
-    ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->(&'a Rect<Self::Num>,&'a Self::Inner);
-    */
 }
 
 
@@ -108,14 +96,22 @@ pub struct ColPair<'a,T:SweepTrait+'a>{
 pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a T::InnerRect,pub &'a mut T::Inner);
 
 
-trait ColMulti{
-    type T:SweepTrait<Inner=Self::Inner>;
-    type Inner:ColFindAdd;
-    fn identity()->Self::Inner;
-    fn add(a:&mut Self::Inner,&Self::Inner);
-    fn collide(a:ColPair<Self::T>);
+pub trait ColMulti:Send+Sync+Clone{
+    type T:SweepTrait;
+    fn identity(&self)-><Self::T as SweepTrait>::Inner;
+    fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&<Self::T as SweepTrait>::Inner);
+    fn collide(&self,a:ColPair<Self::T>);
 }
 
+pub trait ColSeq{
+  type T:SweepTrait;
+  fn collide(&mut self,a:ColPair<Self::T>);
+}
+
+pub trait ColSing{
+    type T:SweepTrait;
+    fn collide(&mut self,a:ColSingle<Self::T>);  
+}
 
 ///The interface through which users can use the tree for what it is for, querying.
 pub trait DynTreeTrait{
@@ -123,28 +119,26 @@ pub trait DynTreeTrait{
    type Num:NumTrait;
 
    ///Finds all objects strictly within the specified rectangle.
-   fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
+   fn for_all_in_rect<F:ColSing<T=Self::T>>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
 
    ///Find all objects who's bounding boxes intersect in parallel.
-   fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
+   fn for_every_col_pair<
+      H:DepthLevel,
+      F:ColMulti<T=Self::T>,
+      K:TreeTimerTrait>
         (&mut self,clos:F)->K::Bag;
-
+  
    ///Find all objects who's bounding boxes intersect sequentially. 
-   fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
-        (&mut self,clos:F)->K::Bag;
+   fn for_every_col_pair_seq<F:ColSeq<T=Self::T>,K:TreeTimerTrait>
+        (&mut self,clos:&mut F)->K::Bag;
+  
 }
-
-
 
 use axgeom::AxisTrait;
 use dyntree::DynTree;
 use median::MedianStrat;
 use support::DefaultDepthLevel;
-use oned::sup::BleekBF;
-use oned::sup::BleekSF;
 use tools::par;
-
-
 
 
 //Note this doesnt check all invariants.
@@ -211,19 +205,17 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTreeTrait for DinoTree<'a,A,T>{
     type Num=T::Num;
     
 
-    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
+    fn for_all_in_rect<F:ColSing<T=T>>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F){
         colfind::for_all_in_rect(&mut self.0,rect,fu);
     }
 
-    fn for_every_col_pair_seq<F:FnMut(ColPair<Self::T>),K:TreeTimerTrait>
-        (&mut self,mut clos:F)->K::Bag{
-        let mut bb=BleekSF::new(&mut clos);            
-        colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(&mut self.0,&mut bb)
+    fn for_every_col_pair_seq<F:ColSeq<T=T>,K:TreeTimerTrait>
+        (&mut self,mut clos:&mut F)->K::Bag{            
+        colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(&mut self.0,clos)
     }
-    fn for_every_col_pair<H:DepthLevel,F:Fn(ColPair<Self::T>)+Sync,K:TreeTimerTrait>
-        (&mut self,clos:F)->K::Bag{
-        let bb=BleekBF::new(&clos);                            
-        colfind::for_every_col_pair::<_,T,H,_,K>(&mut self.0,&bb)
+    fn for_every_col_pair<H:DepthLevel,F:ColMulti<T=T>,K:TreeTimerTrait>
+        (&mut self,clos:F)->K::Bag{                          
+        colfind::for_every_col_pair::<_,T,H,_,K>(&mut self.0,clos)
     }
 }
 /*
