@@ -57,6 +57,16 @@ use tools::par;
 ///    query(&mut rects);
 ///}
 /// ```
+
+use std::marker::PhantomData;
+
+
+pub trait RectsTrait<'c>{
+    type T:SweepTrait;
+    fn collide(&mut self,a:ColSingle<'c,Self::T>);  
+}
+
+
 pub struct Rects<'a,C:DynTreeTrait+'a>{
     tree:&'a mut C,
     rects:Vec<axgeom::Rect<C::Num>>
@@ -78,7 +88,7 @@ impl<'a,C:DynTreeTrait+'a> Rects<'a,C>{
     ///Note the lifetime of the mutable reference in the passed function.
     ///The user is allowed to move this reference out and hold on to it for 
     ///the lifetime of this struct.
-    pub fn for_all_in_rect<F:ColSing<T=C::T>>(&mut self,rect:&axgeom::Rect<C::Num>,func:&mut F)
+    pub fn for_all_in_rect<F:RectsTrait<'a,T=C::T>>(&mut self,rect:&axgeom::Rect<C::Num>,func:&mut F)
     {
 
         
@@ -89,33 +99,26 @@ impl<'a,C:DynTreeTrait+'a> Rects<'a,C>{
         }
 
         {
-            struct Wrapper<'a,F:ColSing+'a>{
-                closure:&'a mut F
+            struct Wrapper<'a,'b:'a,F:RectsTrait<'b>+'a>{
+                closure:&'a mut F,
+                p:PhantomData<&'b usize>
             };
 
-            impl<'a,F:ColSing+'a> ColSing for Wrapper<'a,F>{
+            impl<'a,'b:'a,T:SweepTrait+'b,F:RectsTrait<'b,T=T>+'a> ColSing for Wrapper<'a,'b,F>{
                 type T=F::T;
                 fn collide(&mut self,c:ColSingle<Self::T>){
-                    //axgeom::Rect<C::Num>
-                    let a=unsafe{&*(c.0 as *const <F::T as SweepTrait>::InnerRect)};
-                    let b=unsafe{&mut *(c.1 as *mut <F::T as SweepTrait>::Inner)};               
+                    let (a,b)=(c.0 as *const <F::T as SweepTrait>::InnerRect,c.1 as *mut <F::T as SweepTrait>::Inner);
+                    //Unsafely extend the lifetime to accocomate the
+                    //lifetime of RectsTrait.
+                    let (a,b)=unsafe{(&*a,&mut *b)};
+                    
                     let cn=ColSingle(a,b);
-                    //let a=unsafe{(&*(r as *const geom::Rect),&mut *(a as *mut <C::T as BBoxTrait>::Inner))};
                     self.closure.collide(cn);
     
                 }
             }
-            /*
-            let mut fu=|c:ColSingle<C::T>|{
-                //axgeom::Rect<C::Num>
-                let a=unsafe{&*(c.0 as *const <C::T as SweepTrait>::InnerRect)};
-                let b=unsafe{&mut *(c.1 as *mut <C::T as SweepTrait>::Inner)};               
-                let cn=ColSingle(a,b);
-                //let a=unsafe{(&*(r as *const geom::Rect),&mut *(a as *mut <C::T as BBoxTrait>::Inner))};
-                func(cn);
-            };
-            */
-            let mut wrapper=Wrapper{closure:func};
+
+            let mut wrapper=Wrapper{closure:func,p:PhantomData};
             self.tree.for_all_in_rect(rect,&mut wrapper);
         }
         
@@ -156,11 +159,9 @@ pub fn collide_two_rect_parallel<'a:'b,'b,A:AxisTrait,K:DynTreeTrait<T=T,Num=Num
         a:Vec<Ba<'c,T>>
     }
 
-    impl<'c,T:SweepTrait> ColSing for Wrap<'c,T>{
+    impl<'c,T:SweepTrait> RectsTrait<'c> for Wrap<'c,T>{
         type T=T;
-        fn collide(&mut self,cc:ColSingle<T>){
-            //TODO remove this!!!
-            let cc=unsafe{std::mem::transmute(cc)};
+        fn collide(&mut self,cc:ColSingle<'c,T>){
             self.a.push(Ba(cc));
         }
     }

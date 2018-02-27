@@ -41,7 +41,8 @@ pub use base_kdtree::TreeCache;
 use compt::LevelDesc;
 use axgeom::Rect;
 use treetimer::*;
-
+use axgeom::XAXIS_S;
+use axgeom::YAXIS_S;
 
 ///Returns the level at which a parallel divide and conqur algorithm will switch to sequential
 pub trait DepthLevel{
@@ -86,7 +87,6 @@ pub trait SweepTrait:Send+Sync{
 
 ///This contains the destructured SweepTrait for a colliding pair.
 ///The rect is read only while T::Inner is allowed to be mutated.
-//TODO change name to stat and dyn.
 pub struct ColPair<'a,T:SweepTrait+'a>{
     pub a:(&'a T::InnerRect,&'a mut T::Inner),
     pub b:(&'a T::InnerRect,&'a mut T::Inner)
@@ -178,6 +178,102 @@ pub fn assert_invariant<A:AxisTrait,T:SweepTrait>(d:&DinoTree<A,T>){
     }       
     
 }
+
+
+
+mod ba{
+  use super::*;
+  use TreeCache;
+  use DynTree;
+
+  enum TreeCacheEnum<T:SweepTrait>{
+    Xa(TreeCache<XAXIS_S,T::Num>),
+    Ya(TreeCache<YAXIS_S,T::Num>)
+  }
+
+  struct TreeCache2<T:SweepTrait>(TreeCacheEnum<T>);
+
+  impl<T:SweepTrait> TreeCache2<T>{
+    fn new(axis:axgeom::Axis,height:usize)->TreeCache2<T>{
+      let a=if axis==axgeom::XAXIS{
+        TreeCacheEnum::Xa(TreeCache::<XAXIS_S,T::Num>::new(height))
+      }else{
+        TreeCacheEnum::Ya(TreeCache::<YAXIS_S,T::Num>::new(height))
+      };
+      TreeCache2(a)
+    }
+  }
+
+
+  enum DynTreeEnum<'a,T:SweepTrait+'a>{
+    Xa(DynTree<'a,XAXIS_S,T>),
+    Ya(DynTree<'a,YAXIS_S,T>)
+  }
+
+  struct DinoTree2<'a,T:SweepTrait+'a>(DynTreeEnum<'a,T>);
+
+  impl<'a,T:SweepTrait+'a> DinoTree2<'a,T>{
+      pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
+          rest:&'a mut [T],tc:&mut TreeCache2<T>,medianstrat:&Z)->(DinoTree2<'a,T>,K::Bag){
+
+        let d=match &mut tc.0{
+          &mut TreeCacheEnum::Xa(ref mut a)=>{
+            let k=DynTree::<XAXIS_S,T>::new::<JJ,H,Z,K>(rest,a,medianstrat);
+            (DynTreeEnum::Xa(k.0),k.1)
+          },
+          &mut TreeCacheEnum::Ya(ref mut a)=>{
+            let k=DynTree::<YAXIS_S,T>::new::<JJ,H,Z,K>(rest,a,medianstrat);
+            (DynTreeEnum::Ya(k.0),k.1)
+          }
+        };
+
+        //TODO remove this
+        //assert_invariant(&d);
+
+        (DinoTree2(d.0),d.1)
+     }
+
+
+      pub fn for_all_in_rect<F:ColSing<T=T>>(&mut self,rect:&axgeom::Rect<T::Num>,fu:&mut F){
+        match &mut self.0{
+          &mut DynTreeEnum::Xa(ref mut a)=>{
+            colfind::for_all_in_rect(a,rect,fu);
+          },
+          &mut DynTreeEnum::Ya(ref mut a)=>{
+            colfind::for_all_in_rect(a,rect,fu);
+          }
+        }
+      }
+
+      
+      pub fn for_every_col_pair_seq<F:ColSeq<T=T>,K:TreeTimerTrait>
+          (&mut self,mut clos:&mut F)->K::Bag{            
+          match &mut self.0{
+            &mut DynTreeEnum::Xa(ref mut a)=>{
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,clos)
+            },
+            &mut DynTreeEnum::Ya(ref mut a)=>{
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,clos)
+            }
+          }
+      }
+      
+      pub fn for_every_col_pair<H:DepthLevel,F:ColMulti<T=T>,K:TreeTimerTrait>
+          (&mut self,clos:F)->K::Bag{ 
+          match &mut self.0{
+            &mut DynTreeEnum::Xa(ref mut a)=>{
+              colfind::for_every_col_pair::<_,T,H,_,K>(a,clos)
+            },
+            &mut DynTreeEnum::Ya(ref mut a)=>{
+              colfind::for_every_col_pair::<_,T,H,_,K>(a,clos)
+            }
+          }                         
+      }
+  }
+}
+
+
+
 
 ///The struct that this crate revolves around.
 pub struct DinoTree<'a,A:AxisTrait,T:SweepTrait+'a>(

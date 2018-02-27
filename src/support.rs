@@ -115,7 +115,7 @@ pub mod closure_struct{
             (self.d)(a);
         }
     }
-
+    
     pub struct ColSingStruct<T:SweepTrait,F:FnMut(ColSingle<T>)>{
         d:F,
         p:PhantomData<T>
@@ -131,15 +131,14 @@ pub mod closure_struct{
             (self.d)(a);
         }
     }
-
-    /*
-    #[derive(Copy,Clone)]
+    
+    
     pub struct ColMultiStruct<
         T:SweepTrait<Inner=I>,
         I:Send+Sync,
-        F:Fn(ColPair<T>)+Copy+Clone,
-        F2:Fn()->I+Copy,
-        F3:Fn(&mut I,&I)+Copy
+        F:Fn(ColPair<T>)+Send+Sync,
+        F2:Fn()->I+Send+Sync,
+        F3:Fn(&mut I,&I)+Send+Sync
         >{
         a:F,
         b:F2,
@@ -147,21 +146,32 @@ pub mod closure_struct{
         p:PhantomData<T>
     }
 
-   
+    impl
+    <
+        T:SweepTrait<Inner=I>,
+        I:Send+Sync,
+        F:Fn(ColPair<T>)+Send+Sync,
+        F2:Fn()->I+Send+Sync,
+        F3:Fn(&mut I,&I)+Send+Sync
+        >Clone for ColMultiStruct<T,I,F,F2,F3>{
+        fn clone(&self)->Self{
+            unreachable!()
+        }
+    }
+
 
     impl
     <
         T:SweepTrait<Inner=I>,
         I:Send+Sync,
-        F:Fn(ColPair<T>)+Copy+Clone,
-        F2:Fn()->I+Copy+Clone,
-        F3:Fn(&mut I,&I)+Copy+Clone
-        >
-         ColMulti for ColMultiStruct<T,I,F,F2,F3>{
+        F:Fn(ColPair<T>)+Send+Sync,
+        F2:Fn()->I+Send+Sync,
+        F3:Fn(&mut I,&I)+Send+Sync
+        >ColMulti for ColMultiStruct<T,I,F,F2,F3>{
 
         type T=T;
         fn identity(&self)->I{
-            (self.b)();
+            (self.b)()
         }
         fn add(&self,a:&mut I,b:&I){
             (self.c)(a,b);
@@ -171,6 +181,6 @@ pub mod closure_struct{
         }
 
     }
-    */
+    
     
 }

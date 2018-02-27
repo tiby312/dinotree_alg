@@ -253,17 +253,17 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T
 
     impl<'a,F:ColSeq+'a> Clone for Wrapper<'a,F> {
         fn clone(&self) -> Wrapper<'a,F> {
-            unimplemented!()
+            unreachable!()
         }
     }
 
     impl<'a,F:ColSeq+'a> ColMulti for Wrapper<'a,F> {
         type T=F::T;
         fn identity(&self)-> <Self::T as SweepTrait>::Inner{
-            unimplemented!()
+            unreachable!()
         }
         fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,b:&<Self::T as SweepTrait>::Inner){
-            unimplemented!()
+            unreachable!()
         }
         fn collide(&self,a:ColPair<Self::T>){
             //TODO fix this
