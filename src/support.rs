@@ -133,41 +133,57 @@ pub mod closure_struct{
     }
     
     
-    pub struct ColMultiStruct<
+    pub struct ColMultiStruct<'a,
         T:SweepTrait<Inner=I>,
         I:Send+Sync,
-        F:Fn(ColPair<T>)+Send+Sync,
-        F2:Fn()->I+Send+Sync,
-        F3:Fn(&mut I,&I)+Send+Sync
+        F:Fn(ColPair<T>)+Send+Sync+'a,
+        F2:Fn()->I+Send+Sync+'a,
+        F3:Fn(&mut I,&I)+Send+Sync+'a
         >{
-        a:F,
-        b:F2,
-        c:F3,
+        a:&'a F,
+        b:&'a F2,
+        c:&'a F3,
         p:PhantomData<T>
     }
 
     impl
     <
+        'a,
         T:SweepTrait<Inner=I>,
         I:Send+Sync,
         F:Fn(ColPair<T>)+Send+Sync,
         F2:Fn()->I+Send+Sync,
         F3:Fn(&mut I,&I)+Send+Sync
-        >Clone for ColMultiStruct<T,I,F,F2,F3>{
+        > ColMultiStruct<'a,T,I,F,F2,F3>{
+        pub fn new(a:&'a F,b:&'a F2,c:&'a F3)->ColMultiStruct<'a,T,I,F,F2,F3>{
+            ColMultiStruct{a,b,c,p:PhantomData}
+        }
+    }
+
+    impl
+    <
+        'a,
+        T:SweepTrait<Inner=I>,
+        I:Send+Sync,
+        F:Fn(ColPair<T>)+Send+Sync,
+        F2:Fn()->I+Send+Sync,
+        F3:Fn(&mut I,&I)+Send+Sync
+        >Clone for ColMultiStruct<'a,T,I,F,F2,F3>{
         fn clone(&self)->Self{
-            unreachable!()
+            ColMultiStruct{a:self.a.clone(),b:self.b.clone(),c:self.c.clone(),p:PhantomData}
         }
     }
 
 
     impl
     <
+        'a,
         T:SweepTrait<Inner=I>,
         I:Send+Sync,
         F:Fn(ColPair<T>)+Send+Sync,
         F2:Fn()->I+Send+Sync,
         F3:Fn(&mut I,&I)+Send+Sync
-        >ColMulti for ColMultiStruct<T,I,F,F2,F3>{
+        >ColMulti for ColMultiStruct<'a,T,I,F,F2,F3>{
 
         type T=T;
         fn identity(&self)->I{

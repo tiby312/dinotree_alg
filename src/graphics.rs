@@ -13,6 +13,9 @@ use base_kdtree::TreeCache;
 use support::Numf32;
 use compt::LevelIter;
 use axgeom::AxisTrait;
+use ba::TreeCache2;
+
+
 
 pub trait Vertex: std::default::Default+std::clone::Clone+Send{
     fn set_pos(&mut self,x:f32,y:f32);
@@ -30,7 +33,7 @@ impl GenTreeGraphics {
         (num_nodes/2)*6
     }
 
-    pub fn update<A:AxisTrait,V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache<A,Numf32>,verticies:&mut [V],start_width:f32) {
+    pub fn update<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,verticies:&mut [V],start_width:f32) {
         Self::update2(rect,gentree,verticies,start_width);
     }
 
@@ -38,7 +41,7 @@ impl GenTreeGraphics {
     ///Updates the slice of verticies to reflect the state of the kdtree.
     ///Every median at every level is drawn as a line.
     ///Lines are drawn using 6 verticies as a trianglist.
-    fn update2<A:AxisTrait,V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache<A,Numf32>,verticies:&mut [V],start_width:f32) {
+    fn update2<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,verticies:&mut [V],start_width:f32) {
 
         struct Node<'a, V:Vertex+'a>{
             a:&'a mut [V]
@@ -70,20 +73,23 @@ impl GenTreeGraphics {
         let zip=compt::LevelIter::new(d1.zip(d2),level);
         //let ddd=DivAxisIter::new(gentree.get_starting_axis(),zip);
         
-        fn recc<'a,A:AxisTrait,V:Vertex+'a,D:CTreeIterator<Item=(&'a DivNode<Numf32>,&'a mut Node<'a,V>)>>
-            (height:usize,rect:Rect<Numf32>,d:LevelIter<D>,width:f32)
+        fn recc<'a,V:Vertex+'a,D:CTreeIterator<Item=(&'a DivNode<Numf32>,&'a mut Node<'a,V>)>>
+            (axis:axgeom::Axis,height:usize,rect:Rect<Numf32>,d:LevelIter<D>,width:f32)
             {
-                let div_axis=A::get();
+                //let div_axis=A::get();
+                let div_axis=axis;
                 match d.next(){
                     ((dd,nn),Some((left,right)))=>{
-                        let line_axis=A::Next::get();//div_axis.get_line();
+                        let line_axis=axis.next();
+
+                        //let line_axis=A::Next::get();//div_axis.get_line();
                         let range=rect.get_range(line_axis);
                         draw_node(height,*range,nn.0,(div_axis,dd),nn.1.a,width);
                         
                         let (b, c) = rect.subdivide(*nn.0.divider(), div_axis);
 
-                        recc::<A::Next,_,_>(height,b,left,width*0.9);
-                        recc::<A::Next,_,_>(height,c,right,width*0.9);
+                        recc::<_,_>(axis.next(),height,b,left,width*0.9);
+                        recc::<_,_>(axis.next(),height,c,right,width*0.9);
                     },
                     ((_dd,_nn),None)=>{
 
@@ -91,7 +97,7 @@ impl GenTreeGraphics {
                 }
 
             }
-        recc::<A,_,_>(height,rect,zip,start_width);
+        recc::<_,_>(gentree.get_axis(),height,rect,zip,start_width);
     }
 
 }

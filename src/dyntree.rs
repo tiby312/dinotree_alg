@@ -11,7 +11,8 @@ use tree_alloc::NodeDyn;
 use axgeom::AxisTrait;
 use std::marker::PhantomData;
 use base_kdtree::Node2;
-use TreeCache;
+//use TreeCache;
+use base_kdtree::TreeCache;
 use treetimer::*;
 use super::*;
 

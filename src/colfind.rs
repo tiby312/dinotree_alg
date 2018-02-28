@@ -26,6 +26,25 @@ use treetimer::*;
 use oned::Bleek;
 
 
+pub trait ColMulti:Send+Sync+Clone{
+    type T:SweepTrait;
+    fn identity(&self)-><Self::T as SweepTrait>::Inner;
+    fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&<Self::T as SweepTrait>::Inner);
+    fn collide(&self,a:ColPair<Self::T>);
+}
+
+pub trait ColSeq{
+  type T:SweepTrait;
+  fn collide(&mut self,a:ColPair<Self::T>);
+}
+
+pub trait ColSing{
+    type T:SweepTrait;
+    fn collide(&mut self,a:ColSingle<Self::T>);  
+}
+
+
+
 pub struct ColMultiWrapper<C:ColMulti>(
     pub C
 );
