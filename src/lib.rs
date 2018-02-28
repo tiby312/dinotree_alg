@@ -36,7 +36,7 @@ pub use multirect::collide_two_rect_parallel;
 ///Contains tree level by level timing collection code. 
 pub mod treetimer;
 ///Contains misc tools
-pub mod tools;
+mod tools;
 
 
 //pub use base_kdtree::TreeCache;
