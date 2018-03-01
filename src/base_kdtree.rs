@@ -17,6 +17,8 @@ pub struct TreeCache<A:AxisTrait,Nu:NumTrait>{
     medtree:compt::GenTree<DivNode<Nu>>,
     _p:PhantomData<A>
 }
+
+
 impl<A:AxisTrait,Nu:NumTrait> TreeCache<A,Nu>{
     ///The tree cache contains within it a tree to keep a persistant state between construction of the kdtree.
     ///So the height of the kdtree is decided here, before the creation of the tree.
@@ -215,7 +217,7 @@ mod bla{
             match res{
                 Some((first,rest))=>{
 
-                    let first_ra=first.get().0.get().get_range2::<A>().clone();
+                    let first_ra=first.get().0.get_range2::<A>().clone();
                     
                     create_container::<A,T>(rest,first_ra)
                 },
@@ -237,7 +239,7 @@ mod bla{
             match res{
                 Some((first,rest))=>{
 
-                    let first_ra=first.get().0.get().get_range2::<A>().clone();
+                    let first_ra=first.get().0.get_range2::<A>().clone();
                     
                     use smallvec::SmallVec;
                     let mut vecs:SmallVec<[&[T];16]> =middile.chunks(2000).collect();
@@ -264,7 +266,7 @@ mod bla{
     fn create_container<A:AxisTrait,T:SweepTrait>(rest:&[T],mut container_rect:axgeom::Range<T::Num>)->axgeom::Range<T::Num>{
         
         for i in rest{
-            container_rect.grow_to_fit(i.get().0.get().get_range2::<A>());
+            container_rect.grow_to_fit(i.get().0.get_range2::<A>());
         }
         container_rect
    

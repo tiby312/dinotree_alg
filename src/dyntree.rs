@@ -93,17 +93,16 @@ pub struct Cont<'b,T:'b>{
 }
 
 impl<'b,T:'b+SweepTrait+Send> SweepTrait for Cont<'b,T>{
-    type InnerRect=T::InnerRect;
     type Inner=T::Inner;
     type Num=T::Num;
 
     ///Destructure into the bounding box and mutable parts.
-    fn get_mut<'a>(&'a mut self)->(&'a Self::InnerRect,&'a mut Self::Inner){
+    fn get_mut<'a>(&'a mut self)->(&'a Rect<T::Num>,&'a mut Self::Inner){
         self.a.get_mut()
     }
 
     ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->(&'a Self::InnerRect,&'a Self::Inner){
+    fn get<'a>(&'a self)->(&'a Rect<T::Num>,&'a Self::Inner){
         self.a.get()
     }
     /*

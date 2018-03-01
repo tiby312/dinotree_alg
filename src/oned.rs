@@ -178,7 +178,7 @@ pub fn bin<'a,'b,A:AxisTrait,X:SweepTrait>(med:&X::Num,bots:&'b mut [X])->Binned
     for index_at in 0..bot_len{
         unsafe{
             
-            match Accessor::<A>::get(bots.get_unchecked(index_at).get().0.get() ).left_or_right_or_contain(med){
+            match Accessor::<A>::get(bots.get_unchecked(index_at).get().0 ).left_or_right_or_contain(med){
                 
                 //If the divider is less than the bot
                 std::cmp::Ordering::Equal=>{
@@ -222,8 +222,8 @@ pub fn is_sorted<A:AxisTrait,I:SweepTrait>(collision_botids:&[I]){
     
     for i in &collision_botids[1..]{
          let (a,b)=(i,last);
-         use InnerRect;
-            let (p1,p2)=(Accessor::<A>::get(a.get().0.get()).left(),Accessor::<A>::get(b.get().0.get()).left());
+         
+         let (p1,p2)=(Accessor::<A>::get(a.get().0).left(),Accessor::<A>::get(b.get().0).left());
         
         assert!(p1>=p2);
         last=i;
@@ -245,7 +245,7 @@ impl<I:SweepTrait> Sweeper<I>{
     pub fn update<A:AxisTrait,JJ:par::Joiner>(collision_botids: &mut [I]) {
 
         let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
-            let (p1,p2)=(Accessor::<A>::get(a.get().0.get()).left(),Accessor::<A>::get(b.get().0.get()).left());
+            let (p1,p2)=(Accessor::<A>::get(a.get().0).left(),Accessor::<A>::get(b.get().0).left());
             if p1 > p2 {
                 return std::cmp::Ordering::Greater;
             }
@@ -296,12 +296,12 @@ impl<I:SweepTrait> Sweeper<I>{
            
             {
                 let (curr_rect,curr_bot_id_val)=curr_bot_id.get_mut();
-                let crr=Accessor::<A>::get(curr_rect.get());
+                let crr=Accessor::<A>::get(curr_rect);
 
                 //change this to do retain and then iter
                 active.retain(|that_bot_ind| {
                     let (that_rect,_)=that_bot_ind.get();
-                    let brr=Accessor::<A>::get(that_rect.get());
+                    let brr=Accessor::<A>::get(that_rect);
 
                     if brr.right()<crr.left() {
                         false
@@ -340,7 +340,7 @@ impl<I:SweepTrait> Sweeper<I>{
             while xs.peek().is_some(){
                 let v={
                     let x=xs.peek().unwrap();
-                    Accessor::<A>::get(x.get().0.get()).left()>Accessor::<A>::get(y.get().0.get()).right()
+                    Accessor::<A>::get(x.get().0).left()>Accessor::<A>::get(y.get().0).right()
                 };
                 if v{
                     break;
@@ -353,7 +353,7 @@ impl<I:SweepTrait> Sweeper<I>{
             
 
             active_x.retain(|x:&mut &mut I|{
-                if Accessor::<A>::get(x.get().0.get()).right()<Accessor::<A>::get(y.get().0.get()).left(){
+                if Accessor::<A>::get(x.get().0).right()<Accessor::<A>::get(y.get().0).left(){
                     false
                 }else{
                     true
@@ -392,7 +392,7 @@ impl<I:SweepTrait> Sweeper<I>{
 
         let mut start=0;
         for (e,i) in arr.iter().enumerate(){
-            let rr=Accessor::<A>::get(i.get().0.get());
+            let rr=Accessor::<A>::get(i.get().0);
             if rr.right()>=range.left(){
                 start=e;
                 break;
@@ -401,7 +401,7 @@ impl<I:SweepTrait> Sweeper<I>{
         
         let mut end=arr.len();
         for (e,i) in arr[start..].iter().enumerate(){
-            let rr=Accessor::<A>::get(i.get().0.get());
+            let rr=Accessor::<A>::get(i.get().0);
             if rr.left()>range.right(){
                 end=start+e;
                 break;

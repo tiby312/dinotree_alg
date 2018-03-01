@@ -4,91 +4,76 @@ use support::Numf32;
 use compt::GenTree;
 
 
-
+///The trait that your vertex object needs to implement to be used
+///in the functions in this crate.
 pub trait Vertex: std::default::Default+std::clone::Clone+Send{
     fn set_pos(&mut self,x:f32,y:f32);
 }
 
-
-///Adds functionality to draw the state of the tree.
-pub struct GenTreeGraphics {
-
+///Returns the number of verticies. Pass a slice of this size to update().
+pub fn get_num_verticies(height:usize)->usize{
+    let num_nodes=compt::compute_num_nodes(height);
+    (num_nodes/2)*6
 }
-impl GenTreeGraphics {
 
-    pub fn get_num_verticies(height:usize)->usize{
-        let num_nodes=compt::compute_num_nodes(height);
-        (num_nodes/2)*6
-    }
+///Panics if the slice given has a length not equal to what is returned by get_num_verticies().
+pub fn update<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,verticies:&mut [V],start_width:f32) {
+  
+    struct Node<'a, V:Vertex+'a>{
+        a:&'a mut [V]
+    };
 
-    pub fn update<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,verticies:&mut [V],start_width:f32) {
-        Self::update2(rect,gentree,verticies,start_width);
-    }
+    let a=self::get_num_verticies(gentree.get_tree().get_height());
+    let b=verticies.len();
+    assert_eq!( a,b);
 
+    let height=gentree.get_tree().get_height();
+    let mut vert_tree={
+        let mut va=verticies;
+        let nodes:GenTree<Node<V>>=GenTree::from_bfs(&mut ||{
+            let v=std::mem::replace(&mut va,&mut []);
+            let (a,b)=v.split_at_mut(6);
 
-    ///Updates the slice of verticies to reflect the state of the kdtree.
-    ///Every median at every level is drawn as a line.
-    ///Lines are drawn using 6 verticies as a trianglist.
-    fn update2<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,verticies:&mut [V],start_width:f32) {
+            std::mem::replace(&mut va,b);
 
-        struct Node<'a, V:Vertex+'a>{
-            a:&'a mut [V]
-        };
-
-        let a=Self::get_num_verticies(gentree.get_tree().get_height());
-        let b=verticies.len();
-        assert_eq!( a,b);
-
-        let height=gentree.get_tree().get_height();
-        let mut vert_tree={
-            let mut va=verticies;
-            let nodes:GenTree<Node<V>>=GenTree::from_bfs(&mut ||{
-                let v=std::mem::replace(&mut va,&mut []);
-                let (a,b)=v.split_at_mut(6);
-
-                std::mem::replace(&mut va,b);
-
-                Node{a:a}
-            
-            },gentree.get_tree().get_height()-1);
-            nodes
-        };
-
-
-        let level=gentree.get_tree().get_level_desc();
-        let d1=gentree.get_tree().create_down();
-        let d2=vert_tree.create_down_mut();
-        let zip=compt::LevelIter::new(d1.zip(d2),level);
-        //let ddd=DivAxisIter::new(gentree.get_starting_axis(),zip);
+            Node{a:a}
         
-        fn recc<'a,V:Vertex+'a,D:CTreeIterator<Item=(&'a DivNode<Numf32>,&'a mut Node<'a,V>)>>
-            (axis:axgeom::Axis,height:usize,rect:Rect<Numf32>,d:LevelIter<D>,width:f32)
-            {
-                //let div_axis=A::get();
-                let div_axis=axis;
-                match d.next(){
-                    ((dd,nn),Some((left,right)))=>{
-                        let line_axis=axis.next();
+        },gentree.get_tree().get_height()-1);
+        nodes
+    };
 
-                        //let line_axis=A::Next::get();//div_axis.get_line();
-                        let range=rect.get_range(line_axis);
-                        draw_node(height,*range,nn.0,(div_axis,dd),nn.1.a,width);
-                        
-                        let (b, c) = rect.subdivide(*nn.0.divider(), div_axis);
 
-                        recc::<_,_>(axis.next(),height,b,left,width*0.9);
-                        recc::<_,_>(axis.next(),height,c,right,width*0.9);
-                    },
-                    ((_dd,_nn),None)=>{
+    let level=gentree.get_tree().get_level_desc();
+    let d1=gentree.get_tree().create_down();
+    let d2=vert_tree.create_down_mut();
+    let zip=compt::LevelIter::new(d1.zip(d2),level);
+    
+    fn recc<'a,V:Vertex+'a,D:CTreeIterator<Item=(&'a DivNode<Numf32>,&'a mut Node<'a,V>)>>
+        (axis:axgeom::Axis,height:usize,rect:Rect<Numf32>,d:LevelIter<D>,width:f32)
+        {
+            let div_axis=axis;
+            match d.next(){
+                ((dd,nn),Some((left,right)))=>{
+                    let line_axis=axis.next();
 
-                    }
+                    let range=rect.get_range(line_axis);
+                    draw_node(height,*range,nn.0,(div_axis,dd),nn.1.a,width);
+                    
+                    let (b, c) = rect.subdivide(*nn.0.divider(), div_axis);
+
+                    recc::<_,_>(axis.next(),height,b,left,width*0.9);
+                    recc::<_,_>(axis.next(),height,c,right,width*0.9);
+                },
+                ((_dd,_nn),None)=>{
+
                 }
-
             }
-        recc::<_,_>(gentree.get_axis(),height,rect,zip,start_width);
-    }
 
+        }
+    recc::<_,_>(gentree.get_axis(),height,rect,zip,start_width);
 }
+
+
 fn draw_node<V:Vertex>(height:usize,range:Range<Numf32>,div:&DivNode<Numf32>,faafa:(Axis,compt::LevelDesc),verticies:&mut [V],width:f32){
         let (div_axis,level)=faafa;
         let line_axis=div_axis.next();

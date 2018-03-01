@@ -6,6 +6,7 @@ extern crate compt;
 extern crate rayon;
 extern crate pdqselect;
 extern crate ordered_float;
+#[cfg(test)]
 extern crate rand;
 extern crate smallvec;
 
@@ -26,7 +27,11 @@ mod inner_prelude{
   pub use *;
 }
 
-
+/// Conveniently include commonly used symbols in this crate.
+/// Use like this:
+/// ```
+/// use dinotree::prelude::*
+/// ```
 pub mod prelude{
   pub use ColPair;
   pub use ColSingle;
@@ -34,17 +39,27 @@ pub mod prelude{
   pub use Rects;
   pub use TreeCache2;
   pub use DepthLevel;
-  pub use InnerRect;
   pub use NumTrait;
   pub use RectsTreeTrait;
   pub use SweepTrait;
   pub use median::*;
   pub use median::relax::*;
   pub use median::strict::*;
-  pub use graphics::GenTreeGraphics;
   pub use par;
   pub use treetimer;
 }
+
+
+///Provides functionality to draw the dividers of a dinotree.
+pub mod graphics;
+///Contains the different median finding strategies.
+pub mod median;
+
+///Contains convenience structs.
+pub mod support;
+
+///Contains tree level by level timing collection code. 
+pub mod treetimer;
 
 ///Contains rebalancing code.
 mod base_kdtree;
@@ -58,24 +73,11 @@ mod colfind;
 mod dyntree;
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
-
-///Provides functionality to draw the dividers of a dinotree.
-pub mod graphics;
-///Contains the different median finding strategies.
-pub mod median;
-///Contains conveniance structs.
-pub mod support;
 ///Contains code to query multiple non intersecting rectangles.
 mod multirect;
-//pub use multirect::Rects;
-pub use multirect::collide_two_rect_parallel;
-///Contains tree level by level timing collection code. 
-pub mod treetimer;
 ///Contains misc tools
 mod tools;
 
-
-//pub use base_kdtree::TreeCache;
 use base_kdtree::TreeCache;
 use compt::LevelDesc;
 use axgeom::Rect;
@@ -98,16 +100,8 @@ pub trait DepthLevel{
 pub trait NumTrait:Ord+Copy+Send+Sync+std::fmt::Debug+Default{}
 
 
-pub trait InnerRect:Send+Sync{
-  type Num:NumTrait;
-  fn get(&self)->&Rect<Self::Num>;
-}
-
 ///The interface through which the tree interacts with the objects being inserted into it.
 pub trait SweepTrait:Send+Sync{
-
-    type InnerRect:InnerRect<Num=Self::Num>;
-
     ///The part of the object that is allowed to be mutated
     ///during the querying of the tree. It is important that
     ///the bounding boxes not be mutated during querying of the tree
@@ -121,46 +115,24 @@ pub trait SweepTrait:Send+Sync{
 
 
     ///Destructure into the bounding box and mutable parts.
-    fn get_mut<'a>(&'a mut self)->(&'a Self::InnerRect,&'a mut Self::Inner);
+    fn get_mut<'a>(&'a mut self)->(&'a Rect<Self::Num>,&'a mut Self::Inner);
 
     ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->(&'a Self::InnerRect,&'a Self::Inner);
+    fn get<'a>(&'a self)->(&'a Rect<Self::Num>,&'a Self::Inner);
 }
 
 
 ///This contains the destructured SweepTrait for a colliding pair.
 ///The rect is read only while T::Inner is allowed to be mutated.
 pub struct ColPair<'a,T:SweepTrait+'a>{
-    pub a:(&'a T::InnerRect,&'a mut T::Inner),
-    pub b:(&'a T::InnerRect,&'a mut T::Inner)
+    pub a:(&'a Rect<T::Num>,&'a mut T::Inner),
+    pub b:(&'a Rect<T::Num>,&'a mut T::Inner)
 }
 
 ///Similar to ColPair, but for only one SweepTrait
-pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a T::InnerRect,pub &'a mut T::Inner);
+pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a Rect<T::Num>,pub &'a mut T::Inner);
 
 
-/*
-///The interface through which users can use the tree for what it is for, querying.
-pub trait DynTreeTrait{
-   type T:SweepTrait<Num=Self::Num>;
-   type Num:NumTrait;
-
-   ///Finds all objects strictly within the specified rectangle.
-   fn for_all_in_rect<F:ColSing<T=Self::T>>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:&mut F);
-
-   ///Find all objects who's bounding boxes intersect in parallel.
-   fn for_every_col_pair<
-      H:DepthLevel,
-      F:ColMulti<T=Self::T>,
-      K:TreeTimerTrait>
-        (&mut self,clos:F)->K::Bag;
-  
-   ///Find all objects who's bounding boxes intersect sequentially. 
-   fn for_every_col_pair_seq<F:ColSeq<T=Self::T>,K:TreeTimerTrait>
-        (&mut self,clos:&mut F)->K::Bag;
-  
-}
-*/
 
 use axgeom::AxisTrait;
 use dyntree::DynTree;
@@ -168,10 +140,10 @@ use median::MedianStrat;
 use support::DefaultDepthLevel;
 
 
-
+/*
 //Note this doesnt check all invariants.
 //e.g. doesnt check that every bot is in the tree only once.
-fn assert_invariant<A:AxisTrait,T:SweepTrait>(d:&DinoTree<A,T>){
+fn assert_invariant<T:SweepTrait>(d:&DinoTree2<T>){
     
     let level=d.0.get_level_desc();
     let ll=compt::LevelIter::new(d.0.get_iter(),level);
@@ -206,6 +178,7 @@ fn assert_invariant<A:AxisTrait,T:SweepTrait>(d:&DinoTree<A,T>){
     }       
     
 }
+*/
 
 
 
@@ -216,6 +189,55 @@ pub trait RectsTreeTrait{
     fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:F);
 }
 
+///A construct to allow querying non-intersecting rectangles to retrive mutable references to what is inside them.
+///
+///#Examples
+/// ```ignore //TODO fix
+///extern crate axgeom;
+///extern crate collie;
+///use collie::kdtree::{TreeCache,KdTreeWrapper,KdTreeReal};
+///use collie::extensions::Rects;
+///use collie::support::BBox; 
+///use collie::ColSingle;
+///
+///fn main(){    
+///    #[derive(Copy,Clone)]
+///    struct Bot{
+///        id:usize
+///    }
+///    let b1=BBox::new(Bot{id:0},axgeom::Rect::new(0,10,  0,10));
+///    let b2=BBox::new(Bot{id:1},axgeom::Rect::new(5,15,  5,15));
+///    let b3=BBox::new(Bot{id:2},axgeom::Rect::new(22,40,  22,40));
+///    let mut k=vec!(b1,b2,b3);
+///
+///    let world=axgeom::Rect::new(0,20,0,20);
+///    let mut tc=TreeCache::new(axgeom::XAXIS,5,&mut k);
+///
+///    let mut kd=KdTreeWrapper::new(&mut tc,&mut k);
+///    let mut k=kd.get();
+///    let mut rects=Rects::new(&mut k);//.create_rects();
+///
+///    //Need to create a seperate function so that 
+///    //we can get a named lifetime from the closure.
+///    fn query<'b>(rects:&mut Rects<'b,KdTreeReal<BBox<isize,Bot>>>){
+///
+///        let mut bots1=Vec::new();
+///        rects.for_all_in_rect(
+///                    &axgeom::Rect::new(0,20,0,20),
+///                    &mut |cc:ColSingle<'b,BBox<isize,Bot>>|{bots1.push(cc.1)});
+///
+///        let mut bots2=Vec::new();
+///        rects.for_all_in_rect(
+///                    &axgeom::Rect::new(21,50,21,50),
+///                    &mut |cc:ColSingle<'b,BBox<isize,Bot>>|{bots2.push(cc.1)});
+///
+///        assert!(bots1[0].id==0);
+///        assert!(bots1[1].id==1);
+///        assert!(bots2[0].id==2);
+///    }
+///    query(&mut rects);
+///}
+/// ```
 pub struct Rects<'a,C:RectsTreeTrait+'a>{
     tree:&'a mut C,
     rects:Vec<axgeom::Rect<C::Num>>
@@ -245,7 +267,7 @@ impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
 
         {
             let wrapper=|c:ColSingle<C::T>|{
-                let (a,b)=(c.0 as *const <C::T as SweepTrait>::InnerRect,c.1 as *mut <C::T as SweepTrait>::Inner);
+                let (a,b)=(c.0 as *const Rect<<C::T as SweepTrait>::Num>,c.1 as *mut <C::T as SweepTrait>::Inner);
                 //Unsafely extend the lifetime to accocomate the
                 //lifetime of RectsTrait.
                 let (a,b)=unsafe{(&*a,&mut *b)};
@@ -347,7 +369,7 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync+'a,
-          F2:Fn()->I+Send+Sync+'a,
+          F2:Fn(&mut I)+Send+Sync+'a,
           F3:Fn(&mut I,&I)+Send+Sync+'a
           >{
           a:&'a F,
@@ -362,7 +384,7 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn()->I+Send+Sync,
+          F2:Fn(&mut I)+Send+Sync+'a,
           F3:Fn(&mut I,&I)+Send+Sync
           > ColMultiStruct<'a,T,I,F,F2,F3>{
           pub fn new(a:&'a F,b:&'a F2,c:&'a F3)->ColMultiStruct<'a,T,I,F,F2,F3>{
@@ -370,20 +392,32 @@ mod ba{
           }
       }
 
+
       impl
       <
           'a,
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn()->I+Send+Sync,
+          F2:Fn(&mut I)+Send+Sync+'a,
+          F3:Fn(&mut I,&I)+Send+Sync
+          >Copy for ColMultiStruct<'a,T,I,F,F2,F3>{
+          
+      }
+
+      impl
+      <
+          'a,
+          T:SweepTrait<Inner=I>,
+          I:Send+Sync,
+          F:Fn(ColPair<T>)+Send+Sync,
+          F2:Fn(&mut I)+Send+Sync+'a,
           F3:Fn(&mut I,&I)+Send+Sync
           >Clone for ColMultiStruct<'a,T,I,F,F2,F3>{
           fn clone(&self)->Self{
-              ColMultiStruct{a:self.a.clone(),b:self.b.clone(),c:self.c.clone(),p:PhantomData}
+              *self
           }
       }
-
 
       impl
       <
@@ -391,13 +425,13 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn()->I+Send+Sync,
+          F2:Fn(&mut I)+Send+Sync+'a,
           F3:Fn(&mut I,&I)+Send+Sync
           >ColMulti for ColMultiStruct<'a,T,I,F,F2,F3>{
 
           type T=T;
-          fn identity(&self)->I{
-              (self.b)()
+          fn zero(&self,a:&mut I){
+              (self.b)(a);
           }
           fn add(&self,a:&mut I,b:&I){
               (self.c)(a,b);
@@ -418,6 +452,7 @@ mod ba{
   pub struct TreeCache2<T:NumTrait>(TreeCacheEnum<T>);
 
   impl<T:NumTrait> TreeCache2<T>{
+    
     pub fn new(axis:axgeom::Axis,height:usize)->TreeCache2<T>{
       let a=if axis==axgeom::XAXIS{
         TreeCacheEnum::Xa(TreeCache::<XAXIS_S,T>::new(height))
@@ -426,6 +461,7 @@ mod ba{
       };
       TreeCache2(a)
     }
+
     pub fn new_tree<'a,TT:SweepTrait<Num=T>,JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T>,K:TreeTimerTrait>(
           &mut self,rest:&'a mut [TT],medianstrat:&Z)->(DinoTree2<'a,TT>,K::Bag){
 
@@ -445,7 +481,8 @@ mod ba{
 
         (DinoTree2(d.0),d.1)
      }
-    pub fn get_tree(&self)->&compt::GenTree<DivNode<T>>{
+    
+    pub(crate) fn get_tree(&self)->&compt::GenTree<DivNode<T>>{
       match &self.0{
         &TreeCacheEnum::Xa(ref a)=>{
           //unsafe{std::mem::transmute(a.get_tree())}
@@ -458,7 +495,8 @@ mod ba{
        }
 
     }
-    pub fn get_num_nodes(&self)->usize{
+
+    pub(crate) fn get_num_nodes(&self)->usize{
         match &self.0{
         &TreeCacheEnum::Xa(ref a)=>{
           a.get_num_nodes()
@@ -469,7 +507,7 @@ mod ba{
        }
     }
 
-    pub fn get_height(&self)->usize{
+    pub(crate) fn get_height(&self)->usize{
         match &self.0{
         &TreeCacheEnum::Xa(ref a)=>{
           a.get_height()
@@ -480,7 +518,7 @@ mod ba{
        }
     }  
 
-    pub fn get_axis(&self)->axgeom::Axis{
+    pub(crate) fn get_axis(&self)->axgeom::Axis{
        match &self.0{
         &TreeCacheEnum::Xa(_)=>{
           axgeom::XAXIS
@@ -544,7 +582,7 @@ mod ba{
 
       pub fn for_every_col_pair<
         F:Fn(ColPair<T>)+Send+Sync,
-        F2:Fn()->T::Inner+Send+Sync,
+        F2:Fn(&mut T::Inner)+Send+Sync,
         F3:Fn(&mut T::Inner,&T::Inner)+Send+Sync,
         D:DepthLevel,
         K:TreeTimerTrait>(&mut self,a:F,b:F2,c:F3)->K::Bag{
@@ -592,90 +630,15 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DinoTree<'a,A,T>{
 
 /*
 mod test_support{
-  use axgeom;
-  use support::Numisize;
-  use std;
-  use rand;
-  use rand::{ SeedableRng, StdRng};
-  use rand::distributions::{IndependentSample, Range};
-    
-
-  #[derive(Clone,Debug)]
-  pub struct Bot{
-    pub id:usize,
-    pub col:Vec<usize>
-  }
-
-  pub fn make_rect(a:(isize,isize),b:(isize,isize))->axgeom::Rect<Numisize>{
-    axgeom::Rect::new(
-      Numisize(a.0),
-      Numisize(a.1),
-      Numisize(b.0),
-      Numisize(b.1),
-     )
-  }
-
-  pub fn create_rect_from_point(a:(Numisize,Numisize))->axgeom::Rect<Numisize>{
-    let r:isize=10;
-    let x=a.0;
-    let y=a.1;
-    make_rect((x.0-r,x.0+r),(y.0-r,y.0+r))
-  }
-  pub fn create_unordered(a:&Bot,b:&Bot)->(usize,usize){
-    if a.id<b.id{
-      (a.id,b.id)
-    }else{
-      (b.id,a.id)
-    }
-  }
-  pub fn compair_bot_pair(a:&(usize,usize),b:&(usize,usize))->std::cmp::Ordering{
-      if a.0<b.0{
-          std::cmp::Ordering::Less
-      }else if a.0>b.0{
-          std::cmp::Ordering::Greater
-      }else{
-          if a.1<b.1{
-              std::cmp::Ordering::Less
-          }else if a.1>b.1{
-              std::cmp::Ordering::Greater
-          }else{
-              std::cmp::Ordering::Equal
-          }
-      }
-  }
-
-
-    pub struct PointGenerator{
-        rng:StdRng,
-        xdist:Range<isize>,
-        ydist:Range<isize>
-    }
-    impl PointGenerator{
-      pub fn new(a:&axgeom::Rect<Numisize>,seed:&[usize])->PointGenerator{
-         use rand::distributions::IndependentSample;
-    
-         let mut rng: StdRng = SeedableRng::from_seed(seed);
-
-         let rr=a.get_range2::<axgeom::XAXIS_S>();
-         let xdist=rand::distributions::Range::new(rr.start.0,rr.end.0);
-         
-         let rr=a.get_range2::<axgeom::YAXIS_S>();
-         let ydist=rand::distributions::Range::new(rr.start.0,rr.end.0);
-
-         PointGenerator{rng,xdist,ydist}
-      }
-      pub fn random_point(&mut self)->(Numisize,Numisize){
-          (
-            Numisize(self.xdist.ind_sample(&mut self.rng)),
-            Numisize(self.ydist.ind_sample(&mut self.rng))
-          )
-      }
-    }
+ 
 }
 */
 
 
 
+
+#[cfg(test)]
+mod test_support;
 
 #[cfg(test)]
 mod dinotree_test;
