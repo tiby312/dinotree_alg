@@ -426,7 +426,25 @@ mod ba{
       };
       TreeCache2(a)
     }
+    pub fn new_tree<'a,TT:SweepTrait<Num=T>,JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T>,K:TreeTimerTrait>(
+          &mut self,rest:&'a mut [TT],medianstrat:&Z)->(DinoTree2<'a,TT>,K::Bag){
 
+        let d=match &mut self.0{
+          &mut TreeCacheEnum::Xa(ref mut a)=>{
+            let k=DynTree::<XAXIS_S,TT>::new::<JJ,H,Z,K>(rest,a,medianstrat);
+            (DynTreeEnum::Xa(k.0),k.1)
+          },
+          &mut TreeCacheEnum::Ya(ref mut a)=>{
+            let k=DynTree::<YAXIS_S,TT>::new::<JJ,H,Z,K>(rest,a,medianstrat);
+            (DynTreeEnum::Ya(k.0),k.1)
+          }
+        };
+
+        //TODO remove this
+        //assert_invariant(&d);
+
+        (DinoTree2(d.0),d.1)
+     }
     pub fn get_tree(&self)->&compt::GenTree<DivNode<T>>{
       match &self.0{
         &TreeCacheEnum::Xa(ref a)=>{
@@ -491,25 +509,7 @@ mod ba{
       }
   }
   impl<'a,T:SweepTrait+'a> DinoTree2<'a,T>{
-      pub fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
-          rest:&'a mut [T],tc:&mut TreeCache2<T::Num>,medianstrat:&Z)->(DinoTree2<'a,T>,K::Bag){
-
-        let d=match &mut tc.0{
-          &mut TreeCacheEnum::Xa(ref mut a)=>{
-            let k=DynTree::<XAXIS_S,T>::new::<JJ,H,Z,K>(rest,a,medianstrat);
-            (DynTreeEnum::Xa(k.0),k.1)
-          },
-          &mut TreeCacheEnum::Ya(ref mut a)=>{
-            let k=DynTree::<YAXIS_S,T>::new::<JJ,H,Z,K>(rest,a,medianstrat);
-            (DynTreeEnum::Ya(k.0),k.1)
-          }
-        };
-
-        //TODO remove this
-        //assert_invariant(&d);
-
-        (DinoTree2(d.0),d.1)
-     }
+      
 
       pub fn rects<'b>(&'b mut self)->Rects<'b,Self>{
           Rects{tree:self,rects:Vec::new()}
