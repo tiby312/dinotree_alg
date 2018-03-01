@@ -259,7 +259,7 @@ fn recurse<'x,
 
 
 pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T>,K:TreeTimerTrait>
-        (kdtree:&mut DynTree<A,T>,clos:&mut F)->K::Bag{
+        (kdtree:&mut DynTree<A,T>,mut clos:F)->K::Bag{
     
     use std::marker::PhantomData;
     use std::cell::UnsafeCell;
@@ -300,7 +300,7 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T
     unsafe impl<'a,F:ColSeq+'a> Sync for Wrapper<'a,F>{}
     
 
-    let wrapper=Wrapper(UnsafeCell::new(clos));
+    let wrapper=Wrapper(UnsafeCell::new(&mut clos));
     
     //All of the above is okay because we start with SEQUENTIAL
     self::for_every_col_pair_inner::<_,par::Sequential,_,DefaultDepthLevel,_,K>(kdtree,wrapper)
@@ -398,15 +398,15 @@ fn rect_recurse<'x,
 }
 
 pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
-        tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure: &mut F) {
+        tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure:F) {
     
-    struct Wrapper<'a,F:ColSing+'a>{
-        rect:&'a Rect<<F::T as SweepTrait>::Num>,
-        closure:&'a mut F
+    struct Wrapper<F:ColSing>{
+        rect:Rect<<F::T as SweepTrait>::Num>,
+        closure:F
     };
 
 
-    impl<'a,F:ColSing+'a> ColSing for Wrapper<'a,F>{
+    impl<F:ColSing> ColSing for Wrapper<F>{
         type T=F::T;
         fn collide(&mut self,a:ColSingle<Self::T>){
             if self.rect.contains_rect(a.0.get()){
@@ -415,7 +415,7 @@ pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
         }
     }
 
-    let mut wrapper=Wrapper{rect,closure};
+    let mut wrapper=Wrapper{rect:*rect,closure};
     
     let ta=tree.get_iter_mut();
     self::rect_recurse::<A,_,_,_>(ta,rect,&mut wrapper);

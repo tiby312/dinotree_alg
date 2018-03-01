@@ -288,10 +288,10 @@ mod ba{
         let mut fu=support::closure_struct::ColSingStruct::new(fu);
         match &mut self.0{
           &mut DynTreeEnum::Xa(ref mut a)=>{
-            colfind::for_all_in_rect(a,rect,&mut fu);
+            colfind::for_all_in_rect(a,rect,fu);
           },
           &mut DynTreeEnum::Ya(ref mut a)=>{
-            colfind::for_all_in_rect(a,rect,&mut fu);
+            colfind::for_all_in_rect(a,rect,fu);
           }
         }
       }
@@ -301,10 +301,10 @@ mod ba{
 
           match &mut self.0{
             &mut DynTreeEnum::Xa(ref mut a)=>{
-              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,&mut clos)
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,clos)
             },
             &mut DynTreeEnum::Ya(ref mut a)=>{
-              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,&mut clos)
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,clos)
             }
           }
       }
