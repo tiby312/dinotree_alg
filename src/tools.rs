@@ -14,37 +14,6 @@ impl<T> Clone for PhantomSendSync<T>{
 
 
 
-pub mod par{
-    use rayon;
-    pub trait Joiner{
-
-        fn join<A:FnOnce() -> RA + Send,RA:Send,B:FnOnce() -> RB + Send,RB:Send>(oper_a: A, oper_b: B) -> (RA, RB);
-        fn is_parallel()->bool;
-    }
-
-    pub struct Parallel;
-    impl Joiner for Parallel{
-        fn is_parallel()->bool{
-            return true;
-        }
-
-        fn join<A:FnOnce() -> RA + Send,RA:Send,B:FnOnce() -> RB + Send,RB:Send>(oper_a: A, oper_b: B) -> (RA, RB)   {
-          rayon::join(oper_a, oper_b)
-        }
-    }
-    pub struct Sequential;
-    impl Joiner for Sequential{
-        fn is_parallel()->bool{
-            return false;
-        }
-        fn join<A:FnOnce() -> RA + Send,RA:Send,B:FnOnce() -> RB + Send,RB:Send>(oper_a: A, oper_b: B) -> (RA, RB)   {
-            let a = oper_a();
-            let b = oper_b();
-            (a, b)
-        }
-    }
-}
-
 
 unsafe impl<T:Send> std::marker::Send for PreVec<T>{}
 use smallvec;

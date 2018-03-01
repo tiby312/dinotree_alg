@@ -1,12 +1,4 @@
-
-
-use super::*;
-//use oned::sup::BleekSF;
-use oned::Sweeper;
-use SweepTrait;
-use ColSingle;
-use axgeom::AxisTrait;
-use tools::par;
+use inner_prelude::*;
 
 ///A construct to allow querying non-intersecting rectangles to retrive mutable references to what is inside them.
 ///
@@ -58,99 +50,6 @@ use tools::par;
 ///}
 /// ```
 
-use std::marker::PhantomData;
-
-
-/*
-pub trait RectsTrait<'c>{
-    type T:SweepTrait;
-    fn collide(&mut self,a:ColSingle<'c,Self::T>);  
-}
-*/
-
-
-//TODO hide this
-pub trait RectsTreeTrait{
-    type T:SweepTrait;
-    type Num:NumTrait;
-    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:F);
-}
-
-pub struct Rects<'a,C:RectsTreeTrait+'a>{
-    tree:&'a mut C,
-    rects:Vec<axgeom::Rect<C::Num>>
-}
-
-
-impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
-
-    pub fn new(tree:&'a mut C)->Rects<'a,C>{
-        Rects{tree:tree,rects:Vec::new()}
-    }
-
-        
-    
-    ///Iterate over all bots in a rectangle.
-    ///It is safe to call this function multiple times with rectangles that 
-    ///do not intersect. Because the rectangles do not intersect, all bots retrieved
-    ///from inside either rectangle are guarenteed to be disjoint. 
-    ///If a rectangle is passed that does intersect one from a previous call, this function will panic.
-    ///
-    ///Note the lifetime of the mutable reference in the passed function.
-    ///The user is allowed to move this reference out and hold on to it for 
-    ///the lifetime of this struct.
-    pub fn for_all_in_rect<F:FnMut(ColSingle<'a,C::T>)>(&mut self,rect:&axgeom::Rect<C::Num>,mut func:F){
-    
-
-        
-        for k in self.rects.iter(){
-            if rect.intersects_rect(k){
-                panic!("Rects cannot intersect! {:?}",(k,rect));
-            }
-        }
-
-        {
-            /*
-            struct Wrapper<'a,'b:'a,F:RectsTrait<'b>+'a>{
-                closure:&'a mut F,
-                p:PhantomData<&'b usize>
-            };
-
-            impl<'a,'b:'a,T:SweepTrait+'b,F:RectsTrait<'b,T=T>+'a> ColSing for Wrapper<'a,'b,F>{
-                type T=F::T;
-                fn collide(&mut self,c:ColSingle<Self::T>){
-                    let (a,b)=(c.0 as *const <F::T as SweepTrait>::InnerRect,c.1 as *mut <F::T as SweepTrait>::Inner);
-                    //Unsafely extend the lifetime to accocomate the
-                    //lifetime of RectsTrait.
-                    let (a,b)=unsafe{(&*a,&mut *b)};
-                    
-                    let cn=ColSingle(a,b);
-                    self.closure.collide(cn);
-    
-                }
-            }
-
-            let mut wrapper=Wrapper{closure:func,p:PhantomData};
-            self.tree.for_all_in_rect(rect,&mut wrapper);
-       
-            */
-            let wrapper=|c:ColSingle<C::T>|{
-                let (a,b)=(c.0 as *const <C::T as SweepTrait>::InnerRect,c.1 as *mut <C::T as SweepTrait>::Inner);
-                //Unsafely extend the lifetime to accocomate the
-                //lifetime of RectsTrait.
-                let (a,b)=unsafe{(&*a,&mut *b)};
-                
-                let cn=ColSingle(a,b);
-                func(cn);
-            };
-            self.tree.for_all_in_rect(rect,wrapper);
-       
-
-    }
-        
-        self.rects.push(*rect);
-    }
-}
 
 
 //use oned::Blee;

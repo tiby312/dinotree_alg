@@ -1,20 +1,11 @@
 
-
-use compt::CTreeIterator;
-use median::MedianStrat;
-use compt::GenTree;
-use compt::LevelDesc;
-use base_kdtree::KdTree;
-use tools::par;
+use inner_prelude::*;
 use tree_alloc::NodeDstDynCont;
 use tree_alloc::NodeDyn;
-use axgeom::AxisTrait;
-use std::marker::PhantomData;
 use base_kdtree::Node2;
-//use TreeCache;
-use base_kdtree::TreeCache;
-use treetimer::*;
-use super::*;
+use compt::GenTree;
+use base_kdtree::KdTree;
+
 
 pub struct NdIterMut<'a:'b,'b,T:SweepTrait+'a>{
     c:&'b mut NodeDstDynCont<'a,T>

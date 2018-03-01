@@ -1,19 +1,7 @@
 //!Provides capability to draw the dividers of each node. 
-
-use axgeom;
-use axgeom::Axis;
-use compt;
-use compt::GenTree;
-use std;
-use compt::CTreeIterator;
-use axgeom::Rect;
-use axgeom::Range;
-use base_kdtree::DivNode;
-use base_kdtree::TreeCache;
+use inner_prelude::*;
 use support::Numf32;
-use compt::LevelIter;
-use axgeom::AxisTrait;
-use ba::TreeCache2;
+use compt::GenTree;
 
 
 

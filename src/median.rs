@@ -1,15 +1,4 @@
-
-use oned;
-use oned::Binned;
-use std;
-use SweepTrait;
-use NumTrait;
-use std::marker::PhantomData;
-use axgeom::AxisTrait;
-use compt::LevelDesc;
-use tools;
-use InnerRect;
-use tools::par;
+use inner_prelude::*;
 
 ///Defines what divider-placement strategy to use.
 pub trait MedianStrat:Sync{
@@ -19,7 +8,7 @@ pub trait MedianStrat:Sync{
         &self,
         level:LevelDesc,
         rest:&'a mut [T],
-        mmm:&mut T::Num)->(T::Num,Binned<'a,T>);
+        mmm:&mut T::Num)->(T::Num,oned::Binned<'a,T>);
 }
 
 
@@ -65,7 +54,7 @@ pub mod relax{
             &self,
             level:LevelDesc,
             rest:&'a mut [T],
-            divider:&mut T::Num)->(T::Num,Binned<'a,T>){
+            divider:&mut T::Num)->(T::Num,oned::Binned<'a,T>){
             let div_axis=A::get();
 
             let med=*divider;
@@ -246,7 +235,7 @@ pub mod strict{
             &self,
             level:LevelDesc,
             rest:&'a mut [T],
-            mmm:&mut T::Num)->(T::Num,Binned<'a,T>){
+            mmm:&mut T::Num)->(T::Num,oned::Binned<'a,T>){
             let div_axis=A::get();
 
             let med={

@@ -1,29 +1,8 @@
-
-
-
-use axgeom::Rect;
-use oned::Sweeper;
-use super::DepthLevel;
-
-use rayon;
-use compt::CTreeIterator;
-use tools::par;
-use compt::WrapGen;
-use dyntree::DynTree;
-use compt::LevelIter;
-use axgeom::AxisTrait;
-use tree_alloc::NodeDyn;
-use compt;
-
-
-use *;
-
-use support::DefaultDepthLevel;
-use treetimer::*;
-
-//use oned::ColMultiWrapper;
-//use oned::BleekSync;
+use inner_prelude::*;
 use oned::Bleek;
+use tree_alloc::NodeDyn;
+use compt::LevelIter;
+use compt::WrapGen;
 
 
 pub trait ColMulti:Send+Sync+Clone{

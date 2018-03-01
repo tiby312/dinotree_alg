@@ -1,18 +1,5 @@
-
-use std;
-use axgeom::Range;
-use axgeom::Rect;
-use tools::PreVec;
-use SweepTrait;
-use ColPair;
-use NumTrait;
-use axgeom::AxisTrait;
-use std::marker::PhantomData;
-use tools::par;
+use inner_prelude::*;
 use rayon::prelude::*;
-use smallvec::SmallVec;
-use tools;
-use InnerRect;
 
 
 pub trait Bleek{
@@ -245,13 +232,13 @@ pub fn is_sorted<A:AxisTrait,I:SweepTrait>(collision_botids:&[I]){
 
 ///Provides 1d collision detection.
 pub struct Sweeper<T:SweepTrait>{
-    helper: PreVec<T>
+    helper: tools::PreVec<T>
 }
 
 impl<I:SweepTrait> Sweeper<I>{
 
     pub fn new()->Sweeper<I>{
-        Sweeper{helper:PreVec::new()} //TODO make callers decide?
+        Sweeper{helper:tools::PreVec::new()} //TODO make callers decide?
     }
 
     ///Sorts the bots.

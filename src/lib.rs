@@ -9,6 +9,42 @@ extern crate ordered_float;
 extern crate rand;
 extern crate smallvec;
 
+mod inner_prelude{
+  pub use axgeom::Axis;
+  pub use compt::LevelIter;
+  pub use compt::LevelDesc;
+  pub use axgeom::Range;
+  pub use *;
+  pub use oned::Sweeper;
+  pub use super::median::MedianStrat;
+  pub use compt::CTreeIterator;
+  pub use par;
+  pub use axgeom::AxisTrait;
+  pub use std::marker::PhantomData;
+  pub use treetimer::*;
+  pub use NumTrait;
+  pub use *;
+}
+
+
+pub mod prelude{
+  pub use ColPair;
+  pub use ColSingle;
+  pub use DinoTree2;
+  pub use Rects;
+  pub use TreeCache2;
+  pub use DepthLevel;
+  pub use InnerRect;
+  pub use NumTrait;
+  pub use RectsTreeTrait;
+  pub use SweepTrait;
+  pub use median::*;
+  pub use median::relax::*;
+  pub use median::strict::*;
+  pub use graphics::GenTreeGraphics;
+  pub use par;
+  pub use treetimer;
+}
 
 ///Contains rebalancing code.
 mod base_kdtree;
@@ -31,7 +67,7 @@ pub mod median;
 pub mod support;
 ///Contains code to query multiple non intersecting rectangles.
 mod multirect;
-pub use multirect::Rects;
+//pub use multirect::Rects;
 pub use multirect::collide_two_rect_parallel;
 ///Contains tree level by level timing collection code. 
 pub mod treetimer;
@@ -130,7 +166,7 @@ use axgeom::AxisTrait;
 use dyntree::DynTree;
 use median::MedianStrat;
 use support::DefaultDepthLevel;
-use tools::par;
+
 
 
 //Note this doesnt check all invariants.
@@ -174,13 +210,205 @@ fn assert_invariant<A:AxisTrait,T:SweepTrait>(d:&DinoTree<A,T>){
 
 
 
+pub trait RectsTreeTrait{
+    type T:SweepTrait;
+    type Num:NumTrait;
+    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:F);
+}
+
+pub struct Rects<'a,C:RectsTreeTrait+'a>{
+    tree:&'a mut C,
+    rects:Vec<axgeom::Rect<C::Num>>
+}
+
+
+impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
+
+    ///Iterate over all bots in a rectangle.
+    ///It is safe to call this function multiple times with rectangles that 
+    ///do not intersect. Because the rectangles do not intersect, all bots retrieved
+    ///from inside either rectangle are guarenteed to be disjoint. 
+    ///If a rectangle is passed that does intersect one from a previous call, this function will panic.
+    ///
+    ///Note the lifetime of the mutable reference in the passed function.
+    ///The user is allowed to move this reference out and hold on to it for 
+    ///the lifetime of this struct.
+    pub fn for_all_in_rect<F:FnMut(ColSingle<'a,C::T>)>(&mut self,rect:&axgeom::Rect<C::Num>,mut func:F){
+    
+
+        
+        for k in self.rects.iter(){
+            if rect.intersects_rect(k){
+                panic!("Rects cannot intersect! {:?}",(k,rect));
+            }
+        }
+
+        {
+            let wrapper=|c:ColSingle<C::T>|{
+                let (a,b)=(c.0 as *const <C::T as SweepTrait>::InnerRect,c.1 as *mut <C::T as SweepTrait>::Inner);
+                //Unsafely extend the lifetime to accocomate the
+                //lifetime of RectsTrait.
+                let (a,b)=unsafe{(&*a,&mut *b)};
+                
+                let cn=ColSingle(a,b);
+                func(cn);
+            };
+            self.tree.for_all_in_rect(rect,wrapper);
+    }
+        
+        self.rects.push(*rect);
+    }
+}
+
+
+pub mod par{
+    use rayon;
+    pub trait Joiner{
+
+        fn join<A:FnOnce() -> RA + Send,RA:Send,B:FnOnce() -> RB + Send,RB:Send>(oper_a: A, oper_b: B) -> (RA, RB);
+        fn is_parallel()->bool;
+    }
+
+    pub struct Parallel;
+    impl Joiner for Parallel{
+        fn is_parallel()->bool{
+            return true;
+        }
+
+        fn join<A:FnOnce() -> RA + Send,RA:Send,B:FnOnce() -> RB + Send,RB:Send>(oper_a: A, oper_b: B) -> (RA, RB)   {
+          rayon::join(oper_a, oper_b)
+        }
+    }
+    pub struct Sequential;
+    impl Joiner for Sequential{
+        fn is_parallel()->bool{
+            return false;
+        }
+        fn join<A:FnOnce() -> RA + Send,RA:Send,B:FnOnce() -> RB + Send,RB:Send>(oper_a: A, oper_b: B) -> (RA, RB)   {
+            let a = oper_a();
+            let b = oper_b();
+            (a, b)
+        }
+    }
+}
+
+
 pub use ba::TreeCache2;
 pub use ba::DinoTree2;
 mod ba{
   use super::*;
   use DynTree;
   use base_kdtree::TreeCache;
-  use multirect::RectsTreeTrait;
+  use RectsTreeTrait;
+
+  mod closure_struct{
+      use super::*;
+      use ColPair;
+      use std::marker::PhantomData;
+      use ColSeq;
+      use ColSingle;
+      use ColSing;
+      use ColMulti;
+
+      pub struct ColSeqStruct<T:SweepTrait,F:FnMut(ColPair<T>)>{
+          d:F,
+          p:PhantomData<T>
+      }
+      impl<T:SweepTrait,F:FnMut(ColPair<T>)> ColSeqStruct<T,F>{
+          pub fn new(a:F)->ColSeqStruct<T,F>{
+              ColSeqStruct{d:a,p:PhantomData}
+          }
+      }
+      impl<T:SweepTrait,F:FnMut(ColPair<T>)> ColSeq for ColSeqStruct<T,F>{
+          type T=T;
+          fn collide(&mut self,a:ColPair<Self::T>){
+              (self.d)(a);
+          }
+      }
+      
+      pub struct ColSingStruct<T:SweepTrait,F:FnMut(ColSingle<T>)>{
+          d:F,
+          p:PhantomData<T>
+      }
+      impl<T:SweepTrait,F:FnMut(ColSingle<T>)> ColSingStruct<T,F>{
+          pub fn new(a:F)->ColSingStruct<T,F>{
+              ColSingStruct{d:a,p:PhantomData}
+          }
+      }
+      impl<T:SweepTrait,F:FnMut(ColSingle<T>)> ColSing for ColSingStruct<T,F>{
+          type T=T;
+          fn collide(&mut self,a:ColSingle<Self::T>){
+              (self.d)(a);
+          }
+      }
+      
+      
+      pub struct ColMultiStruct<'a,
+          T:SweepTrait<Inner=I>,
+          I:Send+Sync,
+          F:Fn(ColPair<T>)+Send+Sync+'a,
+          F2:Fn()->I+Send+Sync+'a,
+          F3:Fn(&mut I,&I)+Send+Sync+'a
+          >{
+          a:&'a F,
+          b:&'a F2,
+          c:&'a F3,
+          p:PhantomData<T>
+      }
+
+      impl
+      <
+          'a,
+          T:SweepTrait<Inner=I>,
+          I:Send+Sync,
+          F:Fn(ColPair<T>)+Send+Sync,
+          F2:Fn()->I+Send+Sync,
+          F3:Fn(&mut I,&I)+Send+Sync
+          > ColMultiStruct<'a,T,I,F,F2,F3>{
+          pub fn new(a:&'a F,b:&'a F2,c:&'a F3)->ColMultiStruct<'a,T,I,F,F2,F3>{
+              ColMultiStruct{a,b,c,p:PhantomData}
+          }
+      }
+
+      impl
+      <
+          'a,
+          T:SweepTrait<Inner=I>,
+          I:Send+Sync,
+          F:Fn(ColPair<T>)+Send+Sync,
+          F2:Fn()->I+Send+Sync,
+          F3:Fn(&mut I,&I)+Send+Sync
+          >Clone for ColMultiStruct<'a,T,I,F,F2,F3>{
+          fn clone(&self)->Self{
+              ColMultiStruct{a:self.a.clone(),b:self.b.clone(),c:self.c.clone(),p:PhantomData}
+          }
+      }
+
+
+      impl
+      <
+          'a,
+          T:SweepTrait<Inner=I>,
+          I:Send+Sync,
+          F:Fn(ColPair<T>)+Send+Sync,
+          F2:Fn()->I+Send+Sync,
+          F3:Fn(&mut I,&I)+Send+Sync
+          >ColMulti for ColMultiStruct<'a,T,I,F,F2,F3>{
+
+          type T=T;
+          fn identity(&self)->I{
+              (self.b)()
+          }
+          fn add(&self,a:&mut I,b:&I){
+              (self.c)(a,b);
+          }
+          fn collide(&self,a:ColPair<T>){
+              (self.a)(a);
+          }
+
+      } 
+  }
+
 
   enum TreeCacheEnum<T:NumTrait>{
     Xa(TreeCache<XAXIS_S,T>),
@@ -283,9 +511,13 @@ mod ba{
         (DinoTree2(d.0),d.1)
      }
 
+      pub fn rects<'b>(&'b mut self)->Rects<'b,Self>{
+          Rects{tree:self,rects:Vec::new()}
+      }
 
-      pub fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&axgeom::Rect<T::Num>,fu:F){
-        let mut fu=support::closure_struct::ColSingStruct::new(fu);
+     
+      fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&axgeom::Rect<T::Num>,fu:F){
+        let mut fu=self::closure_struct::ColSingStruct::new(fu);
         match &mut self.0{
           &mut DynTreeEnum::Xa(ref mut a)=>{
             colfind::for_all_in_rect(a,rect,fu);
@@ -295,9 +527,10 @@ mod ba{
           }
         }
       }
+      
       pub fn for_every_col_pair_seq<F:FnMut(ColPair<T>),K:TreeTimerTrait>
           (&mut self,mut clos:F)->K::Bag{     
-          let mut clos=support::closure_struct::ColSeqStruct::new(clos);
+          let mut clos=self::closure_struct::ColSeqStruct::new(clos);
 
           match &mut self.0{
             &mut DynTreeEnum::Xa(ref mut a)=>{
@@ -316,7 +549,7 @@ mod ba{
         D:DepthLevel,
         K:TreeTimerTrait>(&mut self,a:F,b:F2,c:F3)->K::Bag{
           
-          let mut clos=support::closure_struct::ColMultiStruct::new(&a,&b,&c);
+          let mut clos=self::closure_struct::ColMultiStruct::new(&a,&b,&c);
           
           match &mut self.0{
             &mut DynTreeEnum::Xa(ref mut a)=>{
@@ -354,6 +587,8 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DinoTree<'a,A,T>{
 
   }
 }
+
+
 
 /*
 mod test_support{

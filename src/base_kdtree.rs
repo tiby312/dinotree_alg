@@ -1,16 +1,4 @@
-use axgeom;
-use oned::Sweeper;
-use super::median::MedianStrat;
-use compt;
-use compt::CTreeIterator;
-use tools::par;
-use axgeom::AxisTrait;
-
-use std::marker::PhantomData;
-use treetimer::*;
-use *;
-
-
+use inner_prelude::*;
 
 #[derive(Copy,Clone,Debug)]
 pub struct DivNode<Nu:Ord+Copy+std::fmt::Debug>{
