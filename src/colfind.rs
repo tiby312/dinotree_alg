@@ -7,9 +7,9 @@ use compt::WrapGen;
 
 pub trait ColMulti:Send+Sync+Clone{
     type T:SweepTrait;
-    fn zero(&self,a:&mut <Self::T as SweepTrait>::Inner);
-    //fn identity(&self)->T;
-    fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&<Self::T as SweepTrait>::Inner);
+    //User must keel the return object the same rect as this.
+    fn identity(&self,src:&Self::T)->Self::T;
+    fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&mut <Self::T as SweepTrait>::Inner);
     fn collide(&self,a:ColPair<Self::T>);
 }
 
@@ -101,6 +101,66 @@ fn go_down<'x,
 }
 
 
+use self::nodedynowned::NodeDynOwned;
+mod nodedynowned{
+    use super::SweepTrait;
+    use super::NodeDyn;
+    use axgeom::Range;
+    use std;
+    use colfind::ColMulti;
+
+    pub struct NodeDynOwned<'a,X:SweepTrait+'a>{
+        a:&'a mut NodeDyn<X>,
+        inner:Vec<u8>
+    }
+
+    impl<'a,X:SweepTrait+'a> Drop for NodeDynOwned<'a,X>{
+        fn drop(&mut self){
+            for i in self.a.range.iter_mut(){
+                unsafe{
+                    let k:&mut std::mem::ManuallyDrop<X>=std::mem::transmute(i);
+                    std::mem::ManuallyDrop::drop(k);
+                }
+            }
+        }
+    }    
+
+    impl<'a,X:SweepTrait+'a> NodeDynOwned<'a,X>{
+        pub fn new<C:ColMulti<T=X>>(a:&NodeDyn<X>,clos:&C)->NodeDynOwned<'a,X>{
+            struct Repr<X>{
+                start:*mut X,
+                len:usize
+            }
+
+            let num_elements=a.range.len();
+            let align=std::mem::align_of_val(a);
+            let len=std::mem::size_of_val(a);
+
+            let mut k=Vec::with_capacity(len+align);
+
+            let mut ptr=k.as_mut_ptr();
+            //align it.
+            ptr=(ptr as usize+(align-(ptr as usize%align))) as *mut u8;
+
+            let repr=Repr{start:ptr,len:num_elements};
+            let ptr:&mut NodeDyn<X>=unsafe{std::mem::transmute(repr)};
+            ptr.divider=a.divider;
+            ptr.container_box=a.container_box;
+            for (i,j) in ptr.range.iter_mut().zip(a.range.iter().map(|a|clos.identity(a))){
+                
+                unsafe{std::ptr::copy(&j,i,1)};
+                let j=std::mem::ManuallyDrop::new(j);
+                
+            }
+            NodeDynOwned{a:ptr,inner:k}
+        }
+
+        pub fn get(&mut self)->&mut NodeDyn<X>{
+            &mut self.a
+        }
+    }
+
+}
 fn go_down_in_parallel<'x,
     H:DepthLevel,
     A:AxisTrait, //this axis
@@ -114,50 +174,27 @@ fn go_down_in_parallel<'x,
         right:WrapGen<LevelIter<C>>,
         clos:F) 
 {
-    //unsafely make a copy of the anchor
-    //so that we can pass one to the other thread.
-    //after both left and right functions have finished,
-    //merge them back together.
-    let (space,mut anchor_copy)=unsafe{
-      
-        struct Repr<X>{
-            start:*mut X,
-            len:usize
-        }
-
-        let siz=std::mem::size_of_val(*anchor);
-        let anchor=(*anchor) as *mut NodeDyn<X>;
-        let k:Repr<X>=unsafe{std::mem::transmute(anchor)};
-        let lenn=k.len;
-        //use u64 for alignment reasons.
-        //wont work if needs to be aligned on a bigger boundary
-        let mut space:Vec<u64>=Vec::with_capacity((siz/4)+1);
-        let ptr:*mut u8=space.as_mut_ptr() as *mut u8;
-
-        unsafe{std::ptr::copy(k.start as *mut u8,ptr,siz)};
-
-        let mut anchor_copy:&mut NodeDyn<X>=std::mem::transmute(Repr{start:ptr,len:lenn});
-
-        for i in anchor_copy.range.iter_mut(){
-            clos.zero(i.get_mut().1);
-        }
-        (space,anchor_copy)
-    };
-
     {
-        let af=||{
-            self::go_down::<par::Parallel,H,A,B,_,_,_>(sweeper,anchor,left,&mut clos.clone());
-        };
-        let bf=||{
-            let mut sweeper=Sweeper::new(); 
-            self::go_down::<par::Parallel,H,A,B,_,_,_>(&mut sweeper,&mut anchor_copy,right,&mut clos.clone());
-        };
+        let mut copy=NodeDynOwned::new(anchor,&clos);
+        let mut anchor_copy:&mut NodeDyn<X>=copy.get();
+            
+        
+        {
+            let af=||{
+                self::go_down::<par::Parallel,H,A,B,_,_,_>(sweeper,anchor,left,&mut clos.clone());
+            };
+            let bf=||{
+                let mut sweeper=Sweeper::new(); 
+                self::go_down::<par::Parallel,H,A,B,_,_,_>(&mut sweeper,&mut anchor_copy,right,&mut clos.clone());
+            };
 
-        rayon::join(af,bf);
-    }
+            rayon::join(af,bf);
+        }
 
-    for (a,b) in anchor.range.iter_mut().zip(anchor_copy.range.iter()){
-        clos.add(a.get_mut().1,b.get().1);
+
+        for (a,b) in anchor.range.iter_mut().zip(anchor_copy.range.iter_mut()){
+            clos.add(a.get_mut().1,b.get_mut().1);
+        }
     }
 }
 
@@ -262,10 +299,10 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T
 
     impl<'a,F:ColSeq+'a> ColMulti for Wrapper<'a,F> {
         type T=F::T;
-        fn zero(&self,a:&mut <Self::T as SweepTrait>::Inner){
+        fn identity(&self,src:&Self::T)->Self::T{
             unreachable!()
         }
-        fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,b:&<Self::T as SweepTrait>::Inner){
+        fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,b:&mut <Self::T as SweepTrait>::Inner){
             unreachable!()
         }
         fn collide(&self,a:ColPair<Self::T>){

@@ -51,7 +51,14 @@ impl<Nu:NumTrait,T:Send+Sync> SweepTrait for BBox<Nu,T>{
         (&self.rect,&self.val)
     }
 }
+impl<Nu:NumTrait,T:Send+Sync+Copy> Copy for BBox<Nu,T>{
 
+}
+impl<Nu:NumTrait,T:Send+Sync+Clone> Clone for BBox<Nu,T>{
+    fn clone(&self)->BBox<Nu,T>{
+        BBox{rect:self.rect,val:self.val.clone()}
+    }
+}
 impl<Nu:NumTrait,T:Send+Sync> BBox<Nu,T>{
 
     #[inline(always)]

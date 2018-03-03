@@ -402,8 +402,8 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync+'a,
-          F2:Fn(&mut I)+Send+Sync+'a,
-          F3:Fn(&mut I,&I)+Send+Sync+'a
+          F2:Fn(&T)->T+Send+Sync+'a,
+          F3:Fn(&mut I,&mut I)+Send+Sync+'a
           >{
           a:&'a F,
           b:&'a F2,
@@ -417,8 +417,8 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&mut I)+Send+Sync+'a,
-          F3:Fn(&mut I,&I)+Send+Sync
+          F2:Fn(&T)->T+Send+Sync+'a,
+          F3:Fn(&mut I,&mut I)+Send+Sync
           > ColMultiStruct<'a,T,I,F,F2,F3>{
           pub fn new(a:&'a F,b:&'a F2,c:&'a F3)->ColMultiStruct<'a,T,I,F,F2,F3>{
               ColMultiStruct{a,b,c,p:PhantomData}
@@ -432,8 +432,8 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&mut I)+Send+Sync+'a,
-          F3:Fn(&mut I,&I)+Send+Sync
+          F2:Fn(&T)->T+Send+Sync+'a,
+          F3:Fn(&mut I,&mut I)+Send+Sync
           >Copy for ColMultiStruct<'a,T,I,F,F2,F3>{
           
       }
@@ -444,8 +444,8 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&mut I)+Send+Sync+'a,
-          F3:Fn(&mut I,&I)+Send+Sync
+          F2:Fn(&T)->T+Send+Sync+'a,
+          F3:Fn(&mut I,&mut I)+Send+Sync
           >Clone for ColMultiStruct<'a,T,I,F,F2,F3>{
           fn clone(&self)->Self{
               *self
@@ -458,15 +458,15 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&mut I)+Send+Sync+'a,
-          F3:Fn(&mut I,&I)+Send+Sync
+          F2:Fn(&T)->T+Send+Sync+'a,
+          F3:Fn(&mut I,&mut I)+Send+Sync
           >ColMulti for ColMultiStruct<'a,T,I,F,F2,F3>{
 
           type T=T;
-          fn zero(&self,a:&mut I){
-              (self.b)(a);
+          fn identity(&self,src:&T)->T{
+              (self.b)(src)
           }
-          fn add(&self,a:&mut I,b:&I){
+          fn add(&self,a:&mut I,b:&mut I){
               (self.c)(a,b);
           }
           fn collide(&self,a:ColPair<T>){
@@ -618,10 +618,12 @@ mod ba{
           }
       }
 
+      //It is the user responsibility to not change the bounding box
+      //That is returned by SweepTrat in the identity() function.
       pub fn for_every_col_pair<
         F:Fn(ColPair<T>)+Send+Sync,
-        F2:Fn(&mut T::Inner)+Send+Sync,
-        F3:Fn(&mut T::Inner,&T::Inner)+Send+Sync,
+        F2:Fn(&T)->T+Send+Sync,
+        F3:Fn(&mut T::Inner,&mut T::Inner)+Send+Sync,
         D:DepthLevel,
         K:TreeTimerTrait>(&mut self,a:F,b:F2,c:F3)->K::Bag{
           
@@ -639,6 +641,8 @@ mod ba{
       }
       
   }
+
+
 }
 
 

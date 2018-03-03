@@ -22,11 +22,11 @@ pub fn make_rect(a:(isize,isize),b:(isize,isize))->axgeom::Rect<Numisize>{
    )
 }
 
-pub fn create_rect_from_point(a:(Numisize,Numisize))->axgeom::Rect<Numisize>{
+pub fn create_rect_from_point(a:(Numisize,Numisize))->AABBox<Numisize>{
   let r:isize=10;
   let x=a.0;
   let y=a.1;
-  make_rect((x.0-r,x.0+r),(y.0-r,y.0+r))
+  AABBox(make_rect((x.0-r,x.0+r),(y.0-r,y.0+r)))
 }
 pub fn create_unordered(a:&Bot,b:&Bot)->(usize,usize){
   if a.id<b.id{

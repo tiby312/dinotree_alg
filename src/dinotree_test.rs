@@ -163,7 +163,7 @@ fn test_russian_doll(){
           if x>y{
             let id=id_counter.next().unwrap();
             
-            let rect=make_rect((-1000,-100),(x,y));
+            let rect=AABBox(make_rect((-1000,-100),(x,y)));
             
             bots.push(BBox::new(Bot{id,col:Vec::new()},rect));
           }
@@ -188,10 +188,10 @@ fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
             
               let a=el1;
               let b=el2;
-              let ax=a.get().0.get_range2::<XAXIS_S>();     
-              let ay=a.get().0.get_range2::<YAXIS_S>();     
-              let bx=b.get().0.get_range2::<XAXIS_S>();     
-              let by=b.get().0.get_range2::<YAXIS_S>();     
+              let ax=(a.get().0).0.get_range2::<XAXIS_S>();     
+              let ay=(a.get().0).0.get_range2::<YAXIS_S>();     
+              let bx=(b.get().0).0.get_range2::<XAXIS_S>();     
+              let by=(b.get().0).0.get_range2::<YAXIS_S>();     
             
               if ax.intersects(bx) && ay.intersects(by){
                   src.push(test_support::create_unordered(&a.val,&b.val));
