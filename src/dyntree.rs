@@ -97,22 +97,14 @@ impl<'b,T:'b+SweepTrait+Send> SweepTrait for Cont<'b,T>{
     type Num=T::Num;
 
     ///Destructure into the bounding box and mutable parts.
-    fn get_mut<'a>(&'a mut self)->(&'a Rect<T::Num>,&'a mut Self::Inner){
+    fn get_mut<'a>(&'a mut self)->(&'a AABBox<T::Num>,&'a mut Self::Inner){
         self.a.get_mut()
     }
 
     ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->(&'a Rect<T::Num>,&'a Self::Inner){
+    fn get<'a>(&'a self)->(&'a AABBox<T::Num>,&'a Self::Inner){
         self.a.get()
     }
-    /*
-    fn get_mut<'c>(&'c mut self)->(&'c axgeom::Rect<T::Num>,&'c mut Self::Inner){
-        self.a.get_mut()
-    }
-    fn get<'c>(&'c self)->(&'c axgeom::Rect<T::Num>,&'c Self::Inner){
-        self.a.get()
-    }
-    */
 }
 
 

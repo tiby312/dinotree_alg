@@ -11,6 +11,7 @@ extern crate rand;
 extern crate smallvec;
 
 mod inner_prelude{
+  pub use AABBox;
   pub use axgeom::Axis;
   pub use compt::LevelIter;
   pub use compt::LevelDesc;
@@ -33,6 +34,8 @@ mod inner_prelude{
 /// use dinotree::prelude::*
 /// ```
 pub mod prelude{
+  pub use daxis;
+  pub use AABBox;
   pub use ColPair;
   pub use ColSingle;
   pub use DinoTree2;
@@ -100,6 +103,36 @@ pub trait DepthLevel{
 pub trait NumTrait:Ord+Copy+Send+Sync+std::fmt::Debug+Default{}
 
 
+#[derive(Copy,Clone)]
+pub struct AABBox<N:NumTrait>(axgeom::Rect<N>);
+impl<N:NumTrait> AABBox<N>{
+
+  ///For both axises, the first value must be less than the second.
+  pub fn new(xaxis:(N,N),yaxis:(N,N))->AABBox<N>{
+    AABBox(axgeom::Rect::new(xaxis.0,xaxis.1,yaxis.0,yaxis.1))
+  }
+  pub fn get(&self)->((N,N),(N,N)){
+    let a=self.0.get_range2::<XAXIS_S>();
+    let b=self.0.get_range2::<YAXIS_S>();
+    ((a.start,a.end),(b.start,b.end))
+  }
+}
+
+
+pub mod daxis{
+  use axgeom;
+  pub use axgeom::Axis as DAxis;
+  pub use axgeom::XAXIS;
+  pub use axgeom::YAXIS;
+}
+
+impl<N:NumTrait> std::fmt::Debug for AABBox<N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let (xx,yy)=self.get();
+        write!(f, "AABBox {{ xaxis: {:?}, yaxis: {:?} }}", xx, yy)
+    }
+}
+
 ///The interface through which the tree interacts with the objects being inserted into it.
 pub trait SweepTrait:Send+Sync{
     ///The part of the object that is allowed to be mutated
@@ -115,22 +148,22 @@ pub trait SweepTrait:Send+Sync{
 
 
     ///Destructure into the bounding box and mutable parts.
-    fn get_mut<'a>(&'a mut self)->(&'a Rect<Self::Num>,&'a mut Self::Inner);
+    fn get_mut<'a>(&'a mut self)->(&'a AABBox<Self::Num>,&'a mut Self::Inner);
 
     ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->(&'a Rect<Self::Num>,&'a Self::Inner);
+    fn get<'a>(&'a self)->(&'a AABBox<Self::Num>,&'a Self::Inner);
 }
 
 
 ///This contains the destructured SweepTrait for a colliding pair.
 ///The rect is read only while T::Inner is allowed to be mutated.
 pub struct ColPair<'a,T:SweepTrait+'a>{
-    pub a:(&'a Rect<T::Num>,&'a mut T::Inner),
-    pub b:(&'a Rect<T::Num>,&'a mut T::Inner)
+    pub a:(&'a AABBox<T::Num>,&'a mut T::Inner),
+    pub b:(&'a AABBox<T::Num>,&'a mut T::Inner)
 }
 
 ///Similar to ColPair, but for only one SweepTrait
-pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a Rect<T::Num>,pub &'a mut T::Inner);
+pub struct ColSingle<'a,T:SweepTrait+'a>(pub &'a AABBox<T::Num>,pub &'a mut T::Inner);
 
 
 
@@ -186,7 +219,7 @@ fn assert_invariant<T:SweepTrait>(d:&DinoTree2<T>){
 pub trait RectsTreeTrait{
     type T:SweepTrait;
     type Num:NumTrait;
-    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&axgeom::Rect<Self::Num>,fu:F);
+    fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&AABBox<Self::Num>,fu:F);
 }
 
 ///A construct to allow querying non-intersecting rectangles to retrive mutable references to what is inside them.
@@ -240,7 +273,7 @@ pub trait RectsTreeTrait{
 /// ```
 pub struct Rects<'a,C:RectsTreeTrait+'a>{
     tree:&'a mut C,
-    rects:Vec<axgeom::Rect<C::Num>>
+    rects:Vec<&'a AABBox<C::Num>>
 }
 
 
@@ -255,19 +288,19 @@ impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
     ///Note the lifetime of the mutable reference in the passed function.
     ///The user is allowed to move this reference out and hold on to it for 
     ///the lifetime of this struct.
-    pub fn for_all_in_rect<F:FnMut(ColSingle<'a,C::T>)>(&mut self,rect:&axgeom::Rect<C::Num>,mut func:F){
+    pub fn for_all_in_rect<F:FnMut(ColSingle<'a,C::T>)>(&mut self,rect:&'a AABBox<C::Num>,mut func:F){
     
 
         
         for k in self.rects.iter(){
-            if rect.intersects_rect(k){
+            if rect.0.intersects_rect(&k.0){
                 panic!("Rects cannot intersect! {:?}",(k,rect));
             }
         }
 
         {
             let wrapper=|c:ColSingle<C::T>|{
-                let (a,b)=(c.0 as *const Rect<<C::T as SweepTrait>::Num>,c.1 as *mut <C::T as SweepTrait>::Inner);
+                let (a,b)=(c.0 as *const AABBox<<C::T as SweepTrait>::Num>,c.1 as *mut <C::T as SweepTrait>::Inner);
                 //Unsafely extend the lifetime to accocomate the
                 //lifetime of RectsTrait.
                 let (a,b)=unsafe{(&*a,&mut *b)};
@@ -278,7 +311,7 @@ impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
             self.tree.for_all_in_rect(rect,wrapper);
     }
         
-        self.rects.push(*rect);
+        self.rects.push(rect);
     }
 }
 
@@ -453,6 +486,11 @@ mod ba{
 
   impl<T:NumTrait> TreeCache2<T>{
     
+    ///It's the user's responsibility to pick a "good" height.
+    ///The distribution and number of bots matter.
+    ///Ideally you want every node to have around 10 elements in it.
+    ///Here's a good heuristic
+    ///log2(num_bots/num_bots_per_node)
     pub fn new(axis:axgeom::Axis,height:usize)->TreeCache2<T>{
       let a=if axis==axgeom::XAXIS{
         TreeCacheEnum::Xa(TreeCache::<XAXIS_S,T>::new(height))
@@ -542,7 +580,7 @@ mod ba{
       type T=T;
       type Num=T::Num;
 
-      fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&axgeom::Rect<T::Num>,fu:F){
+      fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&AABBox<T::Num>,fu:F){
         DinoTree2::for_all_in_rect(self,rect,fu);
       }
   }
@@ -554,14 +592,14 @@ mod ba{
       }
 
      
-      fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&axgeom::Rect<T::Num>,fu:F){
+      fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&AABBox<T::Num>,fu:F){
         let mut fu=self::closure_struct::ColSingStruct::new(fu);
         match &mut self.0{
           &mut DynTreeEnum::Xa(ref mut a)=>{
-            colfind::for_all_in_rect(a,rect,fu);
+            colfind::for_all_in_rect(a,&rect.0,fu);
           },
           &mut DynTreeEnum::Ya(ref mut a)=>{
-            colfind::for_all_in_rect(a,rect,fu);
+            colfind::for_all_in_rect(a,&rect.0,fu);
           }
         }
       }

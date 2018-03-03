@@ -31,9 +31,9 @@ impl NumTrait for Numusize{}
 
 
 ///A generic container that implements the kdtree trait.
-#[derive(Copy,Clone,Debug)]
+#[derive(Debug)]
 pub struct BBox<Nu:NumTrait,T:Send+Sync>{
-    pub rect:Rect<Nu>,
+    pub rect:AABBox<Nu>,
     pub val:T
 }
 
@@ -42,12 +42,12 @@ impl<Nu:NumTrait,T:Send+Sync> SweepTrait for BBox<Nu,T>{
     type Num=Nu;
 
     ///Destructure into the bounding box and mutable parts.
-    fn get_mut<'a>(&'a mut self)->(&'a Rect<Nu>,&'a mut Self::Inner){
+    fn get_mut<'a>(&'a mut self)->(&'a AABBox<Nu>,&'a mut Self::Inner){
         (&self.rect,&mut self.val)
     }
 
     ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->(&'a Rect<Nu>,&'a Self::Inner){
+    fn get<'a>(&'a self)->(&'a AABBox<Nu>,&'a Self::Inner){
         (&self.rect,&self.val)
     }
 }
@@ -55,7 +55,7 @@ impl<Nu:NumTrait,T:Send+Sync> SweepTrait for BBox<Nu,T>{
 impl<Nu:NumTrait,T:Send+Sync> BBox<Nu,T>{
 
     #[inline(always)]
-    pub fn new(val:T,r:Rect<Nu>)->BBox<Nu,T>{
+    pub fn new(val:T,r:AABBox<Nu>)->BBox<Nu,T>{
         BBox{rect:r,val:val}
     }
 }
@@ -77,13 +77,12 @@ impl DepthLevel for DefaultDepthLevel{
 ///Find all bots that collide along the specified axis only between two rectangles.
 ///So the bots may not actually collide in 2d space, but collide alone the x or y axis.
 ///This is useful when implementing "wrap around" behavior of bots that pass over a rectangular border.
-pub fn collide_two_rect_parallel<'a:'b,'b,
+pub fn collide_two_rect_parallel<
     A:AxisTrait,
-    K:RectsTreeTrait<T=T,Num=Num>,
     Num:NumTrait,
-    T:SweepTrait<Num=Num>+'b,
+    T:SweepTrait<Num=Num>,
     F:FnMut(ColPair<T>)>(
-        rects:&mut Rects<'b,K>,rect1:&Rect<T::Num>,rect2:&Rect<T::Num>,mut func:F)
+        tree:&mut DinoTree2<T>,rect1:& AABBox<T::Num>,rect2:& AABBox<T::Num>,mut func:F)
 {
     
     struct Ba<'z,J:SweepTrait+Send+'z>(ColSingle<'z,J>);
@@ -92,52 +91,31 @@ pub fn collide_two_rect_parallel<'a:'b,'b,
         type Num=J::Num;
 
         ///Destructure into the bounding box and mutable parts.
-        fn get_mut<'a>(&'a mut self)->(&'a Rect<J::Num>,&'a mut Self::Inner){
+        fn get_mut<'a>(&'a mut self)->(&'a AABBox<J::Num>,&'a mut Self::Inner){
             let r=&mut self.0;
             (r.0,r.1)
         }
 
         ///Destructue into the bounding box and inner part.
-        fn get<'a>(&'a self)->(&'a Rect<J::Num>,&'a Self::Inner){
+        fn get<'a>(&'a self)->(&'a AABBox<J::Num>,&'a Self::Inner){
             let r=&self.0;
             (r.0,r.1)
         }
         
     }
+    let mut rects=tree.rects();
     
-    let mut buffer1={
-        let mut buffer1:Vec<Ba<'b,T>>=Vec::new();
-        //let mut wrap=Wrap{a:buffer1};
-        //rects.for_all_in_rect(rect1,&mut wrap);
-        //wrap.a
-        rects.for_all_in_rect(rect1,|a:ColSingle<T>|buffer1.push(Ba(a)));
-        buffer1
-    };
-
-    let mut buffer2={
-        let mut buffer2:Vec<Ba<'b,T>>=Vec::new();
-        //let mut wrap=Wrap{a:buffer2};
-        //rects.for_all_in_rect(rect2,&mut wrap);
-        //wrap.a
-        rects.for_all_in_rect(rect2,|a:ColSingle<T>|buffer2.push(Ba(a)));
-        buffer2
-    };
-
-
+    let mut buffer1=Vec::new();
+    rects.for_all_in_rect(rect1,|a:ColSingle<T>|buffer1.push(Ba(a)));
+    
+    let mut buffer2=Vec::new();
+    rects.for_all_in_rect(rect2,|a:ColSingle<T>|buffer2.push(Ba(a)));
+    
     let cols:(&mut [Ba<T>],&mut [Ba<T>])=(&mut buffer1,&mut buffer2);
 
     {
-        //let blee=Blee::new(axis);
-
         Sweeper::update::<A,par::Parallel>(cols.0);
         Sweeper::update::<A,par::Parallel >(cols.1);
-        /*
-        let mut func2=|cc:ColPair<Ba<K::T>>|{
-            let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};
-            func.collide(c);
-        };
-        */
-
 
         use std::marker::PhantomData;
         use oned::Bleek;
@@ -153,17 +131,11 @@ pub fn collide_two_rect_parallel<'a:'b,'b,
             }
         }
         
-        let mut func2=|cc:ColPair<Ba<K::T>>|{
+        let mut func2=|cc:ColPair<Ba<T>>|{
             let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};
             func(c);
         };
         
-
-        //let r1=rect1.get_range(axis);
-        //let r2=rect2.get_range(axis);
-        //println!("{:?}",(r1,r2));
-        //let r3=&r1.get_intersection(r2).unwrap(); //TODO dont special case this
-        //let mut b=BleekSF::new(&mut func2);
         let mut sweeper=Sweeper::new();
 
         let b=Bo(func2,PhantomData);

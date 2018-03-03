@@ -79,7 +79,7 @@ pub mod relax{
             let tt0=tools::Timer2::new();
             {
                 let (mleft,mright)=bin_middile(binned.middile,|a:&T,div:&T::Num|{
-                    a.get().0.get_range(div_axis).left().cmp(div)
+                    (a.get().0).0.get_range(div_axis).left().cmp(div)
                 },&med);
                 
                 //Now we have binned the middiles in addition to the left and right bins.
@@ -250,8 +250,8 @@ pub mod strict{
                     {
                          let closure = |a: &T, b: &T| -> std::cmp::Ordering {
         
-                            let arr=a.get().0.get_range(div_axis);
-                            let brr=b.get().0.get_range(div_axis);
+                            let arr=(a.get().0).0.get_range(div_axis);
+                            let brr=(b.get().0).0.get_range(div_axis);
                       
                             if arr.left() > brr.left(){
                                 return std::cmp::Ordering::Greater;
@@ -266,7 +266,7 @@ pub mod strict{
                         pdqselect::select_by(rest, mm, closure);
                         
                         let k=&rest[mm];
-                        k.get().0.get_range(div_axis).start
+                        (k.get().0).0.get_range(div_axis).start
                     };
                 *mmm=m;
                 m

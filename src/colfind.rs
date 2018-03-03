@@ -8,6 +8,7 @@ use compt::WrapGen;
 pub trait ColMulti:Send+Sync+Clone{
     type T:SweepTrait;
     fn zero(&self,a:&mut <Self::T as SweepTrait>::Inner);
+    //fn identity(&self)->T;
     fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&<Self::T as SweepTrait>::Inner);
     fn collide(&self,a:ColPair<Self::T>);
 }
@@ -118,6 +119,7 @@ fn go_down_in_parallel<'x,
     //after both left and right functions have finished,
     //merge them back together.
     let (space,mut anchor_copy)=unsafe{
+      
         struct Repr<X>{
             start:*mut X,
             len:usize
@@ -331,7 +333,7 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
             let (rect_a,aval)=inda.get_mut();
             for indb in r2.iter_mut() {
                 let (rect_b,bval)=indb.get_mut();
-                if rect_a.intersects_rect(rect_b){
+                if rect_a.0.intersects_rect(&rect_b.0){
                     func.collide(ColPair{a:(rect_a,aval),b:(rect_b,bval)});
                 }
             }
@@ -390,7 +392,7 @@ pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
     impl<F:ColSing> ColSing for Wrapper<F>{
         type T=F::T;
         fn collide(&mut self,a:ColSingle<Self::T>){
-            if self.rect.contains_rect(a.0){
+            if self.rect.contains_rect(&(a.0).0){
                 self.closure.collide(a);
             }
         }
@@ -429,7 +431,7 @@ mod bl{
             //only check if the opoosite axis intersects.
             //already know they intersect
             let a2=A::Next::get();//self.axis.next();
-            if cc.a.0.get_range(a2).intersects(cc.b.0.get_range(a2)){
+            if (cc.a.0).0.get_range(a2).intersects((cc.b.0).0.get_range(a2)){
                 self.a.collide(cc);
             }
         }
