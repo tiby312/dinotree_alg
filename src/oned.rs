@@ -122,7 +122,7 @@ fn merge<'a,A:AxisTrait,X:SweepTrait+'a>(a:Binned<'a,X>,b:Binned<'a,X>)->Binned<
     let mut b_counter=a_slice_len;
     let mut target=amed_len;
     //append b middiles and shift aleft and aright
-    for i in (0..bmed_len){
+    for i in 0..bmed_len{
         //total.swap(amed_len,amed_len+aleft_len);
         total.swap(b_counter,target);
         total.swap(b_counter,target+aleft_len);
@@ -142,7 +142,7 @@ fn merge<'a,A:AxisTrait,X:SweepTrait+'a>(a:Binned<'a,X>,b:Binned<'a,X>)->Binned<
     //                                              ^               ^
     //                                           target          b_counter
     
-    for i in (0..bleft_len){
+    for i in 0..bleft_len{
         total.swap(b_counter,target);
         total.swap(b_counter,target+aright_len);
         target+=1;
@@ -332,7 +332,6 @@ impl<I:SweepTrait> Sweeper<I>{
         let mut xs=cols.0.iter_mut().peekable();
         let ys=cols.1.iter_mut();
         
-        use smallvec;
         let active_x=self.helper.get_empty_vec_mut();
 
         for y in ys

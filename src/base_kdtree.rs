@@ -176,7 +176,7 @@ fn recurse_rebal<'b,A:AxisTrait,T:SweepTrait,H:DepthLevel,Z:MedianStrat<Num=T::N
                 tot_time[1]=tt.elapsed();
 
 
-                let ll=binned_middile.len();
+                //let ll=binned_middile.len();
                 let tt2=tools::Timer2::new();
 
                 let container_box=self::create_container_rect::<A,_>(binned_middile);
@@ -209,8 +209,7 @@ use self::bla::create_container_rect_par;
 mod bla{
     use super::*;
     pub fn create_container_rect<A:AxisTrait,T:SweepTrait>(middile:&[T])->axgeom::Range<T::Num>{
-        use rayon::prelude::*;
-
+        
         {
             let res=middile.split_first();
 
@@ -242,7 +241,7 @@ mod bla{
                     let first_ra=(first.get().0).0.get_range2::<A>().clone();
                     
                     use smallvec::SmallVec;
-                    let mut vecs:SmallVec<[&[T];16]> =middile.chunks(2000).collect();
+                    let mut vecs:SmallVec<[&[T];16]> =rest.chunks(2000).collect();
 
                     let res:axgeom::Range<T::Num>=
                         vecs.par_iter().map(|a|{create_container::<A,T>(a,first_ra)}).

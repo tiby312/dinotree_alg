@@ -10,6 +10,7 @@ extern crate ordered_float;
 extern crate rand;
 extern crate smallvec;
 
+
 mod inner_prelude{
   pub use AABBox;
   pub use axgeom::Axis;
@@ -31,7 +32,11 @@ mod inner_prelude{
 /// Conveniently include commonly used symbols in this crate.
 /// Use like this:
 /// ```
-/// use dinotree::prelude::*
+/// extern crate dinotree;
+/// use dinotree::prelude::*;
+/// fn main(){
+///    //...
+/// }
 /// ```
 pub mod prelude{
   pub use daxis;
@@ -76,8 +81,7 @@ mod colfind;
 mod dyntree;
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
-///Contains code to query multiple non intersecting rectangles.
-mod multirect;
+
 ///Contains misc tools
 mod tools;
 
@@ -120,7 +124,6 @@ impl<N:NumTrait> AABBox<N>{
 
 
 pub mod daxis{
-  use axgeom;
   pub use axgeom::Axis as DAxis;
   pub use axgeom::XAXIS;
   pub use axgeom::YAXIS;
@@ -173,46 +176,6 @@ use median::MedianStrat;
 use support::DefaultDepthLevel;
 
 
-/*
-//Note this doesnt check all invariants.
-//e.g. doesnt check that every bot is in the tree only once.
-fn assert_invariant<T:SweepTrait>(d:&DinoTree2<T>){
-    
-    let level=d.0.get_level_desc();
-    let ll=compt::LevelIter::new(d.0.get_iter(),level);
-    use compt::CTreeIterator;
-    for (level,node) in ll.dfs_preorder_iter(){
-       
-       //println!("level={:?}",level.get_depth());
-       if level.get_depth()%2==0{
-          oned::is_sorted::<A::Next,_>(&node.range);
-
-
-          let kk=node.container_box;
-          for a in node.range.iter(){
-             let (p1,p2)=(
-                  a.get().0.get().get_range2::<A>().left(),
-                  a.get().0.get().get_range2::<A>().right());
-              assert!(kk.left()<=p1);
-              assert!(p2<=kk.right());
-          }
-       }else{
-          oned::is_sorted::<A,_>(&node.range);
-          
-          let kk=node.container_box;
-          for a in node.range.iter(){
-             let (p1,p2)=(
-                  a.get().0.get().get_range2::<A::Next>().left(),
-                  a.get().0.get().get_range2::<A::Next>().right());
-              assert!(kk.left()<=p1);
-              assert!(p2<=kk.right());
-          }
-       }
-    }       
-    
-}
-*/
-
 
 
 
@@ -223,57 +186,9 @@ pub trait RectsTreeTrait{
 }
 
 ///A construct to allow querying non-intersecting rectangles to retrive mutable references to what is inside them.
-///
-///#Examples
-/// ```ignore //TODO fix
-///extern crate axgeom;
-///extern crate collie;
-///use collie::kdtree::{TreeCache,KdTreeWrapper,KdTreeReal};
-///use collie::extensions::Rects;
-///use collie::support::BBox; 
-///use collie::ColSingle;
-///
-///fn main(){    
-///    #[derive(Copy,Clone)]
-///    struct Bot{
-///        id:usize
-///    }
-///    let b1=BBox::new(Bot{id:0},axgeom::Rect::new(0,10,  0,10));
-///    let b2=BBox::new(Bot{id:1},axgeom::Rect::new(5,15,  5,15));
-///    let b3=BBox::new(Bot{id:2},axgeom::Rect::new(22,40,  22,40));
-///    let mut k=vec!(b1,b2,b3);
-///
-///    let world=axgeom::Rect::new(0,20,0,20);
-///    let mut tc=TreeCache::new(axgeom::XAXIS,5,&mut k);
-///
-///    let mut kd=KdTreeWrapper::new(&mut tc,&mut k);
-///    let mut k=kd.get();
-///    let mut rects=Rects::new(&mut k);//.create_rects();
-///
-///    //Need to create a seperate function so that 
-///    //we can get a named lifetime from the closure.
-///    fn query<'b>(rects:&mut Rects<'b,KdTreeReal<BBox<isize,Bot>>>){
-///
-///        let mut bots1=Vec::new();
-///        rects.for_all_in_rect(
-///                    &axgeom::Rect::new(0,20,0,20),
-///                    &mut |cc:ColSingle<'b,BBox<isize,Bot>>|{bots1.push(cc.1)});
-///
-///        let mut bots2=Vec::new();
-///        rects.for_all_in_rect(
-///                    &axgeom::Rect::new(21,50,21,50),
-///                    &mut |cc:ColSingle<'b,BBox<isize,Bot>>|{bots2.push(cc.1)});
-///
-///        assert!(bots1[0].id==0);
-///        assert!(bots1[1].id==1);
-///        assert!(bots2[0].id==2);
-///    }
-///    query(&mut rects);
-///}
-/// ```
 pub struct Rects<'a,C:RectsTreeTrait+'a>{
     tree:&'a mut C,
-    rects:Vec<&'a AABBox<C::Num>>
+    rects:Vec<AABBox<C::Num>>
 }
 
 
@@ -288,7 +203,7 @@ impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
     ///Note the lifetime of the mutable reference in the passed function.
     ///The user is allowed to move this reference out and hold on to it for 
     ///the lifetime of this struct.
-    pub fn for_all_in_rect<F:FnMut(ColSingle<'a,C::T>)>(&mut self,rect:&'a AABBox<C::Num>,mut func:F){
+    pub fn for_all_in_rect<F:FnMut(ColSingle<'a,C::T>)>(&mut self,rect:&AABBox<C::Num>,mut func:F){
     
 
         
@@ -297,6 +212,8 @@ impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
                 panic!("Rects cannot intersect! {:?}",(k,rect));
             }
         }
+
+        self.rects.push(AABBox(rect.0));
 
         {
             let wrapper=|c:ColSingle<C::T>|{
@@ -309,9 +226,8 @@ impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
                 func(cn);
             };
             self.tree.for_all_in_rect(rect,wrapper);
-    }
+        }
         
-        self.rects.push(rect);
     }
 }
 
@@ -604,6 +520,12 @@ mod ba{
         }
       }
       
+      ///Not implemented!
+      ///Finds the k nearest bots to a point.
+      pub fn kth_nearest<F:FnMut(ColSingle<T>)>(&mut self,mut clos:F,point:(T::Num,T::Num),num:usize){
+        unimplemented!();
+      }
+
       pub fn for_every_col_pair_seq<F:FnMut(ColPair<T>),K:TreeTimerTrait>
           (&mut self,mut clos:F)->K::Bag{     
           let mut clos=self::closure_struct::ColSeqStruct::new(clos);
@@ -670,15 +592,7 @@ impl<'a,A:AxisTrait,T:SweepTrait+'a> DinoTree<'a,A,T>{
 
 
 
-/*
-mod test_support{
- 
-}
-*/
-
-
-
-
+//Pub so benches can access
 #[cfg(test)]
 mod test_support;
 

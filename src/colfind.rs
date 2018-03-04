@@ -3,7 +3,7 @@ use oned::Bleek;
 use tree_alloc::NodeDyn;
 use compt::LevelIter;
 use compt::WrapGen;
-
+use std::cell::UnsafeCell;
 
 pub trait ColMulti:Send+Sync+Clone{
     type T:SweepTrait;
@@ -105,7 +105,6 @@ use self::nodedynowned::NodeDynOwned;
 mod nodedynowned{
     use super::SweepTrait;
     use super::NodeDyn;
-    use axgeom::Range;
     use std;
     use colfind::ColMulti;
 
@@ -281,10 +280,6 @@ fn recurse<'x,
 
 pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T>,K:TreeTimerTrait>
         (kdtree:&mut DynTree<A,T>,mut clos:F)->K::Bag{
-    
-    use std::marker::PhantomData;
-    use std::cell::UnsafeCell;
-
 
     //#[derive(Copy,Clone)]
     pub struct Wrapper<'a,F:ColSeq+'a>(

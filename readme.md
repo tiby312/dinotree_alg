@@ -178,7 +178,11 @@ talk about thread safety
 talk about targeting android that uses ART vs Dalvik
 talk about avoiding copying and ByteBuffer
 
+# Author notes
+As I delved further and further into this passion project. I came to realize that I may have "bitton off more than I could chew" given my lifestyle (9-5 job + girlfriend). So this isn't really as "rigorous" as I would like it to be.
 
+
+talk about recursion limit
 
 ## License
 

@@ -81,7 +81,7 @@ fn test_corners_touch(){
     // # # #
     //# # # #
     let mut bots=Vec::new();
-    let mut id_counter=(0..);
+    let mut id_counter=0..;
     let mut a=false;
     for y in (-100..200).step_by(20){
         if a{
@@ -114,7 +114,7 @@ fn test_1_apart(){
     let spawn_world=make_rect((-1000,1000),(-100,100));
 
     let mut bots=Vec::new();
-    let mut id_counter=(0..);
+    let mut id_counter=0..;
     for x in (-1000..2000).step_by(21){
       for y in (-100..200).step_by(21){
           let id=id_counter.next().unwrap();
@@ -135,7 +135,7 @@ fn test_mesh(){
     let spawn_world=make_rect((-1000,1000),(-100,100));
 
     let mut bots=Vec::new();
-    let mut id_counter=(0..);
+    let mut id_counter=0..;
     for x in (-1000..2000).step_by(20){
       for y in (-100..200).step_by(20){
           let id=id_counter.next().unwrap();
@@ -156,7 +156,7 @@ fn test_russian_doll(){
     let spawn_world=make_rect((-1000,1000),(-100,100));
 
     let mut bots=Vec::new();
-    let mut id_counter=(0..);
+    let mut id_counter=0..;
 
     for x in (-1000..2000).step_by(20){
       for y in (-100..200).step_by(20){
@@ -205,9 +205,8 @@ fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
   let mut test_result={
       let mut src:Vec<(usize,usize)>=Vec::new();
       
-
-      use axgeom::XAXIS_S;
-      use axgeom::YAXIS_S;
+      //use axgeom::XAXIS_S;
+      //use axgeom::YAXIS_S;
 
       {
         let k=MedianStrict::<Numisize>::new();
@@ -253,7 +252,7 @@ fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
                           (&mut bots,&k);
          
 
-        use compt::CTreeIterator;
+        //use compt::CTreeIterator;
         /*
         for i in diff.iter(){
             let level=dyntree.0.get_level_desc();

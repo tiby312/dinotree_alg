@@ -6,6 +6,47 @@ use rand::{ SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};    
 use prelude::*;
 
+/*
+//Note this doesnt check all invariants.
+//e.g. doesnt check that every bot is in the tree only once.
+fn assert_invariant<T:SweepTrait>(d:&DinoTree2<T>){
+    
+    let level=d.0.get_level_desc();
+    let ll=compt::LevelIter::new(d.0.get_iter(),level);
+    use compt::CTreeIterator;
+    for (level,node) in ll.dfs_preorder_iter(){
+       
+       //println!("level={:?}",level.get_depth());
+       if level.get_depth()%2==0{
+          oned::is_sorted::<A::Next,_>(&node.range);
+
+
+          let kk=node.container_box;
+          for a in node.range.iter(){
+             let (p1,p2)=(
+                  a.get().0.get().get_range2::<A>().left(),
+                  a.get().0.get().get_range2::<A>().right());
+              assert!(kk.left()<=p1);
+              assert!(p2<=kk.right());
+          }
+       }else{
+          oned::is_sorted::<A,_>(&node.range);
+          
+          let kk=node.container_box;
+          for a in node.range.iter(){
+             let (p1,p2)=(
+                  a.get().0.get().get_range2::<A::Next>().left(),
+                  a.get().0.get().get_range2::<A::Next>().right());
+              assert!(kk.left()<=p1);
+              assert!(p2<=kk.right());
+          }
+       }
+    }       
+    
+}
+*/
+
+
 
 #[derive(Clone,Debug)]
 pub struct Bot{
@@ -59,7 +100,6 @@ pub struct PointGenerator{
 }
 impl PointGenerator{
   pub fn new(a:&axgeom::Rect<Numisize>,seed:&[usize])->PointGenerator{
-     use rand::distributions::IndependentSample;
 
      let mut rng: StdRng = SeedableRng::from_seed(seed);
 
