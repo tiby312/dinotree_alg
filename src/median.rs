@@ -52,7 +52,7 @@ pub mod relax{
         type Num=N;
         fn compute<'a,JJ:par::Joiner,A:AxisTrait,T:SweepTrait<Num=N>>(
             &self,
-            level:LevelDesc,
+            _level:LevelDesc,
             rest:&'a mut [T],
             divider:&mut T::Num)->(T::Num,oned::Binned<'a,T>){
             let div_axis=A::get();
@@ -233,7 +233,7 @@ pub mod strict{
         
         fn compute<'a,JJ:par::Joiner,A:AxisTrait,T:SweepTrait<Num=N>>(
             &self,
-            level:LevelDesc,
+            _level:LevelDesc,
             rest:&'a mut [T],
             mmm:&mut T::Num)->(T::Num,oned::Binned<'a,T>){
             let div_axis=A::get();

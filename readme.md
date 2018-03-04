@@ -184,6 +184,8 @@ As I delved further and further into this passion project. I came to realize tha
 
 talk about recursion limit
 
+talk about parallel pattern defeating quick select
+
 ## License
 
 Licensed under the terms of MIT license and the Apache License (Version 2.0).

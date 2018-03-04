@@ -84,10 +84,6 @@ impl<'a:'b,'b,T:SweepTrait+'a> CTreeIterator for Wrap<'a,'b,T>{
 }
 */
 
-
-
-
-//SweepTrait+Send
 pub struct Cont<'b,T:'b>{
     pub a:&'b mut T
 }
@@ -114,14 +110,6 @@ pub struct DynTree<'b,A:AxisTrait,T:SweepTrait+Send+'b>{
     mover:Mover,
     _p:PhantomData<A>
 }
-
-
-
-
-//use  oned::sup::BleekSF;
-//use  oned::sup::BleekBF;
-
-
 
 
 impl<'a,A:AxisTrait,T:SweepTrait+'a> DynTree<'a,A,T>{
@@ -232,7 +220,7 @@ mod mover{
 
                 let cp=unsafe{orig.get_unchecked_mut(*mov)};
 
-                let k=unsafe{std::ptr::copy(b,cp,1)};
+                unsafe{std::ptr::copy(b,cp,1)};
                     
                 //*unsafe{orig.get_unchecked_mut(*mov)}=*b;
             }

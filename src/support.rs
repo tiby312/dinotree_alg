@@ -89,7 +89,7 @@ pub fn collide_two_rect_parallel<
     Num:NumTrait,
     T:SweepTrait<Num=Num>,
     F:FnMut(ColPair<T>)>(
-        tree:&mut DinoTree2<T>,rect1:& AABBox<T::Num>,rect2:& AABBox<T::Num>,mut func:F)
+        tree:&mut DinoTree<T>,rect1:& AABBox<T::Num>,rect2:& AABBox<T::Num>,mut func:F)
 {
     
     struct Ba<'z,J:SweepTrait+Send+'z>(ColSingle<'z,J>);
@@ -138,7 +138,7 @@ pub fn collide_two_rect_parallel<
             }
         }
         
-        let mut func2=|cc:ColPair<Ba<T>>|{
+        let func2=|cc:ColPair<Ba<T>>|{
             let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};
             func(c);
         };

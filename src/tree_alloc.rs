@@ -143,9 +143,7 @@ impl<'a,T:SweepTrait+'a> TreeAllocDst<'a,T>{
 
                 //we cant just move it into here.
                 //then rust will try and call the destructor of the uninitialized object
-                let k=unsafe{std::ptr::copy(b.a,a,1)};
-                   
-                //*a=b;
+                unsafe{std::ptr::copy(b.a,a,1)};
             }
             dst
         };

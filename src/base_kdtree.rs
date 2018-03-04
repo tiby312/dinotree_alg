@@ -13,7 +13,6 @@ impl<Nu:Ord+Copy+std::fmt::Debug> DivNode<Nu>{
 ///This preserves some state of the medians at each level between kdtree constructions.
 pub struct TreeCache<A:AxisTrait,Nu:NumTrait>{
     height:usize,
-    num_nodes:usize,
     medtree:compt::GenTree<DivNode<Nu>>,
     _p:PhantomData<A>
 }
@@ -23,23 +22,16 @@ impl<A:AxisTrait,Nu:NumTrait> TreeCache<A,Nu>{
     ///The tree cache contains within it a tree to keep a persistant state between construction of the kdtree.
     ///So the height of the kdtree is decided here, before the creation of the tree.
     pub fn new(height:usize)->TreeCache<A,Nu>{
-        let num_nodes=compt::compute_num_nodes(height);
+        //let num_nodes=compt::compute_num_nodes(height);
         
         let t= compt::GenTree::from_bfs(&mut ||{DivNode{divider:std::default::Default::default()}},height);
 
-        TreeCache{medtree:t,num_nodes:num_nodes,height:height,_p:PhantomData}
+        TreeCache{medtree:t,height:height,_p:PhantomData}
     }
 
     pub fn get_tree(&self)->&compt::GenTree<DivNode<Nu>>{
         &self.medtree
     }
-    pub fn get_num_nodes(&self)->usize{
-        self.num_nodes
-    }
-
-    pub fn get_height(&self)->usize{
-        self.height
-    }  
 }
 
 

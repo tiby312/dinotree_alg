@@ -100,12 +100,12 @@ fn merge<'a,A:AxisTrait,X:SweepTrait+'a>(a:Binned<'a,X>,b:Binned<'a,X>)->Binned<
 
     let new_med_len=a.middile.len()+b.middile.len();
     let new_left_len=a.left.len()+b.left.len();
-    let new_right_len=a.right.len()+b.right.len();
+    //let new_right_len=a.right.len()+b.right.len();
 
     let a_slice=tools::join_mut(tools::join_mut(a.middile,a.left),a.right);
     let a_slice_len=a_slice.len();
     let b_slice=tools::join_mut(tools::join_mut(b.middile,b.left),b.right);
-    let b_slice_len=b_slice.len();
+    //let b_slice_len=b_slice.len();
     let total=tools::join_mut(a_slice,b_slice);
 
     //let mut total_med=amed;
@@ -122,7 +122,7 @@ fn merge<'a,A:AxisTrait,X:SweepTrait+'a>(a:Binned<'a,X>,b:Binned<'a,X>)->Binned<
     let mut b_counter=a_slice_len;
     let mut target=amed_len;
     //append b middiles and shift aleft and aright
-    for i in 0..bmed_len{
+    for _ in 0..bmed_len{
         //total.swap(amed_len,amed_len+aleft_len);
         total.swap(b_counter,target);
         total.swap(b_counter,target+aleft_len);
@@ -142,7 +142,7 @@ fn merge<'a,A:AxisTrait,X:SweepTrait+'a>(a:Binned<'a,X>,b:Binned<'a,X>)->Binned<
     //                                              ^               ^
     //                                           target          b_counter
     
-    for i in 0..bleft_len{
+    for _ in 0..bleft_len{
         total.swap(b_counter,target);
         total.swap(b_counter,target+aright_len);
         target+=1;
@@ -211,7 +211,7 @@ pub fn bin<'a,'b,A:AxisTrait,X:SweepTrait>(med:&X::Num,bots:&'b mut [X])->Binned
     Binned{left:left,middile:middile,right:right}
 }
 
-
+#[cfg(test)]
 pub fn is_sorted<A:AxisTrait,I:SweepTrait>(collision_botids:&[I]){
     
     if collision_botids.len()==0{
