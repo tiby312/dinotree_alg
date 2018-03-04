@@ -16,3 +16,4 @@ odds = "0.2.25"  #used for Vec::retain_mut
 compt = {path="../compt"}
 axgeom = {path="../axgeom"}
 smallvec = "0.6.0"
+dinotree_inner = {path="../dinotree_inner"}

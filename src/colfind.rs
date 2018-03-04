@@ -1,6 +1,5 @@
 use inner_prelude::*;
 use oned::Bleek;
-use tree_alloc::NodeDyn;
 use compt::LevelIter;
 use compt::WrapGen;
 use std::cell::UnsafeCell;
@@ -100,11 +99,8 @@ fn go_down<'x,
 
 use self::nodedynowned::NodeDynOwned;
 mod nodedynowned{
-    use super::SweepTrait;
-    use super::NodeDyn;
-    use std;
-    use colfind::ColMulti;
-
+    use super::*;
+    
     pub struct NodeDynOwned<'a,X:SweepTrait+'a>{
         a:&'a mut NodeDyn<X>,
         _inner:Vec<u8>
