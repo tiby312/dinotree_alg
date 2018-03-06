@@ -16,18 +16,28 @@ pub fn get_num_verticies(height:usize)->usize{
     (num_nodes/2)*6
 }
 
+pub fn update<V:Vertex,T:SweepTrait<Num=Numf32>>(rect:axgeom::Rect<Numf32>,gentree:&DinoTree<T>,verticies:&mut [V],start_width:f32){
+    match &gentree.0{
+      &DynTreeEnum::Xa(ref a)=>{
+        self::update_inner::<XAXIS_S,V,T>(rect,a,verticies,start_width);
+      },
+      &DynTreeEnum::Ya(ref a)=>{
+        self::update_inner::<YAXIS_S,V,T>(rect,a,verticies,start_width);
+      }
+    }
+}
 ///Panics if the slice given has a length not equal to what is returned by get_num_verticies().
-pub fn update<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,verticies:&mut [V],start_width:f32) {
+fn update_inner<A:AxisTrait,V:Vertex,T:SweepTrait<Num=Numf32>>(rect:axgeom::Rect<Numf32>,gentree: &DynTree<A,T>,verticies:&mut [V],start_width:f32) {
   
     struct Node<'a, V:Vertex+'a>{
         a:&'a mut [V]
     };
 
-    let a=self::get_num_verticies(gentree.get_tree().get_height());
+    let a=self::get_num_verticies(gentree.get_height());
     let b=verticies.len();
     assert_eq!( a,b);
 
-    let height=gentree.get_tree().get_height();
+    let height=gentree.get_height();
     let mut vert_tree={
         let mut va=verticies;
         let nodes:GenTree<Node<V>>=GenTree::from_bfs(&mut ||{
@@ -38,31 +48,31 @@ pub fn update<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,v
 
             Node{a:a}
         
-        },gentree.get_tree().get_height()-1);
+        },gentree.get_height()-1);
         nodes
     };
 
 
-    let level=gentree.get_tree().get_level_desc();
-    let d1=gentree.get_tree().create_down();
+    let level=gentree.get_level_desc();
+    let d1=gentree.get_iter();
     let d2=vert_tree.create_down_mut();
     let zip=compt::LevelIter::new(d1.zip(d2),level);
     
-    fn recc<'a,V:Vertex+'a,D:CTreeIterator<Item=(&'a DivNode<Numf32>,&'a mut Node<'a,V>)>>
-        (axis:axgeom::Axis,height:usize,rect:Rect<Numf32>,d:LevelIter<D>,width:f32)
+    fn recc<'a,A:AxisTrait,T:SweepTrait<Num=Numf32>+'a,V:Vertex+'a,D:CTreeIterator<Item=(&'a NodeDyn<T>,&'a mut Node<'a,V>)>>
+        (height:usize,rect:Rect<Numf32>,d:LevelIter<D>,width:f32)
         {
-            let div_axis=axis;
+            let div_axis=A::get();
             match d.next(){
                 ((dd,nn),Some((left,right)))=>{
-                    let line_axis=axis.next();
+                    let line_axis=A::Next::get();;//axis.next();
 
                     let range=rect.get_range(line_axis);
-                    draw_node(height,*range,nn.0,(div_axis,dd),nn.1.a,width);
+                    draw_node(height,*range,&nn.0.divider,(div_axis,dd),nn.1.a,width);
                     
                     let (b, c) = rect.subdivide(*nn.0.divider(), div_axis);
 
-                    recc::<_,_>(axis.next(),height,b,left,width*0.9);
-                    recc::<_,_>(axis.next(),height,c,right,width*0.9);
+                    recc::<A::Next,_,_,_>(height,b,left,width*0.9);
+                    recc::<A::Next,_,_,_>(height,c,right,width*0.9);
                 },
                 ((_dd,_nn),None)=>{
 
@@ -70,11 +80,11 @@ pub fn update<V:Vertex>(rect:axgeom::Rect<Numf32>,gentree: &TreeCache2<Numf32>,v
             }
 
         }
-    recc::<_,_>(gentree.get_axis(),height,rect,zip,start_width);
+    recc::<A,_,_,_>(height,rect,zip,start_width);
 }
 
 
-fn draw_node<V:Vertex>(height:usize,range:Range<Numf32>,div:&DivNode<Numf32>,faafa:(Axis,compt::LevelDesc),verticies:&mut [V],width:f32){
+fn draw_node<V:Vertex>(height:usize,range:Range<Numf32>,div:&Numf32,faafa:(Axis,compt::LevelDesc),verticies:&mut [V],width:f32){
         let (div_axis,level)=faafa;
         let line_axis=div_axis.next();
 
@@ -85,12 +95,12 @@ fn draw_node<V:Vertex>(height:usize,range:Range<Numf32>,div:&DivNode<Numf32>,faa
         let b=line_axis;
 
         let mut p1 = axgeom::Vec2::new(0.0, 0.0);
-        *p1.get_axis_mut(a) = div.divider().0.into_inner();
+        *p1.get_axis_mut(a) = div.0.into_inner();
 
         *p1.get_axis_mut(b) = range.start.0.into_inner();
 
         let mut p2 = axgeom::Vec2::new(0.0, 0.0);
-        *p2.get_axis_mut(a) = div.divider().0.into_inner();
+        *p2.get_axis_mut(a) = div.0.into_inner();
         *p2.get_axis_mut(b) = range.end.0.into_inner();
 
         self::draw_line(verticies,&p1,&p2,width);

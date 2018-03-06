@@ -7,8 +7,8 @@ use std::cell::UnsafeCell;
 pub trait ColMulti:Send+Sync+Clone{
     type T:SweepTrait;
     //User must keel the return object the same rect as this.
-    fn identity(&self,src:&Self::T)->Self::T;
-    fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&mut <Self::T as SweepTrait>::Inner);
+    //fn identity(&self,src:&Self::T)->Self::T;
+    //fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&mut <Self::T as SweepTrait>::Inner);
     fn collide(&self,a:ColPair<Self::T>);
 }
 
@@ -82,13 +82,10 @@ fn go_down<'x,
                         self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
                     };
                 }else{
-                    if JJ::is_parallel() && !H::switch_to_sequential(level){ 
-                        self::go_down_in_parallel::<H,A::Next,B,_,_,_>(sweeper,anchor,left,right,func.clone());
-                        
-                    }else{
-                        self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,left,func);
-                        self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
-                    }
+                    
+                    self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,left,func);
+                    self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
+                   
                 }               
             },
             _=>{}
@@ -96,7 +93,7 @@ fn go_down<'x,
     }
 }
 
-
+/*
 use self::nodedynowned::NodeDynOwned;
 mod nodedynowned{
     use super::*;
@@ -156,42 +153,7 @@ mod nodedynowned{
     }
 
 }
-fn go_down_in_parallel<'x,
-    H:DepthLevel,
-    A:AxisTrait, //this axis
-    B:AxisTrait, //parent axis
-    C:CTreeIterator<Item=&'x mut NodeDyn<X>>+Send,
-    X:SweepTrait+'x,F:ColMulti<T=X>>
-    (
-        sweeper:&mut Sweeper<F::T>,
-        anchor:&mut &mut NodeDyn<X>,
-        left:WrapGen<LevelIter<C>>,
-        right:WrapGen<LevelIter<C>>,
-        clos:F) 
-{
-    {
-        let mut copy=NodeDynOwned::new(anchor,&clos);
-        let mut anchor_copy:&mut NodeDyn<X>=copy.get();
-            
-        
-        {
-            let af=||{
-                self::go_down::<par::Parallel,H,A,B,_,_,_>(sweeper,anchor,left,&mut clos.clone());
-            };
-            let bf=||{
-                let mut sweeper=Sweeper::new(); 
-                self::go_down::<par::Parallel,H,A,B,_,_,_>(&mut sweeper,&mut anchor_copy,right,&mut clos.clone());
-            };
-
-            rayon::join(af,bf);
-        }
-
-
-        for (a,b) in anchor.range.iter_mut().zip(anchor_copy.range.iter_mut()){
-            clos.add(a.get_mut().1,b.get_mut().1);
-        }
-    }
-}
+*/
 
 fn recurse<'x,
         A:AxisTrait,
@@ -231,16 +193,13 @@ fn recurse<'x,
             {
                 let left=compt::WrapGen::new(&mut left);
                 let right=compt::WrapGen::new(&mut right);
+               
+                self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,left,clos);
+                self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,right,clos);
                 
-                if JJ::is_parallel() && !H::switch_to_sequential(level){
-                    self::go_down_in_parallel::<H,A::Next,A,_,_,_>(sweeper,&mut nn,left,right,clos.clone());
-                }else{
-                    self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,left,clos);
-                    self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,right,clos);
-                }
-
             }
 
+            tot_time[1]=tt1.elapsed();
             let (ta,tb)=timer_log.next();      
             
             let (ta,tb)=if JJ::is_parallel() && !H::switch_to_sequential(level)
@@ -263,8 +222,10 @@ fn recurse<'x,
             K::combine(ta,tb)
         }
     };
-    tot_time[1]=tt1.elapsed();
-
+    tot_time[2]=tt1.elapsed();
+    if level.get_depth() == 0{
+        println!("tot_time={:?}",tot_time);
+    }
     k
 }
 
@@ -286,12 +247,14 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T
 
     impl<'a,F:ColSeq+'a> ColMulti for Wrapper<'a,F> {
         type T=F::T;
+        /*
         fn identity(&self,_src:&Self::T)->Self::T{
             unreachable!()
         }
         fn add(&self,_a:&mut <Self::T as SweepTrait>::Inner,_b:&mut <Self::T as SweepTrait>::Inner){
             unreachable!()
         }
+        */
         fn collide(&self,a:ColPair<Self::T>){
             //Protected by the fact that cloning thus struct
             //results in panic!.

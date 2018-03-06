@@ -184,7 +184,11 @@ As I delved further and further into this passion project. I came to realize tha
 
 talk about recursion limit
 
-talk about parallel pattern defeating quick select
+talk about parallel pattern defeating quick select would be nice
+
+
+talk about guarentees on the number of bots in chidlren ondes when always using the median. I tried many divider placement strategies where divider positions from previous positions were used to push them in the right direction. But at the end of the day, all these strategies of applying "forces" to the dividers suffer from the divider not being exactly where they need to be. They are always moving towards way they should be. I dont think the performance gains of a faster rebalance using this strategy is worth the performance loss from querying using suboptimal divider placement.
+
 
 ## License
 

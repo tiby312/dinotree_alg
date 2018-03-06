@@ -43,7 +43,7 @@ pub mod prelude{
   pub use ColSingle;
   pub use DinoTree;
   pub use Rects;
-  pub use TreeCache2;
+  //pub use TreeCache2;
   pub use RectsTreeTrait;
 }
 
@@ -66,7 +66,7 @@ mod tools;
 
 pub use dinotree_inner::prelude::*;
 //use inner_prelude::*;
-use dinotree_inner::TreeCache;
+//use dinotree_inner::TreeCache;
 use compt::LevelDesc;
 use axgeom::Rect;
 
@@ -149,12 +149,14 @@ impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
 }
 
 
-pub use ba::TreeCache2;
+//pub use ba::TreeCache2;
 pub use ba::DinoTree;
+pub(crate) use ba::DynTreeEnum;
+pub use ba::compute_tree_height;
 mod ba{
   use super::*;
   use DynTree;
-  use dinotree_inner::TreeCache;
+  //use dinotree_inner::TreeCache;
   use RectsTreeTrait;
 
   mod closure_struct{
@@ -203,12 +205,8 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync+'a,
-          F2:Fn(&T)->T+Send+Sync+'a,
-          F3:Fn(&mut I,&mut I)+Send+Sync+'a
           >{
           a:&'a F,
-          b:&'a F2,
-          c:&'a F3,
           p:PhantomData<T>
       }
 
@@ -218,11 +216,9 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&T)->T+Send+Sync+'a,
-          F3:Fn(&mut I,&mut I)+Send+Sync
-          > ColMultiStruct<'a,T,I,F,F2,F3>{
-          pub fn new(a:&'a F,b:&'a F2,c:&'a F3)->ColMultiStruct<'a,T,I,F,F2,F3>{
-              ColMultiStruct{a,b,c,p:PhantomData}
+          > ColMultiStruct<'a,T,I,F>{
+          pub fn new(a:&'a F)->ColMultiStruct<'a,T,I,F>{
+              ColMultiStruct{a,p:PhantomData}
           }
       }
 
@@ -233,9 +229,7 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&T)->T+Send+Sync+'a,
-          F3:Fn(&mut I,&mut I)+Send+Sync
-          >Copy for ColMultiStruct<'a,T,I,F,F2,F3>{
+          >Copy for ColMultiStruct<'a,T,I,F>{
           
       }
 
@@ -245,9 +239,7 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&T)->T+Send+Sync+'a,
-          F3:Fn(&mut I,&mut I)+Send+Sync
-          >Clone for ColMultiStruct<'a,T,I,F,F2,F3>{
+          >Clone for ColMultiStruct<'a,T,I,F>{
           fn clone(&self)->Self{
               *self
           }
@@ -259,17 +251,9 @@ mod ba{
           T:SweepTrait<Inner=I>,
           I:Send+Sync,
           F:Fn(ColPair<T>)+Send+Sync,
-          F2:Fn(&T)->T+Send+Sync+'a,
-          F3:Fn(&mut I,&mut I)+Send+Sync
-          >ColMulti for ColMultiStruct<'a,T,I,F,F2,F3>{
+          >ColMulti for ColMultiStruct<'a,T,I,F>{
 
           type T=T;
-          fn identity(&self,src:&T)->T{
-              (self.b)(src)
-          }
-          fn add(&self,a:&mut I,b:&mut I){
-              (self.c)(a,b);
-          }
           fn collide(&self,a:ColPair<T>){
               (self.a)(a);
           }
@@ -277,12 +261,14 @@ mod ba{
       } 
   }
 
-
+  /*
   enum TreeCacheEnum<T:NumTrait>{
     Xa(TreeCache<XAXIS_S,T>),
     Ya(TreeCache<YAXIS_S,T>)
   }
+  */
 
+  /*
   pub struct TreeCache2<T:NumTrait>(TreeCacheEnum<T>);
 
   impl<T:NumTrait> TreeCache2<T>{
@@ -370,14 +356,15 @@ mod ba{
        }
     }
   }
+  */
 
 
-  enum DynTreeEnum<'a,T:SweepTrait+'a>{
+  pub(crate) enum DynTreeEnum<'a,T:SweepTrait+'a>{
     Xa(DynTree<'a,XAXIS_S,T>),
     Ya(DynTree<'a,YAXIS_S,T>)
   }
 
-  pub struct DinoTree<'a,T:SweepTrait+'a>(DynTreeEnum<'a,T>);
+  pub struct DinoTree<'a,T:SweepTrait+'a>(pub(crate) DynTreeEnum<'a,T>);
 
   impl <'a,T:SweepTrait+'a> RectsTreeTrait for DinoTree<'a,T>{
       type T=T;
@@ -387,14 +374,80 @@ mod ba{
         DinoTree::for_all_in_rect(self,rect,fu);
       }
   }
+
+
+
+
+
+  pub fn compute_tree_height(num_bots: usize) -> usize {
+      
+      //we want each node to have space for around 300 bots.
+      //there are 2^h nodes.
+      //2^h*200>=num_bots.  Solve for h s.t. h is an integer.
+
+      const NUM_PER_NODE: usize = 10;
+      if num_bots <= NUM_PER_NODE {
+          return 1;
+      } else {
+          return (num_bots as f32 / NUM_PER_NODE as f32).log2().ceil() as usize;
+      }
+  }
+
+
   impl<'a,T:SweepTrait+'a> DinoTree<'a,T>{
       
+
+    pub fn new<JJ:par::Joiner,K:TreeTimerTrait>(
+          rest:&'a mut [T],axis:axgeom::Axis)->(DinoTree<'a,T>,K::Bag){
+        let height=self::compute_tree_height(rest.len());
+        if axis==daxis::XAXIS{
+            let k=DynTree::<XAXIS_S,T>::new::<JJ,DefaultDepthLevel,K>(rest,height);
+            (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
+          
+        }else{
+              let k=DynTree::<YAXIS_S,T>::new::<JJ,DefaultDepthLevel,K>(rest,height);
+              (DinoTree(DynTreeEnum::Ya(k.0)),k.1)    
+          
+        }
+          
+        //TODO remove this
+        //assert_invariant(&d);
+
+        //(DinoTree(d.0),d.1)
+     }
 
       pub fn rects<'b>(&'b mut self)->Rects<'b,Self>{
           Rects{tree:self,rects:Vec::new()}
       }
 
-     
+      /*
+       pub(crate) fn get_tree(&self)->&DynTree{
+        match &self.0{
+          &DynTreeEnum::Xa(ref a)=>{
+            //unsafe{std::mem::transmute(a.get_tree())}
+            a.get_tree()
+          },
+          &DynTreeEnum::Ya(ref a)=>{
+            //unsafe{std::mem::transmute(a.get_tree())}
+            a.get_tree()
+          }
+         }
+
+      }
+      */
+      /*
+    pub(crate) fn get_axis(&self)->axgeom::Axis{
+       match &self.0{
+        &DynTreeEnum::Xa(_)=>{
+          axgeom::XAXIS
+        },
+        &DynTreeEnum::Xa(_)=>{
+          axgeom::YAXIS
+        }
+       }
+    }
+
+*/
       fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&AABBox<T::Num>,fu:F){
         let fu=self::closure_struct::ColSingStruct::new(fu);
         match &mut self.0{
@@ -431,19 +484,16 @@ mod ba{
       //That is returned by SweepTrat in the identity() function.
       pub fn for_every_col_pair<
         F:Fn(ColPair<T>)+Send+Sync,
-        F2:Fn(&T)->T+Send+Sync,
-        F3:Fn(&mut T::Inner,&mut T::Inner)+Send+Sync,
-        D:DepthLevel,
-        K:TreeTimerTrait>(&mut self,a:F,b:F2,c:F3)->K::Bag{
+        K:TreeTimerTrait>(&mut self,a:F)->K::Bag{
           
-          let clos=self::closure_struct::ColMultiStruct::new(&a,&b,&c);
+          let clos=self::closure_struct::ColMultiStruct::new(&a);
           
           match &mut self.0{
             &mut DynTreeEnum::Xa(ref mut a)=>{
-              colfind::for_every_col_pair::<_,T,D,_,K>(a,clos)
+              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,K>(a,clos)
             },
             &mut DynTreeEnum::Ya(ref mut a)=>{
-              colfind::for_every_col_pair::<_,T,D,_,K>(a,clos)
+              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,K>(a,clos)
             }
           }
 
