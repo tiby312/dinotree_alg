@@ -71,7 +71,7 @@ pub use dinotree_inner::AABBox;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::SweepTrait;
 use dinotree_inner::par;
-pub use dinotree_inner::TreeTimerTrait;
+//pub use dinotree_inner::TreeTimerTrait;
 //use inner_prelude::*;
 //use dinotree_inner::TreeCache;
 use compt::LevelDesc;
@@ -84,7 +84,9 @@ use colfind::ColMulti;
 use colfind::ColSeq;
 use colfind::ColSing;
 use smallvec::SmallVec;
-
+ use dinotree_inner::TreeTimer2;
+  use dinotree_inner::TreeTimerEmpty;
+use dinotree_inner::Bag;
 
 /*
 ///This contains the destructured SweepTrait for a colliding pair.
@@ -520,30 +522,62 @@ mod ba{
     ///Create a dinotree.
     ///Specify the starting axis along which the bots will be partitioned.
     ///So if you picked the x axis, the root divider will be a vertical line.
-    pub fn new<K:TreeTimerTrait>(
-          rest:&'a mut [T],axis:axgeom::Axis)->(DinoTree<'a,T>,K::Bag){
+    pub fn new(
+          rest:&'a mut [T],axis:axgeom::Axis)->DinoTree<'a,T>{
         let height=self::compute_tree_height(rest.len());
         if axis==daxis::XAXIS{
-            let k=DynTree::<XAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,K>(rest,height);
+            let k=DynTree::<XAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+            DinoTree(DynTreeEnum::Xa(k.0))
+          
+        }else{
+              let k=DynTree::<YAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+              DinoTree(DynTreeEnum::Ya(k.0))    
+          
+        }
+    }
+
+    ///Create a dinotree that does not use any parallel algorithms.
+    pub fn new_seq(
+          rest:&'a mut [T],axis:axgeom::Axis)->DinoTree<'a,T>{
+        let height=self::compute_tree_height(rest.len());
+        if axis==daxis::XAXIS{
+            let k=DynTree::<XAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+            DinoTree(DynTreeEnum::Xa(k.0))
+          
+        }else{
+              let k=DynTree::<YAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+              DinoTree(DynTreeEnum::Ya(k.0))   
+          
+        }
+    }
+
+    ///Create a dinotree.
+    ///Specify the starting axis along which the bots will be partitioned.
+    ///So if you picked the x axis, the root divider will be a vertical line.
+    pub fn new_debug(
+          rest:&'a mut [T],axis:axgeom::Axis)->(DinoTree<'a,T>,Bag){
+        let height=self::compute_tree_height(rest.len());
+        if axis==daxis::XAXIS{
+            let k=DynTree::<XAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimer2>(rest,height);
             (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
           
         }else{
-              let k=DynTree::<YAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,K>(rest,height);
+              let k=DynTree::<YAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimer2>(rest,height);
               (DinoTree(DynTreeEnum::Ya(k.0)),k.1)    
           
         }
     }
 
     ///Create a dinotree that does not use any parallel algorithms.
-    pub fn new_seq<K:TreeTimerTrait>(
-          rest:&'a mut [T],axis:axgeom::Axis)->(DinoTree<'a,T>,K::Bag){
+    pub fn new_seq_debug(
+          rest:&'a mut [T],axis:axgeom::Axis)->(DinoTree<'a,T>,Bag){
         let height=self::compute_tree_height(rest.len());
         if axis==daxis::XAXIS{
-            let k=DynTree::<XAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,K>(rest,height);
+            let k=DynTree::<XAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,TreeTimer2>(rest,height);
             (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
           
         }else{
-              let k=DynTree::<YAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,K>(rest,height);
+              let k=DynTree::<YAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,TreeTimer2>(rest,height);
               (DinoTree(DynTreeEnum::Ya(k.0)),k.1)    
           
         }
@@ -610,39 +644,72 @@ mod ba{
 
       ///Find all intersecting pairs sequentially.
       ///Notice that in this case, a FnMut is supplied instead of a Fn.
-      pub fn intersect_every_pair_seq<F:FnMut(ColSingle<T>,ColSingle<T>),K:TreeTimerTrait>
-          (&mut self,clos:F)->K::Bag{     
+      pub fn intersect_every_pair_seq<F:FnMut(ColSingle<T>,ColSingle<T>)>
+          (&mut self,clos:F){     
           let clos=self::closure_struct::ColSeqStruct::new(clos);
 
           match &mut self.0{
             &mut DynTreeEnum::Xa(ref mut a)=>{
-              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,clos)
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,TreeTimerEmpty>(a,clos)
             },
             &mut DynTreeEnum::Ya(ref mut a)=>{
-              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,K>(a,clos)
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,TreeTimerEmpty>(a,clos)
             }
-          }
+          };
       }
 
       ///Find all intersecting pairs.
       ///Optionally return time data of each level of the tree.
       pub fn intersect_every_pair<
         F:Fn(ColSingle<T>,ColSingle<T>)+Send+Sync,
-        K:TreeTimerTrait>(&mut self,a:F)->K::Bag{
+        >(&mut self,a:F){
           
           let clos=self::closure_struct::ColMultiStruct::new(&a);
           
           match &mut self.0{
             &mut DynTreeEnum::Xa(ref mut a)=>{
-              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,K>(a,clos)
+              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,TreeTimerEmpty>(a,clos)
             },
             &mut DynTreeEnum::Ya(ref mut a)=>{
-              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,K>(a,clos)
+              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,TreeTimerEmpty>(a,clos)
+            }
+          };
+
+      }
+
+
+      pub fn intersect_every_pair_seq_debug<F:FnMut(ColSingle<T>,ColSingle<T>)>
+          (&mut self,clos:F)->Bag{     
+          let clos=self::closure_struct::ColSeqStruct::new(clos);
+
+          match &mut self.0{
+            &mut DynTreeEnum::Xa(ref mut a)=>{
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,TreeTimer2>(a,clos)
+            },
+            &mut DynTreeEnum::Ya(ref mut a)=>{
+              colfind::for_every_col_pair_seq::<_,T,DefaultDepthLevel,_,TreeTimer2>(a,clos)
+            }
+          }
+      }
+
+      pub fn intersect_every_pair_debug<
+        F:Fn(ColSingle<T>,ColSingle<T>)+Send+Sync,
+        >(&mut self,a:F)->Bag{
+          
+          let clos=self::closure_struct::ColMultiStruct::new(&a);
+          
+          match &mut self.0{
+            &mut DynTreeEnum::Xa(ref mut a)=>{
+              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,TreeTimer2>(a,clos)
+            },
+            &mut DynTreeEnum::Ya(ref mut a)=>{
+              colfind::for_every_col_pair::<_,T,DefaultDepthLevel,_,TreeTimer2>(a,clos)
             }
           }
 
       }
-      
+
+
   }
 
 

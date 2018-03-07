@@ -39,32 +39,16 @@ fn main(){
   	bots.push(make_bot(5,(50,60),(16,30)));
 
 
-  	let height=2;
-
-  	let mut treecache:TreeCache2<Numisize>=TreeCache2::new(daxis::XAXIS,height);
-
     {
-        let k=MedianStrict::<Numisize>::new();
-        let (mut dyntree,_bag)=treecache.new_tree::<_,par::Parallel,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
-                        (&mut bots,&k);
-        
 
-        let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
-        	cc.a.1.touching.push(cc.b.1.id);
-        	cc.b.1.touching.push(cc.a.1.id);
+        let (mut dyntree,_bag)=DinoTree::new::<treetimer::TreeTimerEmpty>(&mut bots);
+               
+
+        let clos=|a:ColSingle<BBox<Numisize,Bot>>,b:ColSingle<BBox<Numisize,Bot>>|{
+        	a.1.touching.push(b.1.id);
+        	b.1.touching.push(a.1.id);
         };
 
-        let identity=|a:&BBox<Numisize,Bot>|->BBox<Numisize,Bot>{
-            println!("Copying {}",a.val.id);
-            let b1=Bot{id:a.val.id,touching:Vec::new()};
-            let mut b=BBox::new(b1,a.rect);
-            b.val.touching.clear();
-            b
-        };
-
-        let add=|a:&mut Bot,b:&mut Bot|{
-          a.touching.append(&mut b.touching);
-        };
         let _v=dyntree.for_every_col_pair::<_,_,_,DefaultDepthLevel,treetimer::TreeTimer2>(clos,identity,add);
          
 

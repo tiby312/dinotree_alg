@@ -6,7 +6,7 @@ use axgeom::YAXIS_S;
 use support::Numisize;
 use support::BBox;
 //use median::strict::MedianStrict;
-
+use treetimer::*;
 
 
 
@@ -45,14 +45,8 @@ fn test_dinotree_drop(){
       }
 
 
-      let height=12;
-
-      let mut treecache:TreeCache2<Numisize>=TreeCache2::new(axgeom::XAXIS,height);
-
       {
-        let k=MedianStrict::<Numisize>::new();
-        let (mut dyntree,_bag)=treecache.new_tree::<_,par::Parallel,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
-                        (&mut bots,&k);
+        let (mut dyntree,_bag)=DinoTree::new::<treetimer::TreeTimerEmpty>(&mut bots);
         
 
         let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
