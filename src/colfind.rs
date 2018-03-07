@@ -9,12 +9,12 @@ pub trait ColMulti:Send+Sync+Clone{
     //User must keel the return object the same rect as this.
     //fn identity(&self,src:&Self::T)->Self::T;
     //fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&mut <Self::T as SweepTrait>::Inner);
-    fn collide(&self,a:ColPair<Self::T>);
+    fn collide(&self,a:ColSingle<Self::T>,b:ColSingle<Self::T>);
 }
 
 pub trait ColSeq{
   type T:SweepTrait;
-  fn collide(&mut self,a:ColPair<Self::T>);
+  fn collide(&mut self,a:ColSingle<Self::T>,b:ColSingle<Self::T>);
 }
 
 pub trait ColSing{
@@ -30,8 +30,8 @@ pub struct ColMultiWrapper<'a,C:ColMulti+'a>(
 
 impl<'a,C:ColMulti+'a> Bleek for ColMultiWrapper<'a,C>{
     type T=C::T;
-    fn collide(&mut self,cc:ColPair<Self::T>){
-        self.0.collide(cc);
+    fn collide(&mut self,a:ColSingle<Self::T>,b:ColSingle<Self::T>){
+        self.0.collide(a,b);
     }
 }
 
@@ -255,11 +255,11 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T
             unreachable!()
         }
         */
-        fn collide(&self,a:ColPair<Self::T>){
+        fn collide(&self,a:ColSingle<Self::T>,b:ColSingle<Self::T>){
             //Protected by the fact that cloning thus struct
             //results in panic!.
             let k=unsafe{&mut *self.0.get()};
-            k.collide(a);
+            k.collide(a,b);
         }
     }
 
@@ -321,7 +321,9 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
             for indb in r2.iter_mut() {
                 let (rect_b,bval)=indb.get_mut();
                 if rect_a.0.intersects_rect(&rect_b.0){
-                    func.collide(ColPair{a:(rect_a,aval),b:(rect_b,bval)});
+                    let a=ColSingle(rect_a,aval);
+                    let b=ColSingle(rect_b,bval);
+                    func.collide(a,b);
                 }
             }
         }
@@ -367,6 +369,31 @@ fn rect_recurse<'x,
 
 }
 
+
+pub fn for_all_intersect_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
+        tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure:F) {
+    
+    struct Wrapper<F:ColSing>{
+        rect:Rect<<F::T as SweepTrait>::Num>,
+        closure:F
+    };
+
+
+    impl<F:ColSing> ColSing for Wrapper<F>{
+        type T=F::T;
+        fn collide(&mut self,a:ColSingle<Self::T>){
+            if self.rect.intersects_rect(&(a.0).0){
+                self.closure.collide(a);
+            }
+        }
+    }
+
+    let mut wrapper=Wrapper{rect:*rect,closure};
+    
+    let ta=tree.get_iter_mut();
+    self::rect_recurse::<A,_,_,_>(ta,rect,&mut wrapper);
+}
+
 pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
         tree:&mut DynTree<A,T>,rect: &Rect<T::Num>, closure:F) {
     
@@ -391,6 +418,9 @@ pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
     self::rect_recurse::<A,_,_,_>(ta,rect,&mut wrapper);
 }
 
+
+
+
 use colfind::bl::sweeper_find_2d;
 use colfind::bl::sweeper_find_parallel_2d;
 mod bl{
@@ -403,12 +433,12 @@ mod bl{
 
     impl<A:AxisTrait,F:Bleek> Bleek for Bl<A,F>{
         type T=F::T;
-        fn collide(&mut self,cc:ColPair<F::T>){
+        fn collide(&mut self,a:ColSingle<Self::T>,b:ColSingle<Self::T>){
             //only check if the opoosite axis intersects.
             //already know they intersect
             let a2=A::Next::get();//self.axis.next();
-            if (cc.a.0).0.get_range(a2).intersects((cc.b.0).0.get_range(a2)){
-                self.a.collide(cc);
+            if (a.0).0.get_range(a2).intersects((b.0).0.get_range(a2)){
+                self.a.collide(a,b);
             }
         }
     }

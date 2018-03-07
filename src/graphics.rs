@@ -16,6 +16,7 @@ pub fn get_num_verticies(height:usize)->usize{
     (num_nodes/2)*6
 }
 
+///Meant to then be drawn using triangles.
 pub fn update<V:Vertex,T:SweepTrait<Num=Numf32>>(rect:axgeom::Rect<Numf32>,gentree:&DinoTree<T>,verticies:&mut [V],start_width:f32){
     match &gentree.0{
       &DynTreeEnum::Xa(ref a)=>{

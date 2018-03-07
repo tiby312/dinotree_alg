@@ -164,6 +164,9 @@ split_at_mut()
 
 # talk about determinism. floating point additive
 
+# think about it like a sponge. the lower you go into the tree, the more stable the calculates get 
+
+
 # General thoughts on optimizing
 
 Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
