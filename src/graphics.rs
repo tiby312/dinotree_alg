@@ -4,6 +4,9 @@ use support::Numf32;
 use compt::GenTree;
 
 
+///Provided as a conveniance
+pub use ba::compute_tree_height;
+
 ///The trait that your vertex object needs to implement to be used
 ///in the functions in this crate.
 pub trait Vertex: std::default::Default+std::clone::Clone+Send{

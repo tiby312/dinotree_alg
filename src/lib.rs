@@ -28,6 +28,7 @@ mod inner_prelude{
   pub use *;
 }
 
+/*
 /// Conveniently include commonly used symbols in this crate.
 /// Use like this:
 /// ```
@@ -38,14 +39,17 @@ mod inner_prelude{
 /// }
 /// ```
 pub mod prelude{
-  pub use dinotree_inner::prelude::*;
+  //pub use dinotree_inner::prelude::*;
   //pub use ColPair;
   pub use ColSingle;
   pub use DinoTree;
   pub use Rects;
+  pub use dinotree_inner::AABBox;
+  pub use dinotree_inner::SweepTrait;
   //pub use TreeCache2;
   //pub use RectsTreeTrait;
 }
+*/
 
 
 ///Provides functionality to draw the dividers of a dinotree.
@@ -269,7 +273,7 @@ mod rects{
 //pub use ba::TreeCache2;
 pub use ba::DinoTree;
 pub(crate) use ba::DynTreeEnum;
-use ba::compute_tree_height;
+
 use ba::closure_struct;
 mod ba{
   use super::*;
@@ -522,10 +526,11 @@ mod ba{
     ///Create a dinotree.
     ///Specify the starting axis along which the bots will be partitioned.
     ///So if you picked the x axis, the root divider will be a vertical line.
+    ///True means xaxis.
     pub fn new(
-          rest:&'a mut [T],axis:axgeom::Axis)->DinoTree<'a,T>{
+          rest:&'a mut [T],axis:bool)->DinoTree<'a,T>{
         let height=self::compute_tree_height(rest.len());
-        if axis==daxis::XAXIS{
+        if axis{
             let k=DynTree::<XAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
             DinoTree(DynTreeEnum::Xa(k.0))
           
@@ -538,9 +543,9 @@ mod ba{
 
     ///Create a dinotree that does not use any parallel algorithms.
     pub fn new_seq(
-          rest:&'a mut [T],axis:axgeom::Axis)->DinoTree<'a,T>{
+          rest:&'a mut [T],axis:bool)->DinoTree<'a,T>{
         let height=self::compute_tree_height(rest.len());
-        if axis==daxis::XAXIS{
+        if axis{
             let k=DynTree::<XAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
             DinoTree(DynTreeEnum::Xa(k.0))
           
@@ -555,9 +560,9 @@ mod ba{
     ///Specify the starting axis along which the bots will be partitioned.
     ///So if you picked the x axis, the root divider will be a vertical line.
     pub fn new_debug(
-          rest:&'a mut [T],axis:axgeom::Axis)->(DinoTree<'a,T>,Bag){
+          rest:&'a mut [T],axis:bool)->(DinoTree<'a,T>,Bag){
         let height=self::compute_tree_height(rest.len());
-        if axis==daxis::XAXIS{
+        if axis{
             let k=DynTree::<XAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimer2>(rest,height);
             (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
           
@@ -570,9 +575,9 @@ mod ba{
 
     ///Create a dinotree that does not use any parallel algorithms.
     pub fn new_seq_debug(
-          rest:&'a mut [T],axis:axgeom::Axis)->(DinoTree<'a,T>,Bag){
+          rest:&'a mut [T],axis:bool)->(DinoTree<'a,T>,Bag){
         let height=self::compute_tree_height(rest.len());
-        if axis==daxis::XAXIS{
+        if axis{
             let k=DynTree::<XAXIS_S,T>::new::<par::Sequential,DefaultDepthLevel,TreeTimer2>(rest,height);
             (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
           

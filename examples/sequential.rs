@@ -1,5 +1,5 @@
 extern crate dinotree;
-use dinotree::prelude::*;
+use dinotree::*;
 use dinotree::support::Numisize;
 use dinotree::support::BBox;
 use dinotree::support::DefaultDepthLevel;
@@ -34,20 +34,17 @@ fn main(){
 
   	let height=2;
 
-  	let mut treecache:TreeCache2<Numisize>=TreeCache2::new(daxis::XAXIS,height);
-
+  	
     {
-        let k=MedianStrict::<Numisize>::new();
-        let (mut dyntree,_bag)=treecache.new_tree::<_,par::Sequential,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
-                        (&mut bots,&k);
+        let mut dyntree = DinoTree::new(&mut bots,false);
         
 
-        let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
-        	cc.a.1.touching.push(cc.b.1.id);
-        	cc.b.1.touching.push(cc.a.1.id);
+        let clos=|a:ColSingle<BBox<Numisize,Bot>>,b:ColSingle<BBox<Numisize,Bot>>|{
+        	a.1.touching.push(b.1.id);
+        	b.1.touching.push(a.1.id);
         };
 
-        let _v=dyntree.for_every_col_pair_seq::<_,treetimer::TreeTimer2>(clos);
+        dyntree.intersect_every_pair_seq(clos);
          
 
 	}

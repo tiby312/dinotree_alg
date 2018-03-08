@@ -4,7 +4,7 @@ use std;
 use rand;
 use rand::{ SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};    
-use prelude::*;
+use *;
 
 
 

@@ -1,5 +1,5 @@
 extern crate dinotree;
-use dinotree::prelude::*;
+use dinotree::*;
 use dinotree::support::Numisize;
 use dinotree::support::BBox;
 use dinotree::support::DefaultDepthLevel;
@@ -32,16 +32,8 @@ fn main(){
   	bots.push(make_bot(5,(50,60),(16,30)));
 
 
-  	let height=2;
-
-  	let mut treecache:TreeCache2<Numisize>=TreeCache2::new(daxis::XAXIS,height);
-
     {
-        let k=MedianStrict::<Numisize>::new();
-        let (mut dyntree,_bag)=treecache.new_tree::<_,par::Sequential,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
-                        (&mut bots,&k);
-        
-
+        let mut dyntree=DinoTree::new(&mut bots,true);
        
         let mut rects=dyntree.rects();
         let r1=aabb((10,25),(40,70));
