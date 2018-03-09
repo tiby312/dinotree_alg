@@ -14,6 +14,7 @@ pub use dinotree_inner::support::Numusize;
 pub use dinotree_inner::support::BBox;
 pub use dinotree_inner::support::DefaultDepthLevel;
 
+use dinotree_inner::base_kdtree::RebalTrait;
 //use oned::Blee;
 ///Find all bots that collide along the specified axis only between two rectangles.
 ///So the bots may not actually collide in 2d space, but collide alone the x or y axis.
@@ -27,6 +28,13 @@ pub fn collide_two_rect_parallel<
 {
     
     struct Ba<'z,J:SweepTrait+Send+'z>(ColSingle<'z,J>);
+    impl<'z,J:SweepTrait+Send+'z> RebalTrait for Ba<'z,J>{
+        type Num=J::Num;
+        fn get(&self)->&axgeom::Rect<J::Num>{
+            &((self.0).0).0
+        }
+    }
+    
     impl<'z,J:SweepTrait+Send+'z> SweepTrait for Ba<'z,J>{
         type Inner=J::Inner;
         type Num=J::Num;
@@ -44,6 +52,7 @@ pub fn collide_two_rect_parallel<
         }
         
     }
+    
     let mut rects=tree.rects();
     
     let mut buffer1=Vec::new();

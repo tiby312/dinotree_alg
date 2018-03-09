@@ -224,7 +224,7 @@ fn recurse<'x,
     };
     tot_time[2]=tt1.elapsed();
     if level.get_depth() == 0{
-        println!("tot_time={:?}",tot_time);
+        //println!("tot_time={:?}",tot_time);
     }
     k
 }
