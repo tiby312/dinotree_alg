@@ -321,8 +321,8 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
             for indb in r2.iter_mut() {
                 let (rect_b,bval)=indb.get_mut();
                 if rect_a.0.intersects_rect(&rect_b.0){
-                    let a=ColSingle(rect_a,aval);
-                    let b=ColSingle(rect_b,bval);
+                    let a=ColSingle{rect:rect_a,inner:aval};
+                    let b=ColSingle{rect:rect_b,inner:bval};
                     func.collide(a,b);
                 }
             }
@@ -347,7 +347,9 @@ fn rect_recurse<'x,
         
         for i in sl{
             let a = i.get_mut();
-            func.collide(ColSingle(a.0,a.1)); 
+            let a=ColSingle{rect:a.0,inner:a.1};
+
+            func.collide(a); 
         }
         
     }
@@ -382,7 +384,7 @@ pub fn for_all_intersect_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
     impl<F:ColSing> ColSing for Wrapper<F>{
         type T=F::T;
         fn collide(&mut self,a:ColSingle<Self::T>){
-            if self.rect.intersects_rect(&(a.0).0){
+            if self.rect.intersects_rect(&(a.rect).0){
                 self.closure.collide(a);
             }
         }
@@ -406,7 +408,7 @@ pub fn for_all_in_rect<A:AxisTrait,T:SweepTrait,F:ColSing<T=T>>(
     impl<F:ColSing> ColSing for Wrapper<F>{
         type T=F::T;
         fn collide(&mut self,a:ColSingle<Self::T>){
-            if self.rect.contains_rect(&(a.0).0){
+            if self.rect.contains_rect(&(a.rect).0){
                 self.closure.collide(a);
             }
         }
@@ -437,7 +439,7 @@ mod bl{
             //only check if the opoosite axis intersects.
             //already know they intersect
             let a2=A::Next::get();//self.axis.next();
-            if (a.0).0.get_range(a2).intersects((b.0).0.get_range(a2)){
+            if (a.rect).0.get_range(a2).intersects((b.rect).0.get_range(a2)){
                 self.a.collide(a,b);
             }
         }

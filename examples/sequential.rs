@@ -40,8 +40,8 @@ fn main(){
         
 
         let clos=|a:ColSingle<BBox<Numisize,Bot>>,b:ColSingle<BBox<Numisize,Bot>>|{
-        	a.1.touching.push(b.1.id);
-        	b.1.touching.push(a.1.id);
+        	a.inner.touching.push(b.inner.id);
+        	b.inner.touching.push(a.inner.id);
         };
 
         dyntree.intersect_every_pair_seq(clos);

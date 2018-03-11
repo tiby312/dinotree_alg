@@ -83,8 +83,8 @@ impl<I:SweepTrait> Sweeper<I>{
                 for that_bot_ind in active.iter_mut(){
                     let (that_rect,that_val)=that_bot_ind.get_mut();
                     //let brr=Accessor::<A>::get(that_rect);
-                    let a=ColSingle(curr_rect,curr_bot_id_val);
-                    let b=ColSingle(that_rect,that_val);
+                    let a=ColSingle{rect:curr_rect,inner:curr_bot_id_val};
+                    let b=ColSingle{rect:that_rect,inner:that_val};
                     func.collide( a,b);
                         
                 }
@@ -135,8 +135,8 @@ impl<I:SweepTrait> Sweeper<I>{
 
                 let (x_rect,x_val)=x.get_mut();
 
-                let a=ColSingle(x_rect,x_val);
-                let b=ColSingle(y_rect,y_val);
+                let a=ColSingle{rect:x_rect,inner:x_val};
+                let b=ColSingle{rect:y_rect,inner:y_val};
                 func.collide(a,b);
                             
             }

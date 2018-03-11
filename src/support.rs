@@ -31,7 +31,7 @@ pub fn collide_two_rect_parallel<
     impl<'z,J:SweepTrait+Send+'z> RebalTrait for Ba<'z,J>{
         type Num=J::Num;
         fn get(&self)->&axgeom::Rect<J::Num>{
-            &((self.0).0).0
+            &((self.0).rect).0
         }
     }
     
@@ -42,13 +42,13 @@ pub fn collide_two_rect_parallel<
         ///Destructure into the bounding box and mutable parts.
         fn get_mut<'a>(&'a mut self)->(&'a AABBox<J::Num>,&'a mut Self::Inner){
             let r=&mut self.0;
-            (r.0,r.1)
+            (r.rect,r.inner)
         }
-
+        
         ///Destructue into the bounding box and inner part.
         fn get<'a>(&'a self)->(&'a AABBox<J::Num>,&'a Self::Inner){
             let r=&self.0;
-            (r.0,r.1)
+            (r.rect,r.inner)
         }
         
     }
@@ -81,10 +81,11 @@ pub fn collide_two_rect_parallel<
             }
         }
         
-        let func2=|a:ColSingle<Ba<T>>,b:ColSingle<Ba<T>>|{
+        let func2=|aa:ColSingle<Ba<T>>,bb:ColSingle<Ba<T>>|{
+            
             //let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};
-            let a=ColSingle(a.0,a.1);
-            let b=ColSingle(b.0,b.1);
+            let a=ColSingle{rect:aa.rect,inner:aa.inner};
+            let b=ColSingle{rect:bb.rect,inner:bb.inner};
             func(a,b);
         };
         

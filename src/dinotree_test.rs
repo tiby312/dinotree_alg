@@ -46,14 +46,14 @@ fn test_dinotree_drop(){
 
 
       {
-        let (mut dyntree,_bag)=DinoTree::new::<treetimer::TreeTimerEmpty>(&mut bots);
+        let mut dyntree=DinoTree::new(&mut bots,false);
         
 
-        let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
+        let clos=|a:ColSingle<BBox<Numisize,Bot>>,b:ColSingle<BBox<Numisize,Bot>>|{
 
         };
 
-        let _v=dyntree.for_every_col_pair_seq::<_,treetimer::TreeTimer2>(clos);
+        dyntree.intersect_every_pair_seq(clos);
       }     
 
     }  
@@ -169,10 +169,7 @@ fn test_russian_doll(){
 
 
 fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
-  let height=12;
-  //TODO also test yaxis?
-  let mut treecache:TreeCache2<Numisize>=TreeCache2::new(axgeom::XAXIS,height);
-
+  
   let mut control_result={
       let mut src:Vec<(usize,usize)>=Vec::new();
       
@@ -199,21 +196,17 @@ fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
   let mut test_result={
       let mut src:Vec<(usize,usize)>=Vec::new();
       
-      //use axgeom::XAXIS_S;
-      //use axgeom::YAXIS_S;
-
       {
-        let k=MedianStrict::<Numisize>::new();
-        let (mut dyntree,_bag)=treecache.new_tree::<_,par::Parallel,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
-                        (&mut bots,&k);
+        let mut dyntree=DinoTree::new(&mut bots,false);
         
-        let clos=|cc:ColPair<BBox<Numisize,Bot>>|{
-            let a=cc.a;
-            let b=cc.b;
-            src.push(test_support::create_unordered(&a.1,&b.1));
+        let clos=|a:ColSingle<BBox<Numisize,Bot>>,b:ColSingle<BBox<Numisize,Bot>>|{
+            //let (a,b)=(ca,ca.1);
+            //let a=ca[0];
+            //let b=ca[1];
+            src.push(test_support::create_unordered(&a.inner,&b.inner));
         };
 
-        let _v=dyntree.for_every_col_pair_seq::<_,treetimer::TreeTimer2>(clos);
+        dyntree.intersect_every_pair_seq(clos);
       }       
 
       src
@@ -241,9 +234,8 @@ fn test_bot_layout(mut bots:Vec<BBox<Numisize,Bot>>){
     
     if diff.len()!=0{
         let bots_copy=bots.clone();
-        let k=MedianStrict::<Numisize>::new();
-        let (mut dyntree,_bag)=treecache.new_tree::<_,par::Parallel,DefaultDepthLevel,_,treetimer::TreeTimerEmpty>
-                          (&mut bots,&k);
+
+        let mut dyntree=DinoTree::new(&mut bots,false);
          
 
         //use compt::CTreeIterator;

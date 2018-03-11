@@ -166,6 +166,9 @@ split_at_mut()
 
 # think about it like a sponge. the lower you go into the tree, the more stable the calculates get 
 
+talk about exception being thrown inside of closure
+
+talk about what happens if T is zero sized or is a dst???
 
 # General thoughts on optimizing
 
@@ -188,6 +191,11 @@ As I delved further and further into this passion project. I came to realize tha
 talk about recursion limit
 
 talk about parallel pattern defeating quick select would be nice
+
+
+talk about the downside of the pointer indirection. The problem is that its highly dependant on where the given slice is in memory. If its far away from the vec of pointers, then every deref is very expensive.
+
+
 
 
 talk about guarentees on the number of bots in chidlren ondes when always using the median. I tried many divider placement strategies where divider positions from previous positions were used to push them in the right direction. But at the end of the day, all these strategies of applying "forces" to the dividers suffer from the divider not being exactly where they need to be. They are always moving towards way they should be. I dont think the performance gains of a faster rebalance using this strategy is worth the performance loss from querying using suboptimal divider placement.

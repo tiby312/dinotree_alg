@@ -45,14 +45,14 @@ fn main(){
         {
           rects.for_all_in_rect(&r1,
             |cc:ColSingle<BBox<Numisize,Bot>>|{
-              bb1.push(cc.1);
+              bb1.push(cc.inner);
           });
         }
 
         {
           rects.for_all_in_rect(&r2,
             |cc:ColSingle<BBox<Numisize,Bot>>|{
-              bb2.push(cc.1);
+              bb2.push(cc.inner);
           });
         }
 
