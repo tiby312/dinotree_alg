@@ -72,13 +72,13 @@ fn go_down<'x,
         match rest{
             Some((left,right))=>{
                 
-                let div=*nn.divider();
+                let div=nn.divider;
 
                 if B::get()==A::get(){
-                    if !(div<anchor.get_container().start){
+                    if !(div<anchor.container_box.start){
                         self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,left,func);
                     };
-                    if !(div>anchor.get_container().end){
+                    if !(div>anchor.container_box.end){
                         self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
                     };
                 }else{
@@ -177,7 +177,7 @@ fn recurse<'x,
 
     let tt0=tools::Timer2::new();     
     
-    self::sweeper_find_2d::<A::Next,_>(sweeper,nn.get_bots(),ColMultiWrapper(clos));   
+    self::sweeper_find_2d::<A::Next,_>(sweeper,&mut nn.range,ColMultiWrapper(clos));   
     
 
     tot_time[0]=tt0.elapsed();
@@ -329,7 +329,7 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
         }
     
     } else {
-        self::sweeper_find_parallel_2d::<A::Next,_>(sweeper,this.get_bots(),parent.get_bots(),func);
+        self::sweeper_find_parallel_2d::<A::Next,_>(sweeper,&mut this.range,&mut parent.range,func);
     }
 }
 
@@ -343,7 +343,7 @@ fn rect_recurse<'x,
 
     let (nn,rest)=m.next();
     {
-        let sl=Sweeper::get_section::<A::Next>(nn.get_bots(),rect.get_range2::<A::Next>());
+        let sl=Sweeper::get_section::<A::Next>(&mut nn.range,rect.get_range2::<A::Next>());
         
         for i in sl{
             let a = i.get_mut();
@@ -355,14 +355,14 @@ fn rect_recurse<'x,
     }
     match rest{
         Some((left,right))=>{
-            let div=nn.divider();
+            let div=nn.divider;
 
             let rr=rect.get_range2::<A>();
      
-            if !(*div<rr.start){
+            if !(div<rr.start){
                 self::rect_recurse::<A::Next,_,_,_>(left,rect,func);
             }
-            if !(*div>rr.end){
+            if !(div>rr.end){
                 self::rect_recurse::<A::Next,_,_,_>(right,rect,func);
             }
         },

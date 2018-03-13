@@ -5,7 +5,7 @@ use compt::GenTree;
 
 
 ///Provided as a conveniance
-pub use ba::compute_tree_height;
+pub use dinotree_inner::compute_tree_height;
 
 ///The trait that your vertex object needs to implement to be used
 ///in the functions in this crate.
@@ -73,7 +73,7 @@ fn update_inner<A:AxisTrait,V:Vertex,T:SweepTrait<Num=Numf32>>(rect:axgeom::Rect
                     let range=rect.get_range(line_axis);
                     draw_node(height,*range,&nn.0.divider,(div_axis,dd),nn.1.a,width);
                     
-                    let (b, c) = rect.subdivide(*nn.0.divider(), div_axis);
+                    let (b, c) = rect.subdivide(nn.0.divider, div_axis);
 
                     recc::<A::Next,_,_,_>(height,b,left,width*0.9);
                     recc::<A::Next,_,_,_>(height,c,right,width*0.9);

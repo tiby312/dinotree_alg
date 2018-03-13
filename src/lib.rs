@@ -92,6 +92,8 @@ use smallvec::SmallVec;
   use dinotree_inner::TreeTimerEmpty;
 use dinotree_inner::Bag;
 
+
+use dinotree_inner::compute_tree_height;
 /*
 ///This contains the destructured SweepTrait for a colliding pair.
 ///The rect is read only while T::Inner is allowed to be mutated.
@@ -397,20 +399,6 @@ mod ba{
 
 
 
-  pub fn compute_tree_height(num_bots: usize) -> usize {
-      
-      //we want each node to have space for around 300 bots.
-      //there are 2^h nodes.
-      //2^h*200>=num_bots.  Solve for h s.t. h is an integer.
-
-      const NUM_PER_NODE: usize = 20;
-      if num_bots <= NUM_PER_NODE {
-          return 1;
-      } else {
-          return (num_bots as f32 / NUM_PER_NODE as f32).log2().ceil() as usize;
-      }
-  }
-
 
   impl<'a,T:SweepTrait+'a> DinoTree<'a,T>{
       
@@ -423,11 +411,11 @@ mod ba{
           rest:&'a mut [T],axis:bool)->DinoTree<'a,T>{
         let height=self::compute_tree_height(rest.len());
         if axis{
-            let k=DynTree::<XAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+            let k=DynTree::<XAXIS_S,T>::from_exp_method::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
             DinoTree(DynTreeEnum::Xa(k.0))
           
         }else{
-              let k=DynTree::<YAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+              let k=DynTree::<YAXIS_S,T>::from_exp_method::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
               DinoTree(DynTreeEnum::Ya(k.0))    
           
         }
