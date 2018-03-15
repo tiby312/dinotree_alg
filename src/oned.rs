@@ -1,12 +1,10 @@
 use inner_prelude::*;
 //use rayon::prelude::*;
 
-
-pub trait Bleek{
-    type T:SweepTrait;
-    fn collide(&mut self,a:ColSingle<Self::T>,b:ColSingle<Self::T>);
+pub trait Bleek {
+    type T: SweepTrait;
+    fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
 }
-
 
 /*
 unsafe fn swap_unchecked<T>(list:&mut [T],a:usize,b:usize){
@@ -16,177 +14,163 @@ unsafe fn swap_unchecked<T>(list:&mut [T],a:usize,b:usize){
 }
 */
 
-
-
-pub struct Accessor<X:AxisTrait>{
-    _p:PhantomData<X>
+pub struct Accessor<X: AxisTrait> {
+    _p: PhantomData<X>,
 }
-impl<X:AxisTrait> Accessor<X>{
-   
-    pub fn get<'b,Nu:NumTrait>(b:&'b Rect<Nu>)->&'b Range<Nu>{
+impl<X: AxisTrait> Accessor<X> {
+    pub fn get<'b, Nu: NumTrait>(b: &'b Rect<Nu>) -> &'b Range<Nu> {
         b.get_range(X::get())
     }
 }
 
-
-
 ///Provides 1d collision detection.
-pub struct Sweeper<T:SweepTrait>{
-    helper: tools::PreVec<T>
+pub struct Sweeper<T: SweepTrait> {
+    helper: tools::PreVec<T>,
 }
 
-impl<I:SweepTrait> Sweeper<I>{
-
-    pub fn new()->Sweeper<I>{
-        Sweeper{helper:tools::PreVec::new()} //TODO make callers decide?
+impl<I: SweepTrait> Sweeper<I> {
+    pub fn new() -> Sweeper<I> {
+        Sweeper {
+            helper: tools::PreVec::new(),
+        } //TODO make callers decide?
     }
 
-
     ///Find colliding pairs using the mark and sweep algorithm.
-    pub fn find<'a,A:AxisTrait,F: Bleek<T=I>>(
-         &mut self,
-         collision_botids: &'a mut[I],mut func:F) {
-
+    pub fn find<'a, A: AxisTrait, F: Bleek<T = I>>(
+        &mut self,
+        collision_botids: &'a mut [I],
+        mut func: F,
+    ) {
         //    Create a new temporary list called “activeList”.
         //    You begin on the left of your axisList, adding the first item to the activeList.
         //
         //    Now you have a look at the next item in the axisList and compare it with all items
         //     currently in the activeList (at the moment just one):
-        //     - If the new item’s left is greater then the current activeList-item right, then remove
+        //     - If the new item’s left is greater then the current activeList-item right,
+        //       then remove
         //    the activeList-item from the activeList
         //     - otherwise report a possible collision between the new axisList-item and the current
         //     activeList-item.
         //
-        //    Add the new item itself to the activeList and continue with the next item in the axisList.
+        //    Add the new item itself to the activeList and continue with the next item
+        //     in the axisList.
 
-        let active=self.helper.get_empty_vec_mut();
-        
+        let active = self.helper.get_empty_vec_mut();
+
         //use odds::vec::VecExt;
 
         for curr_bot_id in collision_botids.iter_mut() {
-           
             {
-                let (curr_rect,curr_bot_id_val)=curr_bot_id.get_mut();
-                let crr=Accessor::<A>::get(&(curr_rect.0));
+                let (curr_rect, curr_bot_id_val) = curr_bot_id.get_mut();
+                let crr = Accessor::<A>::get(&(curr_rect.0));
 
                 //change this to do retain and then iter
                 active.retain(|that_bot_ind| {
-                    let (that_rect,_)=that_bot_ind.get();
-                    let brr=Accessor::<A>::get(&(that_rect.0));
+                    let (that_rect, _) = that_bot_ind.get();
+                    let brr = Accessor::<A>::get(&(that_rect.0));
 
-                    if brr.right()<crr.left() {
+                    if brr.right() < crr.left() {
                         false
                     } else {
-
                         true
                     }
                 });
-                for that_bot_ind in active.iter_mut(){
-                    let (that_rect,that_val)=that_bot_ind.get_mut();
+                for that_bot_ind in active.iter_mut() {
+                    let (that_rect, that_val) = that_bot_ind.get_mut();
                     //let brr=Accessor::<A>::get(that_rect);
-                    let a=ColSingle{rect:curr_rect,inner:curr_bot_id_val};
-                    let b=ColSingle{rect:that_rect,inner:that_val};
-                    func.collide( a,b);
-                        
+                    let a = ColSingle {
+                        rect: curr_rect,
+                        inner: curr_bot_id_val,
+                    };
+                    let b = ColSingle {
+                        rect: that_rect,
+                        inner: that_val,
+                    };
+                    func.collide(a, b);
                 }
             }
             active.push(curr_bot_id);
         }
     }
 
+    pub fn find_bijective_parallel<A: AxisTrait, F: Bleek<T = I>>(
+        &mut self,
+        cols: (&mut [I], &mut [I]),
+        mut func: F,
+    ) {
+        let mut xs = cols.0.iter_mut().peekable();
+        let ys = cols.1.iter_mut();
 
-    pub fn find_bijective_parallel<A:AxisTrait,F: Bleek<T=I>>(
-            &mut self,
-            cols: (&mut [I], &mut [I]),
-            mut func:F) {
-    
+        let active_x = self.helper.get_empty_vec_mut();
 
-        let mut xs=cols.0.iter_mut().peekable();
-        let ys=cols.1.iter_mut();
-        
-        let active_x=self.helper.get_empty_vec_mut();
-
-        for y in ys
-        {
-            while xs.peek().is_some(){
-                let v={
-                    let x=xs.peek().unwrap();
-                    Accessor::<A>::get(&(x.get().0).0).left()>Accessor::<A>::get(&(y.get().0).0).right()
+        for y in ys {
+            while xs.peek().is_some() {
+                let v = {
+                    let x = xs.peek().unwrap();
+                    Accessor::<A>::get(&(x.get().0).0).left()
+                        > Accessor::<A>::get(&(y.get().0).0).right()
                 };
-                if v{
+                if v {
                     break;
-                }else{
-
+                } else {
                     active_x.push(xs.next().unwrap());
                 }
             }
 
-            
-
-            active_x.retain(|x:&mut &mut I|{
-                if Accessor::<A>::get(&(x.get().0).0).right()<Accessor::<A>::get(&(y.get().0).0).left(){
+            active_x.retain(|x: &mut &mut I| {
+                if Accessor::<A>::get(&(x.get().0).0).right()
+                    < Accessor::<A>::get(&(y.get().0).0).left()
+                {
                     false
-                }else{
+                } else {
                     true
                 }
             });
 
-            let (y_rect,y_val)=y.get_mut();    
-            for x in active_x.iter_mut(){
+            let (y_rect, y_val) = y.get_mut();
+            for x in active_x.iter_mut() {
+                let (x_rect, x_val) = x.get_mut();
 
-                let (x_rect,x_val)=x.get_mut();
-
-                let a=ColSingle{rect:x_rect,inner:x_val};
-                let b=ColSingle{rect:y_rect,inner:y_val};
-                func.collide(a,b);
-                            
+                let a = ColSingle {
+                    rect: x_rect,
+                    inner: x_val,
+                };
+                let b = ColSingle {
+                    rect: y_rect,
+                    inner: y_val,
+                };
+                func.collide(a, b);
             }
         }
     }
-    
-    /*
-    fn assert_sorted<T:Accessor<T=I>>(col: &[I], accessor:&T)->bool {
-        let mut last_val = -999999999999999999.0;
-        for i in col {
-            let pp=accessor.get(&i).left();
-            assert!(pp >= last_val);
-            last_val = pp;
-        }
-        true
-    }*/
-    
+
     //this can have some false positives.
     //but it will still prune a lot of bots.
-    pub fn get_section<'a,A:AxisTrait>(arr:&'a mut [I],range:&Range<I::Num>)->&'a mut [I]{
-    
-        if arr.len()==0{
+    pub fn get_section<'a, A: AxisTrait>(arr: &'a mut [I], range: &Range<I::Num>) -> &'a mut [I] {
+        if arr.len() == 0 {
             return &mut [];
         }
 
-        let mut start=0;
-        for (e,i) in arr.iter().enumerate(){
-            let rr=Accessor::<A>::get(&(i.get().0).0);
-            if rr.right()>=range.left(){
-                start=e;
-                break;
-            }
-        }
-        
-        let mut end=arr.len();
-        for (e,i) in arr[start..].iter().enumerate(){
-            let rr=Accessor::<A>::get(&(i.get().0).0);
-            if rr.left()>range.right(){
-                end=start+e;
+        let mut start = 0;
+        for (e, i) in arr.iter().enumerate() {
+            let rr = Accessor::<A>::get(&(i.get().0).0);
+            if rr.right() >= range.left() {
+                start = e;
                 break;
             }
         }
 
-        return &mut arr[start..end]
+        let mut end = arr.len();
+        for (e, i) in arr[start..].iter().enumerate() {
+            let rr = Accessor::<A>::get(&(i.get().0).0);
+            if rr.left() > range.right() {
+                end = start + e;
+                break;
+            }
+        }
+
+        return &mut arr[start..end];
     }
-
-
-
-
 }
 /*
     #[cfg(test)]
