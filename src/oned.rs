@@ -1,5 +1,5 @@
 use inner_prelude::*;
-use rayon::prelude::*;
+//use rayon::prelude::*;
 
 
 pub trait Bleek{
@@ -8,12 +8,13 @@ pub trait Bleek{
 }
 
 
-
+/*
 unsafe fn swap_unchecked<T>(list:&mut [T],a:usize,b:usize){
     let x=list.get_unchecked_mut(a) as *mut T;
     let y=list.get_unchecked_mut(b) as *mut T;
     std::ptr::swap(x,y)
 }
+*/
 
 
 

@@ -36,22 +36,7 @@ impl<'a,C:ColMulti+'a> Bleek for ColMultiWrapper<'a,C>{
 }
 
 
-/*
-struct BleekS<'a,B:BleekSync+'a>(
-    pub &'a B
-);
-
-impl<'a,B:BleekSync+'a> Bleek for BleekS<'a,B>{
-    type T=B::T;
-    fn collide(&mut self,cc:ColPair<Self::T>){
-        self.0.collide(cc);
-    }
-}
-*/
-
 fn go_down<'x,
-    JJ:par::Joiner,
-    H:DepthLevel,
     A:AxisTrait, //this axis
     B:AxisTrait, //parent axis
     C:CTreeIterator<Item=&'x mut NodeDyn<X>>+Send,
@@ -65,7 +50,7 @@ fn go_down<'x,
     
     {
         let (mut bo,rest) = m.next();
-        let &mut (level,ref mut nn)=bo.get_mut();
+        let &mut (_,ref mut nn)=bo.get_mut();
         
         self::for_every_bijective_pair::<A,B,_>(nn,anchor,sweeper,ColMultiWrapper(func));       
         
@@ -74,17 +59,18 @@ fn go_down<'x,
                 
                 let div=nn.divider;
 
+                //This can be evaluated at compile time!
                 if B::get()==A::get(){
                     if !(div<anchor.container_box.start){
-                        self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,left,func);
+                        self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,left,func);
                     };
                     if !(div>anchor.container_box.end){
-                        self::go_down::<JJ,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
+                        self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,right,func);
                     };
                 }else{
                     
-                    self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,left,func);
-                    self::go_down::<par::Sequential,H,A::Next,B,_,_,_>(sweeper,anchor,right,func);
+                    self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,left,func);
+                    self::go_down::<A::Next,B,_,_,_>(sweeper,anchor,right,func);
                    
                 }               
             },
@@ -93,67 +79,6 @@ fn go_down<'x,
     }
 }
 
-/*
-use self::nodedynowned::NodeDynOwned;
-mod nodedynowned{
-    use super::*;
-    
-    pub struct NodeDynOwned<'a,X:SweepTrait+'a>{
-        a:&'a mut NodeDyn<X>,
-        _inner:Vec<u8>
-    }
-
-    impl<'a,X:SweepTrait+'a> Drop for NodeDynOwned<'a,X>{
-        fn drop(&mut self){
-            for i in self.a.range.iter_mut(){
-                unsafe{
-                    let k:&mut std::mem::ManuallyDrop<X>=std::mem::transmute(i);
-                    std::mem::ManuallyDrop::drop(k);
-                }
-            }
-        }
-    }    
-
-    impl<'a,X:SweepTrait+'a> NodeDynOwned<'a,X>{
-        pub fn new<C:ColMulti<T=X>>(a:&NodeDyn<X>,clos:&C)->NodeDynOwned<'a,X>{
-            
-            struct Repr<X>{
-                #[allow(dead_code)]
-                start:*mut X,
-                #[allow(dead_code)]
-                len:usize
-            }
-
-            let num_elements=a.range.len();
-            let align=std::mem::align_of_val(a);
-            let len=std::mem::size_of_val(a);
-
-            let mut k=Vec::with_capacity(len+align);
-
-            let mut ptr=k.as_mut_ptr();
-            //align it.
-            ptr=(ptr as usize+(align-(ptr as usize%align))) as *mut u8;
-
-            let repr=Repr{start:ptr,len:num_elements};
-            let ptr:&mut NodeDyn<X>=unsafe{std::mem::transmute(repr)};
-            ptr.divider=a.divider;
-            ptr.container_box=a.container_box;
-            for (i,j) in ptr.range.iter_mut().zip(a.range.iter().map(|a|clos.identity(a))){
-                
-                unsafe{std::ptr::copy(&j,i,1)};
-                std::mem::ManuallyDrop::new(j);
-                
-            }
-            NodeDynOwned{a:ptr,_inner:k}
-        }
-
-        pub fn get(&mut self)->&mut NodeDyn<X>{
-            &mut self.a
-        }
-    }
-
-}
-*/
 
 fn recurse<'x,
         A:AxisTrait,
@@ -194,9 +119,8 @@ fn recurse<'x,
                 let left=compt::WrapGen::new(&mut left);
                 let right=compt::WrapGen::new(&mut right);
                
-                self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,left,clos);
-                self::go_down::<par::Sequential,H,A::Next,A,_,_,_>(sweeper,&mut nn,right,clos);
-                
+                self::go_down::<A::Next,A,_,_,_>(sweeper,&mut nn,left,clos);
+                self::go_down::<A::Next,A,_,_,_>(sweeper,&mut nn,right,clos);   
             }
 
             tot_time[1]=tt1.elapsed();
@@ -247,14 +171,7 @@ pub fn for_every_col_pair_seq<A:AxisTrait,T:SweepTrait,H:DepthLevel,F:ColSeq<T=T
 
     impl<'a,F:ColSeq+'a> ColMulti for Wrapper<'a,F> {
         type T=F::T;
-        /*
-        fn identity(&self,_src:&Self::T)->Self::T{
-            unreachable!()
-        }
-        fn add(&self,_a:&mut <Self::T as SweepTrait>::Inner,_b:&mut <Self::T as SweepTrait>::Inner){
-            unreachable!()
-        }
-        */
+
         fn collide(&self,a:ColSingle<Self::T>,b:ColSingle<Self::T>){
             //Protected by the fact that cloning thus struct
             //results in panic!.
@@ -307,10 +224,9 @@ fn for_every_bijective_pair<A:AxisTrait,B:AxisTrait,F:Bleek>(
     parent:&mut &mut NodeDyn<F::T>,
     sweeper:&mut Sweeper<F::T>,
     mut func:F){
-    let this_axis=A::get();
-    let parent_axis=B::get();
-
-    if this_axis != parent_axis {
+    
+    //Evaluated at compile time
+    if A::get() != B::get() {
         let r1 = Sweeper::get_section::<B>(&mut this.range,
                          &parent.container_box);
         let r2 = Sweeper::get_section::<A>(&mut parent.range,

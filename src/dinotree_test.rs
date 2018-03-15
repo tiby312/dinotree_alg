@@ -7,9 +7,33 @@ use support::Numisize;
 use support::BBox;
 //use median::strict::MedianStrict;
 //use treetimer::*;
+use test::*;
 
+#[bench]
+fn colfind(b:&mut Bencher){
+    use test_support::*;
+    let mut p=PointGenerator::new(&test_support::make_rect((0,1000),(0,1000)),&[100,42,6]);
 
+    let mut bots=Vec::new();
+    for id in 0..10000{
+        let ppp=p.random_point();
+        let k=test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(Bot{id,col:Vec::new()},k)); 
+    }
+    
+    let height=compute_tree_height(bots.len());
 
+    let mut tree=DinoTree::new(&mut bots,true);
+
+    let mut fu=|a:ColSingle<BBox<Numisize,Bot>>,b:ColSingle<BBox<Numisize,Bot>>|{
+      a.inner.col.push(b.inner.id);
+      b.inner.col.push(a.inner.id);
+    };
+
+    b.iter(||{
+        black_box(tree.intersect_every_pair_seq(&mut fu));
+    });
+}
 
 
 #[test]

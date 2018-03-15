@@ -3,7 +3,7 @@ use inner_prelude::*;
 //use dinotree_inner::support::*;
 
 
-use ordered_float::NotNaN;
+//use ordered_float::NotNaN;
 
 
 pub use dinotree_inner::support::NumWrapper;

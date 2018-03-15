@@ -1,11 +1,13 @@
 #![feature(iterator_step_by)]
-
+#![feature(test)]
 
 extern crate axgeom;
 extern crate compt;
 extern crate rayon;
 extern crate pdqselect;
 extern crate ordered_float;
+#[cfg(test)]
+extern crate test;
 #[cfg(test)]
 extern crate rand;
 extern crate smallvec;
@@ -70,7 +72,7 @@ mod tools;
 
 //use dinotree_inner::prelude::*;
 use dinotree_inner::support::DefaultDepthLevel;
-use dinotree_inner::daxis;
+//use dinotree_inner::daxis;
 pub use dinotree_inner::AABBox;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::SweepTrait;
@@ -78,12 +80,12 @@ use dinotree_inner::par;
 //pub use dinotree_inner::TreeTimerTrait;
 //use inner_prelude::*;
 //use dinotree_inner::TreeCache;
-use compt::LevelDesc;
+//use compt::LevelDesc;
 use axgeom::Rect;
 
 use axgeom::XAXIS_S;
 use axgeom::YAXIS_S;
-use dinotree_inner::DivNode;
+//use dinotree_inner::DivNode;
 use colfind::ColMulti;
 use colfind::ColSeq;
 use colfind::ColSing;
@@ -141,19 +143,12 @@ mod rects{
 
     ///Panics if user supplies a rectangle that intersects with another one used to call this same
     ///function.
-    pub fn for_all_in_rect<F:FnMut(ColSingle<'b,T>)>(&mut self,rect:&AABBox<T::Num>,mut func:F){
+    pub fn for_all_in_rect<F:FnMut(ColSingle<'b,T>)>(&mut self,rect:&AABBox<T::Num>,func:F){
       match &mut self.0{
         &mut RectsEnum::Xa(ref mut a)=>{
-          //let fu=closure_struct::ColSingStruct::new(func);
-        
-          //colfind::for_all_in_rect(a.tree,&rect.0,fu);
           a.for_all_in_rect(rect,func);
         },
-        &mut RectsEnum::Ya(ref mut a)=>{
-          //let fu=closure_struct::ColSingStruct::new(func);
-        
-          //colfind::for_all_in_rect(a.tree,&rect.0,fu);
-          
+        &mut RectsEnum::Ya(ref mut a)=>{     
           a.for_all_in_rect(rect,func);
         }
       }
@@ -407,15 +402,16 @@ mod ba{
     ///Specify the starting axis along which the bots will be partitioned.
     ///So if you picked the x axis, the root divider will be a vertical line.
     ///True means xaxis.
+    ///The length of the slice must be less than the max value of a u32.
     pub fn new(
           rest:&'a mut [T],axis:bool)->DinoTree<'a,T>{
         let height=self::compute_tree_height(rest.len());
         if axis{
-            let k=DynTree::<XAXIS_S,T>::from_exp_method::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+            let k=DynTree::<XAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
             DinoTree(DynTreeEnum::Xa(k.0))
           
         }else{
-              let k=DynTree::<YAXIS_S,T>::from_exp_method::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
+              let k=DynTree::<YAXIS_S,T>::new::<par::Parallel,DefaultDepthLevel,TreeTimerEmpty>(rest,height);
               DinoTree(DynTreeEnum::Ya(k.0))    
           
         }
@@ -507,7 +503,7 @@ mod ba{
         }
       }
 
-
+      /*
       fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&AABBox<T::Num>,fu:F){
         let fu=self::closure_struct::ColSingStruct::new(fu);
         match &mut self.0{
@@ -519,6 +515,7 @@ mod ba{
           }
         }
       }
+      */
       
       ///Not implemented!
       ///Finds the k nearest bots to a point.
@@ -530,7 +527,7 @@ mod ba{
       ///Find all intersecting pairs sequentially.
       ///Notice that in this case, a FnMut is supplied instead of a Fn.
       pub fn intersect_every_pair_seq<F:FnMut(ColSingle<T>,ColSingle<T>)>
-          (&mut self,mut clos:F){     
+          (&mut self,clos:F){     
 
           let clos=self::closure_struct::ColSeqStruct::new(clos);
 
@@ -548,7 +545,7 @@ mod ba{
       ///Optionally return time data of each level of the tree.
       pub fn intersect_every_pair<
         F:Fn(ColSingle<T>,ColSingle<T>)+Send+Sync,
-        >(&mut self,mut clos:F){
+        >(&mut self,clos:F){
           let clos=self::closure_struct::ColMultiStruct::new(&clos);
           
           match &mut self.0{
@@ -564,7 +561,7 @@ mod ba{
 
 
       pub fn intersect_every_pair_seq_debug<F:FnMut(ColSingle<T>,ColSingle<T>)>
-          (&mut self,mut clos:F)->Bag{     
+          (&mut self,clos:F)->Bag{     
           let clos=self::closure_struct::ColSeqStruct::new(clos);
 
           match &mut self.0{
@@ -579,7 +576,7 @@ mod ba{
 
       pub fn intersect_every_pair_debug<
         F:Fn(ColSingle<T>,ColSingle<T>)+Send+Sync,
-        >(&mut self,mut clos:F)->Bag{
+        >(&mut self,clos:F)->Bag{
           
           let clos=self::closure_struct::ColMultiStruct::new(&clos);
           

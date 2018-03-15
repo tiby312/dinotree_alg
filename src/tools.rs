@@ -62,31 +62,6 @@ impl<T> PreVec<T>{
 }
 */
 
-
-pub fn create_empty_slice_at_start_mut<'a,T:'a>(sl:&mut [T])->&'a mut [T]{
-    unsafe{std::slice::from_raw_parts_mut(sl.as_mut_ptr(),0)}
-}
-
-/*
-pub fn slice_adjacent<'a,T>(first:&'a [T],second:&'a [T])->bool{
-     let f1=first.len();
-     first[f1..].as_ptr() == second.as_ptr()
-}
-*/
-
-///Returns a combined slice given two slices that are next to each other in memory.
-///Panics if they are not next to each other.
-pub fn join_mut<'a,T>(first: &'a mut [T],second:&'a mut [T])->&'a mut[T]{
-    let f1=first.len();
-    if first[f1..].as_mut_ptr() == second.as_mut_ptr(){
-        unsafe{
-            return std::slice::from_raw_parts_mut(first.as_mut_ptr(),f1+second.len());
-        }
-    }else{
-        panic!("Slices are not next to each other in memory.");
-    }
-
-}
 /*
 ///Returns a combined slice given two slices that are next to each other in memory.
 ///Panics if they are not next to each other.
