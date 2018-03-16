@@ -61,12 +61,12 @@ pub fn collide_two_rect_parallel<
     let mut buffer2 = Vec::new();
     rects.for_all_in_rect(rect2, |a: ColSingle<T>| buffer2.push(Ba(a)));
 
-    let cols: (&mut [Ba<T>], &mut [Ba<T>]) = (&mut buffer1, &mut buffer2);
 
     {
-        sweeper_update::<_, A, par::Parallel>(cols.0);
-        sweeper_update::<_, A, par::Parallel>(cols.1);
-
+        rayon::join(
+            ||sweeper_update::<_, A, par::Parallel>(&mut buffer1),
+            ||sweeper_update::<_, A, par::Parallel>(&mut buffer2)
+        );
         use std::marker::PhantomData;
         use oned::Bleek;
         struct Bo<T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>)>(F, PhantomData<T>);
@@ -94,6 +94,6 @@ pub fn collide_two_rect_parallel<
         let mut sweeper = Sweeper::new();
 
         let b = Bo(func2, PhantomData);
-        sweeper.find_bijective_parallel::<A, _>(cols, b);
+        sweeper.find_bijective_parallel::<A, _>((&mut buffer1,&mut buffer2), b);
     }
 }

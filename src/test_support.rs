@@ -54,10 +54,10 @@ impl PointGenerator {
     pub fn new(a: &axgeom::Rect<Numisize>, seed: &[usize]) -> PointGenerator {
         let mut rng: StdRng = SeedableRng::from_seed(seed);
 
-        let rr = a.get_range2::<axgeom::XAXIS_S>();
+        let rr = a.get_range2::<axgeom::XAXISS>();
         let xdist = rand::distributions::Range::new(rr.start.0, rr.end.0);
 
-        let rr = a.get_range2::<axgeom::YAXIS_S>();
+        let rr = a.get_range2::<axgeom::YAXISS>();
         let ydist = rand::distributions::Range::new(rr.start.0, rr.end.0);
 
         PointGenerator { rng, xdist, ydist }

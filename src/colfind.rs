@@ -3,24 +3,13 @@ use oned::Bleek;
 use compt::LevelIter;
 use compt::WrapGen;
 use std::cell::UnsafeCell;
+use dinotree_inner::par::Joiner;
 
 pub trait ColMulti: Send + Sync + Clone {
     type T: SweepTrait;
-    //User must keel the return object the same rect as this.
-    //fn identity(&self,src:&Self::T)->Self::T;
-    //fn add(&self,a:&mut <Self::T as SweepTrait>::Inner,&mut <Self::T as SweepTrait>::Inner);
     fn collide(&self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
 }
 
-pub trait ColSeq {
-    type T: SweepTrait;
-    fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
-}
-
-pub trait ColSing {
-    type T: SweepTrait;
-    fn collide(&mut self, a: ColSingle<Self::T>);
-}
 
 pub struct ColMultiWrapper<'a, C: ColMulti + 'a>(pub &'a mut C);
 
@@ -39,6 +28,8 @@ fn go_down<
     X: SweepTrait + 'x,
     F: ColMulti<T = X>,
 >(
+    this_axis:A,
+    parent_axis:B,
     sweeper: &mut Sweeper<F::T>,
     anchor: &mut &mut NodeDyn<X>,
     m: WrapGen<LevelIter<C>>,
@@ -57,14 +48,14 @@ fn go_down<
                 //This can be evaluated at compile time!
                 if B::get() == A::get() {
                     if !(div < anchor.container_box.start) {
-                        self::go_down::<A::Next, B, _, _, _>(sweeper, anchor, left, func);
+                        self::go_down(this_axis.next(),parent_axis,sweeper, anchor, left, func);
                     };
                     if !(div > anchor.container_box.end) {
-                        self::go_down::<A::Next, B, _, _, _>(sweeper, anchor, right, func);
+                        self::go_down(this_axis.next(),parent_axis,sweeper, anchor, right, func);
                     };
                 } else {
-                    self::go_down::<A::Next, B, _, _, _>(sweeper, anchor, left, func);
-                    self::go_down::<A::Next, B, _, _, _>(sweeper, anchor, right, func);
+                    self::go_down(this_axis.next(),parent_axis,sweeper, anchor, left, func);
+                    self::go_down(this_axis.next(),parent_axis,sweeper, anchor, right, func);
                 }
             }
             _ => {}
@@ -76,12 +67,15 @@ fn recurse<
     'x,
     A: AxisTrait,
     JJ: par::Joiner,
-    X: SweepTrait + 'x,
     H: DepthLevel,
+    X: SweepTrait + 'x,
     F: ColMulti<T = X>,
     C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
     K: TreeTimerTrait,
 >(
+    this_axis:A,
+    par:JJ,
+    depthlevel:H,
     sweeper: &mut Sweeper<F::T>,
     m: LevelIter<C>,
     clos: &mut F,
@@ -91,15 +85,9 @@ fn recurse<
 
     let ((level, mut nn), rest) = m.next();
 
-    let mut tot_time = [0.0f64; 3];
-
-    let tt0 = tools::Timer2::new();
 
     self::sweeper_find_2d::<A::Next, _>(sweeper, &mut nn.range, ColMultiWrapper(clos));
 
-    tot_time[0] = tt0.elapsed();
-
-    let tt1 = tools::Timer2::new();
     let k = match rest {
         None => timer_log.leaf_finish(),
         Some((mut left, mut right)) => {
@@ -107,16 +95,18 @@ fn recurse<
                 let left = compt::WrapGen::new(&mut left);
                 let right = compt::WrapGen::new(&mut right);
 
-                self::go_down::<A::Next, A, _, _, _>(sweeper, &mut nn, left, clos);
-                self::go_down::<A::Next, A, _, _, _>(sweeper, &mut nn, right, clos);
+                self::go_down(this_axis.next(),this_axis,sweeper, &mut nn, left, clos);
+                self::go_down(this_axis.next(),this_axis,sweeper, &mut nn, right, clos);
             }
 
-            tot_time[1] = tt1.elapsed();
             let (ta, tb) = timer_log.next();
 
-            let (ta, tb) = if JJ::is_parallel() && !H::switch_to_sequential(level) {
+            let (ta, tb) = if par.is_parallel() && !depthlevel.switch_to_sequential(level) {
                 let af = || {
-                    self::recurse::<A::Next, par::Parallel, _, H, _, _, _>(
+                    self::recurse::<_, _, H,_, _, _, _>(
+                        this_axis.next(),
+                        par,
+                        depthlevel,
                         sweeper,
                         left,
                         &mut clos.clone(),
@@ -125,7 +115,10 @@ fn recurse<
                 };
                 let bf = || {
                     let mut sweeper = Sweeper::new();
-                    self::recurse::<A::Next, par::Parallel, _, H, _, _, _>(
+                    self::recurse::< _,_, H,_, _, _, _>(
+                        this_axis.next(),
+                        par,
+                        depthlevel,
                         &mut sweeper,
                         right,
                         &mut clos.clone(),
@@ -135,13 +128,19 @@ fn recurse<
                 let (ta, tb) = rayon::join(af, bf);
                 (ta, tb)
             } else {
-                let ta = self::recurse::<A::Next, par::Sequential, _, H, _, _, _>(
+                let ta = self::recurse::<_, _,H, _,  _, _, _>(
+                    this_axis.next(),
+                    par.into_seq(),
+                    depthlevel,
                     sweeper,
                     left,
                     clos,
                     ta,
                 );
-                let tb = self::recurse::<A::Next, par::Sequential, _, H, _, _, _>(
+                let tb = self::recurse::<_, _,H, _,  _, _, _>(
+                    this_axis.next(),
+                    par.into_seq(),
+                    depthlevel,
                     sweeper,
                     right,
                     clos,
@@ -153,10 +152,7 @@ fn recurse<
             K::combine(ta, tb)
         }
     };
-    tot_time[2] = tt1.elapsed();
-    if level.get_depth() == 0 {
-        //println!("tot_time={:?}",tot_time);
-    }
+    
     k
 }
 
@@ -164,29 +160,29 @@ pub fn for_every_col_pair_seq<
     A: AxisTrait,
     T: SweepTrait,
     H: DepthLevel,
-    F: ColSeq<T = T>,
+    F: FnMut(ColSingle<T>, ColSingle<T>),
     K: TreeTimerTrait,
 >(
     kdtree: &mut DynTree<A, T>,
     mut clos: F,
 ) -> K::Bag {
     //#[derive(Copy,Clone)]
-    pub struct Wrapper<'a, F: ColSeq + 'a>(UnsafeCell<&'a mut F>);
+    pub struct Wrapper<'a, T:SweepTrait,F: FnMut(ColSingle<T>, ColSingle<T>) + 'a>(UnsafeCell<&'a mut F>,PhantomData<T>);
 
-    impl<'a, F: ColSeq + 'a> Clone for Wrapper<'a, F> {
-        fn clone(&self) -> Wrapper<'a, F> {
+    impl<'a, T:SweepTrait,F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Clone for Wrapper<'a,T, F> {
+        fn clone(&self) -> Wrapper<'a, T,F> {
             unreachable!()
         }
     }
 
-    impl<'a, F: ColSeq + 'a> ColMulti for Wrapper<'a, F> {
-        type T = F::T;
+    impl<'a, T:SweepTrait,F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> ColMulti for Wrapper<'a,T, F> {
+        type T = T;
 
         fn collide(&self, a: ColSingle<Self::T>, b: ColSingle<Self::T>) {
             //Protected by the fact that cloning thus struct
             //results in panic!.
             let k = unsafe { &mut *self.0.get() };
-            k.collide(a, b);
+            k(a, b);
         }
     }
 
@@ -194,13 +190,16 @@ pub fn for_every_col_pair_seq<
     //Safe to do since our algorithms first clone this struct before
     //passing it to another thread. This sadly has to be indiviually
     //verified.
-    unsafe impl<'a, F: ColSeq + 'a> Send for Wrapper<'a, F> {}
-    unsafe impl<'a, F: ColSeq + 'a> Sync for Wrapper<'a, F> {}
+    unsafe impl<'a, T:SweepTrait,F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Send for Wrapper<'a,T, F> {}
+    unsafe impl<'a, T:SweepTrait,F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Sync for Wrapper<'a,T, F> {}
 
-    let wrapper = Wrapper(UnsafeCell::new(&mut clos));
+    let wrapper = Wrapper(UnsafeCell::new(&mut clos),PhantomData);
 
     //All of the above is okay because we start with SEQUENTIAL
-    self::for_every_col_pair_inner::<_, par::Sequential, _, DefaultDepthLevel, _, K>(
+    self::for_every_col_pair_inner::<_, _, _, _, _, K>(
+        A::new(),
+        par::Sequential::new(),
+        DefaultDepthLevel::new(),
         kdtree,
         wrapper,
     )
@@ -216,7 +215,7 @@ pub fn for_every_col_pair<
     kdtree: &mut DynTree<A, T>,
     clos: F,
 ) -> K::Bag {
-    self::for_every_col_pair_inner::<_, par::Parallel, _, DefaultDepthLevel, _, K>(kdtree, clos)
+    self::for_every_col_pair_inner::<_, _, _, _, _, K>(A::new(),par::Parallel::new(),DefaultDepthLevel::new(),kdtree, clos)
 }
 
 fn for_every_col_pair_inner<
@@ -227,6 +226,9 @@ fn for_every_col_pair_inner<
     F: ColMulti<T = T>,
     K: TreeTimerTrait,
 >(
+    this_axis:A,
+    par:JJ,
+    depthlevel:H,
     kdtree: &mut DynTree<A, T>,
     mut clos: F,
 ) -> K::Bag {
@@ -237,7 +239,7 @@ fn for_every_col_pair_inner<
     let mut sweeper = Sweeper::new();
 
     let h = K::new(height);
-    let bag = self::recurse::<A, JJ, _, H, _, _, _>(&mut sweeper, dt, &mut clos, h);
+    let bag = self::recurse(this_axis,par,depthlevel,&mut sweeper, dt, &mut clos, h);
     bag
 }
 
@@ -284,8 +286,9 @@ fn rect_recurse<
     A: AxisTrait,
     T: SweepTrait + 'x,
     C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-    F: ColSing<T = T>,
+    F: FnMut(ColSingle<T>),
 >(
+    this_axis:A,
     m: C,
     rect: &Rect<T::Num>,
     func: &mut F,
@@ -301,7 +304,7 @@ fn rect_recurse<
                 inner: a.1,
             };
 
-            func.collide(a);
+            func(a);
         }
     }
     match rest {
@@ -311,72 +314,45 @@ fn rect_recurse<
             let rr = rect.get_range2::<A>();
 
             if !(div < rr.start) {
-                self::rect_recurse::<A::Next, _, _, _>(left, rect, func);
+                self::rect_recurse(this_axis.next(),left, rect, func);
             }
             if !(div > rr.end) {
-                self::rect_recurse::<A::Next, _, _, _>(right, rect, func);
+                self::rect_recurse(this_axis.next(),right, rect, func);
             }
         }
         _ => {}
     }
 }
 
-pub fn for_all_intersect_rect<A: AxisTrait, T: SweepTrait, F: ColSing<T = T>>(
+pub fn for_all_intersect_rect<A: AxisTrait, T: SweepTrait, F: FnMut(ColSingle<T>)>(
     tree: &mut DynTree<A, T>,
     rect: &Rect<T::Num>,
-    closure: F,
+    mut closure: F,
 ) {
-    struct Wrapper<F: ColSing> {
-        rect: Rect<<F::T as SweepTrait>::Num>,
-        closure: F,
-    };
-
-
-    impl<F: ColSing> ColSing for Wrapper<F> {
-        type T = F::T;
-        fn collide(&mut self, a: ColSingle<Self::T>) {
-            if self.rect.intersects_rect(&(a.rect).0) {
-                self.closure.collide(a);
-            }
+    let mut f=|a:ColSingle<T>|{
+        if rect.intersects_rect(&(a.rect).0) {
+            closure(a);
         }
-    }
-
-    let mut wrapper = Wrapper {
-        rect: *rect,
-        closure,
     };
+
 
     let ta = tree.get_iter_mut();
-    self::rect_recurse::<A, _, _, _>(ta, rect, &mut wrapper);
+    self::rect_recurse(A::new(),ta, rect, &mut f);
 }
 
-pub fn for_all_in_rect<A: AxisTrait, T: SweepTrait, F: ColSing<T = T>>(
+pub fn for_all_in_rect<A: AxisTrait, T: SweepTrait, F: FnMut(ColSingle<T>)>(
     tree: &mut DynTree<A, T>,
     rect: &Rect<T::Num>,
-    closure: F,
+    mut closure: F,
 ) {
-    struct Wrapper<F: ColSing> {
-        rect: Rect<<F::T as SweepTrait>::Num>,
-        closure: F,
-    };
-
-
-    impl<F: ColSing> ColSing for Wrapper<F> {
-        type T = F::T;
-        fn collide(&mut self, a: ColSingle<Self::T>) {
-            if self.rect.contains_rect(&(a.rect).0) {
-                self.closure.collide(a);
-            }
+    let mut f=|a:ColSingle<T>|{
+        if rect.contains_rect(&(a.rect).0) {
+            closure(a);
         }
-    }
-
-    let mut wrapper = Wrapper {
-        rect: *rect,
-        closure,
     };
 
     let ta = tree.get_iter_mut();
-    self::rect_recurse::<A, _, _, _>(ta, rect, &mut wrapper);
+    self::rect_recurse(A::new(),ta, rect, &mut f);
 }
 
 use colfind::bl::sweeper_find_2d;

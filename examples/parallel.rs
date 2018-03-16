@@ -2,7 +2,6 @@ extern crate dinotree;
 use dinotree::*;
 use dinotree::support::Numisize;
 use dinotree::support::BBox;
-use dinotree::support::DefaultDepthLevel;
 
 #[derive(Debug)]
 struct Bot {

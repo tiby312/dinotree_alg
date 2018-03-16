@@ -3,7 +3,6 @@ use inner_prelude::*;
 use support::Numf32;
 use compt::GenTree;
 
-///Provided as a conveniance
 pub use dinotree_inner::compute_tree_height;
 
 ///The trait that your vertex object needs to implement to be used
@@ -19,6 +18,7 @@ pub fn get_num_verticies(height: usize) -> usize {
 }
 
 ///Meant to then be drawn using triangles.
+///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
 pub fn update<V: Vertex, T: SweepTrait<Num = Numf32>>(
     rect: axgeom::Rect<Numf32>,
     gentree: &DinoTree<T>,
@@ -27,10 +27,10 @@ pub fn update<V: Vertex, T: SweepTrait<Num = Numf32>>(
 ) {
     match &gentree.0 {
         &DynTreeEnum::Xa(ref a) => {
-            self::update_inner::<XAXIS_S, V, T>(rect, a, verticies, start_width);
+            self::update_inner::<XAXISS, V, T>(rect, a, verticies, start_width);
         }
         &DynTreeEnum::Ya(ref a) => {
-            self::update_inner::<YAXIS_S, V, T>(rect, a, verticies, start_width);
+            self::update_inner::<YAXISS, V, T>(rect, a, verticies, start_width);
         }
     }
 }

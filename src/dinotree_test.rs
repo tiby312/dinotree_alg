@@ -1,7 +1,7 @@
 use super::*;
 use test_support::*;
-use axgeom::XAXIS_S;
-use axgeom::YAXIS_S;
+use axgeom::XAXISS;
+use axgeom::YAXISS;
 
 use support::Numisize;
 use support::BBox;
@@ -299,10 +299,10 @@ fn test_bot_layout(mut bots: Vec<BBox<Numisize, Bot>>) {
             for el2 in control_bots[i + 1..].iter() {
                 let a = el1;
                 let b = el2;
-                let ax = (a.get().0).0.get_range2::<XAXIS_S>();
-                let ay = (a.get().0).0.get_range2::<YAXIS_S>();
-                let bx = (b.get().0).0.get_range2::<XAXIS_S>();
-                let by = (b.get().0).0.get_range2::<YAXIS_S>();
+                let ax = (a.get().0).0.get_range2::<XAXISS>();
+                let ay = (a.get().0).0.get_range2::<YAXISS>();
+                let bx = (b.get().0).0.get_range2::<XAXISS>();
+                let by = (b.get().0).0.get_range2::<YAXISS>();
 
                 if ax.intersects(bx) && ay.intersects(by) {
                     src.push(test_support::create_unordered(&a.val, &b.val));

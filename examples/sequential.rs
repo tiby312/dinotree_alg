@@ -2,7 +2,6 @@ extern crate dinotree;
 use dinotree::*;
 use dinotree::support::Numisize;
 use dinotree::support::BBox;
-use dinotree::support::DefaultDepthLevel;
 
 #[derive(Debug)]
 struct Bot {
@@ -34,8 +33,6 @@ fn main() {
     bots.push(make_bot(3, (50, 60), (10, 20)));
     bots.push(make_bot(4, (50, 60), (15, 25)));
     bots.push(make_bot(5, (50, 60), (16, 30)));
-
-    let height = 2;
 
     {
         let mut dyntree = DinoTree::new(&mut bots, false);

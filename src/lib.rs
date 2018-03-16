@@ -35,29 +35,6 @@ mod inner_prelude {
     pub use ::*;
 }
 
-/*
-/// Conveniently include commonly used symbols in this crate.
-/// Use like this:
-/// ```
-/// extern crate dinotree;
-/// use dinotree::prelude::*;
-/// fn main(){
-///    //...
-/// }
-/// ```
-pub mod prelude{
-  //pub use dinotree_inner::prelude::*;
-  //pub use ColPair;
-  pub use ColSingle;
-  pub use DinoTree;
-  pub use Rects;
-  pub use dinotree_inner::AABBox;
-  pub use dinotree_inner::SweepTrait;
-  //pub use TreeCache2;
-  //pub use RectsTreeTrait;
-}
-*/
-
 ///Provides functionality to draw the dividers of a dinotree.
 pub mod graphics;
 
@@ -73,39 +50,25 @@ mod oned;
 ///Contains misc tools
 mod tools;
 
-//use dinotree_inner::prelude::*;
+pub use rects::Rects;
+mod rects;
+
+
 use dinotree_inner::support::DefaultDepthLevel;
-//use dinotree_inner::daxis;
 pub use dinotree_inner::AABBox;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::SweepTrait;
 use dinotree_inner::par;
-//pub use dinotree_inner::TreeTimerTrait;
-//use inner_prelude::*;
-//use dinotree_inner::TreeCache;
-//use compt::LevelDesc;
 use axgeom::Rect;
-
-use axgeom::XAXIS_S;
-use axgeom::YAXIS_S;
-//use dinotree_inner::DivNode;
+use axgeom::XAXISS;
+use axgeom::YAXISS;
 use colfind::ColMulti;
-use colfind::ColSeq;
-use colfind::ColSing;
 use smallvec::SmallVec;
 use dinotree_inner::TreeTimer2;
 use dinotree_inner::TreeTimerEmpty;
 use dinotree_inner::Bag;
 
 use dinotree_inner::compute_tree_height;
-/*
-///This contains the destructured SweepTrait for a colliding pair.
-///The rect is read only while T::Inner is allowed to be mutated.
-pub struct ColPair<'a,T:SweepTrait+'a>{
-    pub a:(&'a AABBox<T::Num>,&'a mut T::Inner),
-    pub b:(&'a AABBox<T::Num>,&'a mut T::Inner)
-}
-*/
 
 ///Represents a destructured SweepTrait into the immutable bounding box reference,
 ///and the mutable reference to the rest of the object.
@@ -116,218 +79,20 @@ pub struct ColSingle<'a, T: SweepTrait + 'a> {
 
 use dinotree_inner::DynTree;
 
-pub use rects::Rects;
-mod rects {
-    use super::*;
 
-    ///Provides a way to query multiple non-intersecting rectangles.
-    ///References returned from the functions within this struct
-    ///Can be held onto for the lifetime of this struct.
-    pub struct Rects<'a: 'b, 'b, T: SweepTrait + 'a>(RectsEnum<'a, 'b, T>);
-
-    impl<'a: 'b, 'b, T: SweepTrait + 'a> Rects<'a, 'b, T> {
-        pub(crate) fn new(tree: &'b mut DinoTree<'a, T>) -> Rects<'a, 'b, T> {
-            Rects(match &mut tree.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => RectsEnum::Xa(RectsInner {
-                    tree: a,
-                    rects: SmallVec::new(),
-                }),
-                &mut DynTreeEnum::Ya(ref mut a) => RectsEnum::Ya(RectsInner {
-                    tree: a,
-                    rects: SmallVec::new(),
-                }),
-            })
-        }
-
-        ///Panics if user supplies a rectangle that intersects with another one used to call this same
-        ///function.
-        pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(
-            &mut self,
-            rect: &AABBox<T::Num>,
-            func: F,
-        ) {
-            match &mut self.0 {
-                &mut RectsEnum::Xa(ref mut a) => {
-                    a.for_all_in_rect(rect, func);
-                }
-                &mut RectsEnum::Ya(ref mut a) => {
-                    a.for_all_in_rect(rect, func);
-                }
-            }
-        }
-    }
-
-    enum RectsEnum<'a: 'b, 'b, T: SweepTrait + 'a> {
-        Xa(RectsInner<'a, 'b, XAXIS_S, T>),
-        Ya(RectsInner<'a, 'b, YAXIS_S, T>),
-    }
-
-    struct RectsInner<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> {
-        tree: &'b mut DynTree<'a, A, T>,
-        rects: SmallVec<[AABBox<T::Num>; 16]>,
-    }
-    use axgeom::AxisTrait;
-
-    impl<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> RectsInner<'a, 'b, A, T> {
-        ///Iterate over all bots in a rectangle.
-        ///It is safe to call this function multiple times with rectangles that
-        ///do not intersect. Because the rectangles do not intersect, all bots retrieved
-        ///from inside either rectangle are guarenteed to be disjoint.
-        ///If a rectangle is passed that does intersect one from a previous call,
-        ///this function will panic.
-        ///
-        ///Note the lifetime of the mutable reference in the passed function.
-        ///The user is allowed to move this reference out and hold on to it for
-        ///the lifetime of this struct.
-        pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(
-            &mut self,
-            rect: &AABBox<T::Num>,
-            mut func: F,
-        ) {
-            for k in self.rects.iter() {
-                if rect.0.intersects_rect(&k.0) {
-                    panic!("Rects cannot intersect! {:?}", (k, rect));
-                }
-            }
-
-            self.rects.push(AABBox(rect.0));
-
-            {
-                let wrapper = |c: ColSingle<T>| {
-                    let (a, b) = (c.rect as *const AABBox<T::Num>, c.inner as *mut T::Inner);
-                    //Unsafely extend the lifetime to accocomate the
-                    //lifetime of RectsTrait.
-                    let (a, b) = unsafe { (&*a, &mut *b) };
-
-                    let cn = ColSingle { rect: a, inner: b };
-                    func(cn);
-                };
-
-                let fu = closure_struct::ColSingStruct::new(wrapper);
-
-                colfind::for_all_in_rect(self.tree, &rect.0, fu);
-
-                //self.tree.for_all_in_rect(rect,wrapper);
-            }
-        }
-    }
-
-}
-
-/*
-mod rects{
-    use super::*;
-    pub trait RectsTreeTrait{
-        type T:SweepTrait;
-        type Num:NumTrait;
-        fn for_all_in_rect<F:FnMut(ColSingle<Self::T>)>(&mut self,rect:&AABBox<Self::Num>,fu:F);
-    }
-
-    ///A construct to allow querying non-intersecting rectangles to retrive mutable references to what is inside them.
-    pub struct Rects<'a,C:RectsTreeTrait+'a>{
-        tree:&'a mut C,
-        rects:SmallVec<[AABBox<C::Num>;16]>
-    }
-
-
-    impl<'a,C:RectsTreeTrait+'a> Rects<'a,C>{
-
-        ///Iterate over all bots in a rectangle.
-        ///It is safe to call this function multiple times with rectangles that 
-        ///do not intersect. Because the rectangles do not intersect, all bots retrieved
-        ///from inside either rectangle are guarenteed to be disjoint. 
-        ///If a rectangle is passed that does intersect one from a previous call, this function will panic.
-        ///
-        ///Note the lifetime of the mutable reference in the passed function.
-        ///The user is allowed to move this reference out and hold on to it for 
-        ///the lifetime of this struct.
-        pub fn for_all_in_rect<F:FnMut(ColSingle<'a,C::T>)>(&mut self,rect:&AABBox<C::Num>,mut func:F){
-        
-
-            
-            for k in self.rects.iter(){
-                if rect.0.intersects_rect(&k.0){
-                    panic!("Rects cannot intersect! {:?}",(k,rect));
-                }
-            }
-
-            self.rects.push(AABBox(rect.0));
-
-            {
-                let wrapper=|c:ColSingle<C::T>|{
-                    let (a,b)=(c.0 as *const AABBox<<C::T as SweepTrait>::Num>,c.1 as *mut <C::T as SweepTrait>::Inner);
-                    //Unsafely extend the lifetime to accocomate the
-                    //lifetime of RectsTrait.
-                    let (a,b)=unsafe{(&*a,&mut *b)};
-                    
-                    let cn=ColSingle(a,b);
-                    func(cn);
-                };
-                self.tree.for_all_in_rect(rect,wrapper);
-            }
-            
-        }
-    }
-}
-*/
-
-//pub use ba::TreeCache2;
 pub use ba::DinoTree;
 pub(crate) use ba::DynTreeEnum;
 
-use ba::closure_struct;
 mod ba {
     use super::*;
     use DynTree;
-    //use dinotree_inner::TreeCache;
-    //use RectsTreeTrait;
 
-    pub(crate) mod closure_struct {
+    mod closure_struct {
         use super::*;
-        //use ColPair;
         use std::marker::PhantomData;
-        use ColSeq;
         use ColSingle;
-        use ColSing;
         use ColMulti;
 
-        pub struct ColSeqStruct<T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>)> {
-            d: F,
-            p: PhantomData<T>,
-        }
-        impl<T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>)> ColSeqStruct<T, F> {
-            pub fn new(a: F) -> ColSeqStruct<T, F> {
-                ColSeqStruct {
-                    d: a,
-                    p: PhantomData,
-                }
-            }
-        }
-        impl<T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>)> ColSeq for ColSeqStruct<T, F> {
-            type T = T;
-            fn collide(&mut self, a: ColSingle<T>, b: ColSingle<T>) {
-                (self.d)(a, b);
-            }
-        }
-
-        pub struct ColSingStruct<T: SweepTrait, F: FnMut(ColSingle<T>)> {
-            d: F,
-            p: PhantomData<T>,
-        }
-        impl<T: SweepTrait, F: FnMut(ColSingle<T>)> ColSingStruct<T, F> {
-            pub fn new(a: F) -> ColSingStruct<T, F> {
-                ColSingStruct {
-                    d: a,
-                    p: PhantomData,
-                }
-            }
-        }
-        impl<T: SweepTrait, F: FnMut(ColSingle<T>)> ColSing for ColSingStruct<T, F> {
-            type T = T;
-            fn collide(&mut self, a: ColSingle<Self::T>) {
-                (self.d)(a);
-            }
-        }
 
         pub struct ColMultiStruct<
             'a,
@@ -387,8 +152,8 @@ mod ba {
     }
 
     pub(crate) enum DynTreeEnum<'a, T: SweepTrait + 'a> {
-        Xa(DynTree<'a, XAXIS_S, T>),
-        Ya(DynTree<'a, YAXIS_S, T>),
+        Xa(DynTree<'a, XAXISS, T>),
+        Ya(DynTree<'a, YAXISS, T>),
     }
 
     ///This is the struct that this crate revolves around.
@@ -403,14 +168,14 @@ mod ba {
         pub fn new(rest: &'a mut [T], axis: bool) -> DinoTree<'a, T> {
             let height = self::compute_tree_height(rest.len());
             if axis {
-                let k = DynTree::<XAXIS_S, T>::new::<
+                let k = DynTree::<XAXISS, T>::new::<
                     par::Parallel,
                     DefaultDepthLevel,
                     TreeTimerEmpty,
                 >(rest, height);
                 DinoTree(DynTreeEnum::Xa(k.0))
             } else {
-                let k = DynTree::<YAXIS_S, T>::new::<
+                let k = DynTree::<YAXISS, T>::new::<
                     par::Parallel,
                     DefaultDepthLevel,
                     TreeTimerEmpty,
@@ -423,14 +188,14 @@ mod ba {
         pub fn new_seq(rest: &'a mut [T], axis: bool) -> DinoTree<'a, T> {
             let height = self::compute_tree_height(rest.len());
             if axis {
-                let k = DynTree::<XAXIS_S, T>::new::<
+                let k = DynTree::<XAXISS, T>::new::<
                     par::Sequential,
                     DefaultDepthLevel,
                     TreeTimerEmpty,
                 >(rest, height);
                 DinoTree(DynTreeEnum::Xa(k.0))
             } else {
-                let k = DynTree::<YAXIS_S, T>::new::<
+                let k = DynTree::<YAXISS, T>::new::<
                     par::Sequential,
                     DefaultDepthLevel,
                     TreeTimerEmpty,
@@ -446,14 +211,14 @@ mod ba {
             let height = self::compute_tree_height(rest.len());
             if axis {
                 let k =
-                    DynTree::<XAXIS_S, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
+                    DynTree::<XAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
                         rest,
                         height,
                     );
                 (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
             } else {
                 let k =
-                    DynTree::<YAXIS_S, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
+                    DynTree::<YAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
                         rest,
                         height,
                     );
@@ -465,14 +230,14 @@ mod ba {
         pub fn new_seq_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
             let height = self::compute_tree_height(rest.len());
             if axis {
-                let k = DynTree::<XAXIS_S, T>::new::<
+                let k = DynTree::<XAXISS, T>::new::<
                     par::Sequential,
                     DefaultDepthLevel,
                     TreeTimer2,
                 >(rest, height);
                 (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
             } else {
-                let k = DynTree::<YAXIS_S, T>::new::<
+                let k = DynTree::<YAXISS, T>::new::<
                     par::Sequential,
                     DefaultDepthLevel,
                     TreeTimer2,
@@ -514,13 +279,14 @@ mod ba {
         }
 
         ///Unlike the rects session api, this function returns all elements within the specified
-        //rectangle AND all those that intersect with it.
+        ///rectangle AND all those that intersect with it. This more relaxed requirement means that
+        ///we can no longer query non intersecting rectangles and be assured that the two respective
+        ///sets of bots are disjoint.
         pub fn for_all_intersect_rect<F: FnMut(ColSingle<T>)>(
             &mut self,
             rect: &AABBox<T::Num>,
             fu: F,
         ) {
-            let fu = self::closure_struct::ColSingStruct::new(fu);
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
                     colfind::for_all_intersect_rect(a, &rect.0, fu);
@@ -530,20 +296,6 @@ mod ba {
                 }
             }
         }
-
-        /*
-      fn for_all_in_rect<F:FnMut(ColSingle<T>)>(&mut self,rect:&AABBox<T::Num>,fu:F){
-        let fu=self::closure_struct::ColSingStruct::new(fu);
-        match &mut self.0{
-          &mut DynTreeEnum::Xa(ref mut a)=>{
-            colfind::for_all_in_rect(a,&rect.0,fu);
-          },
-          &mut DynTreeEnum::Ya(ref mut a)=>{
-            colfind::for_all_in_rect(a,&rect.0,fu);
-          }
-        }
-      }
-      */
 
         ///Not implemented!
         ///Finds the k nearest bots to a point.
@@ -559,7 +311,6 @@ mod ba {
         ///Find all intersecting pairs sequentially.
         ///Notice that in this case, a FnMut is supplied instead of a Fn.
         pub fn intersect_every_pair_seq<F: FnMut(ColSingle<T>, ColSingle<T>)>(&mut self, clos: F) {
-            let clos = self::closure_struct::ColSeqStruct::new(clos);
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
@@ -605,7 +356,6 @@ mod ba {
             &mut self,
             clos: F,
         ) -> Bag {
-            let clos = self::closure_struct::ColSeqStruct::new(clos);
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
