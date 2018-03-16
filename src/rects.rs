@@ -21,11 +21,7 @@ impl<'a: 'b, 'b, T: SweepTrait + 'a> Rects<'a, 'b, T> {
 
     ///Panics if user supplies a rectangle that intersects with another one used to call this same
     ///function.
-    pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(
-        &mut self,
-        rect: &AABBox<T::Num>,
-        func: F,
-    ) {
+    pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(&mut self, rect: &AABBox<T::Num>, func: F) {
         match &mut self.0 {
             &mut RectsEnum::Xa(ref mut a) => {
                 a.for_all_in_rect(rect, func);
@@ -84,7 +80,7 @@ impl<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> RectsInner<'a, 'b, A, T>
                 func(cn);
             };
 
-           // let fu = closure_struct::ColSingStruct::new(wrapper);
+            // let fu = closure_struct::ColSingStruct::new(wrapper);
 
             colfind::for_all_in_rect(self.tree, &rect.0, wrapper);
 

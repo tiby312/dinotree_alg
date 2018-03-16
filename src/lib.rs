@@ -53,7 +53,6 @@ mod tools;
 pub use rects::Rects;
 mod rects;
 
-
 use dinotree_inner::support::DefaultDepthLevel;
 pub use dinotree_inner::AABBox;
 pub use dinotree_inner::NumTrait;
@@ -79,7 +78,6 @@ pub struct ColSingle<'a, T: SweepTrait + 'a> {
 
 use dinotree_inner::DynTree;
 
-
 pub use ba::DinoTree;
 pub(crate) use ba::DynTreeEnum;
 
@@ -92,7 +90,6 @@ mod ba {
         use std::marker::PhantomData;
         use ColSingle;
         use ColMulti;
-
 
         pub struct ColMultiStruct<
             'a,
@@ -210,18 +207,16 @@ mod ba {
         pub fn new_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
             let height = self::compute_tree_height(rest.len());
             if axis {
-                let k =
-                    DynTree::<XAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
-                        rest,
-                        height,
-                    );
+                let k = DynTree::<XAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
+                    rest,
+                    height,
+                );
                 (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
             } else {
-                let k =
-                    DynTree::<YAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
-                        rest,
-                        height,
-                    );
+                let k = DynTree::<YAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
+                    rest,
+                    height,
+                );
                 (DinoTree(DynTreeEnum::Ya(k.0)), k.1)
             }
         }
@@ -230,18 +225,18 @@ mod ba {
         pub fn new_seq_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
             let height = self::compute_tree_height(rest.len());
             if axis {
-                let k = DynTree::<XAXISS, T>::new::<
-                    par::Sequential,
-                    DefaultDepthLevel,
-                    TreeTimer2,
-                >(rest, height);
+                let k =
+                    DynTree::<XAXISS, T>::new::<par::Sequential, DefaultDepthLevel, TreeTimer2>(
+                        rest,
+                        height,
+                    );
                 (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
             } else {
-                let k = DynTree::<YAXISS, T>::new::<
-                    par::Sequential,
-                    DefaultDepthLevel,
-                    TreeTimer2,
-                >(rest, height);
+                let k =
+                    DynTree::<YAXISS, T>::new::<par::Sequential, DefaultDepthLevel, TreeTimer2>(
+                        rest,
+                        height,
+                    );
                 (DinoTree(DynTreeEnum::Ya(k.0)), k.1)
             }
         }
@@ -311,7 +306,6 @@ mod ba {
         ///Find all intersecting pairs sequentially.
         ///Notice that in this case, a FnMut is supplied instead of a Fn.
         pub fn intersect_every_pair_seq<F: FnMut(ColSingle<T>, ColSingle<T>)>(&mut self, clos: F) {
-
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
                     colfind::for_every_col_pair_seq::<_, T, DefaultDepthLevel, _, TreeTimerEmpty>(
@@ -356,7 +350,6 @@ mod ba {
             &mut self,
             clos: F,
         ) -> Bag {
-
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
                     colfind::for_every_col_pair_seq::<_, T, DefaultDepthLevel, _, TreeTimer2>(
