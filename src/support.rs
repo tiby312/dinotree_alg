@@ -10,7 +10,7 @@ pub use dinotree_inner::support::Numf64;
 pub use dinotree_inner::support::Numisize;
 pub use dinotree_inner::support::Numusize;
 pub use dinotree_inner::support::BBox;
-pub use dinotree_inner::support::DefaultDepthLevel;
+//pub use dinotree_inner::support::DefaultDepthLevel;
 
 use dinotree_inner::base_kdtree::RebalTrait;
 //use oned::Blee;
@@ -63,8 +63,8 @@ pub fn collide_two_rect_parallel<
 
     {
         rayon::join(
-            || sweeper_update::<_, A, par::Parallel>(&mut buffer1),
-            || sweeper_update::<_, A, par::Parallel>(&mut buffer2),
+            || sweeper_update::<_, A>(&mut buffer1),
+            || sweeper_update::<_, A>(&mut buffer2),
         );
         use std::marker::PhantomData;
         use oned::Bleek;

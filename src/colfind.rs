@@ -66,7 +66,6 @@ fn recurse<
     'x,
     A: AxisTrait,
     JJ: par::Joiner,
-    H: DepthLevel,
     X: SweepTrait + 'x,
     F: ColMulti<T = X>,
     C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
@@ -74,7 +73,6 @@ fn recurse<
 >(
     this_axis: A,
     par: JJ,
-    depthlevel: H,
     sweeper: &mut Sweeper<F::T>,
     m: LevelIter<C>,
     clos: &mut F,
@@ -99,12 +97,11 @@ fn recurse<
 
             let (ta, tb) = timer_log.next();
 
-            let (ta, tb) = if par.is_parallel() && !depthlevel.switch_to_sequential(level) {
+            let (ta, tb) = if !par.should_switch_to_sequential(level) {
                 let af = || {
                     self::recurse(
                         this_axis.next(),
                         par,
-                        depthlevel,
                         sweeper,
                         left,
                         &mut clos.clone(),
@@ -116,7 +113,6 @@ fn recurse<
                     self::recurse(
                         this_axis.next(),
                         par,
-                        depthlevel,
                         &mut sweeper,
                         right,
                         &mut clos.clone(),
@@ -129,7 +125,6 @@ fn recurse<
                 let ta = self::recurse(
                     this_axis.next(),
                     par.into_seq(),
-                    depthlevel,
                     sweeper,
                     left,
                     clos,
@@ -138,7 +133,6 @@ fn recurse<
                 let tb = self::recurse(
                     this_axis.next(),
                     par.into_seq(),
-                    depthlevel,
                     sweeper,
                     right,
                     clos,
@@ -157,7 +151,6 @@ fn recurse<
 pub fn for_every_col_pair_seq<
     A: AxisTrait,
     T: SweepTrait,
-    H: DepthLevel,
     F: FnMut(ColSingle<T>, ColSingle<T>),
     K: TreeTimerTrait,
 >(
@@ -203,10 +196,9 @@ pub fn for_every_col_pair_seq<
     let wrapper = Wrapper(UnsafeCell::new(&mut clos), PhantomData);
 
     //All of the above is okay because we start with SEQUENTIAL
-    self::for_every_col_pair_inner::<_, _, _, _, _, K>(
+    self::for_every_col_pair_inner::<_, _, _, _, K>(
         A::new(),
         par::Sequential::new(),
-        DefaultDepthLevel::new(),
         kdtree,
         wrapper,
     )
@@ -215,17 +207,15 @@ pub fn for_every_col_pair_seq<
 pub fn for_every_col_pair<
     A: AxisTrait,
     T: SweepTrait,
-    H: DepthLevel,
     F: ColMulti<T = T>,
     K: TreeTimerTrait,
 >(
     kdtree: &mut DynTree<A, T>,
     clos: F,
 ) -> K::Bag {
-    self::for_every_col_pair_inner::<_, _, _, _, _, K>(
+    self::for_every_col_pair_inner::<_, _, _, _, K>(
         A::new(),
         par::Parallel::new(),
-        DefaultDepthLevel::new(),
         kdtree,
         clos,
     )
@@ -235,13 +225,11 @@ fn for_every_col_pair_inner<
     A: AxisTrait,
     JJ: par::Joiner,
     T: SweepTrait,
-    H: DepthLevel,
     F: ColMulti<T = T>,
     K: TreeTimerTrait,
 >(
     this_axis: A,
     par: JJ,
-    depthlevel: H,
     kdtree: &mut DynTree<A, T>,
     mut clos: F,
 ) -> K::Bag {
@@ -252,7 +240,7 @@ fn for_every_col_pair_inner<
     let mut sweeper = Sweeper::new();
 
     let h = K::new(height);
-    let bag = self::recurse(this_axis, par, depthlevel, &mut sweeper, dt, &mut clos, h);
+    let bag = self::recurse(this_axis, par, &mut sweeper, dt, &mut clos, h);
     bag
 }
 

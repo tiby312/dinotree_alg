@@ -53,7 +53,7 @@ mod tools;
 pub use rects::Rects;
 mod rects;
 
-use dinotree_inner::support::DefaultDepthLevel;
+//use dinotree_inner::support::DefaultDepthLevel;
 pub use dinotree_inner::AABBox;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::SweepTrait;
@@ -167,14 +167,12 @@ mod ba {
             if axis {
                 let k = DynTree::<XAXISS, T>::new::<
                     par::Parallel,
-                    DefaultDepthLevel,
                     TreeTimerEmpty,
                 >(rest, height);
                 DinoTree(DynTreeEnum::Xa(k.0))
             } else {
                 let k = DynTree::<YAXISS, T>::new::<
                     par::Parallel,
-                    DefaultDepthLevel,
                     TreeTimerEmpty,
                 >(rest, height);
                 DinoTree(DynTreeEnum::Ya(k.0))
@@ -187,14 +185,12 @@ mod ba {
             if axis {
                 let k = DynTree::<XAXISS, T>::new::<
                     par::Sequential,
-                    DefaultDepthLevel,
                     TreeTimerEmpty,
                 >(rest, height);
                 DinoTree(DynTreeEnum::Xa(k.0))
             } else {
                 let k = DynTree::<YAXISS, T>::new::<
                     par::Sequential,
-                    DefaultDepthLevel,
                     TreeTimerEmpty,
                 >(rest, height);
                 DinoTree(DynTreeEnum::Ya(k.0))
@@ -207,13 +203,13 @@ mod ba {
         pub fn new_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
             let height = self::compute_tree_height(rest.len());
             if axis {
-                let k = DynTree::<XAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
+                let k = DynTree::<XAXISS, T>::new::<par::Parallel, TreeTimer2>(
                     rest,
                     height,
                 );
                 (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
             } else {
-                let k = DynTree::<YAXISS, T>::new::<par::Parallel, DefaultDepthLevel, TreeTimer2>(
+                let k = DynTree::<YAXISS, T>::new::<par::Parallel, TreeTimer2>(
                     rest,
                     height,
                 );
@@ -226,14 +222,14 @@ mod ba {
             let height = self::compute_tree_height(rest.len());
             if axis {
                 let k =
-                    DynTree::<XAXISS, T>::new::<par::Sequential, DefaultDepthLevel, TreeTimer2>(
+                    DynTree::<XAXISS, T>::new::<par::Sequential, TreeTimer2>(
                         rest,
                         height,
                     );
                 (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
             } else {
                 let k =
-                    DynTree::<YAXISS, T>::new::<par::Sequential, DefaultDepthLevel, TreeTimer2>(
+                    DynTree::<YAXISS, T>::new::<par::Sequential, TreeTimer2>(
                         rest,
                         height,
                     );
@@ -308,13 +304,13 @@ mod ba {
         pub fn intersect_every_pair_seq<F: FnMut(ColSingle<T>, ColSingle<T>)>(&mut self, clos: F) {
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
-                    colfind::for_every_col_pair_seq::<_, T, DefaultDepthLevel, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
-                    colfind::for_every_col_pair_seq::<_, T, DefaultDepthLevel, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
@@ -332,13 +328,13 @@ mod ba {
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
-                    colfind::for_every_col_pair::<_, T, DefaultDepthLevel, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
-                    colfind::for_every_col_pair::<_, T, DefaultDepthLevel, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
@@ -352,13 +348,13 @@ mod ba {
         ) -> Bag {
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
-                    colfind::for_every_col_pair_seq::<_, T, DefaultDepthLevel, _, TreeTimer2>(
+                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimer2>(
                         a,
                         clos,
                     )
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
-                    colfind::for_every_col_pair_seq::<_, T, DefaultDepthLevel, _, TreeTimer2>(
+                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimer2>(
                         a,
                         clos,
                     )
@@ -374,10 +370,10 @@ mod ba {
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
-                    colfind::for_every_col_pair::<_, T, DefaultDepthLevel, _, TreeTimer2>(a, clos)
+                    colfind::for_every_col_pair::<_, T, _, TreeTimer2>(a, clos)
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
-                    colfind::for_every_col_pair::<_, T, DefaultDepthLevel, _, TreeTimer2>(a, clos)
+                    colfind::for_every_col_pair::<_, T, _, TreeTimer2>(a, clos)
                 }
             }
         }
