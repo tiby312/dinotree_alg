@@ -49,7 +49,9 @@ mod bap {
     fn aabb2(minx: f32, miny: f32, maxx: f32, maxy: f32) -> Aabb2<f32> {
         Aabb2::new(Point2::new(minx, miny), Point2::new(maxx, maxy))
     }
+
     #[bench]
+    #[ignore]
     fn colfind_3rd_part(b: &mut Bencher) {
         let mut rng = rand::thread_rng();
         let mut tree = DynamicBoundingVolumeTree::<Value>::new();
@@ -113,6 +115,102 @@ fn colfind(b: &mut Bencher) {
 
     b.iter(|| {
         black_box(tree.intersect_every_pair_seq(&mut fu));
+    });
+}
+
+#[bench]
+fn colfind_par(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 1000), (0, 1000)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    for id in 0..10000 {
+        let ppp = p.random_point();
+        let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            k,
+        ));
+    }
+
+    let height = compute_tree_height(bots.len());
+
+    let mut tree = DinoTree::new(&mut bots, true);
+
+    b.iter(|| {
+
+        let mut fu = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+            a.inner.col.push(b.inner.id);
+            b.inner.col.push(a.inner.id);
+        };
+
+        black_box(tree.intersect_every_pair(fu));
+    });
+}
+#[bench]
+fn rebal_seq(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 1000), (0, 1000)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    for id in 0..10000 {
+        let ppp = p.random_point();
+        let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            k,
+        ));
+    }
+
+    let height = compute_tree_height(bots.len());
+
+    b.iter(|| {
+
+        let mut tree = DinoTree::new_seq(&mut bots, true);
+        black_box(tree);
+        
+    });
+}
+#[bench]
+fn rebal_par(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 1000), (0, 1000)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    for id in 0..10000 {
+        let ppp = p.random_point();
+        let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            k,
+        ));
+    }
+
+    let height = compute_tree_height(bots.len());
+
+    b.iter(|| {
+
+        let mut tree = DinoTree::new(&mut bots, true);
+        black_box(tree);
+        
     });
 }
 
