@@ -7,12 +7,11 @@
 An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
 
 # Goal
-Create a fast broad-phase collision system whose running time did not depend on the size of the space
+Create a fast and simple to use broad-phase collision system whose running time did not depend on the size of the space
 in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
 
-# Detailed Design
-
-## The Data Structure
+# The Data Structure itself
+First lets talk about the internal data structure that is used to actually accomplish the collision detection.
 Here are the properties of the constructed tree.
   * Every bot belongs to only one node. 
   * All the bots in a node are sorted along an axis that alternates with each level in the tree
@@ -25,39 +24,28 @@ Here are some additional properties that are more about the practical layout:
   *	Each node has variable size. it contains the divider, and the containing range, and also all the bots within that node, all in contiguous memory.
   * Each node's children are pointed to via mutable references.
 
+So the entire tree and the elements belong to each node and all in one piece of contiguous memory.
 
-## The Algorithm
-Here is algorithm to create the above described tree.
-1. Have a list of bots
-2. Create a list of pointers to those bots
-3. Perform the element swap intensive construction a kdtree using the list of pointers.
-4. Convert the tree of pointers into a tree of raw objects by copying each element.
-5. Query the tree for colliding pairs.
-6. Optionally query the tree for rectangle colliding sections.
-7. Copy each element out of the tree back into the list.
+# Creation of the Data Structure
 
-Step 3 (the construction of the tree) is done recursively using this algorithm:
-1. Place the divider where the median bot is in the current list.
-2. Bin the list of bots into 3 categories, left,right and middle, (middle implying it intersects the divider). There is an alternative divider finding strategy where the divider is found after this step instead of before.
+Creating the tree is made up of these steps:
+1. Find the median in the list of bots.
+2. Bin the bots into three bins. those to the left of the median, those that touch the median, 
+and those to the right of the median.
 3. Sort the middle list along the axis that is orthoganal to the axis the divider is splititing.
-4. Recurse left and recurse right potentially in parallel.
+4. Recurse left and right in parallel
 
-Step 4 (the conversion of the tree to remove a level of indirection) can further be broken down into these steps:
-1. Iterate through all the nodes in bfs order and copy the bots that are being pointed to for each node into a new node type.
-2. Connect all the parent nodes to their children, by iterating backwards.
+# Finding all colliding pairs
 
-Step 5 (the querying of the tree) is done recursively using this algorithm:
 1. For the bots beloning to the current node check for collision using sweep and prune.
 2. Recursively, find all nodes who's bounding containers intersects the current node. Find colliding pairs between the current node's bots and those node's bots. If the two nodes are the same axis, use sweep and prune. If they are different, first find the subset of each lists that intersect with the other node's bounding rectangle. Then naively check every pair.
 3. Recurse left, and right potentially in parallel.
 
-# The relationship between rebalancing and querying
+So the querying sort of does "two pases" of the tree. For each node, it will collide with all the bots in that node, then it will look for all children nodes that intsect with itself and collide with those bots. Then that node is completely done. So it can be removed, and now you have two completely independant trees that you can repeat the algorithm on.
 
-Everything is done in the name of speeding up the querying. This is the part algorithm that could dominate very easily depending on how many bots are intersecting each other. But it's not so much that it dominates, but more so that it could vary wildly. We want to avoid the performance of this collision system to vary with the number of bots colliding as much as possible. So this algorithm trades rebalancing time for query time as much as possible. 
+# Finding bots in a rectangle
 
-
-Note that there is a layer of indirection when rebalancing the tree. The algorithms have different properties. Rebalancing requires a lot of swapping, If we rebalanced actual objects instead of pointers there would be many more memory reads and writes. Every bot will be copied only twice. Once into the dyntree, and once out. I believe the cost of two copies is worth the benefit from removing a layer of indirection when querying a tree. In cases where few objects intersect and/or the objects in the tree are very very large, this may not be the case. But in any case, the performance hit is a steady hit that does not vary depending on how many bots are colliding.
-
+todo
 
 # More detailed explanation of the query algorithm
 
@@ -76,25 +64,28 @@ Another reason sweep and prune is well suited here is that the algorithm does no
 
 The design decision was made that the axis at each level of the tree be known at compile time. There is an XAXIS struct and a YAXIS struct that are passed as type parameters recursively. The benefit of this is that branches that are made based off of the axis can be eliminated at compile time. Specilaized versions of these functions can be generated by the compiler that do not have to branch based off of different axis comparisons. The downside of this is that you have to pick a starting axis statically. This means that if the space that you are partitioning can vary in dimension, you may not be picking the best starting axis to partition against. So if this is a problem for you, you can wrap the collision system behind a trait that does NOT take the starting axis as a type parameter. Then you you can have some dynamic code that will create either a XAXIS, or YAXIS starting collision system that is then returned as a Box of that trait. The downside to this, however, is that two whole versions of your collision system will be monomorphized by the compiler, one for each axis. So this might lead to a big jump in the size of the program. 
 
+
+# Optimizations: The relationship between rebalancing and querying
+
+Everything is done in the name of speeding up the querying. This is the part algorithm that could dominate very easily depending on how many bots are intersecting each other. Well, it's not so much that it dominates, but more so that it could vary wildly. We want to avoid the performance of this collision system to vary with the number of bots colliding as much as possible. So this algorithm trades rebalancing time for query time as much as possible. 
+
+
+
 # Exploiting temporal locality
 
-There are two divider-finding strategies that can be used. The first one simply uses the median value as the divider. This is useful when there is no previous state, or when there is no relationship in the position of the bots between queries.
+The sort answer? It does not. For a while I had the design where the dividers would move as those they had mass. They would gently be pushed to which ever side had more bots. The problem with this approach is that the divider locations will mostly of the time be sub optimial. And the cost saved in rebalancing just isnt enough for the cost added to querying with a suboptimal partitioning.
 
-Another strategy to exploit temporal locality is by inserter looser bounding boxes into the tree and caching the results of a query for longer than one step. There are really two variants of this. The bounding box could dynamically grow the faster the bot goes. I didnt like this because now the performance of your system depends on the speed of the bots. If just a few bots are going very very fast, it could destroy the performnace of your system. The other option is have each bot have a constant bounding box size. To do this, you now have to bound the velocity of your bots. That's a constrait I didn't want users to have to buy into. Probably the best is a combination of the two. At the end of the day I'm not convinced that cacheing+looser bounding boxes is better than no caching+tight bounding boxes. The other downside is that the cached results cannot be iterated through concurrently. And building up the cached list of bots is also hard to do efficiently when multithreaded.
+Another strategy to exploit temporal locality is by inserting looser bounding boxes into the tree and caching the results of a query for longer than one step. There are really two variants of this. The bounding box could dynamically grow the faster the bot goes. I didnt like this because now the performance of your system depends on the speed of the bots. If just a few bots are going very very fast, it could destroy the performnace of your system, and this went against my design goal of creating a very consisten performing system. The other option is have each bot have a constant bounding box size. To do this, you now have to bound the velocity of your bots. That's a constrait I didn't want users to have to buy into. Probably the best is a combination of the two. At the end of the day I'm not convinced that cacheing+looser bounding boxes is better than no caching+tight bounding boxes. The other downside is that the cached results cannot be iterated through concurrently. And building up the cached list of bots is also hard to do efficiently when multithreaded.
 
 # Space and Time Complexity
 
-The theoretical time compleity of this algorithm I bet is very hard to calculate and my guess is that it would depend so wildly on the distribution of the position and sizes of the bots that are fed into it. That plus the fact that the algorithm reused past calculations for the dividers, makes it very hard.
+I dont what the theoretical average time compleity of this algorithm would be. The performance depends so wildly on the distribution of the position and sizes of the bots that are fed into it. And in more usecases, there would be certain patterns to the input data. For example, in most cases, I would hope that the bots are mostly not intersecting, (because presumably the user is using this system to keep the bots apart). And another presumption might be that size of the bounding boxes would be small relative to the world in which all the bots live. 
 
-That said bounding it by the worst case is easy, because in the worst case every single bot is colliding with every other bot.
+That said bounding it by the worst case is easy, because in the worst case every single bot is colliding with every other bot. So the worst case is that all the bots are directly ontop of each other. Then the tree nor the mark and sweep algorithm could take any adantage of the situation and it would degenerate into the naive algorithm.
 
-Simliarily bounding it by the best case should also be easy. Best case, all the bots live in only leaf nodes, and none of the bots intersect. Interestingly by the pigeon principle, if you have more bots than there are leaf nodes then this best case scenario isnt possible. 
-
-So really, the best and worst case scenario really tell you nothing useful. 
-
+In the best case, all the bots live in only leaf nodes, and none of the bots intersect. Interestingly by the pigeon principle, if you have more bots than there are leaf nodes then this best case scenario isnt possible. And this is the case. We are picking the height of the tree such that every leaf node will have around 10 bots. We also know that every non leaf node must have at least one bot in it since it was used as the median.
 
 The space complexity, on the other hand, is much easier to figure out.
-
 
 # Testing Strategy
 
@@ -158,24 +149,31 @@ moving objects that dont implement copy.
 The multirect example. 
 split_at_mut()
 
-#talk about parallilizing node bounding box
-
-#talk about parallilizing binning
-
-# talk about determinism. floating point additive
-
 # think about it like a sponge. the lower you go into the tree, the more stable the calculates get 
 
-talk about exception being thrown inside of closure
+# Some this about this api I haven't tested:
+	talk about exception being thrown inside of closure
+	talk about what happens if T is zero sized or is a dst???
 
-talk about what happens if T is zero sized or is a dst???
+
+
 
 # General thoughts on optimizing
 
 Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
+
 Dynamic allocation is fast. Dynamically allocate large vecs in one allocation is fast. Its only when you're dynamically allocte thousands of small objects does it become bad.
 
-When dealing with parallelism, benching small units can give you a warped sense. Onces the units are combined, there may be more contention for work stealing.
+When dealing with parallelism, benching small units can give you a warped sense of performance. Onces the units are combined, there may be more contention for work stealing. With small units, you have a false sense that the cpu's are not busy doing other things. For example, I parallalized creating the container range for each node. Benchmarks showed that it was faster. But when I benched the rebalancing as a whole, it was slower with the parallel container creation.
+
+Platform dependance. Rust is a great language that strives for platform independant code. But at the end of the day, even though rust programs will behave the same on multiple platforms, their performance might be wildly different. And as soon as you start optimizing for one platform you have to wonder whether or not you are actually de-optimizing for another platform. For example, rebalancing is much slower on my android phone than querying. On my dell xps laptop, querying is the bottle neck instead. I have wondered why there is this disconnect. I think part of it is that rebalancing requires a lot of sorting, and sorting is something where it is hard to predict branches. So my laptop probably has a superior branch predictor. Another possible reason is memory writing. Rebalancing involves a lot of swapping, whereas querying does involve in any major writing to memory outside of what the user decides to do for each colliding pair. In any case, my end goal in creating this algorithm was to make the querying as fast as possible so as to get the most consistent performance regardless of how many bots were colliding.
+
+In fact, I ended up with 3 competing rebalancing algorithms. The first one would simply create pointers to all the bots, and sort the pointers. This one was the slowest. I think it is because only one field is relevant to this algorithm, the bounding box rect. So all the other fields in the bots is were wasted space. So the distnace between relevant information to be used by the algotihm wa high. On the other hand this method didnt have to allocate much memory.
+
+The second one would create a list of rects and ids pulled from the bots and sort that. The main characteristic of this method is that there is no layer of indirection. The downside is that swapping elements in more expensive since you are not swapping pointesr, you are swapping bounding boxes couples with an id. So this method made the median-finding part of the algorithm very fast, but made the sorting slower.
+
+The third method was to create a list of rects, and then create a list of pointers to that list of rects and then sort that. The obvious downside is that you end up dynamically allocating two seperate vecs. But really it doesnt use any more memory that method 2. This turned out to be the fastest on my my laptop and phone. It has the benefit of swapping only pointers, and it also has better memory locality that method1.
+
 
 
 
@@ -188,12 +186,10 @@ talk about targeting android that uses ART vs Dalvik
 talk about avoiding copying and ByteBuffer
 
 # Author notes
-As I delved further and further into this passion project. I came to realize that I may have "bitton off more than I could chew" given my lifestyle (9-5 job + girlfriend). So this isn't really as "rigorous" as I would like it to be.
+As I delved further and further into this passion project. I came to realize that I may have "bitten off more than I could chew" given my life responsibilities. So this isn't really as "rigorous" as I would like it to be.
 
 
 talk about recursion limit
-
-talk about parallel pattern defeating quick select would be nice
 
 
 talk about the downside of the pointer indirection. The problem is that its highly dependant on where the given slice is in memory. If its far away from the vec of pointers, then every deref is very expensive.
