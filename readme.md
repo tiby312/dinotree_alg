@@ -175,6 +175,9 @@ talk about what happens if T is zero sized or is a dst???
 Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
 Dynamic allocation is fast. Dynamically allocate large vecs in one allocation is fast. Its only when you're dynamically allocte thousands of small objects does it become bad.
 
+When dealing with parallelism, benching small units can give you a warped sense. Onces the units are combined, there may be more contention for work stealing.
+
+
 
 # Android
 
