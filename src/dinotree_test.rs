@@ -263,6 +263,43 @@ fn test_dinotree_drop() {
 }
 
 #[test]
+fn test_dinotree_move_back() {
+
+    let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+    let bots_control=bots.clone();
+
+    let world = make_rect((-1000, 1000), (-100, 100));
+
+    let spawn_world = make_rect((-990, 990), (-90, 90));
+
+    let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
+
+    for id in (0..5000) {
+        let rect = create_rect_from_point(p.random_point());
+        let j = BBox::new(
+            Bot {
+                id,
+                col:Vec::new()
+            },
+            rect,
+        );
+        bots.push(j);
+    }
+
+    {
+        let mut dyntree = DinoTree::new(&mut bots, false);
+
+        let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {};
+
+        dyntree.intersect_every_pair_seq(clos);
+    }
+
+    for (a,b) in bots.iter().zip(bots_control.iter()){
+        assert!(a.val.id==b.val.id);
+    }
+}
+
+#[test]
 fn test_corners_touch() {
     let world = make_rect((-1010, 1010), (-110, 110));
     let spawn_world = make_rect((-1000, 1000), (-100, 100));

@@ -32,7 +32,7 @@ impl<I: SweepTrait> Sweeper<I> {
     pub fn new() -> Sweeper<I> {
         Sweeper {
             helper: tools::PreVec::new(),
-        } //TODO make callers decide?
+        }
     }
 
     ///Find colliding pairs using the mark and sweep algorithm.
@@ -56,8 +56,6 @@ impl<I: SweepTrait> Sweeper<I> {
         //     in the axisList.
 
         let active = self.helper.get_empty_vec_mut();
-
-        //use odds::vec::VecExt;
 
         for curr_bot_id in collision_botids.iter_mut() {
             {

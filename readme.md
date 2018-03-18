@@ -1,13 +1,10 @@
 [![Build Status](https://travis-ci.org/tiby312/collie.svg?branch=master)](https://travis-ci.org/tiby312/collie)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/tiby312/collie)
 
-
-# KdTree Algorithm Overview
-
 An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
 
 # Goal
-Create a fast and simple to use broad-phase collision system whose running time did not depend on the size of the space
+Create a fast and simple to use broad-phase collision system whose running time did not depend on the size of the 2d space
 in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
 
 # The Data Structure itself
@@ -70,7 +67,7 @@ Everything is done in the name of speeding up the querying. This is the part alg
 
 # Exploiting temporal locality
 
-The sort answer? It does not. For a while I had the design where the dividers would move as those they had mass. They would gently be pushed to which ever side had more bots. The problem with this approach is that the divider locations will mostly of the time be sub optimial. And the cost saved in rebalancing just isnt enough for the cost added to querying with a suboptimal partitioning.
+The sort answer? It does not. For a while I had the design where the dividers would move as those they had mass. They would gently be pushed to which ever side had more bots. The problem with this approach is that the divider locations will mostly of the time be sub optimial. And the cost saved in rebalancing just isnt enough for the cost added to querying with a suboptimal partitioning. By always partitioning optimally, we can make some more assumptions. For example, we are guarenteed that the leaf nodes will have less than 10 bots (because we picked the height of the tree specifically so that that would be the case). Therefore, when sorting the leaf nodes, we can do a simple insertion sort, instead of doing a more general sorting algorithm that might branch into doing an insertion sort.
 
 Another strategy to exploit temporal locality is by inserting looser bounding boxes into the tree and caching the results of a query for longer than one step. There are really two variants of this. The bounding box could dynamically grow the faster the bot goes. I didnt like this because now the performance of your system depends on the speed of the bots. If just a few bots are going very very fast, it could destroy the performnace of your system, and this went against my design goal of creating a very consisten performing system. The other option is have each bot have a constant bounding box size. To do this, you now have to bound the velocity of your bots. That's a constrait I didn't want users to have to buy into. Probably the best is a combination of the two. At the end of the day I'm not convinced that cacheing+looser bounding boxes is better than no caching+tight bounding boxes. The other downside is that the cached results cannot be iterated through concurrently. And building up the cached list of bots is also hard to do efficiently when multithreaded.
 
@@ -82,12 +79,16 @@ That said bounding it by the worst case is easy, because in the worst case every
 
 In the best case, all the bots live in only leaf nodes, and none of the bots intersect. Interestingly by the pigeon principle, if you have more bots than there are leaf nodes then this best case scenario isnt possible. And this is the case. We are picking the height of the tree such that every leaf node will have around 10 bots. We also know that every non leaf node must have at least one bot in it since it was used as the median.
 
-The space complexity, on the other hand, is much easier to figure out.
+The space complexity, on the other hand, is much easier to figure out. 
+The height of the tree is=log2(num/10).
+The num of nodes=2^height.
+So the number of nodes as a function of bots is nodes=2^(log2(num/10))=num/10.
+So the number of nodes created is linear to the number of bots.
 
 
 # Testing correctness
 
-Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible paths that the produced program can take. Ideally you want your program to be as static as possible and still satisfy whatever function it is supposed to serve.
+Simply using rust has a big impact on testing. Because of its heavy use of static typing, many bugs are caught at compile time. This translates to less testing as there are fewer possible paths that the produced program can take. Also the fact that the api is generic over the underlying number type used is useful. This means that we can test the system using integers and we can expect it to work for floats. It is easier to test with integers since we can more easily construct specific scenarios where one number is one value more or less than another.
 
 A good test is a test that tests with good certainty that a large portion of code is working properly.
 Maintaining tests comes at the cost of anchoring down the design of the production code in addition to having to be maintained themselves. As a result, making good abstractions between your crates and modules that have very simple and well defined apis is very important. Then you can have a few simple tests to fully excersise an api and verify large amounts of code.
@@ -96,25 +97,16 @@ This crate's sole purpose is to provide a method of providing collision detectio
 
 The tailored inputs is important. For example, a case where two bounding boxes collide but only at the corner is an extremely unlikely case that may never present themselves in random inputs. To test this case, we have to turn to more point-directed tests with specific constructed set up input bot lists. They can still be verified in the same manner, though.
 
-At this point one could say that we were done. We have a pretty good case that the algorithms that this crate provide are correct and satisfy the api. But there is another expectation/design goal that is hard to show. The point of this crate is that it is a very fast collison detection system. So there is the problem of define how fast is fast enough? If I were simply to show that it was faster than the naive method would that be enough? Or do I have to prove it against some other metric?
-
-Also, talk about how we can just test it for isize, and not float since works over anything that implements NumTrait.
-
-
 # Benching
 
-So even though we know the api is being satisfied, we don't really know if the code is actually going down paths we expect it to as designers of the crate. This is where code coverage can be useful. Where code coerage fails, though, is the fact that even if all control paths are hit, not all possible values of the variables that effect the outcome are hit. It is also useful to come up with a "upholding invariant" function that can be called at any time on the tree after it has been constructed to be sure that it has all the properties that it needs to perform querying on. 
+Writing benches that validate every single piece of the algorithm design is a hassle ,although it would be nice. Ideally you dont want to rely on my word to say that, for example, using sweep and prune to find colliding pairs actually sped things up. It could be that while the algorithm is correct and fast that this particular aspect of the algorithm actually slows things down. 
 
-So up until now we have only verified the correctness of this algorithm. We still need to verify that it is worth using. So we have to bench it. The crate api provides a way to get the time taken at each level of the tree. This information is given to the user since finding the right hight of the tree is very usecase specific. It also serves the purpose of proving that the crate is behaving like a tree and is properly dividing and conquering the problem. So by comparing the performance against the naive approach, and possibly other crates, we can prove that is is worth using.
-
-Simply proving that it is better than the naive approach isnt very impressive. We want to prove that the design constructs and complexity used in the crate are actually accomplishing something. Otherwise you're just maintaining complexity for the sake of complexity. In order to show this, the user has the option of turning off an on certain features of the system using generic parameters. The user can turn off and on multithreading and bench them seperately. The user can specify the median finding strategy and bench them seperately. 
-
-Not all features can be turned off however. How can I show that, for example, using sweep and prune within each node, actually sped things up? This is hard to show. I have a pretty good feeling because I can comment out the the code and notice a speed difference, but then the user has to take my word for it. Should all these features we able to turn off via generic parameters? If you did this, you'd eventually end up with the one high level function with a whole mess of generic parameters. At this point I decided that the user can modify the code and test things out on his own if he wants. It would be nice if there could be automated benching to show the performance improvements (would be interesting to see how they vary on different target platforms) brought upon by every single idea in this crate, but the added complexity, doesnt seem worth it. 
+So I dont think writing tons of low level benches are worth it. If you are unsure of a piece of code, you can bench the algorithm as a whole, change a piece of the algorithm, and bench again and compare results. Because at the end of the day, we already tested the correctness, and that is the most important thing. So I think this strategy, coupled with code coverage and just general reasoning of the code can supplement tons of benches to validate the innards of the algorithm.
 
 
 # Extensions and Improvements
 
-A current limitation is the amount of dead memory that is allocated in the leaf nodes.
+A current limitation is the amount of unused allocated memory that is allocated in the leaf nodes.
 Many of the fields in the node struct, are uneeded for the leaf nodes. This wouldn't be so bad 
 if it wernt for the fact that this is a complete tree, so there are many leaf nodes. Ideally, there would be a tree data structure that took as type arguments a Node
 and a LeafNode type. This would then require more branching, though. So it could be that the current design is faster anyway.
@@ -127,11 +119,8 @@ Another possible "improvement" would be to store positions and radius instead of
 That saves one extra float, but it is less versatile. Also fixing the radius of the bots would be a
 huge performance improvement. Every bot would only need to store a position then.
 
-# Use of Rust
 
-NumTrait. Use of generics.
-
-## Use of Unsafe
+# Use of Unsafe
 
 moving objects that dont implement copy.
 The multirect example. 
@@ -150,7 +139,11 @@ split_at_mut()
 
 Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
 
-Dynamic allocation is fast. Dynamically allocate large vecs in one allocation is fast. Its only when you're dynamically allocting thousands of small objects does it become bad.
+Dynamic allocation is fast. Dynamically allocate large vecs in one allocation is fast. Its only when you're dynamically allocting thousands of small objects does it become bad. Concepually, I have to remind myself that if you dynamically allocate a giant block, its simply reserving that area in memory. There isnt any expensive zeroing out of all that memory unless you want to do it. That's not to say the complicated algorithms the allocator has to do arn't complicated.
+
+The thing is that if you don't use dynamic allocation, and you instead reserve some giant piece of memory for use of your system, then that memory is not taken advanage of when your system is not using it. It is wasted space. If you know your system will always be using it then sure it is fine. But I can see this system being using only 30 times a second. That is a lot of inbetween time where that memory that cannot be used by anything else. So really, the idea of dynamic allocation only works is everybody buys into the system. Another option is to make your api flexible enough that you pass is a slice of "workspace" memory, so that the user can decide whether to dynamically allocate it everytime or whatever. But this complicates the api for a very small portion of users who would want to not using the standard allocator.
+
+
 
 When dealing with parallelism, benching small units can give you a warped sense of performance. Onces the units are combined, there may be more contention for work stealing. With small units, you have a false sense that the cpu's are not busy doing other things. For example, I parallalized creating the container range for each node. Benchmarks showed that it was faster. But when I benched the rebalancing as a whole, it was slower with the parallel container creation.
 

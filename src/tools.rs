@@ -16,7 +16,7 @@ unsafe impl<T: Send> std::marker::Send for PreVec<T> {}
 use smallvec;
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
 pub struct PreVec<T> {
-    vec: smallvec::SmallVec<[*mut T; 32]>,
+    vec: smallvec::SmallVec<[*mut T; 64]>,
 }
 impl<T> PreVec<T> {
     #[inline(always)]
@@ -28,9 +28,9 @@ impl<T> PreVec<T> {
 
     ///Clears the vec and returns a mutable reference to a vec.
     #[inline(always)]
-    pub fn get_empty_vec_mut<'a>(&'a mut self) -> &mut smallvec::SmallVec<[&'a mut T; 32]> {
+    pub fn get_empty_vec_mut<'a>(&'a mut self) -> &mut smallvec::SmallVec<[&'a mut T; 64]> {
         self.vec.clear();
-        let v: &mut smallvec::SmallVec<[*mut T; 32]> = &mut self.vec;
+        let v: &mut smallvec::SmallVec<[*mut T; 64]> = &mut self.vec;
         unsafe { std::mem::transmute(v) }
     }
 }
