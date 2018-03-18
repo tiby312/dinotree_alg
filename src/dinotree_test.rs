@@ -343,6 +343,169 @@ fn test_corners_touch() {
     //assert!(false);
 }
 
+
+#[ignore]
+#[test]
+fn test_large() {
+    //Test the max size of slice.
+    unimplemented!()
+}
+
+
+#[should_panic]
+#[ignore]
+#[test]
+fn test_too_large() {
+    //Test the max size of slice +1
+    unimplemented!()
+}
+
+
+#[test]
+fn test_panic_in_callback() {
+   struct Bot;
+
+    static mut drop_counter: isize = 0;
+
+    impl Drop for Bot{
+        fn drop(&mut self) {
+            //We know that the bots are dropped sequentially.
+            unsafe{
+                drop_counter+=1;
+            }
+        }
+    }
+
+    {
+        let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+
+        let world = make_rect((-1000, 1000), (-100, 100));
+
+        let spawn_world = make_rect((-990, 990), (-90, 90));
+
+        let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
+
+        for _id in (0..5000) {
+            let rect = create_rect_from_point(p.random_point());
+            let j = BBox::new(
+                Bot,
+                rect,
+            );
+            bots.push(j);
+        }
+
+        //Test the max size of slice +1
+        let k=move ||{
+
+            let mut dyntree = DinoTree::new(&mut bots, false);
+
+            let mut counter=0;
+            let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+                if counter==1000{
+                    panic!("panic inside of callback!");
+                }
+                counter+=1;
+
+            };
+
+            dyntree.intersect_every_pair_seq(clos);
+        
+            
+        };
+
+        let t=std::thread::spawn(k);
+
+        match t.join(){
+            Ok(x)=>{
+                panic!("test fail");
+            },
+            Err(e)=>{
+                //assert!(e==Err("panic inside of callback!"));
+            }
+        }
+    }
+    assert_eq!(unsafe{drop_counter},5000);
+
+}
+
+#[test]
+fn test_zero_sized_type() {
+    struct Bot;
+
+    static mut drop_counter: isize = 0;
+
+    impl Drop for Bot{
+        fn drop(&mut self) {
+            //We know that the bots are dropped sequentially.
+            unsafe{
+                drop_counter+=1;
+            }
+        }
+    }
+
+    {
+        let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+
+        let world = make_rect((-1000, 1000), (-100, 100));
+
+        let spawn_world = make_rect((-990, 990), (-90, 90));
+
+        let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
+
+        for _id in (0..5000) {
+            let rect = create_rect_from_point(p.random_point());
+            let j = BBox::new(
+                Bot,
+                rect,
+            );
+            bots.push(j);
+        }
+
+        {
+            let mut dyntree = DinoTree::new(&mut bots, false);
+
+            let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {};
+
+            dyntree.intersect_every_pair_seq(clos);
+        }
+    }
+    
+    assert_eq!(unsafe{drop_counter},5000);
+
+}
+
+#[test]
+fn test_bounding_boxes_as_points() {
+    //Test the max size of slice +1
+    unimplemented!()
+}
+
+
+
+#[test]
+fn test_one_bot() {
+    let world = make_rect((-1010, 1010), (-110, 110));
+    let spawn_world = make_rect((-1000, 1000), (-100, 100));
+
+    let mut bots:Vec<BBox<Numisize,Bot>> = Vec::new();
+    let rect=create_rect_from_point((Numisize(0),Numisize(0)));
+    bots.push(BBox::new(Bot{id:0,col:Vec::new()},rect));
+    test_bot_layout(bots);
+}
+
+
+
+#[test]
+fn test_empty() {
+    let world = make_rect((-1010, 1010), (-110, 110));
+    let spawn_world = make_rect((-1000, 1000), (-100, 100));
+
+    let mut bots:Vec<BBox<Numisize,Bot>> = Vec::new();
+    
+    test_bot_layout(bots);
+}
+
+
 #[test]
 fn test_1_apart() {
     let world = make_rect((-1010, 1010), (-110, 110));

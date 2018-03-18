@@ -128,10 +128,6 @@ split_at_mut()
 
 # think about it like a sponge. the lower you go into the tree, the more stable the calculates get 
 
-# Some this about this api I haven't tested:
-	talk about exception being thrown inside of closure
-	talk about what happens if T is zero sized or is a dst???
-
 
 
 
@@ -139,17 +135,15 @@ split_at_mut()
 
 Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
 
-Dynamic allocation is fast. Dynamically allocate large vecs in one allocation is fast. Its only when you're dynamically allocting thousands of small objects does it become bad. Concepually, I have to remind myself that if you dynamically allocate a giant block, its simply reserving that area in memory. There isnt any expensive zeroing out of all that memory unless you want to do it. That's not to say the complicated algorithms the allocator has to do arn't complicated.
+Dynamic allocation is fast. Dynamically allocating large vecs in one allocation is fast. Its only when you're dynamically allocting thousands of small objects does it become bad. Even then, probably the allocations are fast, but because the memory will likely be fragmented, iterating over a list of those objects could be very slow. Concepually, I have to remind myself that if you dynamically allocate a giant block, its simply reserving that area in memory. There isnt any expensive zeroing out of all that memory unless you want to do it. That's not to say the complicated algorithms the allocator has to do arn't complicated, but still relatively cheap.
 
-The thing is that if you don't use dynamic allocation, and you instead reserve some giant piece of memory for use of your system, then that memory is not taken advanage of when your system is not using it. It is wasted space. If you know your system will always be using it then sure it is fine. But I can see this system being using only 30 times a second. That is a lot of inbetween time where that memory that cannot be used by anything else. So really, the idea of dynamic allocation only works is everybody buys into the system. Another option is to make your api flexible enough that you pass is a slice of "workspace" memory, so that the user can decide whether to dynamically allocate it everytime or whatever. But this complicates the api for a very small portion of users who would want to not using the standard allocator.
+The thing is that if you don't use dynamic allocation, and you instead reserve some giant piece of memory for use of your system, then that memory is not taken advanage of when your system is not using it. It is wasted space. If you know your system will always be using it then sure it is fine. But I can see this system being used sometimes only 30 times a second. That is a lot of inbetween time where that memory that cannot be used by anything else. So really, the idea of dynamic allocation only works is everybody buys into the system. Another option is to make your api flexible enough that you pass is a slice of "workspace" memory, so that the user can decide whether to dynamically allocate it everytime or whatever. But this complicates the api for a very small portion of users who would want to not using the standard allocator.
 
-
-
-When dealing with parallelism, benching small units can give you a warped sense of performance. Onces the units are combined, there may be more contention for work stealing. With small units, you have a false sense that the cpu's are not busy doing other things. For example, I parallalized creating the container range for each node. Benchmarks showed that it was faster. But when I benched the rebalancing as a whole, it was slower with the parallel container creation.
+When dealing with parallelism, benching small units can give you a warped sense of performance. Onces the units are combined, there may be more contention for work stealing. With small units, you have a false sense that the cpu's are not busy doing other things. For example, I parallalized creating the container range for each node. Benchmarks showed that it was faster. But when I benched the rebalancing as a whole, it was slower with the parallel container creation. So in this way, benching small units isnt quite as useful as testing small units is. That said, if you know that your code doesnt depend on some global resource like a threadpool, then benching small units is great.
 
 Platform dependance. Rust is a great language that strives for platform independant code. But at the end of the day, even though rust programs will behave the same on multiple platforms, their performance might be wildly different. And as soon as you start optimizing for one platform you have to wonder whether or not you are actually de-optimizing for another platform. For example, rebalancing is much slower on my android phone than querying. On my dell xps laptop, querying is the bottle neck instead. I have wondered why there is this disconnect. I think part of it is that rebalancing requires a lot of sorting, and sorting is something where it is hard to predict branches. So my laptop probably has a superior branch predictor. Another possible reason is memory writing. Rebalancing involves a lot of swapping, whereas querying does involve in any major writing to memory outside of what the user decides to do for each colliding pair. In any case, my end goal in creating this algorithm was to make the querying as fast as possible so as to get the most consistent performance regardless of how many bots were colliding.
 
-In fact, I ended up with 3 competing rebalancing algorithms. The first one would simply create pointers to all the bots, and sort the pointers. This one was the slowest. I think it is because only one field is relevant to this algorithm, the bounding box rect. So all the other fields were just creating space that needed to be jumped over. So the distance between relevant information to be used by the algotihm wa high. On the other hand this method didnt have to allocate much memory. There is also the problem that its highly dependant on where the given slice is in memory. If its far away from the vec of pointers, then every deref is expensive?
+In fact, I ended up with 3 competing rebalancing algorithms. The first one would simply create pointers to all the bots, and sorted the pointers. This one was the slowest. I think it is because only one field is relevant to this algorithm, the bounding box rect. So all the other fields were just creating space that needed to be jumped over. So the distance between relevant information to be used by the algotihm wa high. On the other hand this method didnt have to allocate much memory. There is also the problem that its highly dependant on where the given slice is in memory. If its far away from the vec of pointers, then every deref is expensive, probably.
 
 The second one would create a list of rects and ids pulled from the bots and sort that. The main characteristic of this method is that there is no layer of indirection. The downside is that swapping elements is more expensive since you are not swapping pointers, you are swapping bounding boxes coupled with an id. So this method made the median-finding part of the algorithm very fast, but made the sorting slower.
 
@@ -160,13 +154,14 @@ For large numbers of bots 50,000+, the second method seems to be the best on bot
 
 # Android
 
-There were a couple of pitfalls when creating an android example of this rust library. 
+To create the android gemo, I built native libraries and loaded they dynamically inside a regular android java app. So I didnt use a native activity. I wanted to allow the possibiilty of using android ui in the future. I followed https://github.com/kennytm/rust-ios-android. I think the android-rs-glue crate + glutin crate have a lot of stability issues. (For example see https://github.com/tomaka/android-rs-glue/issues/172). 
 
-talk about ByteBuffer
-talk about android NDK.
-talk about thread safety
-talk about targeting android that uses ART vs Dalvik
-talk about avoiding copying and ByteBuffer
+So I created a jni interface to my rust demo. In order to make this jni interface platform independant required some unique code in the jni wrapper. If it was a 64bit system, I could simply cast pointers to jlongs and give them to the java side as a handle to the game instance. On 32bit systems there needs to an extra step where the pointer is embeded and extracted from a jlong.
+
+Passing data to and from the jni interface is slow, unless you use a ByteBuffer. Here endianess matters. The Jav bytebuffer has a function to change the byte order to the native byte order. But you first have to populate the bytebuffer with the correct types. Afterall, byte order doesnt make sense without the context of what type it is you are changing the byte order of whether it is a int or a long, etc. So first you have to put() a bunch floats, then change the byte order to native, and then you can pass this byte buffer to the native library for it to populate with verticies that are then drawn in the java context using a GLSurfaceView.
+
+I decided to simply tick the word inside of the UI draw thread of the surface view. You are not supposed to do expensive computation in the UI thread, and thats true for the most part in this case. Ideally your phone is fast enough that the word can be simulated at the rate at which the surface view is drawn which is normally 60fps on phones.
+
 
 # Author notes
 As I delved further and further into this passion project. I came to realize that I may have "bitten off more than I could chew" given my life responsibilities. So this isn't really as "rigorous" as I would like it to be.
