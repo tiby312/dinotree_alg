@@ -344,26 +344,11 @@ fn test_corners_touch() {
 }
 
 
-#[ignore]
-#[test]
-fn test_large() {
-    //Test the max size of slice.
-    unimplemented!()
-}
-
-
-#[should_panic]
-#[ignore]
-#[test]
-fn test_too_large() {
-    //Test the max size of slice +1
-    unimplemented!()
-}
 
 
 #[test]
 fn test_panic_in_callback() {
-   struct Bot;
+    struct Bot;
 
     static mut drop_counter: isize = 0;
 
@@ -475,9 +460,36 @@ fn test_zero_sized_type() {
 }
 
 #[test]
+fn test_rect(){
+    
+}
+
+#[test]
 fn test_bounding_boxes_as_points() {
-    //Test the max size of slice +1
-    unimplemented!()
+    let world = make_rect((-1000, 1000), (-100, 100));
+
+    let spawn_world = make_rect((-990, 990), (-90, 90));
+
+    let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
+
+    let mut bots: Vec<BBox<Numisize, Bot>> = {
+        (0..2000)
+            .map(|id| {
+                let p=p.random_point();
+                let rect = AABBox::new(p,p);
+                BBox::new(
+                    Bot {
+                        id,
+                        col: Vec::new(),
+                    },
+                    rect,
+                )
+            })
+            .collect()
+    };
+
+    test_bot_layout(bots);
+
 }
 
 
@@ -718,22 +730,21 @@ fn test_dinotree() {
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-    for _ in 0..1 {
-        let mut bots: Vec<BBox<Numisize, Bot>> = {
-            (0..2000)
-                .map(|id| {
-                    let rect = create_rect_from_point(p.random_point());
-                    BBox::new(
-                        Bot {
-                            id,
-                            col: Vec::new(),
-                        },
-                        rect,
-                    )
-                })
-                .collect()
-        };
+    let mut bots: Vec<BBox<Numisize, Bot>> = {
+        (0..2000)
+            .map(|id| {
+                let rect = create_rect_from_point(p.random_point());
+                BBox::new(
+                    Bot {
+                        id,
+                        col: Vec::new(),
+                    },
+                    rect,
+                )
+            })
+            .collect()
+    };
 
-        test_bot_layout(bots);
-    }
+    test_bot_layout(bots);
+
 }
