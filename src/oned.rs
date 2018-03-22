@@ -6,13 +6,7 @@ pub trait Bleek {
     fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
 }
 
-/*
-unsafe fn swap_unchecked<T>(list:&mut [T],a:usize,b:usize){
-    let x=list.get_unchecked_mut(a) as *mut T;
-    let y=list.get_unchecked_mut(b) as *mut T;
-    std::ptr::swap(x,y)
-}
-*/
+
 
 pub struct Accessor<X: AxisTrait> {
     _p: PhantomData<X>,

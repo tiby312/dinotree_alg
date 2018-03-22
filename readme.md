@@ -129,6 +129,7 @@ split_at_mut()
 # think about it like a sponge. the lower you go into the tree, the more stable the calculates get 
 
 
+# Talk about bfs vs dfs ordering. Better space locality if in dfs ordering.
 
 
 # General thoughts on optimizing
