@@ -153,6 +153,14 @@ The third method was to create a list of rects, and then create a list of pointe
 For large numbers of bots 50,000+, the second method seems to be the best on both my phone and laptop.
 
 
+
+
+There are lot of optimization questions that I had to struggle with. For example, I'm not entirely convinced that storing the indexes of the bots in their sorted tree order in a seperate Vec was a good idea. It might be better to store the indicies in the tree themselves along side the actual bots. The downside is that now the dinotree is full of these indicides that are not used for any of the querying and are only needed when restoing the order of the bots when the tree is destroyed. So every query you do on the tree will slower because you use locality. On the upside, when you restore the tree, you dont have to iterate through 3 seperate dat stures in order to restore it. You can iterate through the tree itsef, the index data structure, and the original bot slice in which to move all the bots back into.
+
+The rebalancing algorithm has the problem of working with two seperate segments of memory. On one hand it is swapping bots around in the provided bots slice. And on the other hand it is building of a tree of nodes that point to slices of the before mentioned bots. I think ideally the nodes and the bots would all be in contiguous memory just like the dinotree itself onces rebalancing is finished. I thought about how you might be able to do this, but I don't think it is posible without requiring massive amounts of shifting in memory, so it is porobably not worth it. 
+
+
+
 # Android
 
 To create the android gemo, I built native libraries and loaded they dynamically inside a regular android java app. So I didnt use a native activity. I wanted to allow the possibiilty of using android ui in the future. I followed https://github.com/kennytm/rust-ios-android. I think the android-rs-glue crate + glutin crate have a lot of stability issues. (For example see https://github.com/tomaka/android-rs-glue/issues/172). 
