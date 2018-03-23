@@ -266,7 +266,6 @@ fn test_dinotree_drop() {
 fn test_dinotree_move_back() {
 
     let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
-    let bots_control=bots.clone();
 
     let world = make_rect((-1000, 1000), (-100, 100));
 
@@ -285,6 +284,7 @@ fn test_dinotree_move_back() {
         );
         bots.push(j);
     }
+    let bots_control=bots.clone();
 
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
@@ -296,6 +296,7 @@ fn test_dinotree_move_back() {
 
     for (a,b) in bots.iter().zip(bots_control.iter()){
         assert!(a.val.id==b.val.id);
+        assert!(a.rect.get()==b.rect.get());
     }
 }
 
@@ -348,6 +349,12 @@ fn test_corners_touch() {
 
 #[test]
 fn test_panic_in_callback() {
+
+
+    std::panic::set_hook(Box::new(|_| {
+        //println!("Custom panic hook");
+    }));
+
     struct Bot;
 
     static mut drop_counter: isize = 0;
@@ -410,6 +417,7 @@ fn test_panic_in_callback() {
         }
     }
     assert_eq!(unsafe{drop_counter},5000);
+    let _ = std::panic::take_hook();
 
 }
 
@@ -461,7 +469,8 @@ fn test_zero_sized_type() {
 
 #[test]
 fn test_rect(){
-    
+  
+
 }
 
 #[test]
@@ -476,7 +485,7 @@ fn test_bounding_boxes_as_points() {
         (0..2000)
             .map(|id| {
                 let p=p.random_point();
-                let rect = AABBox::new(p,p);
+                let rect = AABBox::new((p.0,p.0),(p.1,p.1));
                 BBox::new(
                     Bot {
                         id,
@@ -599,6 +608,7 @@ fn test_russian_doll() {
 
     test_bot_layout(bots);
 }
+
 
 fn test_bot_layout(mut bots: Vec<BBox<Numisize, Bot>>) {
     let mut control_result = {
