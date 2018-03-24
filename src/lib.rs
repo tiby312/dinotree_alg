@@ -8,6 +8,8 @@ extern crate pdqselect;
 extern crate rayon;
 
 #[cfg(test)]
+extern crate num;
+#[cfg(test)]
 extern crate cgmath;
 #[cfg(test)]
 extern crate collision;
@@ -248,17 +250,18 @@ mod ba {
         ///No intersecting pairs within each group are looked for.
         ///Only those between the two groups.
         ///Ideally the group that this tree is built around should be the bigger of the two groups.
-        pub fn intersect_with<X: SweepTrait<Num = T::Num>, F: Fn(ColSingle<T>, ColSingle<X>)>(
+        pub fn intersect_with_seq<X: SweepTrait<Num = T::Num>, F: FnMut(ColSingle<T>, ColSingle<X>)>(
             &mut self,
             b: &mut [X],
-            func: F,
+            mut func: F,
         ) {
             //todo find better algorithn?
             //todo do this before axis specialization?
             //ideally you'd bin the new group using the existing dividers and query that.
-            let func = &func;
+            //let func = &func;
             for i in b.iter_mut() {
                 let jj = i.get_mut();
+
                 self.for_all_intersect_rect(jj.0, |a: ColSingle<T>| {
                     let blag = ColSingle {
                         rect: jj.0,
@@ -288,15 +291,51 @@ mod ba {
             }
         }
 
-        ///Not implemented!
-        ///Finds the k nearest bots to a point.
-        pub fn kth_nearest<F: FnMut(ColSingle<T>)>(
+        ///The dinotree's NumTrait does not inherit any kind of arithmetic traits.
+        ///This showcases that the tree construction and pair finding collision algorithms
+        ///do not involves any arithmetic. 
+        ///However, when finding the nearest neighbor, we need to do some calculations to
+        ///compute distance between points. So instead of giving the NumTrait arithmetic and thus
+        ///add uneeded bounds for general use of this tree, the user must provide functions for arithmetic
+        ///specifically for this function.
+        ///The use can also specify what the minimum distance function is minizing based off of. For example
+        ///minimizing based off the square distance will give you the same answer as minimizing based off 
+        ///of the distant. 
+        pub fn k_nearest<
+            F: FnMut(ColSingle<T>),
+            MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
+            MF2:Fn(T::Num,T::Num)->T::Num,
+        >(
             &mut self,
-            _clos: F,
-            _point: (T::Num, T::Num),
-            _num: usize,
+            
+            point: (T::Num, T::Num),
+            num:usize,
+            clos: F,
+            mf:MF,
+            mf2:MF2,
         ) {
-            unimplemented!();
+            match &mut self.0 {
+                &mut DynTreeEnum::Xa(ref mut a) => {
+                    colfind::k_nearest::<XAXISS,_, _,_,_>(
+                        a,
+                        point,
+                        num,
+                        clos,
+                        mf,
+                        mf2
+                    )
+                }
+                &mut DynTreeEnum::Ya(ref mut a) => {
+                    colfind::k_nearest::<YAXISS,_, _,_,_>(
+                        a,
+                        point,
+                        num,
+                        clos,
+                        mf,
+                        mf2
+                    )
+                }
+            };
         }
 
         ///Find all intersecting pairs sequentially.

@@ -468,10 +468,165 @@ fn test_zero_sized_type() {
 }
 
 #[test]
+fn test_k_nearest(){
+    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
+        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    }
+
+    let mut bots=Vec::new();
+    bots.push(BBox::new(Bot::new(2),from_point(15,15)));
+    bots.push(BBox::new(Bot::new(1),from_point(10,10)));
+    bots.push(BBox::new(Bot::new(2),from_point(20,20)));
+    bots.push(BBox::new(Bot::new(3),from_point(30,30)));
+    bots.push(BBox::new(Bot::new(0),from_point(0,0)));
+
+    let mut res=Vec::new();
+    {
+        let mut dyntree = DinoTree::new(&mut bots, false);
+
+        let clos = |a: ColSingle<BBox<Numisize, Bot>>| {
+
+            res.push(a.inner.id);
+        };
+
+        let min_rect=|point:(Numisize,Numisize),aabb:&AABBox<Numisize>|{
+            let (px,py)=(point.0,point.1);
+            let (px,py)=(px.0,py.0);
+
+            let ((a,b),(c,d))=aabb.get();
+            let ((a,b),(c,d))=((a.0,b.0),(c.0,d.0));
+
+            let xx=num::clamp(px,a,b);
+            let yy=num::clamp(py,a,b);
+
+            Numisize((xx-px)*(xx-px) + (yy-px)*(yy-py))
+        
+        };
+
+        let min_oned=|p1:Numisize,p2:Numisize|{
+            let (p1,p2)=(p1.0,p2.0);
+            Numisize((p2-p1)*(p2-p1))
+        };
+        dyntree.k_nearest((Numisize(40),Numisize(40)),3,clos,min_rect,min_oned);
+    }
+
+    println!("ids={:?}",res);
+    assert!(res.len()==2);
+    assert!(res[0]==3);
+    assert!(res[1]==2);
+}
+
+
+
+#[test]
 fn test_rect(){
-  
+    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
+        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    }
+
+    let mut bots=Vec::new();
+    bots.push(BBox::new(Bot::new(0),from_point(0,0)));
+    bots.push(BBox::new(Bot::new(1),from_point(10,0)));
+    bots.push(BBox::new(Bot::new(2),from_point(0,10)));
+    bots.push(BBox::new(Bot::new(3),from_point(10,10)));
+
+
+    let mut res=Vec::new();
+    {
+        let mut dyntree = DinoTree::new(&mut bots, false);
+
+        let clos = |a: ColSingle<BBox<Numisize, Bot>>| {
+
+            res.push(a.inner.id);
+        };
+
+        let mut r=dyntree.rects();
+        let rect=AABBox::new((Numisize(0),Numisize(10)),(Numisize(0),Numisize(10)));
+        r.for_all_in_rect(&rect,clos);
+    }
+    assert!(res.len()==4);
+}
+
+#[should_panic]
+#[test]
+fn test_rect_panic(){
+    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
+        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    }
+
+    let mut bots=Vec::new();
+
+    let mut res=Vec::new();
+    {
+        let mut dyntree = DinoTree::new(&mut bots, false);
+
+        let mut r=dyntree.rects();
+        let rect=AABBox::new((Numisize(0),Numisize(10)),(Numisize(0),Numisize(10)));
+        r.for_all_in_rect(&rect,|a: ColSingle<BBox<Numisize, Bot>>|res.push(a.inner.id));
+        let rect=AABBox::new((Numisize(10),Numisize(20)),(Numisize(0),Numisize(10)));
+
+        r.for_all_in_rect(&rect,|a: ColSingle<BBox<Numisize, Bot>>|res.push(a.inner.id));
+    }
 
 }
+
+
+#[test]
+fn test_rect_intersect(){
+    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
+        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    }
+
+    let mut bots=Vec::new();
+    bots.push(BBox::new(Bot::new(0),from_point(0,0)));
+    bots.push(BBox::new(Bot::new(1),from_point(10,0)));
+    bots.push(BBox::new(Bot::new(2),from_point(0,10)));
+    bots.push(BBox::new(Bot::new(3),from_point(10,10)));
+
+    let rect=AABBox::new((Numisize(10),Numisize(20)),(Numisize(10),Numisize(20)));
+    bots.push(BBox::new(Bot::new(3),rect));
+
+    let mut res=Vec::new();
+    {
+        let mut dyntree = DinoTree::new(&mut bots, false);
+
+
+        let rect=AABBox::new((Numisize(0),Numisize(10)),(Numisize(0),Numisize(10)));
+        dyntree.for_all_intersect_rect(&rect,|a|res.push(a.inner.id));
+    }
+    assert!(res.len()==5);
+}
+
+#[test]
+fn test_intersect_with(){
+    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
+        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    }
+    fn from_rect(a:isize,b:isize,c:isize,d:isize)->AABBox<Numisize>{
+        AABBox::new((Numisize(a),Numisize(b)),(Numisize(c),Numisize(d))) 
+    }
+
+    let mut bots=Vec::new();
+    bots.push(BBox::new(Bot::new(0),from_rect(0,10,0,10)));
+    bots.push(BBox::new(Bot::new(1),from_rect(5,10,0,10)));
+
+    let mut bots2=Vec::new();
+    bots2.push(BBox::new(Bot::new(2),from_rect(-10,4,0,10)));
+    bots2.push(BBox::new(Bot::new(3),from_rect(-10,3,0,10)));
+
+
+    let mut res=Vec::new();
+    {
+        let mut dyntree = DinoTree::new(&mut bots, false);
+
+        dyntree.intersect_with_seq::<BBox<Numisize,Bot>,_>(&mut bots2,|a,b|res.push((a.inner.id,b.inner.id)));
+    }
+
+    assert!(res.len()==2);
+    res.contains(&(0,2));
+    res.contains(&(0,3));
+}
+
 
 #[test]
 fn test_bounding_boxes_as_points() {

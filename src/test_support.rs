@@ -12,6 +12,12 @@ pub struct Bot {
     pub col: Vec<usize>,
 }
 
+impl Bot{
+    pub fn new(id:usize)->Bot{
+        Bot{id,col:Vec::new()}
+    }
+}
+
 pub fn make_rect(a: (isize, isize), b: (isize, isize)) -> axgeom::Rect<Numisize> {
     axgeom::Rect::new(Numisize(a.0), Numisize(a.1), Numisize(b.0), Numisize(b.1))
 }
