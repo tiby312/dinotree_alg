@@ -168,6 +168,7 @@ pub fn k_nearest<
         func(ColSingle{inner:j.1,rect:j.0});
     }
 
+
     struct ClosestCand<T:SweepTrait>{
         a:Vec<(*mut T,T::Num)>,
         num:usize

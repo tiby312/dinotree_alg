@@ -481,40 +481,45 @@ fn test_k_nearest(){
     bots.push(BBox::new(Bot::new(0),from_point(0,0)));
 
     let mut res=Vec::new();
+
+    let min_rect=|point:(Numisize,Numisize),aabb:&AABBox<Numisize>|{
+        let (px,py)=(point.0,point.1);
+        let (px,py)=(px.0,py.0);
+
+        let ((a,b),(c,d))=aabb.get();
+        let ((a,b),(c,d))=((a.0,b.0),(c.0,d.0));
+
+        let xx=num::clamp(px,a,b);
+        let yy=num::clamp(py,a,b);
+
+        Numisize((xx-px)*(xx-px) + (yy-px)*(yy-py))
+    
+    };
+
+    let min_oned=|p1:Numisize,p2:Numisize|{
+        let (p1,p2)=(p1.0,p2.0);
+        Numisize((p2-p1)*(p2-p1))
+    };
+
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        let clos = |a: ColSingle<BBox<Numisize, Bot>>| {
+        dyntree.k_nearest((Numisize(40),Numisize(40)),3,|a|res.push(a.inner.id),&min_rect,&min_oned);
+        assert!(res.len()==3);
+        assert!(res[0]==3);
+        assert!(res[1]==2);
+        assert!(res[2]==4);
 
-            res.push(a.inner.id);
-        };
-
-        let min_rect=|point:(Numisize,Numisize),aabb:&AABBox<Numisize>|{
-            let (px,py)=(point.0,point.1);
-            let (px,py)=(px.0,py.0);
-
-            let ((a,b),(c,d))=aabb.get();
-            let ((a,b),(c,d))=((a.0,b.0),(c.0,d.0));
-
-            let xx=num::clamp(px,a,b);
-            let yy=num::clamp(py,a,b);
-
-            Numisize((xx-px)*(xx-px) + (yy-px)*(yy-py))
-        
-        };
-
-        let min_oned=|p1:Numisize,p2:Numisize|{
-            let (p1,p2)=(p1.0,p2.0);
-            Numisize((p2-p1)*(p2-p1))
-        };
-        dyntree.k_nearest((Numisize(40),Numisize(40)),3,clos,min_rect,min_oned);
+        res.clear();
+        dyntree.k_nearest((Numisize(-40),Numisize(-40)),3,|a|res.push(a.inner.id),min_rect,min_oned);
+        assert!(res.len()==3);
+        println!("res={:?}",res);
+        assert!(res[0]==0);
+        assert!(res[1]==1);
+        assert!(res[2]==4);
     }
 
-    println!("ids={:?}",res);
-    assert!(res.len()==3);
-    assert!(res[0]==3);
-    assert!(res[1]==2);
-    assert!(res[2]==4);
+
 }
 
 
