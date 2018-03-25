@@ -474,7 +474,7 @@ fn test_k_nearest(){
     }
 
     let mut bots=Vec::new();
-    bots.push(BBox::new(Bot::new(2),from_point(15,15)));
+    bots.push(BBox::new(Bot::new(4),from_point(15,15)));
     bots.push(BBox::new(Bot::new(1),from_point(10,10)));
     bots.push(BBox::new(Bot::new(2),from_point(20,20)));
     bots.push(BBox::new(Bot::new(3),from_point(30,30)));
@@ -511,9 +511,10 @@ fn test_k_nearest(){
     }
 
     println!("ids={:?}",res);
-    assert!(res.len()==2);
+    assert!(res.len()==3);
     assert!(res[0]==3);
     assert!(res[1]==2);
+    assert!(res[2]==4);
 }
 
 

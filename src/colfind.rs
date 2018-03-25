@@ -166,7 +166,6 @@ pub fn k_nearest<
     for i in c.a{
         let j=unsafe{&mut *i.0}.get_mut();
         func(ColSingle{inner:j.1,rect:j.0});
-        println!("des={:?}",i.1);
     }
 
     struct ClosestCand<T:SweepTrait>{
@@ -188,12 +187,11 @@ pub fn k_nearest<
                 //TODO inefficient?
                 self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
             }else{
-                //if the thing is less than the max
                 if a.1<self.a[self.num-1].1{
-                    //figure out where to insert
-                    //and then pop the last.
-                    //self.a[self.num-1]=a;
-                    unimplemented!();
+                    self.a.push(a);
+                    //TODO inefficient?
+                    self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
+                    self.a.pop();
                 }
             }
         }
@@ -227,13 +225,10 @@ pub fn k_nearest<
             point.1
         };
 
-        for i in nn.range.iter_mut(){            
-            let dis_sqr=mf(point,i.get().0);
-            res.consider((i,dis_sqr));
-        }
+        let div = nn.divider;
+        
         match rest {
             Some((left, right)) => {
-                let div = nn.divider;
 
 
                 let (first,other)=if (pp<div) {
@@ -266,6 +261,25 @@ pub fn k_nearest<
             }
         }
 
+        let traverse_other=match res.full_and_max_distance(){
+            Some(max)=>{
+                if mf2(pp,div)<max{
+                    true
+                }else{
+                    false
+                }
+            },
+            None=>{
+                true
+            }
+        };
+
+        if traverse_other{
+            for i in nn.range.iter_mut(){            
+                let dis_sqr=mf(point,i.get().0);
+                res.consider((i,dis_sqr));
+            }
+        }
     }
 }
 
