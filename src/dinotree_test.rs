@@ -441,10 +441,13 @@ fn test_dinotree_adv() {
         assert!(a.rect.get()==b.rect.get());
     }
 
+    //println!("num pairs={:?}",pairs.a.len());
+    
     for i in pairs.a{
         println!("pairs={:?}",i.len());
         
     }
+    
     assert!(false);
 }
 

@@ -371,9 +371,10 @@ pub fn for_every_col_pair<
 ) -> (F,K::Bag) {
 
     let height=kdtree.get_height();
+    println!("height={:?}",height);
     //TODO this value really should be able to be set by the user right?
     //highly dependant on the algorithm 
-    const a:usize=8;
+    const a:usize=6;
 
     let gg=if height<=a{
         0
@@ -384,7 +385,7 @@ pub fn for_every_col_pair<
 
     self::for_every_col_pair_inner::<_, _, _, _, K>(
         A::new(),
-        par::Parallel::new(Depth(a)),
+        par::Parallel::new(Depth(gg)),
         kdtree,
         clos,
     )
