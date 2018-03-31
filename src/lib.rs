@@ -1,3 +1,22 @@
+//! An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
+//! ## Goal
+//! To provide a fast and simple to use broad-phase collision system.
+//!
+//!                            
+//!                               
+//!
+//!
+//!
+//!
+//!
+//!
+//!
+//!
+//!
+//!
+//!
+//!
+
 #![feature(iterator_step_by)]
 #![feature(test)]
 
@@ -25,7 +44,7 @@ mod inner_prelude {
     pub use AABBox;
     pub use axgeom::Axis;
     pub use compt::LevelIter;
-    pub use compt::LevelDesc;
+    pub use compt::Depth;
     pub use axgeom::Range;
     pub use ::*;
     pub use oned::Sweeper;
@@ -83,69 +102,62 @@ use dinotree_inner::DynTree;
 pub use ba::DinoTree;
 pub(crate) use ba::DynTreeEnum;
 
+use std::marker::PhantomData;
 mod ba {
     use super::*;
     use DynTree;
 
     mod closure_struct {
+        //use std::marker::PhantomData;
         use super::*;
-        use std::marker::PhantomData;
+        //use std::marker::PhantomData;
         use ColSingle;
         use ColMulti;
 
         pub struct ColMultiStruct<
             'a,
+            A:Send,
             T: SweepTrait<Inner = I>,
             I: Send + Sync,
-            F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync + 'a,
+            F: Fn(&mut A,ColSingle<T>, ColSingle<T>) + Send + Sync + 'a,
+            F2:Fn(A)->(A,A)+Sync+'a,
+            F3:Fn(A,A)->A+Sync+'a
         > {
-            a: &'a F,
-            p: PhantomData<T>,
+            pub a: &'a F,
+            pub f2: &'a F2,
+            pub f3: &'a F3,
+            pub aa:A,
+            pub _p: PhantomData<(T)>,
         }
+
 
         impl<
             'a,
+            A:Send+Sync,
             T: SweepTrait<Inner = I>,
             I: Send + Sync,
-            F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync,
-        > ColMultiStruct<'a, T, I, F>
-        {
-            pub fn new(a: &'a F) -> ColMultiStruct<'a, T, I, F> {
-                ColMultiStruct { a, p: PhantomData }
-            }
-        }
-
-        impl<
-            'a,
-            T: SweepTrait<Inner = I>,
-            I: Send + Sync,
-            F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync,
-        > Copy for ColMultiStruct<'a, T, I, F>
-        {
-        }
-
-        impl<
-            'a,
-            T: SweepTrait<Inner = I>,
-            I: Send + Sync,
-            F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync,
-        > Clone for ColMultiStruct<'a, T, I, F>
-        {
-            fn clone(&self) -> Self {
-                *self
-            }
-        }
-
-        impl<
-            'a,
-            T: SweepTrait<Inner = I>,
-            I: Send + Sync,
-            F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync,
-        > ColMulti for ColMultiStruct<'a, T, I, F>
+            F: Fn(&mut A,ColSingle<T>, ColSingle<T>) + Send + Sync,
+            F2:Fn(A)->(A,A)+Sync+'a,
+            F3:Fn(A,A)->A+Sync+'a
+        > ColMulti for ColMultiStruct<'a, A,T, I, F,F2,F3>
         {
             type T = T;
-            fn collide(&self, a: ColSingle<T>, b: ColSingle<T>) {
-                (self.a)(a, b);
+        
+            fn collide(&mut self,a: ColSingle<T>, b: ColSingle<T>) {
+                (self.a)(&mut self.aa,a,b);
+            }
+            fn div(self)->(Self,Self){
+                let (aa1,aa2)=(self.f2)(self.aa);
+                
+                let c1=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa1,_p:PhantomData};
+                let c2=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa2,_p:PhantomData};
+                (c1,c2)
+            }
+            fn add(self,b:Self)->Self{
+
+                let aa_n=(self.f3)(self.aa,b.aa);
+                
+                ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa_n,_p:PhantomData}
             }
         }
     }
@@ -357,13 +369,55 @@ mod ba {
             };
         }
 
+
+        ///Find all intersecting pairs.
+        ///Optionally return time data of each level of the tree.
+        pub fn intersect_every_pair_adv<
+            A:Send+Sync,
+            F: Fn(&mut A,ColSingle<T>, ColSingle<T>) + Send + Sync,
+            F2:Fn(A)->(A,A)+Sync,
+            F3:Fn(A,A)->A+Sync
+            >(
+            &mut self,
+            a:A,
+            clos: F,
+            f2:F2,
+            f3:F3,
+        )->A {
+            let clos = self::closure_struct::ColMultiStruct{aa:a,a:&clos,f2:&f2,f3:&f3,_p:PhantomData};
+
+            let ans=match &mut self.0 {
+                &mut DynTreeEnum::Xa(ref mut a) => {
+                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
+                        a,
+                        clos,
+                    )
+                }
+                &mut DynTreeEnum::Ya(ref mut a) => {
+                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
+                        a,
+                        clos,
+                    )
+                }
+            };
+            ans.0.aa
+        }
+
+
         ///Find all intersecting pairs.
         ///Optionally return time data of each level of the tree.
         pub fn intersect_every_pair<F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync>(
             &mut self,
             clos: F,
         ) {
-            let clos = self::closure_struct::ColMultiStruct::new(&clos);
+            let c1=|z:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
+                clos(a,b);
+            };
+            let c2=|a:()|((),());
+            let c3=|a:(),b:()|();
+
+            let clos = self::closure_struct::ColMultiStruct{aa
+                :(),a:&c1,f2:&c2,f3:&c3,_p:PhantomData};
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
@@ -398,14 +452,20 @@ mod ba {
                         clos,
                     )
                 }
-            }
+            }.1
         }
 
         pub fn intersect_every_pair_debug<F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync>(
             &mut self,
             clos: F,
         ) -> Bag {
-            let clos = self::closure_struct::ColMultiStruct::new(&clos);
+            let c1=|z:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
+                clos(a,b);
+            };
+            let c2=|a:()|((),());
+            let c3=|a:(),b:()|();
+
+            let clos = self::closure_struct::ColMultiStruct{aa:(),a:&c1,f2:&c2,f3:&c3,_p:PhantomData};
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
@@ -414,7 +474,7 @@ mod ba {
                 &mut DynTreeEnum::Ya(ref mut a) => {
                     colfind::for_every_col_pair::<_, T, _, TreeTimer2>(a, clos)
                 }
-            }
+            }.1
         }
     }
 

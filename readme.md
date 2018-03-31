@@ -75,6 +75,9 @@ Another strategy to exploit temporal locality is by inserting looser bounding bo
 
 So in short, this system doesnt take advantage of temporal locality, but the user can still take advantage of it by inserting loose bounding boxes and then querying less frequently to amortize the cost.
 
+
+
+
 # Space and Time Complexity
 
 I dont what the theoretical average time compleity of this algorithm would be. The performance depends so wildly on the distribution of the position and sizes of the bots that are fed into it. And in more usecases, there would be certain patterns to the input data. For example, in most cases, I would hope that the bots are mostly not intersecting, (because presumably the user is using this system to keep the bots apart). And another presumption might be that size of the bounding boxes would be small relative to the world in which all the bots live. 
@@ -160,6 +163,10 @@ The third method was to create a list of rects, and then create a list of pointe
 
 For large numbers of bots 50,000+, the second method seems to be the best on both my phone and laptop.
 
+
+
+Parallalization is done using rayon. The rust slice provided split_at_mut() and rayon's join() are two extremely powerful constructs. Seeing and understanding the api and implementation of split_at_mut() is what convinced me that rust was the future.
+At a certain point while going down the tree, we switch to a sequential version as recommended by rayon's usage guidelines when used in recursive divide and conquer problems. The depth at which point we switch to sequential should not be static. It should change along with the size of the problem. TODO explain this more.
 
 
 

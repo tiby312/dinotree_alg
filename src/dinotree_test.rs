@@ -153,6 +153,8 @@ fn colfind_par(b: &mut Bencher) {
         black_box(tree.intersect_every_pair(fu));
     });
 }
+
+
 #[bench]
 fn rebal_seq(b: &mut Bencher) {
     use test_support::*;
@@ -214,6 +216,78 @@ fn rebal_par(b: &mut Bencher) {
     });
 }
 
+
+
+#[bench]
+fn colfind_seq_acc(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 1000), (0, 1000)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    for id in 0..10000 {
+        let ppp = p.random_point();
+        let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            k,
+        ));
+    }
+
+    let height = compute_tree_height(bots.len());
+
+    let mut tree = DinoTree::new_seq(&mut bots, true);
+    
+    b.iter(|| {
+        let mut v=Vec::new();
+
+        tree.intersect_every_pair_seq(|a,b|v.push((a.inner.id,b.inner.id)));
+        
+        black_box(v);
+        
+    });
+}
+
+#[bench]
+fn colfind_par_acc(b:&mut Bencher){
+   use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 1000), (0, 1000)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    for id in 0..10000 {
+        let ppp = p.random_point();
+        let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            k,
+        ));
+    }
+
+    let height = compute_tree_height(bots.len());
+
+    let mut tree = DinoTree::new_seq(&mut bots, true);
+    
+    b.iter(|| {
+        let mut v=std::sync::Mutex::new(Vec::new());
+
+        tree.intersect_every_pair(|a,b|v.lock().unwrap().push((a.inner.id,b.inner.id)));
+        
+        black_box(v);
+        
+    });
+
+}
 #[test]
 fn test_dinotree_drop() {
     struct Bot<'a> {
@@ -298,6 +372,80 @@ fn test_dinotree_move_back() {
         assert!(a.val.id==b.val.id);
         assert!(a.rect.get()==b.rect.get());
     }
+}
+
+
+#[test]
+fn test_dinotree_adv() {
+
+    let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+
+    let world = make_rect((-1000, 1000), (-100, 100));
+
+    let spawn_world = make_rect((-990, 990), (-90, 90));
+
+    let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
+
+    for id in (0..5000) {
+        let rect = create_rect_from_point(p.random_point());
+        let j = BBox::new(
+            Bot {
+                id,
+                col:Vec::new()
+            },
+            rect,
+        );
+        bots.push(j);
+    }
+    let bots_control=bots.clone();
+
+
+    struct Blag{
+        a:Vec<Vec<(usize,usize)>>
+    }
+    impl Blag{
+        fn new()->Blag{
+            let mut a=Vec::new();
+            a.push(Vec::new());
+            Blag{a}
+        }
+        fn append(&mut self,mut bb:Blag){
+            self.a.append(&mut bb.a);
+        }
+    }
+
+    let mut pairs=Blag::new();
+    {
+        let mut dyntree = DinoTree::new(&mut bots, false);
+
+        let clos = |aa:&mut Blag,a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+            //expensive collide code here
+            aa.a.first_mut().unwrap().push((a.inner.id,b.inner.id))
+        };
+
+        let div=|aa:Blag|->(Blag,Blag){
+            (aa,Blag::new())
+        } ;
+
+        let add=|mut aa:Blag,mut bb:Blag|->Blag{
+            aa.append(bb);
+            aa
+        };
+
+
+        pairs=dyntree.intersect_every_pair_adv(pairs,clos,div,add);
+    }
+
+    for (a,b) in bots.iter().zip(bots_control.iter()){
+        assert!(a.val.id==b.val.id);
+        assert!(a.rect.get()==b.rect.get());
+    }
+
+    for i in pairs.a{
+        println!("pairs={:?}",i.len());
+        
+    }
+    assert!(false);
 }
 
 #[test]

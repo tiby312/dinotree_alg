@@ -106,14 +106,14 @@ fn draw_node<V: Vertex>(
     height: usize,
     range: Range<Numf32>,
     div: &Numf32,
-    faafa: (Axis, compt::LevelDesc),
+    faafa: (Axis, compt::Depth),
     verticies: &mut [V],
     width: f32,
 ) {
     let (div_axis, level) = faafa;
     let line_axis = div_axis.next();
 
-    let width = (((height - level.get_depth()) + 1) as f32) / (height as f32) * width;
+    let width = (((height - level.0) + 1) as f32) / (height as f32) * width;
 
     let a = div_axis;
     let b = line_axis;
