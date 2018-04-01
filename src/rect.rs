@@ -30,7 +30,11 @@ fn rect_recurse<
     }
     match rest {
         Some((left, right)) => {
-            let div = nn.div.unwrap();
+            let div=match nn.div{
+                Some(div)=>div,
+                None=>return
+            };
+            //let div = nn.div.unwrap();
 
             let rr = rect.get_range2::<A>();
 
