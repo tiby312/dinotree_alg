@@ -59,13 +59,22 @@ fn go_down<
 
         
         
+
         match rest {
             Some((left, right)) => {
-                self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
-        
+
+                if nn.inner.is_none(){
+                    return;
+                }
+                
+                //already checked that andhor has bots
+                //also the fact that we are here implies that the anchor had children.
                 let (_,anchor_container_box)=anchor.inner.unwrap();
                 let (div,_) = nn.inner.unwrap();
 
+
+                self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
+        
                 
                 //This can be evaluated at compile time!
                 if B::get() == A::get() {
@@ -109,7 +118,13 @@ fn recurse<
 
     let ((level, mut nn), rest) = m.next();
 
+    
     self::sweeper_find_2d::<A::Next, _>(sweeper, &mut nn.range, ColMultiWrapper(&mut clos));
+
+    if nn.inner.is_none(){
+        //TODO this isnt necessarily the leaf. Okay to say?
+        return (clos,timer_log.leaf_finish());
+    }
 
     let k = match rest {
         None => (clos,timer_log.leaf_finish()),

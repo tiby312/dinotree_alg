@@ -177,8 +177,8 @@ mod ba {
             let k=DynTree::<XAXISS,T>::new::<JJ,K>(rest,height);
             (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
         }else{
-            let k=DynTree::<XAXISS,T>::new::<JJ,K>(rest,height);
-            (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
+            let k=DynTree::<YAXISS,T>::new::<JJ,K>(rest,height);
+            (DinoTree(DynTreeEnum::Ya(k.0)),k.1)
         }
     }
     ///This is the struct that this crate revolves around.
