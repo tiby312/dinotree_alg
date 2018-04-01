@@ -90,7 +90,7 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = Numf32>>(
 
                 let range = rect.get_range(line_axis);
 
-                let (div,_)=nn.0.inner.unwrap();
+                let div=nn.0.div.unwrap();
                 draw_node(height, *range, &div, (div_axis, dd), nn.1.a, width);
 
                 let (b, c) = rect.subdivide(div, div_axis);

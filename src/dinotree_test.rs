@@ -376,7 +376,7 @@ fn test_dinotree_adv() {
         
     }
 
-    assert_eq!(pairs.a.len(),32);
+    assert_eq!(pairs.a.len(),16);
     
 }
 

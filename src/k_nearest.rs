@@ -84,7 +84,7 @@ fn recc<'x,'a,
     
     match rest {
         Some((left, right)) => {
-            let (div,_) = nn.inner.unwrap();
+            let div = nn.div.unwrap();
     
 
             let (first,other)=if (pp<div) {
@@ -122,8 +122,8 @@ fn recc<'x,'a,
 
     let traverse_other=match res.full_and_max_distance(){
         Some(max)=>{
-            match nn.inner{
-                Some((div,_))=>{
+            match nn.div{
+                Some(div)=>{
                     if mf2(pp,div)<max{
                         true
                     }else{

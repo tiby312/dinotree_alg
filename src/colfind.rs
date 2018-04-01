@@ -63,15 +63,16 @@ fn go_down<
         match rest {
             Some((left, right)) => {
 
-                if nn.inner.is_none(){
-                    return;
-                }
-                
+                let div=match nn.div{
+                    Some(div)=>div,
+                    None=>return
+                };
+
                 //already checked that andhor has bots
                 //also the fact that we are here implies that the anchor had children.
-                let (_,anchor_container_box)=anchor.inner.unwrap();
-                let (div,_) = nn.inner.unwrap();
-
+                //TODO unwrap this ealier?
+                let anchor_container_box=anchor.cont.unwrap();
+                
 
                 self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
         
@@ -119,23 +120,34 @@ fn recurse<
     let ((level, mut nn), rest) = m.next();
 
     
-    self::sweeper_find_2d::<A::Next, _>(sweeper, &mut nn.range, ColMultiWrapper(&mut clos));
-
-    if nn.inner.is_none(){
-        //TODO this isnt necessarily the leaf. Okay to say?
-        return (clos,timer_log.leaf_finish());
-    }
+   
 
     let k = match rest {
-        None => (clos,timer_log.leaf_finish()),
+        None => {
+            self::sweeper_find_2d::<A::Next, _>(sweeper, &mut nn.range, ColMultiWrapper(&mut clos));
+
+            (clos,timer_log.leaf_finish())
+        },
         Some((mut left, mut right)) => {
+                     
+            if nn.div.is_none(){
+                //TODO this isnt necessarily the leaf. Okay to say?
+                return (clos,timer_log.leaf_finish());
+            }
+            match nn.cont{
+                //TODO use this value instead of re unwrapping later
+                Some(_)=>{
+                    self::sweeper_find_2d::<A::Next, _>(sweeper, &mut nn.range, ColMultiWrapper(&mut clos));
 
-            {
-                let left = compt::WrapGen::new(&mut left);
-                let right = compt::WrapGen::new(&mut right);
+                    let left = compt::WrapGen::new(&mut left);
+                    let right = compt::WrapGen::new(&mut right);
 
-                self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos);
-                self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos);
+                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos);
+                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos);
+                },
+                None=>{
+
+                }
             }
 
             let (ta, tb) = timer_log.next();
@@ -329,11 +341,12 @@ fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
 ) {
     //Evaluated at compile time
     if A::get() != B::get() {
-        let (_,parent_box)=parent.inner.unwrap();
+        //TODO unwrap this earlier?
+        let parent_box=parent.cont.unwrap();
         let r1 = Sweeper::get_section::<B>(&mut this.range, &parent_box);
 
         let r2=if !leaf_tracker.is_leaf(){
-            let (_,this_box)=this.inner.unwrap();
+            let this_box=this.cont.unwrap();
         
             Sweeper::get_section::<A>(&mut parent.range, &this_box)
         }else{
