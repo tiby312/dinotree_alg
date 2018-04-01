@@ -65,6 +65,10 @@ pub mod support;
 ///Contains query code
 mod colfind;
 
+mod k_nearest;
+
+mod rect;
+
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
 
@@ -78,6 +82,7 @@ mod rects;
 pub use dinotree_inner::AABBox;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::SweepTrait;
+use dinotree_inner::TreeTimerTrait;
 use dinotree_inner::par;
 use axgeom::Rect;
 use axgeom::XAXISS;
@@ -166,7 +171,16 @@ mod ba {
         Xa(DynTree<'a, XAXISS, T>),
         Ya(DynTree<'a, YAXISS, T>),
     }
-
+    fn make<'a,T:SweepTrait,JJ:par::Joiner,K:TreeTimerTrait>(axis:bool,rest:&'a mut [T])->(DinoTree<'a,T>,K::Bag){
+        let height = self::compute_tree_height(rest.len());
+        if axis{
+            let k=DynTree::<XAXISS,T>::new::<JJ,K>(rest,height);
+            (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
+        }else{
+            let k=DynTree::<XAXISS,T>::new::<JJ,K>(rest,height);
+            (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
+        }
+    }
     ///This is the struct that this crate revolves around.
     pub struct DinoTree<'a, T: SweepTrait + 'a>(pub(crate) DynTreeEnum<'a, T>);
 
@@ -177,78 +191,24 @@ mod ba {
         ///True means xaxis.
         ///The length of the slice must be less than the max value of a u32.
         pub fn new(rest: &'a mut [T], axis: bool) -> DinoTree<'a, T> {
-            let height = self::compute_tree_height(rest.len());
-            if axis {
-                let k = DynTree::<XAXISS, T>::new::<
-                    par::Parallel,
-                    TreeTimerEmpty,
-                >(rest, height);
-                DinoTree(DynTreeEnum::Xa(k.0))
-            } else {
-                let k = DynTree::<YAXISS, T>::new::<
-                    par::Parallel,
-                    TreeTimerEmpty,
-                >(rest, height);
-                DinoTree(DynTreeEnum::Ya(k.0))
-            }
+            self::make::<_,par::Parallel,TreeTimerEmpty>(axis,rest).0
         }
 
         ///Create a dinotree that does not use any parallel algorithms.
         pub fn new_seq(rest: &'a mut [T], axis: bool) -> DinoTree<'a, T> {
-            let height = self::compute_tree_height(rest.len());
-            if axis {
-                let k = DynTree::<XAXISS, T>::new::<
-                    par::Sequential,
-                    TreeTimerEmpty,
-                >(rest, height);
-                DinoTree(DynTreeEnum::Xa(k.0))
-            } else {
-                let k = DynTree::<YAXISS, T>::new::<
-                    par::Sequential,
-                    TreeTimerEmpty,
-                >(rest, height);
-                DinoTree(DynTreeEnum::Ya(k.0))
-            }
+            self::make::<_,par::Sequential,TreeTimerEmpty>(axis,rest).0
         }
 
         ///Create a dinotree.
         ///Specify the starting axis along which the bots will be partitioned.
         ///So if you picked the x axis, the root divider will be a vertical line.
         pub fn new_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
-            let height = self::compute_tree_height(rest.len());
-            if axis {
-                let k = DynTree::<XAXISS, T>::new::<par::Parallel, TreeTimer2>(
-                    rest,
-                    height,
-                );
-                (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
-            } else {
-                let k = DynTree::<YAXISS, T>::new::<par::Parallel, TreeTimer2>(
-                    rest,
-                    height,
-                );
-                (DinoTree(DynTreeEnum::Ya(k.0)), k.1)
-            }
+            self::make::<_,par::Parallel,TreeTimer2>(axis,rest)
         }
 
         ///Create a dinotree that does not use any parallel algorithms.
         pub fn new_seq_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
-            let height = self::compute_tree_height(rest.len());
-            if axis {
-                let k =
-                    DynTree::<XAXISS, T>::new::<par::Sequential, TreeTimer2>(
-                        rest,
-                        height,
-                    );
-                (DinoTree(DynTreeEnum::Xa(k.0)), k.1)
-            } else {
-                let k =
-                    DynTree::<YAXISS, T>::new::<par::Sequential, TreeTimer2>(
-                        rest,
-                        height,
-                    );
-                (DinoTree(DynTreeEnum::Ya(k.0)), k.1)
-            }
+            self::make::<_,par::Sequential,TreeTimer2>(axis,rest)
         }
 
         ///Create a rect finding session.
@@ -295,10 +255,10 @@ mod ba {
         ) {
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
-                    colfind::for_all_intersect_rect(a, &rect.0, fu);
+                    rect::for_all_intersect_rect(a, &rect.0, fu);
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
-                    colfind::for_all_intersect_rect(a, &rect.0, fu);
+                    rect::for_all_intersect_rect(a, &rect.0, fu);
                 }
             }
         }
@@ -328,7 +288,7 @@ mod ba {
         ) {
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
-                    colfind::k_nearest::<XAXISS,_, _,_,_>(
+                    k_nearest::k_nearest::<XAXISS,_, _,_,_>(
                         a,
                         point,
                         num,
@@ -338,7 +298,7 @@ mod ba {
                     )
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
-                    colfind::k_nearest::<YAXISS,_, _,_,_>(
+                    k_nearest::k_nearest::<YAXISS,_, _,_,_>(
                         a,
                         point,
                         num,
@@ -481,27 +441,6 @@ mod ba {
 
 }
 
-/*
-///The struct that this crate revolves around.
-struct DinoTree<'a,A:AxisTrait,T:SweepTrait+'a>(
-  DynTree<'a,A,T>
-  );
-
-impl<'a,A:AxisTrait,T:SweepTrait+'a> DinoTree<'a,A,T>{
-   fn new<JJ:par::Joiner,H:DepthLevel,Z:MedianStrat<Num=T::Num>,K:TreeTimerTrait>(
-        rest:&'a mut [T],tc:&mut TreeCache<A,T::Num>,medianstrat:&Z) -> (DinoTree<'a,A,T>,K::Bag) {
-      let k=DynTree::new::<JJ,H,Z,K>(rest,tc,medianstrat);
-      
-      let d=DinoTree(k.0);
-
-      //TODO remove this
-      //assert_invariant(&d);
-
-      (d,k.1)
-
-  }
-}
-*/
 
 //Pub so benches can access
 #[cfg(test)]

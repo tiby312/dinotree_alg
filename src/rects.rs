@@ -82,7 +82,7 @@ impl<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> RectsInner<'a, 'b, A, T>
 
             // let fu = closure_struct::ColSingStruct::new(wrapper);
 
-            colfind::for_all_in_rect(self.tree, &rect.0, wrapper);
+            rect::for_all_in_rect(self.tree, &rect.0, wrapper);
 
             //self.tree.for_all_in_rect(rect,wrapper);
         }

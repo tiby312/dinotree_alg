@@ -157,141 +157,6 @@ fn recurse<
 }
 
 
-pub fn k_nearest<
-    A:AxisTrait,
-    T:SweepTrait,
-    F: FnMut(ColSingle<T>),
-    MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
-    MF2:Fn(T::Num,T::Num)->T::Num,
-    >(tree:&mut DynTree<A,T>,point:(T::Num,T::Num),num:usize,mut func:F,mf:MF,mf2:MF2){
-
-    let height = tree.get_height();
-    let dt = tree.get_iter_mut();
-
-    let mut c=ClosestCand::new(num);
-    recc(A::new(),dt,&mf,&mf2,point,&mut c);
- 
-    for i in c.a{
-        let j=unsafe{&mut *i.0}.get_mut();
-        func(ColSingle{inner:j.1,rect:j.0});
-    }
-
-
-    struct ClosestCand<T:SweepTrait>{
-        a:Vec<(*mut T,T::Num)>,
-        num:usize
-    }
-    impl<T:SweepTrait> ClosestCand<T>{
-        fn new(num:usize)->ClosestCand<T>{
-            let a=Vec::with_capacity(num);
-            ClosestCand{a,num}
-        }
-
-        fn consider(&mut self,a:(&mut T,T::Num)){
-            let a=(a.0 as *mut T,a.1);
-
-            if self.a.len()<self.num{
-                //println!("added");
-                self.a.push(a);
-                //TODO inefficient?
-                self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
-            }else{
-                if a.1<self.a[self.num-1].1{
-                    self.a.push(a);
-                    //TODO inefficient?
-                    self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
-                    self.a.pop();
-                }
-            }
-        }
-        fn full_and_max_distance(&self)->Option<T::Num>{
-            match self.a.get(self.num-1){
-                Some(x)=>
-                {
-                    Some(x.1)
-                },
-                None=>{
-                    None
-                }
-            }
-        }
-    }
-    
-    fn recc<'x,'a,
-        A: AxisTrait,
-        T: SweepTrait + 'x,
-        C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-        MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
-        MF2:Fn(T::Num,T::Num)->T::Num,
-        >(axis:A,stuff:C,mf:&MF,mf2:&MF2,point:(T::Num,T::Num),res:&mut ClosestCand<T>){
-
-        let (nn,rest)=stuff.next();
-
-        //known at compile time.
-        let pp=if axis.is_xaxis(){
-            point.0
-        }else{
-            point.1
-        };
-
-        let div = nn.divider;
-        
-        match rest {
-            Some((left, right)) => {
-
-
-                let (first,other)=if (pp<div) {
-                    (left,right)
-                }else{
-                    (right,left)
-                };
-
-                recc(axis.next(), first,mf,mf2,point,res);
-               
-                let traverse_other=match res.full_and_max_distance(){
-                    Some(max)=>{
-                        if mf2(pp,div)<max{
-                            true
-                        }else{
-                            false
-                        }
-                    },
-                    None=>{
-                        true
-                    }
-                };
-
-                if traverse_other{
-                    recc(axis.next(),other,mf,mf2,point,res);
-                }
-            }
-            _ => {
-                
-            }
-        }
-
-        let traverse_other=match res.full_and_max_distance(){
-            Some(max)=>{
-                if mf2(pp,div)<max{
-                    true
-                }else{
-                    false
-                }
-            },
-            None=>{
-                true
-            }
-        };
-
-        if traverse_other{
-            for i in nn.range.iter_mut(){            
-                let dis_sqr=mf(point,i.get().0);
-                res.consider((i,dis_sqr));
-            }
-        }
-    }
-}
-
 pub fn for_every_col_pair_seq<
     A: AxisTrait,
     T: SweepTrait,
@@ -302,8 +167,6 @@ pub fn for_every_col_pair_seq<
     mut clos: F,
 ) -> (F,K::Bag) {
 
-
-    //#[derive(Copy,Clone)]
     pub struct Wrapper<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a>(
         UnsafeCell<&'a mut F>,
         PhantomData<T>,
@@ -372,7 +235,7 @@ pub fn for_every_col_pair<
 
     let height=kdtree.get_height();
     
-    const a:usize=6;
+    const a:usize=4;
 
     let gg=if height<=a{
         0
@@ -450,78 +313,6 @@ fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek>(
     }
 }
 
-fn rect_recurse<
-    'x,
-    A: AxisTrait,
-    T: SweepTrait + 'x,
-    C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-    F: FnMut(ColSingle<T>),
->(
-    this_axis: A,
-    m: C,
-    rect: &Rect<T::Num>,
-    func: &mut F,
-) {
-    let (nn, rest) = m.next();
-    {
-        let sl = Sweeper::get_section::<A::Next>(&mut nn.range, rect.get_range2::<A::Next>());
-
-        for i in sl {
-            let a = i.get_mut();
-            let a = ColSingle {
-                rect: a.0,
-                inner: a.1,
-            };
-
-            func(a);
-        }
-    }
-    match rest {
-        Some((left, right)) => {
-            let div = nn.divider;
-
-            let rr = rect.get_range2::<A>();
-
-            if !(div < rr.start) {
-                self::rect_recurse(this_axis.next(), left, rect, func);
-            }
-            if !(div > rr.end) {
-                self::rect_recurse(this_axis.next(), right, rect, func);
-            }
-        }
-        _ => {}
-    }
-}
-
-pub fn for_all_intersect_rect<A: AxisTrait, T: SweepTrait, F: FnMut(ColSingle<T>)>(
-    tree: &mut DynTree<A, T>,
-    rect: &Rect<T::Num>,
-    mut closure: F,
-) {
-    let mut f = |a: ColSingle<T>| {
-        if rect.intersects_rect(&(a.rect).0) {
-            closure(a);
-        }
-    };
-
-    let ta = tree.get_iter_mut();
-    self::rect_recurse(A::new(), ta, rect, &mut f);
-}
-
-pub fn for_all_in_rect<A: AxisTrait, T: SweepTrait, F: FnMut(ColSingle<T>)>(
-    tree: &mut DynTree<A, T>,
-    rect: &Rect<T::Num>,
-    mut closure: F,
-) {
-    let mut f = |a: ColSingle<T>| {
-        if rect.contains_rect(&(a.rect).0) {
-            closure(a);
-        }
-    };
-
-    let ta = tree.get_iter_mut();
-    self::rect_recurse(A::new(), ta, rect, &mut f);
-}
 
 use colfind::bl::sweeper_find_2d;
 use colfind::bl::sweeper_find_parallel_2d;
