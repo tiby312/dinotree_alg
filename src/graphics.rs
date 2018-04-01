@@ -89,9 +89,11 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = Numf32>>(
                 let line_axis = A::Next::get(); //axis.next();
 
                 let range = rect.get_range(line_axis);
-                draw_node(height, *range, &nn.0.divider, (div_axis, dd), nn.1.a, width);
 
-                let (b, c) = rect.subdivide(nn.0.divider, div_axis);
+                let (div,_)=nn.0.inner.unwrap();
+                draw_node(height, *range, &div, (div_axis, dd), nn.1.a, width);
+
+                let (b, c) = rect.subdivide(div, div_axis);
 
                 recc::<A::Next, _, _, _>(height, b, left, width * 0.9);
                 recc::<A::Next, _, _, _>(height, c, right, width * 0.9);

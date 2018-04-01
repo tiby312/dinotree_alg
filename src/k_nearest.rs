@@ -81,11 +81,11 @@ fn recc<'x,'a,
         point.1
     };
 
-    let div = nn.divider;
     
     match rest {
         Some((left, right)) => {
-
+            let (div,_) = nn.inner.unwrap();
+    
 
             let (first,other)=if (pp<div) {
                 (left,right)
@@ -111,6 +111,9 @@ fn recc<'x,'a,
             if traverse_other{
                 recc(axis.next(),other,mf,mf2,point,res);
             }
+
+
+
         }
         _ => {
             
@@ -119,10 +122,17 @@ fn recc<'x,'a,
 
     let traverse_other=match res.full_and_max_distance(){
         Some(max)=>{
-            if mf2(pp,div)<max{
-                true
-            }else{
-                false
+            match nn.inner{
+                Some((div,_))=>{
+                    if mf2(pp,div)<max{
+                        true
+                    }else{
+                        false
+                    }
+                },
+                None=>{
+                    true
+                }
             }
         },
         None=>{
@@ -136,4 +146,5 @@ fn recc<'x,'a,
             res.consider((i,dis_sqr));
         }
     }
+
 }

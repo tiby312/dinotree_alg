@@ -63,15 +63,16 @@ fn go_down<
             Some((left, right)) => {
                 self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
         
-                let div = nn.divider;
+                let (_,anchor_container_box)=anchor.inner.unwrap();
+                let (div,_) = nn.inner.unwrap();
 
                 
                 //This can be evaluated at compile time!
                 if B::get() == A::get() {
-                    if !(div < anchor.container_box.start) {
+                    if !(div < anchor_container_box.start) {
                         self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
                     };
-                    if !(div > anchor.container_box.end) {
+                    if !(div > anchor_container_box.end) {
                         self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
                     };
                 } else {
@@ -313,10 +314,13 @@ fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
 ) {
     //Evaluated at compile time
     if A::get() != B::get() {
-        let r1 = Sweeper::get_section::<B>(&mut this.range, &parent.container_box);
+        let (_,parent_box)=parent.inner.unwrap();
+        let r1 = Sweeper::get_section::<B>(&mut this.range, &parent_box);
 
         let r2=if !leaf_tracker.is_leaf(){
-            Sweeper::get_section::<A>(&mut parent.range, &this.container_box)
+            let (_,this_box)=this.inner.unwrap();
+        
+            Sweeper::get_section::<A>(&mut parent.range, &this_box)
         }else{
             &mut parent.range
         };
