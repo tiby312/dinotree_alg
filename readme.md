@@ -68,8 +68,7 @@ Everything is done in the name of speeding up the querying. This is the part alg
 
 # Exploiting temporal locality
 
-There's really two different contexts in which temporal locality applied. There's the time locality between states of the word between calls to create and destroy the tree. Then there's the time locality of the internal locality as it makes it ways through the alogrithm.
-
+There's really two different contexts in which temporal locality can be talked about. There's the time locality between states of the 2d world between calls to create and destroy the tree. Then there's the time locality of the internal locality as it makes it ways through the alogrithm.
 
 The sort answer? It does not. For a while I had the design where the dividers would move as those they had mass. They would gently be pushed to which ever side had more bots. The problem with this approach is that the divider locations will mostly of the time be sub optimial. And the cost saved in rebalancing just isnt enough for the cost added to querying with a suboptimal partitioning. By always partitioning optimally, we can make some more assumptions. For example, we are guarenteed that the leaf nodes will have less than 10 bots (because we picked the height of the tree specifically so that that would be the case). Therefore, when sorting the leaf nodes, we can do a simple insertion sort, instead of doing a more general sorting algorithm that might branch into doing an insertion sort.
 
@@ -83,22 +82,103 @@ So in short, this system doesnt take advantage of temporal locality, but the use
 
 # Space and Time Complexity
 
-I dont what the theoretical average time compleity of this algorithm would be. The performance depends so wildly on the distribution of the position and sizes of the bots that are fed into it. And in more usecases, there would be certain patterns to the input data. For example, in most cases, I would hope that the bots are mostly not intersecting, (because presumably the user is using this system to keep the bots apart). And another presumption might be that size of the bounding boxes would be small relative to the world in which all the bots live. 
+I dont what the theoretical average time compleity of this algorithm would be. The performance depends so wildly on the distribution of the position and sizes of the bots that are fed into it. And in more usecases, there would be certain patterns to the input data. For example, in most cases, I would hope that the bots are mostly not intersecting, (because presumably the user is using this system to keep the bots apart). And another presumption might be that size of the bounding boxes would tend to be small relative to the world in which all the bots live. 
 
-In the average case, if you thought of all the bots as nodes, and then added edges to the nodes whos boths intersected, you'd hope that your graph was planar. This might be another way of figuring out the time complexity. The number of edges of a planar graph is bounded from above by 3*v-6. This is much smaller than the naive v*v edges of a complete graph.
-
-
+In the average case, if you thought of all the bots as nodes, and then added edges to the nodes whose bots intersected, you'd hope that your graph was planar. This might be another way of figuring out the time complexity. The number of edges of a planar graph is bounded from above by 3*v-6. This is much smaller than the naive v*v edges of a complete graph.
 
 That said bounding it by the worst case is easy, because in the worst case every single bot is colliding with every other bot. So the worst case is that all the bots are directly ontop of each other. Then the tree nor the mark and sweep algorithm could take any adantage of the situation and it would degenerate into the naive algorithm.
 
-In the best case, all the bots live in only leaf nodes, and none of the bots intersect. Interestingly by the pigeon principle, if you have more bots than there are leaf nodes then this best case scenario isnt possible. And this is the case. We are picking the height of the tree such that every leaf node will have around 10 bots. We also know that every non leaf node must have at least one bot in it since it was used as the median.
+In the best case, all the bots live in only leaf nodes, and none of the bots intersect. Interestingly by the pigeon principle, if you have more bots than there are leaf nodes then this best case scenario isnt possible. And this is the case. We are picking the height of the tree such that every leaf node will have a specific amount of bots. We also know that every non leaf node will most likely have at least one bot in it since it was used as the median. The non leaf nodes that dont have any bots in them, must not have any because none of its children have bots either.
+
+Lets looking at rebalancing:
+binning process
+sort middile
+recurse left,right
+
+As you go down the tree, less time is spent binning, and more time is spent sorting.
+
+at the root, binning would take N, and sorting would take epsilon (the amount intersecting the divider. The hope is that this is  asmall number).
+at the second level, binning would be (N-e1), and sorting would take 2*e2, so if we write this out:
+n+e1
+(n-e1)+2*e2
+n-(e1+2*e2)+4*e3
+...
+Lets make further assumption that all e's are roughly the same.
+n+e
+n-e+2*e=n+e
+n-(e+2*e)+4*e=n-3e+4e=n+e
+...n=e
+
+so I think each level would take n+e.
+The number of levels is log2(n/10);
+So in total (n+e)*log2(n/10);
+So assuming e is small.. complixty is O(n*log2(n)).
+
+
+
+Querying on the other hand is more challening, lets give it a shot:
+Lets make some sweeping (no pun intended) assumptions. Every node has around the same number of bots,
+and we will call it e (same as rebalancing)
+
+Level 1: from the root we have to recurse all the way down until we visit all nodes that touch the root divider.
+	sweep(e)+bjsweep(e)*h
+level 2:
+	sweep(e)*2+bjsweep(e)*(h-1)*2
+level 3:
+	sweep(e)*4+bjsweep(e)*(h-2)*4
+
+so we have:
+
+(se+be*h) + 2*(se+be*(h-1)) + 2^2(se+be*(h-2)) + ...
+
+Lets split it into two terms
+
+(se+2*se+4*se+....)+(be*h  + 2*be*(h-1)+4*be(h-2)+..)
+
+now lets distribute:
+
+se*(2^0+2^1+2^2+2^3+...)   + be*(1h +2(h-1)+4(h-2)+8(h-3)+...)
+                                 
+
+
+The first term is a geometric series, so is equal to:
+se*(2^h-1)
+or roughly:
+se*(2^h)
+
+The second term, is more complicated, but a geometric series can be broken off and you are left with a summation
+over ia^i. After some simplifying the second term is close to:
+be(h*2^h)
+
+so we have:
+se*(2^h)+be(h*2^h)
+
+here:
+2^h(se+be*h);
+
+We want to bound it by a function that takes n as input, not h.
+
+2^(log2(n/10))*(se+be*log2(n/10))
+
+(n/10)(se+be*log2(n/10))
+
+So I think the complexity of the querying is also O(n*log2(n)).
+
+The function bjsweep(e) is less expensive that sweep(e). 
+
+
+
+
+
+
+
 
 The space complexity, on the other hand, is much easier to figure out. 
 The height of the tree is=log2(num/10).
 The num of nodes=2^height.
 So the number of nodes as a function of bots is nodes=2^(log2(num/10))=num/10.
 So the number of nodes created is linear to the number of bots.
-
+So I think space complexity is O(n).
 
 # Testing correctness
 
