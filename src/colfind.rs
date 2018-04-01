@@ -5,6 +5,23 @@ use compt::WrapGen;
 use std::cell::UnsafeCell;
 use dinotree_inner::par::Joiner;
 
+
+trait LeafTracker{
+    fn is_leaf(&self)->bool;
+}
+struct IsLeaf;
+struct IsNotLeaf;
+impl LeafTracker for IsNotLeaf{
+    fn is_leaf(&self)->bool{
+        false
+    }
+}
+impl LeafTracker for IsLeaf{
+    fn is_leaf(&self)->bool{
+        true
+    }
+}
+
 pub trait ColMulti: Send + Sync + Sized {
     type T: SweepTrait;
     fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
@@ -27,25 +44,28 @@ fn go_down<
     B: AxisTrait, //parent axis
     C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
     X: SweepTrait + 'x,
-    F: ColMulti<T = X>,
+    F: ColMulti<T = X>
 >(
     this_axis: A,
     parent_axis: B,
     sweeper: &mut Sweeper<F::T>,
     anchor: &mut &mut NodeDyn<X>,
     m: WrapGen<LevelIter<C>>,
-    func: &mut F,
+    func: &mut F
 ) {
     {
         let (mut bo, rest) = m.next();
-        let &mut (_, ref mut nn) = bo.get_mut();
+        let &mut (leveld, ref mut nn) = bo.get_mut();
 
-        self::for_every_bijective_pair::<A, B, _>(nn, anchor, sweeper, ColMultiWrapper(func));
-
+        
+        
         match rest {
             Some((left, right)) => {
+                self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
+        
                 let div = nn.divider;
 
+                
                 //This can be evaluated at compile time!
                 if B::get() == A::get() {
                     if !(div < anchor.container_box.start) {
@@ -58,8 +78,12 @@ fn go_down<
                     self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
                     self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
                 }
+               
             }
-            _ => {}
+            _ => {
+                self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsLeaf);
+        
+            }
         };
     }
 }
@@ -71,14 +95,14 @@ fn recurse<
     X: SweepTrait + 'x,
     F: ColMulti<T = X>,
     C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
-    K: TreeTimerTrait,
+    K: TreeTimerTrait
 >(
     this_axis: A,
     par: JJ,
     sweeper: &mut Sweeper<F::T>,
     m: LevelIter<C>,
     mut clos: F,
-    mut timer_log: K,
+    mut timer_log: K
 ) -> (F,K::Bag) {
     timer_log.start();
 
@@ -89,6 +113,7 @@ fn recurse<
     let k = match rest {
         None => (clos,timer_log.leaf_finish()),
         Some((mut left, mut right)) => {
+
             {
                 let left = compt::WrapGen::new(&mut left);
                 let right = compt::WrapGen::new(&mut right);
@@ -110,6 +135,7 @@ fn recurse<
                         left,
                         aa,
                         ta,
+                        
                     )
                 };
                 let bf = || {
@@ -121,6 +147,7 @@ fn recurse<
                         right,
                         bb,
                         tb,
+                        
                     )
                 };
                 let (ta, tb) = rayon::join(af, bf);
@@ -135,6 +162,7 @@ fn recurse<
                     left,
                     clos,
                     ta,
+                    
                 );
                 let (clos,tb) = self::recurse(
                     this_axis.next(),
@@ -143,6 +171,7 @@ fn recurse<
                     right,
                     clos,
                     tb,
+                    
                 );
 
                 (clos,ta, tb)
@@ -275,16 +304,22 @@ fn for_every_col_pair_inner<
     bag
 }
 
-fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek>(
+fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
     this: &mut NodeDyn<F::T>,
     parent: &mut &mut NodeDyn<F::T>,
     sweeper: &mut Sweeper<F::T>,
     mut func: F,
+    leaf_tracker:L
 ) {
     //Evaluated at compile time
     if A::get() != B::get() {
         let r1 = Sweeper::get_section::<B>(&mut this.range, &parent.container_box);
-        let r2 = Sweeper::get_section::<A>(&mut parent.range, &this.container_box);
+
+        let r2=if !leaf_tracker.is_leaf(){
+            Sweeper::get_section::<A>(&mut parent.range, &this.container_box)
+        }else{
+            &mut parent.range
+        };
 
         for inda in r1.iter_mut() {
             let (rect_a, aval) = inda.get_mut();
@@ -303,6 +338,8 @@ fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek>(
                 }
             }
         }
+
+
     } else {
         self::sweeper_find_parallel_2d::<A::Next, _>(
             sweeper,
