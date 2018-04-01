@@ -217,77 +217,6 @@ fn rebal_par(b: &mut Bencher) {
 }
 
 
-
-#[bench]
-fn colfind_seq_acc(b: &mut Bencher) {
-    use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 1000), (0, 1000)),
-        &[100, 42, 6],
-    );
-
-    let mut bots = Vec::new();
-    for id in 0..10000 {
-        let ppp = p.random_point();
-        let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
-
-    let height = compute_tree_height(bots.len());
-
-    let mut tree = DinoTree::new_seq(&mut bots, true);
-    
-    b.iter(|| {
-        let mut v=Vec::new();
-
-        tree.intersect_every_pair_seq(|a,b|v.push((a.inner.id,b.inner.id)));
-        
-        black_box(v);
-        
-    });
-}
-
-#[bench]
-fn colfind_par_acc(b:&mut Bencher){
-   use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 1000), (0, 1000)),
-        &[100, 42, 6],
-    );
-
-    let mut bots = Vec::new();
-    for id in 0..10000 {
-        let ppp = p.random_point();
-        let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
-
-    let height = compute_tree_height(bots.len());
-
-    let mut tree = DinoTree::new_seq(&mut bots, true);
-    
-    b.iter(|| {
-        let mut v=std::sync::Mutex::new(Vec::new());
-
-        tree.intersect_every_pair(|a,b|v.lock().unwrap().push((a.inner.id,b.inner.id)));
-        
-        black_box(v);
-        
-    });
-
-}
 #[test]
 fn test_dinotree_drop() {
     struct Bot<'a> {
@@ -441,14 +370,14 @@ fn test_dinotree_adv() {
         assert!(a.rect.get()==b.rect.get());
     }
 
-    //println!("num pairs={:?}",pairs.a.len());
-    
-    for i in pairs.a{
+
+    for i in &pairs.a{
         println!("pairs={:?}",i.len());
         
     }
+
+    assert!(pairs.a.len()==8);
     
-    assert!(false);
 }
 
 #[test]

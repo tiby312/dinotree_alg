@@ -370,8 +370,9 @@ mod ba {
         }
 
 
-        ///Find all intersecting pairs.
-        ///Optionally return time data of each level of the tree.
+        ///Gives user the option to store some internals to the bots
+        ///in vecs. Its main purpose is so that you could cache the ids 
+        ///of colliding pairs.
         pub fn intersect_every_pair_adv<
             A:Send+Sync,
             F: Fn(&mut A,ColSingle<T>, ColSingle<T>) + Send + Sync,

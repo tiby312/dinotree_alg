@@ -191,7 +191,7 @@ pub fn k_nearest<
             let a=(a.0 as *mut T,a.1);
 
             if self.a.len()<self.num{
-                println!("added");
+                //println!("added");
                 self.a.push(a);
                 //TODO inefficient?
                 self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
@@ -371,9 +371,7 @@ pub fn for_every_col_pair<
 ) -> (F,K::Bag) {
 
     let height=kdtree.get_height();
-    println!("height={:?}",height);
-    //TODO this value really should be able to be set by the user right?
-    //highly dependant on the algorithm 
+    
     const a:usize=6;
 
     let gg=if height<=a{
