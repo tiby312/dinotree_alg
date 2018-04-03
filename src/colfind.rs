@@ -55,7 +55,7 @@ fn go_down<
 ) {
     {
         let (mut bo, rest) = m.next();
-        let &mut (leveld, ref mut nn) = bo.get_mut();
+        let &mut (_, ref mut nn) = bo.get_mut();
 
         
         
@@ -129,7 +129,7 @@ fn recurse<
             (clos,timer_log.leaf_finish())
         },
         Some((mut left, mut right)) => {
-                     
+
             if nn.div.is_none(){
                 //TODO this isnt necessarily the leaf. Okay to say?
                 return (clos,timer_log.leaf_finish());
@@ -247,7 +247,7 @@ pub fn for_every_col_pair_seq<
         fn div(self)->(Self,Self){
             unreachable!();
         }
-        fn add(self,b:Self)->Self{
+        fn add(self,_b:Self)->Self{
             unreachable!();
         }
     }
@@ -292,12 +292,12 @@ pub fn for_every_col_pair<
 
     let height=kdtree.get_height();
     
-    const a:usize=4;
+    const DEPTH_SEQ:usize=4;
 
-    let gg=if height<=a{
+    let gg=if height<=DEPTH_SEQ{
         0
     }else{
-        height-a
+        height-DEPTH_SEQ
     };
     
 
@@ -319,7 +319,7 @@ fn for_every_col_pair_inner<
     this_axis: A,
     par: JJ,
     kdtree: &mut DynTree<A, T>,
-    mut clos: F,
+    clos: F,
 ) -> (F,K::Bag) {
     let height = kdtree.get_height();
     let level = kdtree.get_level_desc();

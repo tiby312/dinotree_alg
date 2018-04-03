@@ -9,7 +9,7 @@ pub fn k_nearest<
     MF2:Fn(T::Num,T::Num)->T::Num,
     >(tree:&mut DynTree<A,T>,point:(T::Num,T::Num),num:usize,mut func:F,mf:MF,mf2:MF2){
 
-    let height = tree.get_height();
+    //let height = tree.get_height();
     let dt = tree.get_iter_mut();
 
     let mut c=ClosestCand::new(num);
@@ -87,7 +87,7 @@ fn recc<'x,'a,
             let div = nn.div.unwrap();
     
 
-            let (first,other)=if (pp<div) {
+            let (first,other)=if pp<div {
                 (left,right)
             }else{
                 (right,left)

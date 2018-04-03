@@ -90,7 +90,34 @@ That said bounding it by the worst case is easy, because in the worst case every
 
 In the best case, all the bots live in only leaf nodes, and none of the bots intersect. Interestingly by the pigeon principle, if you have more bots than there are leaf nodes then this best case scenario isnt possible. And this is the case. We are picking the height of the tree such that every leaf node will have a specific amount of bots. We also know that every non leaf node will most likely have at least one bot in it since it was used as the median. The non leaf nodes that dont have any bots in them, must not have any because none of its children have bots either.
 
-Lets looking at rebalancing:
+# Epsilon
+
+Before we analyze the rebalance and query algorithms, lets come up with an approximation of how often bots would intersect a divider. Lets first look at the root. If you had a bunch of bots randomly and uniformly distrubuted in a 2d space, how many of them would intersect the median divider? The answer to this depends on the sizes of the bots. If all the bots were points, then hopefully only one bot would intersect with the divider. The only case this wouldnt be true is if multiple bots had the same x position as the median bot. If we're talking about real numbers, then I think the likelyhood of two bots randomly sharing the exact same x value is next to impossible. Since we are not dealing with real numbers, its more likely. On some bounded interval, there are only so many values that a floating point can have inbetween them, and even less so for integers. But it would still be a small enough chance that we can ignore. So for the cases where the bot is a point, I think its safe to say that epsilon is around 1 for the root.
+
+As the sizes of the bots increases, epsilon would also grow. By how much I'm not sure. But thats not the real concern. We are only concerned about the complexity as n grows. We can just assume that the bot size is constant, whatever it may be. 
+For our purposes, its simpler to just think of the bots as points since it doesnt effect our n complexity.
+
+So the question is as n grows, how is episolon effected?
+
+It clearly must also grow somewhat. The more bots there are, the greater the likelyhood that any bot will have the same value as the median bot.  
+So we have:
+1/x + 1/x +1/x +1/x + ... =  n/x
+where x is the possible x values.
+
+
+
+
+
+
+
+
+
+
+
+
+# Rebalance Algorithm time complexity
+
+Lets looking at rebalancing. For each node, there are three steps that need to be done:
 binning process
 sort middile
 recurse left,right
@@ -99,19 +126,19 @@ As you go down the tree, less time is spent binning, and more time is spent sort
 
 at the root, binning would take N, and sorting would take epsilon (the amount intersecting the divider. The hope is that this is  asmall number).
 at the second level, binning would be (N-e1), and sorting would take 2*e2, so if we write this out:
-n+e1
-(n-e1)+2*e2
-n-(e1+2*e2)+4*e3
+bn+se1
+(bn-se1)+2*se2
+bn-(se1+2*se2)+4*se3
 ...
 Lets make further assumption that all e's are roughly the same.
-n+e
-n-e+2*e=n+e
-n-(e+2*e)+4*e=n-3e+4e=n+e
-...n=e
+bn+se
+bn-se+2*se=bn+se
+bn-(se+2*se)+4*se=bn-3se+4se=bn+se
+...
 
-so I think each level would take n+e.
+so I think each level would take b(n)+s(e).
 The number of levels is log2(n/10);
-So in total (n+e)*log2(n/10);
+So in total (bin(n)+sort(e))*log2(n/10);
 So assuming e is small.. complixty is O(n*log2(n)).
 
 
@@ -150,6 +177,8 @@ The second term, is more complicated, but a geometric series can be broken off a
 over ia^i. After some simplifying the second term is close to:
 be(h*2^h)
 
+I'm dropping small constants left and right since we only care about the complexity at a large scale.
+
 so we have:
 se*(2^h)+be(h*2^h)
 
@@ -162,9 +191,20 @@ We want to bound it by a function that takes n as input, not h.
 
 (n/10)(se+be*log2(n/10))
 
-So I think the complexity of the querying is also O(n*log2(n)).
+So I think the complexity of the querying is also O(n*log2(n)), but it is clearly more expensive than rebalancing.
 
-The function bjsweep(e) is less expensive that sweep(e). 
+
+
+So overall we have to functions that bound complexity:
+
+rebalance_cost=(bin(n)+sort(e))*log2(n/bots_per_node);
+query_cost=(n/bots_per_node)(sweep_sort(e)+bi_sweep(e)*log2(n/bots_per_node))
+
+So things to notice about these functions. The bin function takes the entirety of n as input. Even though binning is fast (only have to put the bots into 3 buckets), it has to be applied to a large number of bots. By contract, the sorting function is done on on a smaller epsilon.
+
+The bijective sweep algorithm is less expensive than the sweep sort. The sweep sort algorithm has to check every body against every other in the slice that is passed to it. By contrast, the bi_sweep() algorithm checks two slices of bots only against each other. 
+
+
 
 
 

@@ -371,11 +371,11 @@ mod ba {
             &mut self,
             clos: F,
         ) {
-            let c1=|z:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
+            let c1=|_:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
                 clos(a,b);
             };
-            let c2=|a:()|((),());
-            let c3=|a:(),b:()|();
+            let c2=|_:()|((),());
+            let c3=|_:(),_:()|();
 
             let clos = self::closure_struct::ColMultiStruct{aa
                 :(),a:&c1,f2:&c2,f3:&c3,_p:PhantomData};
@@ -420,11 +420,11 @@ mod ba {
             &mut self,
             clos: F,
         ) -> Bag {
-            let c1=|z:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
+            let c1=|_:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
                 clos(a,b);
             };
-            let c2=|a:()|((),());
-            let c3=|a:(),b:()|();
+            let c2=|_:()|((),());
+            let c3=|_:(),_:()|();
 
             let clos = self::closure_struct::ColMultiStruct{aa:(),a:&c1,f2:&c2,f3:&c3,_p:PhantomData};
 

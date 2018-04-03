@@ -11,7 +11,7 @@ use test::*;
 #[cfg(test)]
 mod bap {
     use super::*;
-    use cgmath::{InnerSpace, Point2, Vector2};
+    use cgmath::{ Point2, Vector2};
     use collision::dbvt::TreeValue;
     use collision::*;
     use collision::dbvt::DynamicBoundingVolumeTree;
@@ -376,7 +376,7 @@ fn test_dinotree_adv() {
         
     }
 
-    assert_eq!(pairs.a.len(),16);
+    assert_eq!(pairs.a.len(),32);
     
 }
 
