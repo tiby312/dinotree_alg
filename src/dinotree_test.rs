@@ -3,7 +3,6 @@ use test_support::*;
 use axgeom::XAXISS;
 use axgeom::YAXISS;
 
-use support::Numisize;
 use support::BBox;
 
 use test::*;
@@ -63,8 +62,8 @@ mod bap {
 
         for id in 0..10000 {
             let ppp = p.random_point();
-            let offset_x = (ppp.0).0 as f32;
-            let offset_y = (ppp.1).0 as f32;
+            let offset_x = ppp.0 as f32;
+            let offset_y = ppp.1 as f32;
 
             tree.insert(Value::new(
                 id,
@@ -108,7 +107,7 @@ fn colfind(b: &mut Bencher) {
 
     let mut tree = DinoTree::new(&mut bots, true);
 
-    let mut fu = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+    let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
         a.inner.col.push(b.inner.id);
         b.inner.col.push(a.inner.id);
     };
@@ -145,7 +144,7 @@ fn colfind_par(b: &mut Bencher) {
 
     b.iter(|| {
 
-        let mut fu = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+        let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
             a.inner.col.push(b.inner.id);
             b.inner.col.push(a.inner.id);
         };
@@ -232,7 +231,7 @@ fn test_dinotree_drop() {
 
     let mut drop_counter: Vec<isize> = (0..5000).map(|a| 1).collect();
     {
-        let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+        let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
         let world = make_rect((-1000, 1000), (-100, 100));
 
@@ -255,7 +254,7 @@ fn test_dinotree_drop() {
         {
             let mut dyntree = DinoTree::new(&mut bots, false);
 
-            let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {};
+            let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
 
             dyntree.intersect_every_pair_seq(clos);
         }
@@ -268,7 +267,7 @@ fn test_dinotree_drop() {
 #[test]
 fn test_dinotree_move_back() {
 
-    let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+    let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
     let world = make_rect((-1000, 1000), (-100, 100));
 
@@ -292,7 +291,7 @@ fn test_dinotree_move_back() {
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {};
+        let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
 
         dyntree.intersect_every_pair_seq(clos);
     }
@@ -307,7 +306,7 @@ fn test_dinotree_move_back() {
 #[test]
 fn test_dinotree_adv() {
 
-    let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+    let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
     let world = make_rect((-1000, 1000), (-100, 100));
 
@@ -347,7 +346,7 @@ fn test_dinotree_adv() {
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        let clos = |aa:&mut Blag,a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+        let clos = |aa:&mut Blag,a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
             //expensive collide code here
             aa.a.first_mut().unwrap().push((a.inner.id,b.inner.id))
         };
@@ -395,7 +394,7 @@ fn test_corners_touch() {
         if a {
             for x in (-1000..2000).step_by(20).step_by(2) {
                 let id = id_counter.next().unwrap();
-                let rect = create_rect_from_point((Numisize(x), Numisize(y)));
+                let rect = create_rect_from_point((x, y));
                 bots.push(BBox::new(
                     Bot {
                         id,
@@ -407,7 +406,7 @@ fn test_corners_touch() {
         } else {
             for x in (-1000..2000).step_by(20).skip(1).step_by(2) {
                 let id = id_counter.next().unwrap();
-                let rect = create_rect_from_point((Numisize(x), Numisize(y)));
+                let rect = create_rect_from_point((x, y));
                 bots.push(BBox::new(
                     Bot {
                         id,
@@ -449,7 +448,7 @@ fn test_panic_in_callback() {
     }
 
     {
-        let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+        let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
         let world = make_rect((-1000, 1000), (-100, 100));
 
@@ -472,7 +471,7 @@ fn test_panic_in_callback() {
             let mut dyntree = DinoTree::new(&mut bots, false);
 
             let mut counter=0;
-            let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+            let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
                 if counter==1000{
                     panic!("panic inside of callback!");
                 }
@@ -517,7 +516,7 @@ fn test_zero_sized_type() {
     }
 
     {
-        let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+        let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
         let world = make_rect((-1000, 1000), (-100, 100));
 
@@ -537,7 +536,7 @@ fn test_zero_sized_type() {
         {
             let mut dyntree = DinoTree::new(&mut bots, false);
 
-            let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {};
+            let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
 
             dyntree.intersect_every_pair_seq(clos);
         }
@@ -549,8 +548,8 @@ fn test_zero_sized_type() {
 
 #[test]
 fn test_k_nearest(){
-    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
-        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    fn from_point(a:isize,b:isize)->AABBox<isize>{
+        AABBox::new((a,a),(b,b))
     }
 
     let mut bots=Vec::new();
@@ -562,36 +561,36 @@ fn test_k_nearest(){
 
     let mut res=Vec::new();
 
-    let min_rect=|point:(Numisize,Numisize),aabb:&AABBox<Numisize>|{
+    let min_rect=|point:(isize,isize),aabb:&AABBox<isize>|{
         let (px,py)=(point.0,point.1);
-        let (px,py)=(px.0,py.0);
+        //let (px,py)=(px.0,py.0);
 
         let ((a,b),(c,d))=aabb.get();
-        let ((a,b),(c,d))=((a.0,b.0),(c.0,d.0));
+        //let ((a,b),(c,d))=((a,b.0),(c.0,d.0));
 
         let xx=num::clamp(px,a,b);
         let yy=num::clamp(py,a,b);
 
-        Numisize((xx-px)*(xx-px) + (yy-px)*(yy-py))
+        (xx-px)*(xx-px) + (yy-px)*(yy-py)
     
     };
 
-    let min_oned=|p1:Numisize,p2:Numisize|{
-        let (p1,p2)=(p1.0,p2.0);
-        Numisize((p2-p1)*(p2-p1))
+    let min_oned=|p1:isize,p2:isize|{
+        //let (p1,p2)=(p1.0,p2.0);
+        (p2-p1)*(p2-p1)
     };
 
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        dyntree.k_nearest((Numisize(40),Numisize(40)),3,|a|res.push(a.inner.id),&min_rect,&min_oned);
+        dyntree.k_nearest((40,40),3,|a|res.push(a.inner.id),&min_rect,&min_oned);
         assert!(res.len()==3);
         assert!(res[0]==3);
         assert!(res[1]==2);
         assert!(res[2]==4);
 
         res.clear();
-        dyntree.k_nearest((Numisize(-40),Numisize(-40)),3,|a|res.push(a.inner.id),min_rect,min_oned);
+        dyntree.k_nearest((-40,-40),3,|a|res.push(a.inner.id),min_rect,min_oned);
         assert!(res.len()==3);
         println!("res={:?}",res);
         assert!(res[0]==0);
@@ -606,8 +605,8 @@ fn test_k_nearest(){
 
 #[test]
 fn test_rect(){
-    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
-        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    fn from_point(a:isize,b:isize)->AABBox<isize>{
+        AABBox::new((a,a),(b,b))
     }
 
     let mut bots=Vec::new();
@@ -621,13 +620,13 @@ fn test_rect(){
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        let clos = |a: ColSingle<BBox<Numisize, Bot>>| {
+        let clos = |a: ColSingle<BBox<isize, Bot>>| {
 
             res.push(a.inner.id);
         };
 
         let mut r=dyntree.rects();
-        let rect=AABBox::new((Numisize(0),Numisize(10)),(Numisize(0),Numisize(10)));
+        let rect=AABBox::new((0,10),(0,10));
         r.for_all_in_rect(&rect,clos);
     }
     assert!(res.len()==4);
@@ -636,8 +635,8 @@ fn test_rect(){
 #[should_panic]
 #[test]
 fn test_rect_panic(){
-    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
-        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    fn from_point(a:isize,b:isize)->AABBox<isize>{
+        AABBox::new((a,a),(b,b))
     }
 
     let mut bots=Vec::new();
@@ -647,11 +646,11 @@ fn test_rect_panic(){
         let mut dyntree = DinoTree::new(&mut bots, false);
 
         let mut r=dyntree.rects();
-        let rect=AABBox::new((Numisize(0),Numisize(10)),(Numisize(0),Numisize(10)));
-        r.for_all_in_rect(&rect,|a: ColSingle<BBox<Numisize, Bot>>|res.push(a.inner.id));
-        let rect=AABBox::new((Numisize(10),Numisize(20)),(Numisize(0),Numisize(10)));
+        let rect=AABBox::new((0,10),(0,10));
+        r.for_all_in_rect(&rect,|a: ColSingle<BBox<isize, Bot>>|res.push(a.inner.id));
+        let rect=AABBox::new((10,20),(0,10));
 
-        r.for_all_in_rect(&rect,|a: ColSingle<BBox<Numisize, Bot>>|res.push(a.inner.id));
+        r.for_all_in_rect(&rect,|a: ColSingle<BBox<isize, Bot>>|res.push(a.inner.id));
     }
 
 }
@@ -659,8 +658,8 @@ fn test_rect_panic(){
 
 #[test]
 fn test_rect_intersect(){
-    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
-        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    fn from_point(a:isize,b:isize)->AABBox<isize>{
+        AABBox::new((a,a),(b,b))
     }
 
     let mut bots=Vec::new();
@@ -669,7 +668,7 @@ fn test_rect_intersect(){
     bots.push(BBox::new(Bot::new(2),from_point(0,10)));
     bots.push(BBox::new(Bot::new(3),from_point(10,10)));
 
-    let rect=AABBox::new((Numisize(10),Numisize(20)),(Numisize(10),Numisize(20)));
+    let rect=AABBox::new((10,20),(10,20));
     bots.push(BBox::new(Bot::new(3),rect));
 
     let mut res=Vec::new();
@@ -677,7 +676,7 @@ fn test_rect_intersect(){
         let mut dyntree = DinoTree::new(&mut bots, false);
 
 
-        let rect=AABBox::new((Numisize(0),Numisize(10)),(Numisize(0),Numisize(10)));
+        let rect=AABBox::new((0,10),(0,10));
         dyntree.for_all_intersect_rect(&rect,|a|res.push(a.inner.id));
     }
     assert!(res.len()==5);
@@ -685,11 +684,11 @@ fn test_rect_intersect(){
 
 #[test]
 fn test_intersect_with(){
-    fn from_point(a:isize,b:isize)->AABBox<Numisize>{
-        AABBox::new((Numisize(a),Numisize(a)),(Numisize(b),Numisize(b)))
+    fn from_point(a:isize,b:isize)->AABBox<isize>{
+        AABBox::new((a,a),(b,b))
     }
-    fn from_rect(a:isize,b:isize,c:isize,d:isize)->AABBox<Numisize>{
-        AABBox::new((Numisize(a),Numisize(b)),(Numisize(c),Numisize(d))) 
+    fn from_rect(a:isize,b:isize,c:isize,d:isize)->AABBox<isize>{
+        AABBox::new((a,b),(c,d)) 
     }
 
     let mut bots=Vec::new();
@@ -705,7 +704,7 @@ fn test_intersect_with(){
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        dyntree.intersect_with_seq::<BBox<Numisize,Bot>,_>(&mut bots2,|a,b|res.push((a.inner.id,b.inner.id)));
+        dyntree.intersect_with_seq::<BBox<isize,Bot>,_>(&mut bots2,|a,b|res.push((a.inner.id,b.inner.id)));
     }
 
     assert!(res.len()==2);
@@ -722,7 +721,7 @@ fn test_bounding_boxes_as_points() {
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-    let mut bots: Vec<BBox<Numisize, Bot>> = {
+    let mut bots: Vec<BBox<isize, Bot>> = {
         (0..2000)
             .map(|id| {
                 let p=p.random_point();
@@ -749,8 +748,8 @@ fn test_one_bot() {
     let world = make_rect((-1010, 1010), (-110, 110));
     let spawn_world = make_rect((-1000, 1000), (-100, 100));
 
-    let mut bots:Vec<BBox<Numisize,Bot>> = Vec::new();
-    let rect=create_rect_from_point((Numisize(0),Numisize(0)));
+    let mut bots:Vec<BBox<isize,Bot>> = Vec::new();
+    let rect=create_rect_from_point((0,0));
     bots.push(BBox::new(Bot{id:0,col:Vec::new()},rect));
     test_bot_layout(bots);
 }
@@ -762,7 +761,7 @@ fn test_empty() {
     let world = make_rect((-1010, 1010), (-110, 110));
     let spawn_world = make_rect((-1000, 1000), (-100, 100));
 
-    let mut bots:Vec<BBox<Numisize,Bot>> = Vec::new();
+    let mut bots:Vec<BBox<isize,Bot>> = Vec::new();
     
     test_bot_layout(bots);
 }
@@ -778,7 +777,7 @@ fn test_1_apart() {
     for x in (-1000..2000).step_by(21) {
         for y in (-100..200).step_by(21) {
             let id = id_counter.next().unwrap();
-            let rect = create_rect_from_point((Numisize(x), Numisize(y)));
+            let rect = create_rect_from_point((x, y));
             bots.push(BBox::new(
                 Bot {
                     id,
@@ -804,7 +803,7 @@ fn test_mesh() {
     for x in (-1000..2000).step_by(20) {
         for y in (-100..200).step_by(20) {
             let id = id_counter.next().unwrap();
-            let rect = create_rect_from_point((Numisize(x), Numisize(y)));
+            let rect = create_rect_from_point((x, y));
             bots.push(BBox::new(
                 Bot {
                     id,
@@ -851,7 +850,7 @@ fn test_russian_doll() {
 }
 
 
-fn test_bot_layout(mut bots: Vec<BBox<Numisize, Bot>>) {
+fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
     let mut control_result = {
         let mut src: Vec<(usize, usize)> = Vec::new();
 
@@ -879,7 +878,7 @@ fn test_bot_layout(mut bots: Vec<BBox<Numisize, Bot>>) {
         {
             let mut dyntree = DinoTree::new(&mut bots, false);
 
-            let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+            let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
                 //let (a,b)=(ca,ca.1);
                 //let a=ca[0];
                 //let b=ca[1];
@@ -981,7 +980,7 @@ fn test_dinotree() {
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-    let mut bots: Vec<BBox<Numisize, Bot>> = {
+    let mut bots: Vec<BBox<isize, Bot>> = {
         (0..2000)
             .map(|id| {
                 let rect = create_rect_from_point(p.random_point());

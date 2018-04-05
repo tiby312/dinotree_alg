@@ -1,6 +1,5 @@
 extern crate dinotree;
 use dinotree::*;
-use dinotree::support::Numisize;
 use dinotree::support::BBox;
 
 #[derive(Debug)]
@@ -15,10 +14,10 @@ impl Drop for Bot {
     }
 }
 
-fn make_bot(id: usize, x: (isize, isize), y: (isize, isize)) -> BBox<Numisize, Bot> {
+fn make_bot(id: usize, x: (isize, isize), y: (isize, isize)) -> BBox<isize, Bot> {
     let rect = AABBox::new(
-        (Numisize(x.0), Numisize(x.1)),
-        (Numisize(y.0), Numisize(y.1)),
+        (x.0, x.1),
+        (y.0, y.1),
     );
     println!("making bot {}", id);
     BBox::new(
@@ -31,7 +30,7 @@ fn make_bot(id: usize, x: (isize, isize), y: (isize, isize)) -> BBox<Numisize, B
 }
 
 fn main() {
-    let mut bots: Vec<BBox<Numisize, Bot>> = Vec::new();
+    let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
     bots.push(make_bot(0, (10, 20), (50, 60)));
     bots.push(make_bot(1, (15, 25), (50, 60)));
@@ -44,7 +43,7 @@ fn main() {
     {
         let mut dyntree = DinoTree::new(&mut bots, true);
 
-        let clos = |a: ColSingle<BBox<Numisize, Bot>>, b: ColSingle<BBox<Numisize, Bot>>| {
+        let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
             a.inner.touching.push(b.inner.id);
             b.inner.touching.push(a.inner.id);
         };
