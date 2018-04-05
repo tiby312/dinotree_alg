@@ -5,10 +5,10 @@ use inner_prelude::*;
 //use ordered_float::NotNaN;
 
 pub use dinotree_inner::support::NumWrapper;
-pub use dinotree_inner::support::Numf32;
-pub use dinotree_inner::support::Numf64;
-pub use dinotree_inner::support::Numisize;
-pub use dinotree_inner::support::Numusize;
+//pub use dinotree_inner::support::Numf32;
+//pub use dinotree_inner::support::Numf64;
+//pub use dinotree_inner::support::Numisize;
+//pub use dinotree_inner::support::Numusize;
 pub use dinotree_inner::support::BBox;
 //pub use dinotree_inner::support::DefaultDepthLevel;
 

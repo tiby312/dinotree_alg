@@ -1,10 +1,11 @@
 //!Provides capability to draw the dividers of each node.
 use inner_prelude::*;
-use support::Numf32;
+//use support::Numf32;
 use compt::GenTree;
 
 pub use dinotree_inner::compute_tree_height;
 
+use ordered_float::NotNaN;
 ///The trait that your vertex object needs to implement to be used
 ///in the functions in this crate.
 pub trait Vertex: std::default::Default + std::clone::Clone + Send {
@@ -19,8 +20,8 @@ pub fn get_num_verticies(height: usize) -> usize {
 
 ///Meant to then be drawn using triangles.
 ///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
-pub fn update<V: Vertex, T: SweepTrait<Num = Numf32>>(
-    rect: axgeom::Rect<Numf32>,
+pub fn update<V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
+    rect: axgeom::Rect<NotNaN<f32>>,
     gentree: &DinoTree<T>,
     verticies: &mut [V],
     start_width: f32,
@@ -35,8 +36,8 @@ pub fn update<V: Vertex, T: SweepTrait<Num = Numf32>>(
     }
 }
 ///Panics if the slice given has a length not equal to what is returned by get_num_verticies().
-fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = Numf32>>(
-    rect: axgeom::Rect<Numf32>,
+fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
+    rect: axgeom::Rect<NotNaN<f32>>,
     gentree: &DynTree<A, T>,
     verticies: &mut [V],
     start_width: f32,
@@ -74,12 +75,12 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = Numf32>>(
     fn recc<
         'a,
         A: AxisTrait,
-        T: SweepTrait<Num = Numf32> + 'a,
+        T: SweepTrait<Num = NotNaN<f32>> + 'a,
         V: Vertex + 'a,
         D: CTreeIterator<Item = (&'a NodeDyn<T>, &'a mut Node<'a, V>)>,
     >(
         height: usize,
-        rect: Rect<Numf32>,
+        rect: Rect<NotNaN<f32>>,
         d: LevelIter<D>,
         width: f32,
     ) {
@@ -110,8 +111,8 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = Numf32>>(
 
 fn draw_node<V: Vertex>(
     height: usize,
-    range: Range<Numf32>,
-    div: &Numf32,
+    range: Range<NotNaN<f32>>,
+    div: &NotNaN<f32>,
     faafa: (Axis, compt::Depth),
     verticies: &mut [V],
     width: f32,
@@ -125,13 +126,13 @@ fn draw_node<V: Vertex>(
     let b = line_axis;
 
     let mut p1 = axgeom::Vec2::new(0.0, 0.0);
-    *p1.get_axis_mut(a) = div.0.into_inner();
+    *p1.get_axis_mut(a) = div.into_inner();
 
-    *p1.get_axis_mut(b) = range.start.0.into_inner();
+    *p1.get_axis_mut(b) = range.start.into_inner();
 
     let mut p2 = axgeom::Vec2::new(0.0, 0.0);
-    *p2.get_axis_mut(a) = div.0.into_inner();
-    *p2.get_axis_mut(b) = range.end.0.into_inner();
+    *p2.get_axis_mut(a) = div.into_inner();
+    *p2.get_axis_mut(b) = range.end.into_inner();
 
     self::draw_line(verticies, &p1, &p2, width);
     //self::draw_line(&mut verticies[*counter*6..*counter*6+6],&p1,&p2,width);
