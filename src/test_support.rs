@@ -1,5 +1,4 @@
 use axgeom;
-use support::Numisize;
 use std;
 use rand;
 use rand::{SeedableRng, StdRng};

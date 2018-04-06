@@ -133,6 +133,12 @@ split_at_mut()
 
 # General thoughts on optimizing
 
+
+Optimization is a great balancing act. There are so many interesting questions. Indirection, locality, dividng and conquering. Every algorithm has unique properties. On top of the designing the algorithm, there is a whole nother level of interesting questions when it comes to implementing said algorithm. How to best write the code for maintainability, readabilty, performance, simplicity in the api. Concurrency is the strangest of all. The theory and in practice clash together. I think coding is well suited for people who like chess. The same interesting desision making takes place. "big picture" thinking is very important, and you are often rewarded for following your intuition and hunches down some path. Making desisions of when to stabailize and write tests, or when to capitalize on some new design oportunity, it goes on.
+
+
+
+
 Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
 
 Dynamic allocation is fast. Dynamically allocating large vecs in one allocation is fast. Its only when you're dynamically allocting thousands of small objects does it become bad. Even then, probably the allocations are fast, but because the memory will likely be fragmented, iterating over a list of those objects could be very slow. Concepually, I have to remind myself that if you dynamically allocate a giant block, its simply reserving that area in memory. There isnt any expensive zeroing out of all that memory unless you want to do it. That's not to say the complicated algorithms the allocator has to do arn't complicated, but still relatively cheap.
