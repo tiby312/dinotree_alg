@@ -24,7 +24,7 @@
 //! So we can safely hide this unsafety from the user.
 //! The bots are copied back in the trees drop() method. If the user panics inside of a callback function,
 //! The changes to the bots up until that more during the traversal of the tree will take effect when the 
-//! trees drop() occurrs. TODO test this. 
+//! trees drop() occurrs.
 //!
 //! The sequential version of the pair intersection uses unsafe{} to re-use code from the parallel version.
 //! That is protected at runtime. It will panic if the parallel version tries to copy the closure.

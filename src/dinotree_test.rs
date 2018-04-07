@@ -500,7 +500,9 @@ fn test_panic_in_callback() {
         //println!("Custom panic hook");
     }));
 
-    struct Bot;
+    struct Bot{
+        was_hit:usize
+    }
 
     static mut DROP_COUNTER: isize = 0;
 
@@ -525,41 +527,53 @@ fn test_panic_in_callback() {
         for _id in 0..5000 {
             let rect = create_rect_from_point(p.random_point());
             let j = BBox::new(
-                Bot,
+                Bot{was_hit:0},
                 rect,
             );
             bots.push(j);
         }
 
-        //Test the max size of slice +1
-        let k=move ||{
+        {
+            struct Point(*mut [BBox<isize,Bot>]);
+            unsafe impl Send for Point{};
 
-            let mut dyntree = DinoTree::new(&mut bots, false);
+            let bots=Point((&mut bots as &mut [BBox<isize,Bot>]) as *mut [BBox<isize,Bot>]);
+            //Test the max size of slice +1
+            let k=move ||{
+                let bb=unsafe{&mut *bots.0};
+                let mut dyntree = DinoTree::new(bb, false);
 
-            let mut counter=0;
+                let mut counter=0;
+                
+
+                dyntree.intersect_every_pair_seq(|a, b| {
+                    
+                    if counter==1000{
+                        panic!("panic inside of callback!");
+                    }
+                    counter+=1;
+                    
+                    a.inner.was_hit+=1;
+                    b.inner.was_hit+=1;
+                });
             
+                
+            };
 
-            dyntree.intersect_every_pair_seq(|_, _| {
-                if counter==1000{
-                    panic!("panic inside of callback!");
+            let t=std::thread::spawn(k);
+
+            match t.join(){
+                Ok(x)=>{
+                    panic!("test fail {:?}",x);
+                },
+                Err(_e)=>{
+                    //expected
                 }
-                counter+=1;
-
-            });
-        
-            
-        };
-
-        let t=std::thread::spawn(k);
-
-        match t.join(){
-            Ok(x)=>{
-                panic!("test fail {:?}",x);
-            },
-            Err(_e)=>{
-                //expected
             }
         }
+
+        let total=bots.iter().fold(0,|a,b|{a+b.val.was_hit});
+        assert_eq!(total,2000);
     }
     assert_eq!(unsafe{DROP_COUNTER},5000);
     let _ = std::panic::take_hook();
