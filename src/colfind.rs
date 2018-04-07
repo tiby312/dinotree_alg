@@ -44,49 +44,73 @@ impl<'a, C: ColMulti + 'a> Bleek for ColMultiWrapper<'a, C> {
 mod anchor{
     use super::*;
 
+
     pub struct DestructuredAnchor<'a,T:SweepTrait+'a,AnchorAxis:AxisTrait+'a>{
         cont:Range<T::Num>, //TODO reference instead?
         div:T::Num,//TODO reference instead?
         range:&'a mut [T],
         _p:PhantomData<AnchorAxis>
     }
-
+    pub enum ErrEnum{
+        NoBots,
+        NoChildrenOrBots
+    }
     impl<'a,T:SweepTrait+'a,AnchorAxis:AxisTrait+'a> DestructuredAnchor<'a,T,AnchorAxis>{
 
-        pub fn new(nd:&'a mut NodeDyn<T>)->Option<(DestructuredAnchor<'a,T,AnchorAxis>,AnchorSection)>{
+        pub fn get_range_mut(&mut self)->&mut [T]{
+            self.range
+        }
+        pub fn get_cont(&self)->&Range<T::Num>{
+            &self.cont
+        }
+        pub fn new(nd:&'a mut NodeDyn<T>)->Result<DestructuredAnchor<'a,T,AnchorAxis>,ErrEnum>{
             let cont=match nd.cont{
                 Some(x)=>{x},
-                None=>return None
+                None=>return Err(ErrEnum::NoBots)
             };
             let div=match nd.div{
                 Some(x)=>{x},
-                None=>return None
+                None=>return Err(ErrEnum::NoChildrenOrBots)
             };
             let range=&mut nd.range;
 
-            let a=AnchorSection{start:0,end:range.len()};
-            Some((DestructuredAnchor{_p:PhantomData,cont,div,range},a))
-            
-        
+            //let a=AnchorSection{start:0,end:range.len()};
+            Ok(DestructuredAnchor{_p:PhantomData,cont,div,range})
         }
 
+        /*
         //get the section of the anchor that intersects this node, and return 
         //versions of this struct for the left and right side.
         pub fn get_section<'b>(&'b mut self,ag:AnchorSection,range:&Range<T::Num>)->(&'b mut [T],AnchorSection,AnchorSection){
             let arr=&mut self.range[ag.start..ag.end];
-            let (arr,l,r)=oned::Sweeper::get_section_general::<AnchorAxis>(arr,range);
+            
+            let (arr,l,r)=oned::Sweeper::get_section_general::<AnchorAxis::Next>(arr,range);
 
 
-            let left=AnchorSection{start:ag.start,end:l};
-            let right=AnchorSection{start:r,end:ag.end};
+            //IMPORTANT r and l are flipped!!!!
+            let left=AnchorSection{start:ag.start,end:ag.start+l};
+            let right=AnchorSection{start:ag.start+r,end:ag.end};
+            //println!("{:?},{:?},{:?}",ag,left,right);
+            //let left=AnchorSection{start:ag.start,end:ag.end};
+            //let right=AnchorSection{start:ag.start,end:ag.end};
+            
             (arr,left,right)
         }
-    }
 
+        pub fn pass_level(&mut self,ag:AnchorSection)->(AnchorSection,AnchorSection){
+            let a=AnchorSection{start:ag.start,end:ag.end};
+            let b=AnchorSection{start:ag.start,end:ag.end};
+            (a,b)
+        }
+        */
+    }
+    /*
+    #[derive(Debug)]
     pub struct AnchorSection{
         start:usize,
         end:usize
     }
+    */
 }
 
 
@@ -104,7 +128,7 @@ fn go_down<
     this_axis: A,
     parent_axis: B,
     sweeper: &mut Sweeper<F::T>,
-    anchor: &mut &mut NodeDyn<X>,
+    anchor: &mut anchor::DestructuredAnchor<X,B>,
     m: WrapGen<LevelIter<C>>,
     func: &mut F
 ) {
@@ -123,28 +147,22 @@ fn go_down<
                     None=>return
                 };
 
-                //already checked that andhor has bots
-                //also the fact that we are here implies that the anchor had children.
-                //TODO unwrap this ealier?
-                let anchor_container_box=anchor.cont.unwrap();
-                
-
                 self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
         
                 
                 //This can be evaluated at compile time!
                 if B::get() == A::get() {
-                    if !(div < anchor_container_box.start) {
+                    if !(div < anchor.get_cont().start) {
                         self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
                     };
-                    if !(div > anchor_container_box.end) {
+                    if !(div > anchor.get_cont().end) {
                         self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
                     };
                 } else {
 
                     //TODO okay to go down in dfs preorder?
                     self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
-                    self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
+                    self::go_down(this_axis.next(), parent_axis, sweeper, anchor,right, func);
                 }
                
             }
@@ -187,25 +205,30 @@ fn recurse<
         },
         Some((mut left, mut right)) => {
 
-            if nn.div.is_none(){
-                //TODO this isnt necessarily the leaf. Okay to say?
-                return (clos,timer_log.leaf_finish());
-            }
-            match nn.cont{
-                //TODO use this value instead of re unwrapping later
-                Some(_)=>{
-                    self::sweeper_find_2d::<A::Next, _>(sweeper, &mut nn.range, ColMultiWrapper(&mut clos));
+            match anchor::DestructuredAnchor::<X,A>::new(nn){
+                Ok(mut nn)=>{
+                    self::sweeper_find_2d::<A::Next, _>(sweeper, nn.get_range_mut(), ColMultiWrapper(&mut clos));
 
                     let left = compt::WrapGen::new(&mut left);
                     let right = compt::WrapGen::new(&mut right);
 
+                    //let (lsection,rsection)=nn.pass_level(section);
                     self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos);
                     self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos);
                 },
-                None=>{
-
+                Err(e)=>{
+                    match e{
+                        anchor::ErrEnum::NoBots=>{
+                            //Do nothing. Dont need to check against self, or children
+                        },
+                        anchor::ErrEnum::NoChildrenOrBots=>{
+                            //Dont even need to recurse futher down.
+                            return (clos,timer_log.leaf_finish())
+                        }
+                    }
                 }
             }
+
 
             let (ta, tb) = timer_log.next();
 
@@ -393,23 +416,32 @@ fn for_every_col_pair_inner<
 
 fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
     this: &mut NodeDyn<F::T>,
-    parent: &mut &mut NodeDyn<F::T>,
+    parent: &mut anchor::DestructuredAnchor<F::T,B>,
     sweeper: &mut Sweeper<F::T>,
     mut func: F,
     leaf_tracker:L
 ) {
     //Evaluated at compile time
     if A::get() != B::get() {
-        //TODO unwrap this earlier?
-        let parent_box=parent.cont.unwrap();
-        let r1 = Sweeper::get_section::<B>(&mut this.range, &parent_box);
+
+        //TODO avoid copy?
+        let parent_box=*(parent.get_cont());
+        let parent_box=&parent_box;
+
+        let r1 = Sweeper::get_section::<B>(&mut this.range, parent_box);
 
         let r2=if !leaf_tracker.is_leaf(){
             let this_box=this.cont.unwrap();
         
-            Sweeper::get_section::<A>(&mut parent.range, &this_box)
+            //let k=parent.pass_level(section);
+            let arr=Sweeper::get_section::<A>(parent.get_range_mut(), &this_box);
+            arr
+            //(arr,k.0,k.1)
+            
+            //parent.get_section(section,&this_box)
         }else{
-            &mut parent.range
+            //let k=parent.pass_level(section);
+            parent.get_range_mut()
         };
 
         for inda in r1.iter_mut() {
@@ -429,13 +461,11 @@ fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
                 }
             }
         }
-
-
     } else {
         self::sweeper_find_parallel_2d::<A::Next, _>(
             sweeper,
             &mut this.range,
-            &mut parent.range,
+            parent.get_range_mut(),
             func,
         );
     }

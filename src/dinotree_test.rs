@@ -155,6 +155,88 @@ fn colfind_par(b: &mut Bencher) {
 
 
 #[bench]
+fn colfind_par_point(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 200), (0, 200)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    for id in 0..2000 {
+        let ppp = p.random_point();
+        //let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            AABBox::<isize>::new((ppp.0,ppp.0),(ppp.1,ppp.1)),
+        ));
+    }
+
+    let height = compute_tree_height(bots.len());
+
+    let mut tree = DinoTree::new(&mut bots, true);
+
+    b.iter(|| {
+
+        let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
+            a.inner.col.push(b.inner.id);
+            b.inner.col.push(a.inner.id);
+        };
+
+        let k=tree.intersect_every_pair_debug(fu);
+        //println!("{:?}",k.into_vec());
+        black_box(k);
+    });
+
+    //assert!(false);
+}
+
+
+
+#[bench]
+fn colfind_par_dense(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 200), (0, 200)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    for id in 0..2000 {
+        let ppp = p.random_point();
+        let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            k,
+        ));
+    }
+
+    let height = compute_tree_height(bots.len());
+
+    let mut tree = DinoTree::new(&mut bots, true);
+
+    b.iter(|| {
+
+        let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
+            a.inner.col.push(b.inner.id);
+            b.inner.col.push(a.inner.id);
+        };
+
+        let k=tree.intersect_every_pair_debug(fu);
+        //println!("{:?}",k.into_vec());
+        black_box(k);
+    });
+
+}
+
+
+#[bench]
 fn rebal_seq(b: &mut Bencher) {
     use test_support::*;
     let mut p = PointGenerator::new(
