@@ -138,7 +138,7 @@ impl<I: SweepTrait> Sweeper<I> {
 
     //this can have some false positives.
     //but it will still prune a lot of bots.
-    pub fn get_section<'a, A: AxisTrait>(arr: &'a mut [I], range: &Range<I::Num>) -> &'a mut [I] {
+    pub fn get_section_general<'a, A: AxisTrait>(arr: &'a mut [I], range: &Range<I::Num>) -> (&'a mut [I],usize,usize) {
         let mut start = 0;
         for (e, i) in arr.iter().enumerate() {
             let rr = Accessor::<A>::get(&(i.get().0).0);
@@ -157,7 +157,12 @@ impl<I: SweepTrait> Sweeper<I> {
             }
         }
 
-        return &mut arr[start..end];
+        return (&mut arr[start..end],start,end);
+    }
+    //this can have some false positives.
+    //but it will still prune a lot of bots.
+    pub fn get_section<'a, A: AxisTrait>(arr: &'a mut [I], range: &Range<I::Num>) -> &'a mut [I] {
+        Self::get_section_general::<A>(arr,range).0
     }
 }
 /*

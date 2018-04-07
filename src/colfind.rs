@@ -38,6 +38,61 @@ impl<'a, C: ColMulti + 'a> Bleek for ColMultiWrapper<'a, C> {
     }
 }
 
+
+
+
+mod anchor{
+    use super::*;
+
+    pub struct DestructuredAnchor<'a,T:SweepTrait+'a,AnchorAxis:AxisTrait+'a>{
+        cont:Range<T::Num>, //TODO reference instead?
+        div:T::Num,//TODO reference instead?
+        range:&'a mut [T],
+        _p:PhantomData<AnchorAxis>
+    }
+
+    impl<'a,T:SweepTrait+'a,AnchorAxis:AxisTrait+'a> DestructuredAnchor<'a,T,AnchorAxis>{
+
+        pub fn new(nd:&'a mut NodeDyn<T>)->Option<(DestructuredAnchor<'a,T,AnchorAxis>,AnchorSection)>{
+            let cont=match nd.cont{
+                Some(x)=>{x},
+                None=>return None
+            };
+            let div=match nd.div{
+                Some(x)=>{x},
+                None=>return None
+            };
+            let range=&mut nd.range;
+
+            let a=AnchorSection{start:0,end:range.len()};
+            Some((DestructuredAnchor{_p:PhantomData,cont,div,range},a))
+            
+        
+        }
+
+        //get the section of the anchor that intersects this node, and return 
+        //versions of this struct for the left and right side.
+        pub fn get_section<'b>(&'b mut self,ag:AnchorSection,range:&Range<T::Num>)->(&'b mut [T],AnchorSection,AnchorSection){
+            let arr=&mut self.range[ag.start..ag.end];
+            let (arr,l,r)=oned::Sweeper::get_section_general::<AnchorAxis>(arr,range);
+
+
+            let left=AnchorSection{start:ag.start,end:l};
+            let right=AnchorSection{start:r,end:ag.end};
+            (arr,left,right)
+        }
+    }
+
+    pub struct AnchorSection{
+        start:usize,
+        end:usize
+    }
+}
+
+
+
+
+
 fn go_down<
     'x,
     A: AxisTrait, //this axis
@@ -86,6 +141,8 @@ fn go_down<
                         self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
                     };
                 } else {
+
+                    //TODO okay to go down in dfs preorder?
                     self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
                     self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
                 }
@@ -331,6 +388,8 @@ fn for_every_col_pair_inner<
     let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h);
     bag
 }
+
+
 
 fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
     this: &mut NodeDyn<F::T>,
