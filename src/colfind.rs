@@ -46,8 +46,8 @@ mod anchor{
 
 
     pub struct DestructuredAnchor<'a,T:SweepTrait+'a,AnchorAxis:AxisTrait+'a>{
-        cont:Range<T::Num>, //TODO reference instead?
-        div:T::Num,//TODO reference instead?
+        cont:&'a Range<T::Num>,
+        _div:&'a T::Num,
         range:&'a mut [T],
         _p:PhantomData<AnchorAxis>
     }
@@ -57,25 +57,22 @@ mod anchor{
     }
     impl<'a,T:SweepTrait+'a,AnchorAxis:AxisTrait+'a> DestructuredAnchor<'a,T,AnchorAxis>{
 
-        pub fn get_range_mut(&mut self)->&mut [T]{
-            self.range
-        }
-        pub fn get_cont(&self)->&Range<T::Num>{
-            &self.cont
+        pub fn get(&mut self)->(&Range<T::Num>,&mut [T]){
+            (self.cont,self.range)
         }
         pub fn new(nd:&'a mut NodeDyn<T>)->Result<DestructuredAnchor<'a,T,AnchorAxis>,ErrEnum>{
-            let cont=match nd.cont{
-                Some(x)=>{x},
-                None=>return Err(ErrEnum::NoBots)
+            let cont=match &nd.cont{
+                &Some(ref x)=>{x},
+                &None=>return Err(ErrEnum::NoBots)
             };
-            let div=match nd.div{
-                Some(x)=>{x},
-                None=>return Err(ErrEnum::NoChildrenOrBots)
+            let div=match &nd.div{
+                &Some(ref x)=>{x},
+                &None=>return Err(ErrEnum::NoChildrenOrBots)
             };
             let range=&mut nd.range;
 
             //let a=AnchorSection{start:0,end:range.len()};
-            Ok(DestructuredAnchor{_p:PhantomData,cont,div,range})
+            Ok(DestructuredAnchor{_p:PhantomData,cont,_div:div,range})
         }
 
         /*
@@ -136,9 +133,6 @@ fn go_down<
         let (mut bo, rest) = m.next();
         let &mut (_, ref mut nn) = bo.get_mut();
 
-        
-        
-
         match rest {
             Some((left, right)) => {
 
@@ -152,15 +146,13 @@ fn go_down<
                 
                 //This can be evaluated at compile time!
                 if B::get() == A::get() {
-                    if !(div < anchor.get_cont().start) {
+                    if !(div < anchor.get().0.start) {
                         self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
                     };
-                    if !(div > anchor.get_cont().end) {
+                    if !(div > anchor.get().0.end) {
                         self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
                     };
                 } else {
-
-                    //TODO okay to go down in dfs preorder?
                     self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
                     self::go_down(this_axis.next(), parent_axis, sweeper, anchor,right, func);
                 }
@@ -168,7 +160,6 @@ fn go_down<
             }
             _ => {
                 self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsLeaf);
-        
             }
         };
     }
@@ -192,10 +183,7 @@ fn recurse<
 ) -> (F,K::Bag) {
     timer_log.start();
 
-    let ((level, mut nn), rest) = m.next();
-
-    
-   
+    let ((level, nn), rest) = m.next();
 
     let k = match rest {
         None => {
@@ -207,12 +195,11 @@ fn recurse<
 
             match anchor::DestructuredAnchor::<X,A>::new(nn){
                 Ok(mut nn)=>{
-                    self::sweeper_find_2d::<A::Next, _>(sweeper, nn.get_range_mut(), ColMultiWrapper(&mut clos));
+                    self::sweeper_find_2d::<A::Next, _>(sweeper, nn.get().1, ColMultiWrapper(&mut clos));
 
                     let left = compt::WrapGen::new(&mut left);
                     let right = compt::WrapGen::new(&mut right);
 
-                    //let (lsection,rsection)=nn.pass_level(section);
                     self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos);
                     self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos);
                 },
@@ -304,49 +291,52 @@ pub fn for_every_col_pair_seq<
     mut clos: F,
 ) -> (F,K::Bag) {
 
-    pub struct Wrapper<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a>(
-        UnsafeCell<&'a mut F>,
-        PhantomData<T>,
-    );
+    mod wrap{
+        use super::*;
+        pub struct Wrapper<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a>(
+            pub UnsafeCell<&'a mut F>,
+            pub PhantomData<T>,
+        );
 
-    impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Clone for Wrapper<'a, T, F> {
-        fn clone(&self) -> Wrapper<'a, T, F> {
-            unreachable!()
+        impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Clone for Wrapper<'a, T, F> {
+            fn clone(&self) -> Wrapper<'a, T, F> {
+                unreachable!()
+            }
         }
-    }
 
-    impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> ColMulti for Wrapper<'a, T, F> {
-        type T = T;
+        impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> ColMulti for Wrapper<'a, T, F> {
+            type T = T;
 
-        fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>) {
-            //Protected by the fact that cloning thus struct
-            //results in panic!.
-            let k = unsafe { &mut *self.0.get() };
-            k(a, b);
+            fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>) {
+                //Protected by the fact that cloning thus struct
+                //results in panic!.
+                let k = unsafe { &mut *self.0.get() };
+                k(a, b);
+            }
+            fn div(self)->(Self,Self){
+                unreachable!();
+            }
+            fn add(self,_b:Self)->Self{
+                unreachable!();
+            }
         }
-        fn div(self)->(Self,Self){
-            unreachable!();
-        }
-        fn add(self,_b:Self)->Self{
-            unreachable!();
-        }
-    }
 
-    //Unsafely implement send and Sync
-    //Safe to do since our algorithms first clone this struct before
-    //passing it to another thread. This sadly has to be indiviually
-    //verified.
-    unsafe impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Send
-        for Wrapper<'a, T, F>
-    {
-    }
-    unsafe impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Sync
-        for Wrapper<'a, T, F>
-    {
+        //Unsafely implement send and Sync
+        //Safe to do since our algorithms first clone this struct before
+        //passing it to another thread. This sadly has to be indiviually
+        //verified.
+        unsafe impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Send
+            for Wrapper<'a, T, F>
+        {
+        }
+        unsafe impl<'a, T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Sync
+            for Wrapper<'a, T, F>
+        {
+        }
     }
 
     let (_,bag)={
-        let wrapper = Wrapper(UnsafeCell::new(&mut clos), PhantomData);
+        let wrapper =wrap::Wrapper(UnsafeCell::new(&mut clos), PhantomData);
 
 
         //All of the above is okay because we start with SEQUENTIAL
@@ -421,27 +411,19 @@ fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
     mut func: F,
     leaf_tracker:L
 ) {
-    //Evaluated at compile time
+    //Can be evaluated at compile time
     if A::get() != B::get() {
 
-        //TODO avoid copy?
-        let parent_box=*(parent.get_cont());
-        let parent_box=&parent_box;
+        let (parent_box,parent_bots)=parent.get();
 
         let r1 = Sweeper::get_section::<B>(&mut this.range, parent_box);
 
         let r2=if !leaf_tracker.is_leaf(){
             let this_box=this.cont.unwrap();
-        
-            //let k=parent.pass_level(section);
-            let arr=Sweeper::get_section::<A>(parent.get_range_mut(), &this_box);
-            arr
-            //(arr,k.0,k.1)
-            
-            //parent.get_section(section,&this_box)
+    
+            Sweeper::get_section::<A>(parent_bots, &this_box)
         }else{
-            //let k=parent.pass_level(section);
-            parent.get_range_mut()
+            parent_bots
         };
 
         for inda in r1.iter_mut() {
@@ -465,7 +447,7 @@ fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
         self::sweeper_find_parallel_2d::<A::Next, _>(
             sweeper,
             &mut this.range,
-            parent.get_range_mut(),
+            parent.get().1,
             func,
         );
     }
@@ -488,7 +470,7 @@ mod bl {
         fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>) {
             //only check if the opoosite axis intersects.
             //already know they intersect
-            let a2 = A::Next::get(); //self.axis.next();
+            let a2 = A::Next::get();
             if (a.rect)
                 .0
                 .get_range(a2)

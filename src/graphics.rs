@@ -1,11 +1,12 @@
 //!Provides capability to draw the dividers of each node.
 use inner_prelude::*;
-//use support::Numf32;
 use compt::GenTree;
 
 pub use dinotree_inner::compute_tree_height;
 
 use ordered_float::NotNaN;
+
+
 ///The trait that your vertex object needs to implement to be used
 ///in the functions in this crate.
 pub trait Vertex: std::default::Default + std::clone::Clone + Send {
@@ -87,7 +88,7 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
         let div_axis = A::get();
         match d.next() {
             ((dd, nn), Some((left, right))) => {
-                let line_axis = A::Next::get(); //axis.next();
+                let line_axis = A::Next::get();
 
                 let range = rect.get_range(line_axis);
 
@@ -135,13 +136,11 @@ fn draw_node<V: Vertex>(
     *p2.get_axis_mut(b) = range.end.into_inner();
 
     self::draw_line(verticies, &p1, &p2, width);
-    //self::draw_line(&mut verticies[*counter*6..*counter*6+6],&p1,&p2,width);
 }
 
 fn draw_line<V: Vertex>(verticies: &mut [V], p1: &axgeom::Vec2, p2: &axgeom::Vec2, width: f32) {
     debug_assert!(verticies.len() == 6);
 
-    //TODO make these floating points fast approx since they just graphics.
     let (p1, p2) = (*p1, *p2);
 
     let offset = p2 - p1;
