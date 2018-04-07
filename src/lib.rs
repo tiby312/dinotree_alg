@@ -288,6 +288,8 @@ mod ba {
         ///The use can also specify what the minimum distance function is minizing based off of. For example
         ///minimizing based off the square distance will give you the same answer as minimizing based off 
         ///of the distant. 
+        ///The callback function will be called on the closest object, then the second closest, and so on up 
+        ///until k.
         pub fn k_nearest<
             F: FnMut(ColSingle<T>),
             MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,

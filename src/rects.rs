@@ -66,7 +66,7 @@ impl<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> RectsInner<'a, 'b, A, T>
             }
         }
 
-        self.rects.push(AABBox(rect.0));
+        self.rects.push(rect.clone());
 
         {
             let wrapper = |c: ColSingle<T>| {

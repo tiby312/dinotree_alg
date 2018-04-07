@@ -1,6 +1,7 @@
 use inner_prelude::*;
 use super::*;
 
+
 pub fn k_nearest<
     A:AxisTrait,
     T:SweepTrait,
@@ -14,7 +15,7 @@ pub fn k_nearest<
     let mut c=ClosestCand::new(num);
     recc(A::new(),dt,&mf,&mf2,point,&mut c);
  
-    for i in c.a{
+    for i in c.into_sorted(){
         let j=unsafe{&mut *i.0}.get_mut();
         func(ColSingle{inner:j.1,rect:j.0});
     }
@@ -23,38 +24,80 @@ pub fn k_nearest<
 }
 
 
-struct ClosestCand<T:SweepTrait>{
-    a:Vec<(*mut T,T::Num)>,
-    num:usize
-}
-impl<T:SweepTrait> ClosestCand<T>{
-    fn new(num:usize)->ClosestCand<T>{
-        let a=Vec::with_capacity(num);
-        ClosestCand{a,num}
+use self::cand::ClosestCand;
+mod cand{
+    use super::*;
+
+    pub struct ClosestCand<T:SweepTrait>{
+        a:Vec<(*mut T,T::Num)>,
+        num:usize
     }
+    impl<T:SweepTrait> ClosestCand<T>{
 
-    fn consider(&mut self,a:(&mut T,T::Num)){
-        let a=(a.0 as *mut T,a.1);
-
-        if self.a.len()<self.num{
-            self.a.push(a);
-            self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
-        }else{
-            if a.1<self.a[self.num-1].1{
-                self.a.push(a);
-                self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
-                self.a.pop();
-            }
+        //First is the closest
+        pub fn into_sorted(self)->Vec<(*mut T,T::Num)>{
+            self.a
         }
-    }
-    fn full_and_max_distance(&self)->Option<T::Num>{
-        match self.a.get(self.num-1){
-            Some(x)=>
+        pub fn new(num:usize)->ClosestCand<T>{
+            let a=Vec::with_capacity(num);
+            ClosestCand{a,num}
+        }
+
+        pub fn consider(&mut self,a:(&mut T,T::Num)){
+            let a=(a.0 as *mut T,a.1);
+
+            if self.a.len()<self.num{
+                
+
+                let arr=&mut self.a;
+                if arr.len()==0{
+                    arr.push(a);
+                }else{
+                    let mut inserted=false;
+                    for i in 0..arr.len(){
+                        if a.1<arr[i].1{
+                            arr.insert(i,a);
+                            inserted=true;
+                            break;
+                        }
+                    }
+                    if !inserted{
+                        arr.push(a);
+                    }
+
+                }
+
+            }else{
+                let arr=&mut self.a;
+                for i in 0..arr.len(){
+                    if a.1<arr[i].1{
+                        arr.pop();
+                        arr.insert(i,a);
+                        break;
+                    }
+                }
+                
+            }
+            /* check sorted
             {
-                Some(x.1)
-            },
-            None=>{
-                None
+                let mut c=arr.first().unwrap();
+                for i in arr
+                [1..].iter(){
+                    assert!(i.1>=c.1,"{:?}",(i.1,c.1));
+                    c=i;
+                }
+            }
+            */
+        }
+        pub fn full_and_max_distance(&self)->Option<T::Num>{
+            match self.a.get(self.num-1){
+                Some(x)=>
+                {
+                    Some(x.1)
+                },
+                None=>{
+                    None
+                }
             }
         }
     }
@@ -107,9 +150,6 @@ fn recc<'x,'a,
             if traverse_other{
                 recc(axis.next(),other,mf,mf2,point,res);
             }
-
-
-
         }
         _ => {
             

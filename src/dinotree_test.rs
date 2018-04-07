@@ -287,6 +287,22 @@ fn rebal_par(b: &mut Bencher) {
 }
 
 
+
+#[test]
+fn test_send_sync_dinotree(){
+
+    let mut bots1:Vec<BBox<isize,Bot>>=Vec::new();
+    let mut bots2:Vec<BBox<isize,Bot>>=Vec::new();
+
+
+    let (t1,t2)=rayon::join(||{DinoTree::new(&mut bots1,false)},||{DinoTree::new(&mut bots2,false)});
+
+    let (p1,p2)=(&t1,&t2);
+
+    rayon::join(||{p1},||{p2});
+    
+}
+
 #[test]
 fn test_dinotree_drop() {
     struct Bot<'a> {
