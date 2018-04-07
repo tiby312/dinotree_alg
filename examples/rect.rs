@@ -40,13 +40,13 @@ fn main() {
         let mut bb2: Vec<&mut Bot> = Vec::new();
 
         {
-            rects.for_all_in_rect(&r1, |cc: ColSingle<BBox<isize, Bot>>| {
+            rects.for_all_in_rect(&r1, |cc| {
                 bb1.push(cc.inner);
             });
         }
 
         {
-            rects.for_all_in_rect(&r2, |cc: ColSingle<BBox<isize, Bot>>| {
+            rects.for_all_in_rect(&r2, |cc| {
                 bb2.push(cc.inner);
             });
         }

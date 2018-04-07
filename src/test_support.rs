@@ -57,7 +57,7 @@ pub struct PointGenerator {
 }
 impl PointGenerator {
     pub fn new(a: &axgeom::Rect<isize>, seed: &[usize]) -> PointGenerator {
-        let mut rng: StdRng = SeedableRng::from_seed(seed);
+        let rng: StdRng = SeedableRng::from_seed(seed);
 
         let rr = a.get_range2::<axgeom::XAXISS>();
         let xdist = rand::distributions::Range::new(rr.start, rr.end);

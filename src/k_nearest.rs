@@ -9,7 +9,6 @@ pub fn k_nearest<
     MF2:Fn(T::Num,T::Num)->T::Num,
     >(tree:&mut DynTree<A,T>,point:(T::Num,T::Num),num:usize,mut func:F,mf:MF,mf2:MF2){
 
-    //let height = tree.get_height();
     let dt = tree.get_iter_mut();
 
     let mut c=ClosestCand::new(num);
@@ -38,14 +37,11 @@ impl<T:SweepTrait> ClosestCand<T>{
         let a=(a.0 as *mut T,a.1);
 
         if self.a.len()<self.num{
-            //println!("added");
             self.a.push(a);
-            //TODO inefficient?
             self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
         }else{
             if a.1<self.a[self.num-1].1{
                 self.a.push(a);
-                //TODO inefficient?
                 self.a.sort_unstable_by(|a,b|a.1.cmp(&b.1));
                 self.a.pop();
             }

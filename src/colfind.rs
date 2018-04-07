@@ -69,9 +69,8 @@ mod anchor{
                 &Some(ref x)=>{x},
                 &None=>return Err(ErrEnum::NoChildrenOrBots)
             };
+            
             let range=&mut nd.range;
-
-            //let a=AnchorSection{start:0,end:range.len()};
             Ok(DestructuredAnchor{_p:PhantomData,cont,_div:div,range})
         }
 

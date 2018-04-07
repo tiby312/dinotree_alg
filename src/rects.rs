@@ -55,7 +55,6 @@ impl<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> RectsInner<'a, 'b, A, T>
     ///Note the lifetime of the mutable reference in the passed function.
     ///The user is allowed to move this reference out and hold on to it for
     ///the lifetime of this struct.
-    ///TODO parallelize
     pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(
         &mut self,
         rect: &AABBox<T::Num>,
@@ -80,11 +79,7 @@ impl<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> RectsInner<'a, 'b, A, T>
                 func(cn);
             };
 
-            // let fu = closure_struct::ColSingStruct::new(wrapper);
-
             rect::for_all_in_rect(self.tree, &rect.0, wrapper);
-
-            //self.tree.for_all_in_rect(rect,wrapper);
         }
     }
 }

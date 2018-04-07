@@ -52,7 +52,7 @@ mod bap {
     #[bench]
     #[ignore]
     fn colfind_3rd_part(b: &mut Bencher) {
-        let mut rng = rand::thread_rng();
+        //let mut rng = rand::thread_rng();
         let mut tree = DynamicBoundingVolumeTree::<Value>::new();
 
         let mut p = PointGenerator::new(
@@ -103,7 +103,7 @@ fn colfind(b: &mut Bencher) {
         ));
     }
 
-    let height = compute_tree_height(bots.len());
+    //let height = compute_tree_height(bots.len());
 
     let mut tree = DinoTree::new(&mut bots, true);
 
@@ -138,18 +138,16 @@ fn colfind_par(b: &mut Bencher) {
         ));
     }
 
-    let height = compute_tree_height(bots.len());
+    //let height = compute_tree_height(bots.len());
 
     let mut tree = DinoTree::new(&mut bots, true);
 
     b.iter(|| {
 
-        let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
+        black_box(tree.intersect_every_pair(|a, b| {
             a.inner.col.push(b.inner.id);
             b.inner.col.push(a.inner.id);
-        };
-
-        black_box(tree.intersect_every_pair(fu));
+        }));
     });
 }
 
@@ -175,18 +173,15 @@ fn colfind_par_point(b: &mut Bencher) {
         ));
     }
 
-    let height = compute_tree_height(bots.len());
-
+    
     let mut tree = DinoTree::new(&mut bots, true);
 
     b.iter(|| {
 
-        let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
+        let k=tree.intersect_every_pair_debug(|a, b| {
             a.inner.col.push(b.inner.id);
             b.inner.col.push(a.inner.id);
-        };
-
-        let k=tree.intersect_every_pair_debug(fu);
+        });
         //println!("{:?}",k.into_vec());
         black_box(k);
     });
@@ -217,18 +212,15 @@ fn colfind_par_dense(b: &mut Bencher) {
         ));
     }
 
-    let height = compute_tree_height(bots.len());
-
+    
     let mut tree = DinoTree::new(&mut bots, true);
 
     b.iter(|| {
 
-        let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
+        let k=tree.intersect_every_pair_debug(|a, b| {
             a.inner.col.push(b.inner.id);
             b.inner.col.push(a.inner.id);
-        };
-
-        let k=tree.intersect_every_pair_debug(fu);
+        });
         //println!("{:?}",k.into_vec());
         black_box(k);
     });
@@ -257,11 +249,10 @@ fn rebal_seq(b: &mut Bencher) {
         ));
     }
 
-    let height = compute_tree_height(bots.len());
-
+    
     b.iter(|| {
 
-        let mut tree = DinoTree::new_seq(&mut bots, true);
+        let tree = DinoTree::new_seq(&mut bots, true);
         black_box(tree);
         
     });
@@ -287,11 +278,9 @@ fn rebal_par(b: &mut Bencher) {
         ));
     }
 
-    let height = compute_tree_height(bots.len());
-
     b.iter(|| {
 
-        let mut tree = DinoTree::new(&mut bots, true);
+        let tree = DinoTree::new(&mut bots, true);
         black_box(tree);
         
     });
@@ -301,7 +290,7 @@ fn rebal_par(b: &mut Bencher) {
 #[test]
 fn test_dinotree_drop() {
     struct Bot<'a> {
-        id: usize,
+        _id: usize,
         drop_counter: &'a mut isize,
     }
 
@@ -311,12 +300,11 @@ fn test_dinotree_drop() {
         }
     }
 
-    let mut drop_counter: Vec<isize> = (0..5000).map(|a| 1).collect();
+    let mut drop_counter: Vec<isize> = (0..5000).map(|_| 1).collect();
     {
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
-        let world = make_rect((-1000, 1000), (-100, 100));
-
+        
         let spawn_world = make_rect((-990, 990), (-90, 90));
 
         let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
@@ -325,7 +313,7 @@ fn test_dinotree_drop() {
             let rect = create_rect_from_point(p.random_point());
             let j = BBox::new(
                 Bot {
-                    id,
+                    _id:id,
                     drop_counter: dc,
                 },
                 rect,
@@ -334,11 +322,9 @@ fn test_dinotree_drop() {
         }
 
         {
-            let mut dyntree = DinoTree::new(&mut bots, false);
+            let mut dyntree:DinoTree<BBox<isize,Bot>> = DinoTree::new(&mut bots, false);
 
-            let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
-
-            dyntree.intersect_every_pair_seq(clos);
+            dyntree.intersect_every_pair_seq(|_,_|{});
         }
     }
 
@@ -351,13 +337,13 @@ fn test_dinotree_move_back() {
 
     let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
-    let world = make_rect((-1000, 1000), (-100, 100));
+    
 
     let spawn_world = make_rect((-990, 990), (-90, 90));
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-    for id in (0..5000) {
+    for id in 0..5000{
         let rect = create_rect_from_point(p.random_point());
         let j = BBox::new(
             Bot {
@@ -373,9 +359,9 @@ fn test_dinotree_move_back() {
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
+        //let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
 
-        dyntree.intersect_every_pair_seq(clos);
+        dyntree.intersect_every_pair_seq(|_,_|{});
     }
 
     for (a,b) in bots.iter().zip(bots_control.iter()){
@@ -390,13 +376,13 @@ fn test_dinotree_adv() {
 
     let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
-    let world = make_rect((-1000, 1000), (-100, 100));
+    
 
     let spawn_world = make_rect((-990, 990), (-90, 90));
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-    for id in (0..5000) {
+    for id in 0..5000 {
         let rect = create_rect_from_point(p.random_point());
         let j = BBox::new(
             Bot {
@@ -437,7 +423,7 @@ fn test_dinotree_adv() {
             (aa,Blag::new())
         } ;
 
-        let add=|mut aa:Blag,mut bb:Blag|->Blag{
+        let add=|mut aa:Blag,bb:Blag|->Blag{
             aa.append(bb);
             aa
         };
@@ -463,9 +449,7 @@ fn test_dinotree_adv() {
 
 #[test]
 fn test_corners_touch() {
-    let world = make_rect((-1010, 1010), (-110, 110));
-    let spawn_world = make_rect((-1000, 1000), (-100, 100));
-
+    
     //# # # #
     // # # #
     //# # # #
@@ -518,13 +502,13 @@ fn test_panic_in_callback() {
 
     struct Bot;
 
-    static mut drop_counter: isize = 0;
+    static mut DROP_COUNTER: isize = 0;
 
     impl Drop for Bot{
         fn drop(&mut self) {
             //We know that the bots are dropped sequentially.
             unsafe{
-                drop_counter+=1;
+                DROP_COUNTER+=1;
             }
         }
     }
@@ -532,13 +516,13 @@ fn test_panic_in_callback() {
     {
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
-        let world = make_rect((-1000, 1000), (-100, 100));
+        
 
         let spawn_world = make_rect((-990, 990), (-90, 90));
 
         let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-        for _id in (0..5000) {
+        for _id in 0..5000 {
             let rect = create_rect_from_point(p.random_point());
             let j = BBox::new(
                 Bot,
@@ -553,15 +537,15 @@ fn test_panic_in_callback() {
             let mut dyntree = DinoTree::new(&mut bots, false);
 
             let mut counter=0;
-            let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
+            
+
+            dyntree.intersect_every_pair_seq(|_, _| {
                 if counter==1000{
                     panic!("panic inside of callback!");
                 }
                 counter+=1;
 
-            };
-
-            dyntree.intersect_every_pair_seq(clos);
+            });
         
             
         };
@@ -570,14 +554,14 @@ fn test_panic_in_callback() {
 
         match t.join(){
             Ok(x)=>{
-                panic!("test fail");
+                panic!("test fail {:?}",x);
             },
-            Err(e)=>{
-                //assert!(e==Err("panic inside of callback!"));
+            Err(_e)=>{
+                //expected
             }
         }
     }
-    assert_eq!(unsafe{drop_counter},5000);
+    assert_eq!(unsafe{DROP_COUNTER},5000);
     let _ = std::panic::take_hook();
 
 }
@@ -586,13 +570,13 @@ fn test_panic_in_callback() {
 fn test_zero_sized_type() {
     struct Bot;
 
-    static mut drop_counter: isize = 0;
+    static mut DROP_COUNTER: isize = 0;
 
     impl Drop for Bot{
         fn drop(&mut self) {
             //We know that the bots are dropped sequentially.
             unsafe{
-                drop_counter+=1;
+                DROP_COUNTER+=1;
             }
         }
     }
@@ -600,13 +584,13 @@ fn test_zero_sized_type() {
     {
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
-        let world = make_rect((-1000, 1000), (-100, 100));
+        
 
         let spawn_world = make_rect((-990, 990), (-90, 90));
 
         let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-        for _id in (0..5000) {
+        for _id in 0..5000 {
             let rect = create_rect_from_point(p.random_point());
             let j = BBox::new(
                 Bot,
@@ -618,13 +602,11 @@ fn test_zero_sized_type() {
         {
             let mut dyntree = DinoTree::new(&mut bots, false);
 
-            let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
-
-            dyntree.intersect_every_pair_seq(clos);
+            dyntree.intersect_every_pair_seq(|_,_|{});
         }
     }
     
-    assert_eq!(unsafe{drop_counter},5000);
+    assert_eq!(unsafe{DROP_COUNTER},5000);
 
 }
 
@@ -648,10 +630,9 @@ fn test_k_nearest(){
         //let (px,py)=(px.0,py.0);
 
         let ((a,b),(c,d))=aabb.get();
-        //let ((a,b),(c,d))=((a,b.0),(c.0,d.0));
 
         let xx=num::clamp(px,a,b);
-        let yy=num::clamp(py,a,b);
+        let yy=num::clamp(py,c,d);
 
         (xx-px)*(xx-px) + (yy-px)*(yy-py)
     
@@ -717,9 +698,6 @@ fn test_rect(){
 #[should_panic]
 #[test]
 fn test_rect_panic(){
-    fn from_point(a:isize,b:isize)->AABBox<isize>{
-        AABBox::new((a,a),(b,b))
-    }
 
     let mut bots=Vec::new();
 
@@ -766,9 +744,7 @@ fn test_rect_intersect(){
 
 #[test]
 fn test_intersect_with(){
-    fn from_point(a:isize,b:isize)->AABBox<isize>{
-        AABBox::new((a,a),(b,b))
-    }
+ 
     fn from_rect(a:isize,b:isize,c:isize,d:isize)->AABBox<isize>{
         AABBox::new((a,b),(c,d)) 
     }
@@ -797,13 +773,13 @@ fn test_intersect_with(){
 
 #[test]
 fn test_bounding_boxes_as_points() {
-    let world = make_rect((-1000, 1000), (-100, 100));
+    
 
     let spawn_world = make_rect((-990, 990), (-90, 90));
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-    let mut bots: Vec<BBox<isize, Bot>> = {
+    let bots: Vec<BBox<isize, Bot>> = {
         (0..2000)
             .map(|id| {
                 let p=p.random_point();
@@ -827,9 +803,7 @@ fn test_bounding_boxes_as_points() {
 
 #[test]
 fn test_one_bot() {
-    let world = make_rect((-1010, 1010), (-110, 110));
-    let spawn_world = make_rect((-1000, 1000), (-100, 100));
-
+    
     let mut bots:Vec<BBox<isize,Bot>> = Vec::new();
     let rect=create_rect_from_point((0,0));
     bots.push(BBox::new(Bot{id:0,col:Vec::new()},rect));
@@ -840,10 +814,8 @@ fn test_one_bot() {
 
 #[test]
 fn test_empty() {
-    let world = make_rect((-1010, 1010), (-110, 110));
-    let spawn_world = make_rect((-1000, 1000), (-100, 100));
-
-    let mut bots:Vec<BBox<isize,Bot>> = Vec::new();
+    
+    let bots:Vec<BBox<isize,Bot>> = Vec::new();
     
     test_bot_layout(bots);
 }
@@ -851,9 +823,7 @@ fn test_empty() {
 
 #[test]
 fn test_1_apart() {
-    let world = make_rect((-1010, 1010), (-110, 110));
-    let spawn_world = make_rect((-1000, 1000), (-100, 100));
-
+    
     let mut bots = Vec::new();
     let mut id_counter = 0..;
     for x in (-1000..2000).step_by(21) {
@@ -877,9 +847,7 @@ fn test_1_apart() {
 fn test_mesh() {
     //in this test, tesselate a bunch of bots such that
     //all of their edges are touching.
-    let world = make_rect((-1010, 1010), (-110, 110));
-    let spawn_world = make_rect((-1000, 1000), (-100, 100));
-
+    
     let mut bots = Vec::new();
     let mut id_counter = 0..;
     for x in (-1000..2000).step_by(20) {
@@ -903,10 +871,7 @@ fn test_mesh() {
 fn test_russian_doll() {
     //In this test, test larger and larger rectangles overlapping each other.
 
-    let world = make_rect((-1010, 1010), (-110, 110));
-
-    let spawn_world = make_rect((-1000, 1000), (-100, 100));
-
+    
     let mut bots = Vec::new();
     let mut id_counter = 0..;
 
@@ -1003,9 +968,9 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
             .collect::<Vec<_>>();
 
         if diff.len() != 0 {
-            let bots_copy = bots.clone();
+            //let bots_copy = bots.clone();
 
-            let mut dyntree = DinoTree::new(&mut bots, false);
+            //let mut dyntree = DinoTree::new(&mut bots, false);
 
             //use compt::CTreeIterator;
         /*
@@ -1056,13 +1021,13 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
 
 #[test]
 fn test_dinotree() {
-    let world = make_rect((-1000, 1000), (-100, 100));
+    
 
     let spawn_world = make_rect((-990, 990), (-90, 90));
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
 
-    let mut bots: Vec<BBox<isize, Bot>> = {
+    let bots: Vec<BBox<isize, Bot>> = {
         (0..2000)
             .map(|id| {
                 let rect = create_rect_from_point(p.random_point());

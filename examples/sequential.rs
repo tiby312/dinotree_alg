@@ -36,12 +36,10 @@ fn main() {
     {
         let mut dyntree = DinoTree::new(&mut bots, false);
 
-        let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
+        dyntree.intersect_every_pair_seq(|a, b| {
             a.inner.touching.push(b.inner.id);
             b.inner.touching.push(a.inner.id);
-        };
-
-        dyntree.intersect_every_pair_seq(clos);
+        });
     }
 
     println!("These bots are colliding:");
