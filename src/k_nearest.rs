@@ -2,6 +2,8 @@ use inner_prelude::*;
 use super::*;
 
 
+//TODO write benches!
+
 pub fn k_nearest<
     A:AxisTrait,
     T:SweepTrait,
