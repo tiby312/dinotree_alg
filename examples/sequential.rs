@@ -34,7 +34,7 @@ fn main() {
     bots.push(make_bot(5, (50, 60), (16, 30)));
 
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
         dyntree.intersect_every_pair_seq(|a, b| {
             a.inner.touching.push(b.inner.id);

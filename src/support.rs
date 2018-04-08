@@ -13,6 +13,22 @@ pub use dinotree_inner::support::BBox;
 //pub use dinotree_inner::support::DefaultDepthLevel;
 
 use dinotree_inner::base_kdtree::RebalTrait;
+
+
+//Provide a 2d area in which the bots you insert to the tree will generally live in,
+//so aid in finding the most optimal starting partitioning axis.
+pub fn choose_best_axis<N:NumTrait+std::ops::Sub<Output=N>>(a:&AABBox<N>)->StartAxis{
+    let ((a,b),(c,d))=a.get();
+    let widthx=b-a;
+    let heighty=d-c;
+
+    if widthx>heighty{
+        StartAxis::Xaxis
+    }else{
+        StartAxis::Yaxis
+    }
+}
+
 //use oned::Blee;
 ///Find all bots that collide along the specified axis only between two rectangles.
 ///So the bots may not actually collide in 2d space, but collide alone the x or y axis.

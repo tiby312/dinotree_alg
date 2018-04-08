@@ -1,13 +1,10 @@
 use inner_prelude::*;
 use super::*;
 
-
-//TODO write benches!
-
 pub fn k_nearest<
     A:AxisTrait,
     T:SweepTrait,
-    F: FnMut(ColSingle<T>),
+    F: FnMut(ColSingle<T>,T::Num),
     MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
     MF2:Fn(T::Num,T::Num)->T::Num,
     >(tree:&mut DynTree<A,T>,point:(T::Num,T::Num),num:usize,mut func:F,mf:MF,mf2:MF2){
@@ -19,7 +16,7 @@ pub fn k_nearest<
  
     for i in c.into_sorted(){
         let j=unsafe{&mut *i.0}.get_mut();
-        func(ColSingle{inner:j.1,rect:j.0});
+        func(ColSingle{inner:j.1,rect:j.0},i.1);
     }
 
 
@@ -31,17 +28,17 @@ mod cand{
     use super::*;
 
     pub struct ClosestCand<T:SweepTrait>{
-        a:Vec<(*mut T,T::Num)>,
+        a:SmallVec<[(*mut T,T::Num);32]>,
         num:usize
     }
     impl<T:SweepTrait> ClosestCand<T>{
 
         //First is the closest
-        pub fn into_sorted(self)->Vec<(*mut T,T::Num)>{
+        pub fn into_sorted(self)->SmallVec<[(*mut T,T::Num);32]>{
             self.a
         }
         pub fn new(num:usize)->ClosestCand<T>{
-            let a=Vec::with_capacity(num);
+            let a=SmallVec::with_capacity(num);
             ClosestCand{a,num}
         }
 
@@ -80,16 +77,6 @@ mod cand{
                 }
                 
             }
-            /* check sorted
-            {
-                let mut c=arr.first().unwrap();
-                for i in arr
-                [1..].iter(){
-                    assert!(i.1>=c.1,"{:?}",(i.1,c.1));
-                    c=i;
-                }
-            }
-            */
         }
         pub fn full_and_max_distance(&self)->Option<T::Num>{
             match self.a.get(self.num-1){

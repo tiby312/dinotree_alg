@@ -123,6 +123,18 @@ pub use ba::DinoTree;
 pub(crate) use ba::DynTreeEnum;
 
 use std::marker::PhantomData;
+
+
+///If Xaxis, then the first divider will be a line splitting the x axis.
+///So it would be a vertical line.
+///TODO test this
+#[derive(Copy,Clone,Debug)]
+pub enum StartAxis{
+    Xaxis,
+    Yaxis
+}
+
+
 mod ba {
     use super::*;
     use DynTree;
@@ -186,14 +198,17 @@ mod ba {
         Xa(DynTree<'a, XAXISS, T>),
         Ya(DynTree<'a, YAXISS, T>),
     }
-    fn make<'a,T:SweepTrait,JJ:par::Joiner,K:TreeTimerTrait>(axis:bool,rest:&'a mut [T])->(DinoTree<'a,T>,K::Bag){
+    fn make<'a,T:SweepTrait,JJ:par::Joiner,K:TreeTimerTrait>(axis:StartAxis,rest:&'a mut [T])->(DinoTree<'a,T>,K::Bag){
         let height = self::compute_tree_height(rest.len());
-        if axis{
-            let k=DynTree::<XAXISS,T>::new::<JJ,K>(rest,height);
-            (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
-        }else{
-            let k=DynTree::<YAXISS,T>::new::<JJ,K>(rest,height);
-            (DinoTree(DynTreeEnum::Ya(k.0)),k.1)
+        match axis{
+            StartAxis::Xaxis=>{
+                let k=DynTree::<XAXISS,T>::new::<JJ,K>(rest,height);
+                (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
+            },
+            StartAxis::Yaxis=>{
+                let k=DynTree::<YAXISS,T>::new::<JJ,K>(rest,height);
+                (DinoTree(DynTreeEnum::Ya(k.0)),k.1)
+            }
         }
     }
     ///This is the struct that this crate revolves around.
@@ -205,24 +220,24 @@ mod ba {
         ///So if you picked the x axis, the root divider will be a vertical line.
         ///True means xaxis.
         ///The length of the slice must be less than the max value of a u32.
-        pub fn new(rest: &'a mut [T], axis: bool) -> DinoTree<'a, T> {
+        pub fn new(rest: &'a mut [T], axis: StartAxis) -> DinoTree<'a, T> {
             self::make::<_,par::Parallel,TreeTimerEmpty>(axis,rest).0
         }
 
         ///Create a dinotree that does not use any parallel algorithms.
-        pub fn new_seq(rest: &'a mut [T], axis: bool) -> DinoTree<'a, T> {
+        pub fn new_seq(rest: &'a mut [T], axis: StartAxis) -> DinoTree<'a, T> {
             self::make::<_,par::Sequential,TreeTimerEmpty>(axis,rest).0
         }
 
         ///Create a dinotree.
         ///Specify the starting axis along which the bots will be partitioned.
         ///So if you picked the x axis, the root divider will be a vertical line.
-        pub fn new_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
+        pub fn new_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Bag) {
             self::make::<_,par::Parallel,TreeTimer2>(axis,rest)
         }
 
         ///Create a dinotree that does not use any parallel algorithms.
-        pub fn new_seq_debug(rest: &'a mut [T], axis: bool) -> (DinoTree<'a, T>, Bag) {
+        pub fn new_seq_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Bag) {
             self::make::<_,par::Sequential,TreeTimer2>(axis,rest)
         }
 
@@ -291,7 +306,7 @@ mod ba {
         ///The callback function will be called on the closest object, then the second closest, and so on up 
         ///until k.
         pub fn k_nearest<
-            F: FnMut(ColSingle<T>),
+            F: FnMut(ColSingle<T>,T::Num),
             MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
             MF2:Fn(T::Num,T::Num)->T::Num,
         >(

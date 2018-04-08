@@ -30,7 +30,7 @@ fn main() {
     bots.push(make_bot(5, (50, 60), (16, 30)));
 
     {
-        let mut dyntree = DinoTree::new(&mut bots, true);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
         let mut rects = dyntree.rects();
         let r1 = aabb((10, 25), (40, 70));

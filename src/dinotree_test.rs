@@ -105,7 +105,7 @@ fn colfind(b: &mut Bencher) {
 
     //let height = compute_tree_height(bots.len());
 
-    let mut tree = DinoTree::new(&mut bots, true);
+    let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
     let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
         a.inner.col.push(b.inner.id);
@@ -138,9 +138,8 @@ fn colfind_par(b: &mut Bencher) {
         ));
     }
 
-    //let height = compute_tree_height(bots.len());
 
-    let mut tree = DinoTree::new(&mut bots, true);
+    let mut tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
     b.iter(|| {
 
@@ -174,7 +173,7 @@ fn colfind_par_point(b: &mut Bencher) {
     }
 
     
-    let mut tree = DinoTree::new(&mut bots, true);
+    let mut tree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
     b.iter(|| {
 
@@ -184,6 +183,168 @@ fn colfind_par_point(b: &mut Bencher) {
         });
         //println!("{:?}",k.into_vec());
         black_box(k);
+    });
+
+    //assert!(false);
+}
+
+
+#[bench]
+fn k_nearest_par_point(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 200), (0, 200)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    let mut points=Vec::new();
+    for id in 0..2000 {
+        let ppp = p.random_point();
+        points.push(ppp);
+        //let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            AABBox::<isize>::new((ppp.0,ppp.0),(ppp.1,ppp.1)),
+        ));
+    }
+
+
+    //println!("bot 716={:?}",&bots[716]);
+    //println!("point 19={:?} bot19={:?}",&points[19],&bots[19]);    
+    let mut tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
+
+
+    
+
+    b.iter(|| {
+
+        for (i,p) in points.iter().enumerate(){
+            let min_rect=|point:(isize,isize),aabb:&AABBox<isize>|{
+                let (px,py)=(point.0,point.1);
+                //let (px,py)=(px.0,py.0);
+
+                let ((a,b),(c,d))=aabb.get();
+
+                let xx=num::clamp(px,a,b);
+                let yy=num::clamp(py,c,d);
+
+                (xx-px)*(xx-px) + (yy-py)*(yy-py)
+            };
+
+            let min_oned=|p1:isize,p2:isize|{
+                //let (p1,p2)=(p1.0,p2.0);
+                (p2-p1)*(p2-p1)
+            };
+
+            tree.k_nearest(*p,1,|a,_|{
+                if a.inner.id!=i{
+                    let ((a,b),(c,d))=a.rect.get();
+                    assert_eq!(a,p.0);
+                    assert_eq!(b,p.0);
+                    assert_eq!(c,p.1);
+                    assert_eq!(d,p.1);
+                }
+                
+            },min_rect,min_oned);
+        }
+        /*
+        let k=tree.intersect_every_pair_debug(|a, b| {
+            a.inner.col.push(b.inner.id);
+            b.inner.col.push(a.inner.id);
+        });
+        */
+        //println!("{:?}",k.into_vec());
+        //black_box(k);
+    });
+
+    //assert!(false);
+}
+
+
+#[bench]
+fn k_nearest_par_point2(b: &mut Bencher) {
+    use test_support::*;
+    let mut p = PointGenerator::new(
+        &test_support::make_rect((0, 200), (0, 200)),
+        &[100, 42, 6],
+    );
+
+    let mut bots = Vec::new();
+    let mut points=Vec::new();
+    for id in 0..2000 {
+        let ppp = p.random_point();
+        points.push(ppp);
+        //let k = test_support::create_rect_from_point(ppp);
+        bots.push(BBox::new(
+            Bot {
+                id,
+                col: Vec::new(),
+            },
+            AABBox::<isize>::new((ppp.0,ppp.0),(ppp.1,ppp.1)),
+        ));
+    }
+
+
+    //println!("bot 716={:?}",&bots[716]);
+    //println!("point 19={:?} bot19={:?}",&points[19],&bots[19]);    
+    let mut tree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
+
+
+    
+
+    b.iter(|| {
+
+        let mut total_dis=0;
+        let mut num_found=0;
+        for (i,p) in points.iter().enumerate(){
+            let min_rect=|point:(isize,isize),aabb:&AABBox<isize>|{
+                let (px,py)=(point.0,point.1);
+                //let (px,py)=(px.0,py.0);
+
+                let ((a,b),(c,d))=aabb.get();
+
+                let xx=num::clamp(px,a,b);
+                let yy=num::clamp(py,c,d);
+
+                (xx-px)*(xx-px) + (yy-py)*(yy-py)
+            };
+
+            let min_oned=|p1:isize,p2:isize|{
+                //let (p1,p2)=(p1.0,p2.0);
+                (p2-p1)*(p2-p1)
+            };
+
+
+            let mut counter=0;
+            tree.k_nearest(*p,2,|a,dis|{
+
+                if counter==1{
+                    total_dis+=dis;
+                    num_found+=1;
+                }
+                counter+=1;
+                
+            },min_rect,min_oned);
+        }
+
+        let avg=total_dis/(points.len() as isize);
+        //println!("avg dis={:?}",));
+        //Check that the average distance the the nearest object to every other object
+        //is small
+        assert!(avg<10);
+        assert_eq!(num_found,points.len());
+        /*
+        let k=tree.intersect_every_pair_debug(|a, b| {
+            a.inner.col.push(b.inner.id);
+            b.inner.col.push(a.inner.id);
+        });
+        */
+        //println!("{:?}",k.into_vec());
+        black_box(avg);
     });
 
     //assert!(false);
@@ -213,7 +374,7 @@ fn colfind_par_dense(b: &mut Bencher) {
     }
 
     
-    let mut tree = DinoTree::new(&mut bots, true);
+    let mut tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
     b.iter(|| {
 
@@ -252,7 +413,7 @@ fn rebal_seq(b: &mut Bencher) {
     
     b.iter(|| {
 
-        let tree = DinoTree::new_seq(&mut bots, true);
+        let tree = DinoTree::new_seq(&mut bots,  StartAxis::Xaxis);
         black_box(tree);
         
     });
@@ -280,7 +441,7 @@ fn rebal_par(b: &mut Bencher) {
 
     b.iter(|| {
 
-        let tree = DinoTree::new(&mut bots, true);
+        let tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
         black_box(tree);
         
     });
@@ -295,12 +456,12 @@ fn test_send_sync_dinotree(){
     let mut bots2:Vec<BBox<isize,Bot>>=Vec::new();
 
 
-    let (t1,t2)=rayon::join(||{DinoTree::new(&mut bots1,false)},||{DinoTree::new(&mut bots2,false)});
+    let (t1,t2)=rayon::join(||{DinoTree::new(&mut bots1, StartAxis::Xaxis)},||{DinoTree::new(&mut bots2, StartAxis::Yaxis)});
 
     let (p1,p2)=(&t1,&t2);
 
     rayon::join(||{p1},||{p2});
-    
+
 }
 
 #[test]
@@ -338,7 +499,7 @@ fn test_dinotree_drop() {
         }
 
         {
-            let mut dyntree:DinoTree<BBox<isize,Bot>> = DinoTree::new(&mut bots, false);
+            let mut dyntree:DinoTree<BBox<isize,Bot>> = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
             dyntree.intersect_every_pair_seq(|_,_|{});
         }
@@ -373,7 +534,7 @@ fn test_dinotree_move_back() {
     let bots_control=bots.clone();
 
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
         //let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {};
 
@@ -428,7 +589,7 @@ fn test_dinotree_adv() {
 
     let mut pairs=Blag::new();
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
         let clos = |aa:&mut Blag,a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
             //expensive collide code here
@@ -557,7 +718,7 @@ fn test_panic_in_callback() {
             //Test the max size of slice +1
             let k=move ||{
                 let bb=unsafe{&mut *bots.0};
-                let mut dyntree = DinoTree::new(bb, false);
+                let mut dyntree = DinoTree::new(bb,  StartAxis::Yaxis);
 
                 let mut counter=0;
                 
@@ -630,7 +791,7 @@ fn test_zero_sized_type() {
         }
 
         {
-            let mut dyntree = DinoTree::new(&mut bots, false);
+            let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
             dyntree.intersect_every_pair_seq(|_,_|{});
         }
@@ -664,8 +825,7 @@ fn test_k_nearest(){
         let xx=num::clamp(px,a,b);
         let yy=num::clamp(py,c,d);
 
-        (xx-px)*(xx-px) + (yy-px)*(yy-py)
-    
+        (xx-px)*(xx-px) + (yy-py)*(yy-py)
     };
 
     let min_oned=|p1:isize,p2:isize|{
@@ -674,16 +834,16 @@ fn test_k_nearest(){
     };
 
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
-        dyntree.k_nearest((40,40),3,|a|res.push(a.inner.id),&min_rect,&min_oned);
+        dyntree.k_nearest((40,40),3,|a,_dis|res.push(a.inner.id),&min_rect,&min_oned);
         assert!(res.len()==3);
         assert!(res[0]==3);
         assert!(res[1]==2);
         assert!(res[2]==4);
 
         res.clear();
-        dyntree.k_nearest((-40,-40),3,|a|res.push(a.inner.id),min_rect,min_oned);
+        dyntree.k_nearest((-40,-40),3,|a,_dis|res.push(a.inner.id),min_rect,min_oned);
         assert!(res.len()==3);
         println!("res={:?}",res);
         assert!(res[0]==0);
@@ -711,7 +871,7 @@ fn test_rect(){
 
     let mut res=Vec::new();
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
         let clos = |a: ColSingle<BBox<isize, Bot>>| {
 
@@ -733,7 +893,7 @@ fn test_rect_panic(){
 
     let mut res=Vec::new();
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
         let mut r=dyntree.rects();
         let rect=AABBox::new((0,10),(0,10));
@@ -763,7 +923,7 @@ fn test_rect_intersect(){
 
     let mut res=Vec::new();
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
 
         let rect=AABBox::new((0,10),(0,10));
@@ -790,7 +950,7 @@ fn test_intersect_with(){
 
     let mut res=Vec::new();
     {
-        let mut dyntree = DinoTree::new(&mut bots, false);
+        let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
         dyntree.intersect_with_seq::<BBox<isize,Bot>,_>(&mut bots2,|a,b|res.push((a.inner.id,b.inner.id)));
     }
@@ -953,7 +1113,7 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
         let mut src: Vec<(usize, usize)> = Vec::new();
 
         {
-            let mut dyntree = DinoTree::new(&mut bots, false);
+            let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
             let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
                 //let (a,b)=(ca,ca.1);
