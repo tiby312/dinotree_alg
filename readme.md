@@ -136,8 +136,7 @@ split_at_mut()
 
 Optimization is a great balancing act. There are so many interesting questions. Indirection, locality, dividng and conquering. Every algorithm has unique properties. On top of the designing the algorithm, there is a whole nother level of interesting questions when it comes to implementing said algorithm. How to best write the code for maintainability, readabilty, performance, simplicity in the api. Concurrency is the strangest of all. The theory and in practice clash together. I think coding is well suited for people who like chess. The same interesting desision making takes place. "big picture" thinking is very important, and you are often rewarded for following your intuition and hunches down some path. Making desisions of when to stabailize and write tests, or when to capitalize on some new design oportunity, it goes on. At some point it really starts to feel like art. 
 
-
-
+One thing to notice. Collision detection is expensive, and dominates the running time. So right off the bat, you know it is a waste of effort to allocate time into optimizing the linear parts of your program, when you could be spending that time optimizing the bottleneck.
 
 Always measure code before investing time in optimizing. As you design your program. You form in your mind ideas of what you think the bottle necks in your code are. When you actually measure your program, your huntches can be wildly off.
 
