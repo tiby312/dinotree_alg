@@ -82,6 +82,8 @@ mod colfind;
 
 mod k_nearest;
 
+mod raycast;
+
 mod rect;
 
 ///A collection of 1d functions that operate on lists of 2d objects.

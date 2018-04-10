@@ -110,7 +110,10 @@ Many of the fields in the node struct, are uneeded for the leaf nodes. This woul
 if it wernt for the fact that this is a complete tree, so there are many leaf nodes. Ideally, there would be a tree data structure that took as type arguments a Node
 and a LeafNode type. This would then require more branching, though. So it could be that the current design is faster anyway.
 
-What about 3d? Making this multi dimensional would have added to the complexity, so the design desision was made to only target 2d. That's not to say one couldn't still take advantage of this system in a 3d simulation. Every bot could store a height field that you do an extra check against in the collision function. The downside is that imagine if there were many bots stacked on top of each other, but you only wanted to query a small cube. Then doing it this way, your query function would have to consider all those bots that were stacked. If there are only a few different height values, one could maintain a seperte 2d dinotree for each level. Looking at the real world though, and most usecases, your potential z values are much less than our potetial x and y values. So for many cases, it probably better to use the tree for 2 dimentions, and then naively handling the 3rd. Then you dont suffer from the "curse of dimensionality"?
+What about 3d? Making this multi dimensional would have added to the complexity, so the design desision was made to only target 2d. Its much easier for me as a developer to visualize 2d. So as a good first iteration of this algorithm, targeting just 2d simplifies things. Expanding it to 3d, shouldnt take too much effort. The hard part would be over. Code architecture would hopefully not need to be changed much.  
+
+
+That's not to say one couldn't still take advantage of this system in a 3d simulation. Every bot could store a height field that you do an extra check against in the collision function. The downside is that imagine if there were many bots stacked on top of each other, but you only wanted to query a small cube. Then doing it this way, your query function would have to consider all those bots that were stacked. If there are only a few different height values, one could maintain a seperte 2d dinotree for each level. Looking at the real world though, and most usecases, your potential z values are much less than our potetial x and y values. So for many cases, it probably better to use the tree for 2 dimentions, and then naively handling the 3rd. Then you dont suffer from the "curse of dimensionality"?
 
 Pipelining. It might be possible to pipeline the process so that rebalancing and querying happen at the same time with the only downside being that bots react to their collisions one step later.
 
@@ -158,6 +161,7 @@ The second one would create a list of rects and ids pulled from the bots and sor
 The third method was to create a list of rects, and then create a list of pointers to that list of rects and then sort that. The obvious downside is that you end up dynamically allocating two seperate vecs. But really it doesnt use any more memory that method 2. It has the benefit of swapping only pointers, and it also has better memory locality that method1.
 
 For large numbers of bots 50,000+, the second method seems to be the best on both my phone and laptop.
+
 
 
 
