@@ -3,6 +3,8 @@ use dinotree::*;
 use dinotree::support::BBox;
 extern crate num;
 
+mod support;
+
 #[derive(Debug)]
 struct Bot {
     id: usize,

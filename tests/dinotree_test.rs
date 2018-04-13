@@ -1,12 +1,25 @@
-use super::*;
-use test_support::*;
+
+#![feature(test)]
+#![feature(iterator_step_by)]
+mod test_support;
+
+extern crate dinotree;
+extern crate rand;
+extern crate axgeom;
+extern crate test;
+extern crate num;
+extern crate rayon;
+
 use axgeom::XAXISS;
 use axgeom::YAXISS;
-
-use support::BBox;
-
+use dinotree::support::BBox;
 use test::*;
+use dinotree::*;
+use test_support::*;
 
+
+
+/*
 #[cfg(test)]
 mod bap {
     use super::*;
@@ -81,6 +94,7 @@ mod bap {
         });
     }
 }
+*/
 
 #[bench]
 fn colfind(b: &mut Bencher) {

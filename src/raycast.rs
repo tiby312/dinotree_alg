@@ -28,7 +28,7 @@ pub fn raycast<
 
     //let ray=Ray{point,dir};
     let mut closest=Closest{closest:None};
-    recc(A::new(),dt,&func,&ray,&mut closest);
+    recc(A::new(),dt,&func,ray,&mut closest);
 
     match closest.closest{
         Some(x)=>{
@@ -101,6 +101,7 @@ pub mod ray{
     pub struct Ray<N:NumTrait>{
         pub point:Vec2<N>,
         pub dir:Vec2<N>,
+        pub tmax:Option<N>
     }
 
     pub enum Val<X>{
@@ -108,18 +109,19 @@ pub mod ray{
         OneTouch(X),
     }
 
-    pub trait RayTrait{
+    pub trait RayTrait:Sized{
         type N:NumTrait;
-        fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:Self::N,left:X,right:X)->Val<X>;
+        fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:Self::N,left:X,right:X)->Val<(Self,X)>;
+
         fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<Self::N>)->Self::N;
     }
     impl RayTrait for Ray<isize>{
         type N=isize;
         //visit all kd tree nodes intersected by segment S=a+t*d,0<=t
-        fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:isize,left:X,right:X)->Val<X>{
+        fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:isize,left:X,right:X)->Val<(Ray<isize>,X)>{
             let point=self.point;
             let dir=self.dir;
-
+            let tmax=self.tmax;
             //s=a+t*d
             //s-a=t*d
             //(s-a)/d=t
@@ -145,15 +147,40 @@ pub mod ray{
             };
 
             if dir.get(axis)==0{
-                return Val::OneTouch(first);
+                return Val::OneTouch((*self,first));
             }
 
             let t=(div-point.get(axis))/dir.get(axis);
 
-            if t>0{
-                Val::BothTouch((first,second))
-            }else{
-                return Val::OneTouch(first);
+            match tmax{
+                Some(tmax)=>{
+                    if t>0 && t<tmax{
+                        let r1=Ray{point,dir,tmax:Some(t)};
+                        let newpx=point.x+t*dir.x;
+                        let newpy=point.y+t*dir.y;
+                        let newp=Vec2{x:newpx,y:newpy};
+                        let r2=Ray{point:newp,dir,tmax:Some(tmax-t)};
+                        let r1=(r1,first);
+                        let r2=(r2,second);
+                        Val::BothTouch((r1,r2))
+                    }else{
+                        Val::OneTouch((*self,first))
+                    }
+                },
+                None=>{
+                    if t>0{
+                        let r1=Ray{point,dir,tmax:Some(t)};
+                        let newpx=point.x+t*dir.x;
+                        let newpy=point.y+t*dir.y;
+                        let newp=Vec2{x:newpx,y:newpy};
+                        let r2=Ray{point:newp,dir,tmax:None};
+                        let r1=(r1,first);
+                        let r2=(r2,second);
+                        Val::BothTouch((r1,r2))
+                    }else{
+                        Val::OneTouch((*self,first))
+                    }
+                }
             }
         }
 
@@ -185,12 +212,13 @@ pub mod ray{
 
 //Returns the first object that touches the ray.
 fn recc<'x,'a,
+    N:NumTrait,
     A: AxisTrait,
-    T: SweepTrait + 'x,
+    T: SweepTrait<Num=N> + 'x,
     C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-    MF:Fn(ColSingle<T>)->Option<T::Num>, //User returns distance to ray origin if it collides with ray
-    R:RayTrait<N=T::Num>,
-    >(axis:A,stuff:C,func:&MF,ray:&R,closest:&mut Closest<T>){
+    MF:Fn(ColSingle<T>)->Option<N>, //User returns distance to ray origin if it collides with ray
+    R:RayTrait<N=N>,
+    >(axis:A,stuff:C,func:&MF,ray:R,closest:&mut Closest<T>){
 
 
     let (nn,rest)=stuff.next();
@@ -207,12 +235,12 @@ fn recc<'x,'a,
             };
 
             match ray.intersects_divider(axis.next(),div,left,right){
-                ray::Val::BothTouch((first,second))=>{
+                ray::Val::BothTouch(((ray1,first),(ray2,second)))=>{
                     //Its more likely that we'll find the closest bot in a children, than this node.
                     //This is because only the bots that intersect with this node are kept here.
                     //Many more bots exist in the lower you o in the tree.
                     //So because of this, lets recurse first, before we check this node.
-                    recc(axis.next(),first,func,ray,closest);
+                    recc(axis.next(),first,func,ray1,closest);
 
                     //Only bother considering the bots in this node,
                     match closest.get_dis(){
@@ -239,10 +267,10 @@ fn recc<'x,'a,
                     //that intersected the ray, do we recurse the side of the node that is
                     //further away from the ray's origin.
                     if closest.is_empty(){
-                        recc(axis.next(),second,func,ray,closest);
+                        recc(axis.next(),second,func,ray2,closest);
                     }
                 },
-                ray::Val::OneTouch(first)=>{
+                ray::Val::OneTouch((ray,first))=>{
                     recc(axis.next(),first,func,ray,closest);
                 },
             }
@@ -256,74 +284,3 @@ fn recc<'x,'a,
 
 }
 
-
-
-#[cfg(test)]
-mod test{
-    use super::*;
-    use test_support::*;
-    use support::BBox;
-    use test::*;
-
-
-    #[test]
-    fn test_raycast(){
-        fn from_point(a:isize,b:isize)->AABBox<isize>{
-            AABBox::new((a-10,a+10),(b-10,b+10))
-        }
-
-        let mut bots=Vec::new();
-        bots.push(BBox::new(Bot::new(0),from_point(-30,0)));
-        bots.push(BBox::new(Bot::new(1),from_point(30,0)));
-        bots.push(BBox::new(Bot::new(2),from_point(0,-100)));
-
-        let ray=Ray{point:Vec2{x:0,y:0},dir:Vec2{x:0,y:-1}};
-
-        //https://tavianator.com/fast-branchless-raybounding-box-intersections/
-
-        let ray_touch_box=|a:ColSingle<BBox<isize,Bot>>|->Option<isize>{
-            let ((x1,x2),(y1,y2))=a.rect.get();
-            let point=ray.point;
-            let dir=ray.dir;
- 
-            //top and bottom
-            //s(t)=point+t*dir
-            let mut tmin=isize::min_value();
-            let mut tmax=isize::max_value();
-
-            if dir.x!=0{
-                let tx1=(x1-point.x)/dir.x;
-                let tx2=(x2-point.x)/dir.x;
-
-                tmin=tmin.max(tx1.min(tx2));
-                tmax=tmax.min(tx1.max(tx2));
-                
-            }
-            if dir.y!=0{
-                let ty1=(y1-point.y)/dir.y;
-                let ty2=(y2-point.y)/dir.y;
-
-                tmin=tmin.max(ty1.min(ty2));
-                tmax=tmax.min(ty1.max(ty2));
-            }
-            println!("max min ={:?}",(tmin,tmax));
-            if tmax>=tmin && tmin>=0{
-                println!("TOUCH!");
-                return Some(tmin);
-            }
-            
-            return None
-        };
-
-
-        {
-            let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
-            let k=dyntree.raycast(ray,ray_touch_box).expect("nothing hit the ray!");
-            println!("{:?}",k.0.inner);
-            assert!(false);
-        }
-
-
-    }
-
-}

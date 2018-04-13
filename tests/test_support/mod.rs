@@ -3,8 +3,7 @@ use std;
 use rand;
 use rand::{SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};
-use ::*;
-
+use dinotree::*;
 #[derive(Clone, Debug)]
 pub struct Bot {
     pub id: usize,
