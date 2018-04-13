@@ -1,18 +1,32 @@
 use inner_prelude::*;
 use super::*;
 
+#[derive(Copy,Clone)]
+pub struct Vec2<N:Copy>{
+    pub x:N,
+    pub y:N
+}
+impl<N:Copy> Vec2<N>{
+    pub fn get<A:AxisTrait>(&self,axis:A)->N{
+        if axis.is_xaxis(){
+            self.x
+        }else{
+            self.y
+        }
+    }
+}
 
 pub fn raycast<
-    A:AxisTrait,
+    'a,A:AxisTrait,
     T:SweepTrait,
     MF:Fn(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
-    MF2:FnMut(ColSingle<T>,T::Num),  //called for the first thing that touched the ray
-    >(tree:&mut DynTree<A,T>,point:(T::Num,T::Num),dir:(T::Num,T::Num),mut func:MF,mut mf2:MF2){
+    R:RayTrait<N=T::Num>
+    >(tree:&'a mut DynTree<A,T>,ray:R,mut func:MF)->Option<(ColSingle<'a,T>,T::Num)>{
 
 
     let dt = tree.get_iter_mut();
 
-    let ray=Ray{point,dir};
+    //let ray=Ray{point,dir};
     let mut closest=Closest{closest:None};
     recc(A::new(),dt,&func,&ray,&mut closest);
 
@@ -21,10 +35,11 @@ pub fn raycast<
             let bb=unsafe{&mut *x.0};
             let rr=bb.get_mut();
             let cc=ColSingle{inner:rr.1,rect:rr.0};
-            mf2(cc,x.1);
+            Some((cc,x.1))
+            //mf2(cc,x.1);
         },
         None=>{
-
+            None
         }
     }
 }
@@ -76,36 +91,95 @@ impl<T:SweepTrait> Closest<T>{
 
 
 use self::ray::Ray;
-mod ray{
+use self::ray::RayTrait;
+pub mod ray{
     use super::*;
-    pub struct Ray<N:NumTrait>{
-        pub point:(N,N),
-        pub dir:(N,N)
-    }
 
-    //TODO have a line struct.
-    //When ray is split into two, return a ray and a line.
+
+    //A finite ray
+    #[derive(Copy,Clone)]
+    pub struct Ray<N:NumTrait>{
+        pub point:Vec2<N>,
+        pub dir:Vec2<N>,
+    }
 
     pub enum Val<X>{
         BothTouch((X,X)),
         OneTouch(X),
-        //NoTouch Impossibe????
     }
 
-    impl<N:NumTrait> Ray<N>{
+    pub trait RayTrait{
+        type N:NumTrait;
+        fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:Self::N,left:X,right:X)->Val<X>;
+        fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<Self::N>)->Self::N;
+    }
+    impl RayTrait for Ray<isize>{
+        type N=isize;
+        //visit all kd tree nodes intersected by segment S=a+t*d,0<=t
+        fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:isize,left:X,right:X)->Val<X>{
+            let point=self.point;
+            let dir=self.dir;
 
-        pub fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:N,left:X,right:X)->Val<X>{
-            //test code
-            //Val::OneTouch(right)
-            unimplemented!();
+            //s=a+t*d
+            //s-a=t*d
+            //(s-a)/d=t
+
+
+            //s(t)=point+t*dir
+            //we want to figure out what t is when the ray has the same value as the divider
+            //for the irght axis.
+            //so if this were a divider that was splitting alone the xaxis, we'd have:
+            // div=point.x+t*dir.x
+            // t=(div-point.x)/dir.x
+            //
+            //So clearly dir.x cant be zero.
+            //What would it mean if dir.x is zero?
+            //it means that in the equation div=point.x+t*dir.x, the t*dir.x term disappears.
+            //so the only way div=point.x is if the point is directly on the point. 
+
+
+            let (first,second)=if point.get(axis)<div{
+                (left,right)
+            }else{
+                (right,left)
+            };
+
+            if dir.get(axis)==0{
+                return Val::OneTouch(first);
+            }
+
+            let t=(div-point.get(axis))/dir.get(axis);
+
+            if t>0{
+                Val::BothTouch((first,second))
+            }else{
+                return Val::OneTouch(first);
+            }
         }
 
         //Returns the closest possible distance between the ray, 
         //and the two parallel lines.
-        pub fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<N>)->N{
-            unimplemented!();
+        fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<isize>)->isize{
+            let point=self.point;
+            let dir=self.dir;
+            if point.get(axis)<cont.start{
+                if dir.get(axis)>0{
+                    return 0;
+                }else{
+                    return point.get(axis);
+                }
+            }else if point.get(axis)>cont.end{
+                if dir.get(axis)<0{
+                    return 0;
+                }else{
+                    return point.get(axis);
+                }
+            }else{
+                return 0
+            };
         }
     }
+
 }
 
 
@@ -115,7 +189,8 @@ fn recc<'x,'a,
     T: SweepTrait + 'x,
     C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
     MF:Fn(ColSingle<T>)->Option<T::Num>, //User returns distance to ray origin if it collides with ray
-    >(axis:A,stuff:C,func:&MF,ray:&Ray<T::Num>,closest:&mut Closest<T>){
+    R:RayTrait<N=T::Num>,
+    >(axis:A,stuff:C,func:&MF,ray:&R,closest:&mut Closest<T>){
 
 
     let (nn,rest)=stuff.next();
@@ -181,155 +256,74 @@ fn recc<'x,'a,
 
 }
 
-/*
-use self::cand::ClosestCand;
-mod cand{
+
+
+#[cfg(test)]
+mod test{
     use super::*;
+    use test_support::*;
+    use support::BBox;
+    use test::*;
 
-    pub struct ClosestCand<T:SweepTrait>{
-        a:SmallVec<[(*mut T,T::Num);32]>,
-        num:usize
-    }
-    impl<T:SweepTrait> ClosestCand<T>{
 
-        //First is the closest
-        pub fn into_sorted(self)->SmallVec<[(*mut T,T::Num);32]>{
-            self.a
-        }
-        pub fn new(num:usize)->ClosestCand<T>{
-            let a=SmallVec::with_capacity(num);
-            ClosestCand{a,num}
+    #[test]
+    fn test_raycast(){
+        fn from_point(a:isize,b:isize)->AABBox<isize>{
+            AABBox::new((a-10,a+10),(b-10,b+10))
         }
 
-        pub fn consider(&mut self,a:(&mut T,T::Num)){
-            let a=(a.0 as *mut T,a.1);
+        let mut bots=Vec::new();
+        bots.push(BBox::new(Bot::new(0),from_point(-30,0)));
+        bots.push(BBox::new(Bot::new(1),from_point(30,0)));
+        bots.push(BBox::new(Bot::new(2),from_point(0,-100)));
 
-            if self.a.len()<self.num{
-                
+        let ray=Ray{point:Vec2{x:0,y:0},dir:Vec2{x:0,y:-1}};
 
-                let arr=&mut self.a;
-                if arr.len()==0{
-                    arr.push(a);
-                }else{
-                    let mut inserted=false;
-                    for i in 0..arr.len(){
-                        if a.1<arr[i].1{
-                            arr.insert(i,a);
-                            inserted=true;
-                            break;
-                        }
-                    }
-                    if !inserted{
-                        arr.push(a);
-                    }
+        //https://tavianator.com/fast-branchless-raybounding-box-intersections/
 
-                }
+        let ray_touch_box=|a:ColSingle<BBox<isize,Bot>>|->Option<isize>{
+            let ((x1,x2),(y1,y2))=a.rect.get();
+            let point=ray.point;
+            let dir=ray.dir;
+ 
+            //top and bottom
+            //s(t)=point+t*dir
+            let mut tmin=isize::min_value();
+            let mut tmax=isize::max_value();
 
-            }else{
-                let arr=&mut self.a;
-                for i in 0..arr.len(){
-                    if a.1<arr[i].1{
-                        arr.pop();
-                        arr.insert(i,a);
-                        break;
-                    }
-                }
+            if dir.x!=0{
+                let tx1=(x1-point.x)/dir.x;
+                let tx2=(x2-point.x)/dir.x;
+
+                tmin=tmin.max(tx1.min(tx2));
+                tmax=tmax.min(tx1.max(tx2));
                 
             }
-        }
-        pub fn full_and_max_distance(&self)->Option<T::Num>{
-            match self.a.get(self.num-1){
-                Some(x)=>
-                {
-                    Some(x.1)
-                },
-                None=>{
-                    None
-                }
+            if dir.y!=0{
+                let ty1=(y1-point.y)/dir.y;
+                let ty2=(y2-point.y)/dir.y;
+
+                tmin=tmin.max(ty1.min(ty2));
+                tmax=tmax.min(ty1.max(ty2));
             }
-        }
-    }
-}
-
-fn recc<'x,'a,
-    A: AxisTrait,
-    T: SweepTrait + 'x,
-    C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-    MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
-    MF2:Fn(T::Num,T::Num)->T::Num,
-    >(axis:A,stuff:C,mf:&MF,mf2:&MF2,point:(T::Num,T::Num),res:&mut ClosestCand<T>){
-
-    let (nn,rest)=stuff.next();
-
-    //known at compile time.
-    let pp=if axis.is_xaxis(){
-        point.0
-    }else{
-        point.1
-    };
-
-    
-    match rest {
-        Some((left, right)) => {
-            let div = nn.div.unwrap();
-    
-
-            let (first,other)=if pp<div {
-                (left,right)
-            }else{
-                (right,left)
-            };
-
-            recc(axis.next(), first,mf,mf2,point,res);
-           
-            let traverse_other=match res.full_and_max_distance(){
-                Some(max)=>{
-                    if mf2(pp,div)<max{
-                        true
-                    }else{
-                        false
-                    }
-                },
-                None=>{
-                    true
-                }
-            };
-
-            if traverse_other{
-                recc(axis.next(),other,mf,mf2,point,res);
+            println!("max min ={:?}",(tmin,tmax));
+            if tmax>=tmin && tmin>=0{
+                println!("TOUCH!");
+                return Some(tmin);
             }
-        }
-        _ => {
             
-        }
-    }
+            return None
+        };
 
-    let traverse_other=match res.full_and_max_distance(){
-        Some(max)=>{
-            match nn.div{
-                Some(div)=>{
-                    if mf2(pp,div)<max{
-                        true
-                    }else{
-                        false
-                    }
-                },
-                None=>{
-                    true
-                }
-            }
-        },
-        None=>{
-            true
-        }
-    };
 
-    if traverse_other{
-        for i in nn.range.iter_mut(){            
-            let dis_sqr=mf(point,i.get().0);
-            res.consider((i,dis_sqr));
+        {
+            let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
+            let k=dyntree.raycast(ray,ray_touch_box).expect("nothing hit the ray!");
+            println!("{:?}",k.0.inner);
+            assert!(false);
         }
+
+
     }
 
 }
-*/

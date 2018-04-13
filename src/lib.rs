@@ -109,7 +109,7 @@ use smallvec::SmallVec;
 use dinotree_inner::TreeTimer2;
 use dinotree_inner::TreeTimerEmpty;
 use dinotree_inner::Bag;
-
+use raycast::ray::RayTrait;
 use dinotree_inner::compute_tree_height;
 
 ///Represents a destructured SweepTrait into the immutable bounding box reference,
@@ -291,6 +291,29 @@ mod ba {
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
                     rect::for_all_intersect_rect(a, &rect.0, fu);
+                }
+            }
+        }
+
+        pub fn raycast<
+            'b,MF:Fn(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
+            R:RayTrait<N=T::Num>>
+            (&'b mut self,ray:R,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
+
+            match &mut self.0 {
+                &mut DynTreeEnum::Xa(ref mut a) => {
+                    raycast::raycast::<XAXISS,_,_, _>(
+                        a,
+                        ray,
+                        func,
+                    )
+                }
+                &mut DynTreeEnum::Ya(ref mut a) => {
+                    raycast::raycast::<YAXISS,_, _,_>(
+                        a,
+                        ray,
+                        func,
+                    )
                 }
             }
         }
