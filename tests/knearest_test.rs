@@ -1,5 +1,5 @@
  #![feature(test)]
-mod test_support;
+mod support;
 
 extern crate dinotree;
 extern crate rand;
@@ -10,7 +10,7 @@ extern crate num;
 use dinotree::support::BBox;
 use test::*;
 use dinotree::*;
-use test_support::*;
+use support::*;
 
 #[test]
 fn test_k_nearest(){
@@ -68,9 +68,9 @@ fn test_k_nearest(){
 
 #[bench]
 fn k_nearest_par_point(b: &mut Bencher) {
-    use test_support::*;
+    
     let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 200), (0, 200)),
+        &support::make_rect((0, 200), (0, 200)),
         &[100, 42, 6],
     );
 
@@ -144,9 +144,8 @@ fn k_nearest_par_point(b: &mut Bencher) {
 
 #[bench]
 fn k_nearest_par_point2(b: &mut Bencher) {
-    use test_support::*;
     let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 200), (0, 200)),
+        &support::make_rect((0, 200), (0, 200)),
         &[100, 42, 6],
     );
 

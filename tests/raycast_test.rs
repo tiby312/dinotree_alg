@@ -1,5 +1,5 @@
  #![feature(test)]
-mod test_support;
+mod support;
 
 extern crate dinotree;
 extern crate test;
@@ -10,7 +10,7 @@ extern crate rand;
 use dinotree::support::BBox;
 use test::*;
 use dinotree::*;
-use test_support::*;
+use support::*;
 
 /*
 #[test]

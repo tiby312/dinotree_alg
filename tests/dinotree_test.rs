@@ -1,7 +1,7 @@
 
 #![feature(test)]
 #![feature(iterator_step_by)]
-mod test_support;
+mod support;
 
 extern crate dinotree;
 extern crate rand;
@@ -15,8 +15,8 @@ use axgeom::YAXISS;
 use dinotree::support::BBox;
 use test::*;
 use dinotree::*;
-use test_support::*;
-
+use support::*;
+use support as test_support;
 
 
 /*
