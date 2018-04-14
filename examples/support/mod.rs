@@ -24,7 +24,7 @@ pub fn make_rect(a: (isize, isize), b: (isize, isize)) -> axgeom::Rect<isize> {
 }
 
 pub fn create_rect_from_point(a: (isize, isize)) -> AABBox<isize> {
-    let r: isize = 10;
+    let r: isize = 4;
     let x = a.0;
     let y = a.1;
     AABBox(make_rect((x - r, x + r), (y - r, y + r)))

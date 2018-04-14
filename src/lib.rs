@@ -83,6 +83,8 @@ mod colfind;
 mod k_nearest;
 
 mod raycast;
+pub use raycast::ray::Ray;
+pub use raycast::Vec2;
 
 mod rect;
 
@@ -296,7 +298,7 @@ mod ba {
         }
 
         pub fn raycast<
-            'b,MF:Fn(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
+            'b,MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
             R:RayTrait<N=T::Num>>
             (&'b mut self,ray:R,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
 

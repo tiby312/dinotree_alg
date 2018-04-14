@@ -19,7 +19,7 @@ impl<N:Copy> Vec2<N>{
 pub fn raycast<
     'a,A:AxisTrait,
     T:SweepTrait,
-    MF:Fn(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
+    MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
     R:RayTrait<N=T::Num>
     >(tree:&'a mut DynTree<A,T>,ray:R,mut func:MF)->Option<(ColSingle<'a,T>,T::Num)>{
 
@@ -28,7 +28,7 @@ pub fn raycast<
 
     //let ray=Ray{point,dir};
     let mut closest=Closest{closest:None};
-    recc(A::new(),dt,&func,ray,&mut closest);
+    recc(A::new(),dt,&mut func,ray,&mut closest);
 
     match closest.closest{
         Some(x)=>{
@@ -50,7 +50,7 @@ struct Closest<T:SweepTrait>{
     closest:Option<(*mut T,T::Num)>
 }
 impl<T:SweepTrait> Closest<T>{
-    fn consider<MF:Fn(ColSingle<T>)->Option<T::Num>>(&mut self,bots:&mut [T],func:MF){
+    fn consider<MF:FnMut(ColSingle<T>)->Option<T::Num>>(&mut self,bots:&mut [T],func:&mut MF){
 
         for b in bots{
             let val={
@@ -113,7 +113,7 @@ pub mod ray{
         type N:NumTrait;
         fn intersects_divider<A:AxisTrait,X>(&self,axis:A,div:Self::N,left:X,right:X)->Val<(Self,X)>;
 
-        fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<Self::N>)->Self::N;
+        fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<Self::N>)->Option<Self::N>;
     }
     impl RayTrait for Ray<isize>{
         type N=isize;
@@ -151,7 +151,18 @@ pub mod ray{
             }
 
             let t=(div-point.get(axis))/dir.get(axis);
+            /*
+            if t>0{
+                let r1=Ray{point,dir,tmax:None};
 
+                let r2=Ray{point,dir,tmax:None};
+                let r1=(r1,first);
+                let r2=(r2,second);
+                Val::BothTouch((r1,r2))
+            }else{
+                Val::OneTouch((*self,first))
+            }*/
+            
             match tmax{
                 Some(tmax)=>{
                     if t>0 && t<tmax{
@@ -184,26 +195,35 @@ pub mod ray{
             }
         }
 
-        //Returns the closest possible distance between the ray, 
-        //and the two parallel lines.
-        fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<isize>)->isize{
+        //Returns the closest possible tvalue to something that intersects this divider.
+
+        fn closest_distance_to_cyclinder<A:AxisTrait>(&self,axis:A,cont:Range<isize>)->Option<isize>{
             let point=self.point;
             let dir=self.dir;
-            if point.get(axis)<cont.start{
-                if dir.get(axis)>0{
-                    return 0;
-                }else{
-                    return point.get(axis);
-                }
-            }else if point.get(axis)>cont.end{
-                if dir.get(axis)<0{
-                    return 0;
-                }else{
-                    return point.get(axis);
-                }
+
+
+
+            let div=if point.get(axis)<cont.start{  //TODO less and equal?
+                cont.start
+            }else if point.get(axis)>cont.end{ //TODO less and equal?
+                cont.end
             }else{
-                return 0
+                return Some(0); //point is inside the range, possible that something touches
             };
+
+
+            if dir.get(axis)==0{
+                //We already know from the above, that div is not inside of the range.
+                //So this case means that the ray is running parallel to the range, but not inside it,
+                //so not possible that it touches.
+                return None;
+            }
+
+            let t=(div-point.get(axis))/dir.get(axis);
+            if t<0{
+                return None;
+            }
+            return Some(t);
         }
     }
 
@@ -216,9 +236,9 @@ fn recc<'x,'a,
     A: AxisTrait,
     T: SweepTrait<Num=N> + 'x,
     C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-    MF:Fn(ColSingle<T>)->Option<N>, //User returns distance to ray origin if it collides with ray
+    MF:FnMut(ColSingle<T>)->Option<N>, //User returns distance to ray origin if it collides with ray
     R:RayTrait<N=N>,
-    >(axis:A,stuff:C,func:&MF,ray:R,closest:&mut Closest<T>){
+    >(axis:A,stuff:C,func:&mut MF,ray:R,closest:&mut Closest<T>){
 
 
     let (nn,rest)=stuff.next();
@@ -234,7 +254,7 @@ fn recc<'x,'a,
                 }
             };
 
-            match ray.intersects_divider(axis.next(),div,left,right){
+            let (ray,second)=match ray.intersects_divider(axis,div,left,right){
                 ray::Val::BothTouch(((ray1,first),(ray2,second)))=>{
                     //Its more likely that we'll find the closest bot in a children, than this node.
                     //This is because only the bots that intersect with this node are kept here.
@@ -242,38 +262,93 @@ fn recc<'x,'a,
                     //So because of this, lets recurse first, before we check this node.
                     recc(axis.next(),first,func,ray1,closest);
 
-                    //Only bother considering the bots in this node,
-                    match closest.get_dis(){
-                        Some(dis)=>{
-                            match nn.cont{
-                                Some(cont)=>{
-                                    if ray.closest_distance_to_cyclinder(axis.next(),cont)<dis{
+                    (ray2,second)
+                },
+                ray::Val::OneTouch((ray,first))=>{
+                    //TODO is this needed?
+                    //closest.consider(&mut nn.range,func);  
+                    
+                    //recc(axis.next(),first,func,ray,closest);
+                    (ray,first)
+                },
+            };
+
+            //Only bother considering the bots in this node,
+            
+            match nn.cont{
+                Some(cont)=>{
+                    match ray.closest_distance_to_cyclinder(axis,cont){
+                        Some(closest_possible)=>{
+                            match closest.get_dis(){
+                                Some(dis)=>{
+                                    if closest_possible<=dis{
                                         closest.consider(&mut nn.range,func);
-                                    }        
+                                    }
                                 },
                                 None=>{
-                                    //this node does not have any nodes, so dont need to consider
-                                    //anything in this node.
+                                    //We have to check them all since there isnt a closest 
+                                    closest.consider(&mut nn.range,func);
                                 }
                             }
                         },
                         None=>{
-                            closest.consider(&mut nn.range,func);  
+                            //Impossible for anything in this node to touch the ray
                         }
                     }
-                    
-
-                    //So only in the case where we literally could not find a single bot 
-                    //that intersected the ray, do we recurse the side of the node that is
-                    //further away from the ray's origin.
-                    if closest.is_empty(){
-                        recc(axis.next(),second,func,ray2,closest);
+                },
+                None=>{
+                    //This node doesnt have anything.
+                }
+            }
+            
+            /*
+            //Only bother considering the bots in this node,
+            match closest.get_dis(){
+                Some(dis)=>{
+                    match nn.cont{
+                        Some(cont)=>{
+                            match ray.closest_distance_to_cyclinder(axis,cont){
+                                Some(closest_possible)=>{
+                                    if closest_possible<=dis{
+                                        closest.consider(&mut nn.range,func);
+                                    }
+                                },
+                                None=>{}
+                            } 
+                                    
+                        },
+                        None=>{
+                            //this node does not have any nodes, so dont need to consider
+                            //anything in this node.
+                        }
                     }
                 },
-                ray::Val::OneTouch((ray,first))=>{
-                    recc(axis.next(),first,func,ray,closest);
-                },
+                None=>{
+                    match nn.cont{
+                        Some(cont)=>{
+                            match ray.closest_distance_to_cyclinder(axis,cont){
+                                Some(_)=>{
+                                    
+                                    closest.consider(&mut nn.range,func);  
+                                },
+                                None=>{}
+                            } 
+                        },
+                        None=>{
+
+                        }
+                    }
+                }
             }
+            */
+
+            //So only in the case where we literally could not find a single bot 
+            //that intersected the ray, do we recurse the side of the node that is
+            //further away from the ray's origin.
+            if closest.is_empty(){ //TODO 
+                recc(axis.next(),second,func,ray,closest);
+            }
+
         }
         _ => {
             //If we are a leaf node, there are so little bots in here,
