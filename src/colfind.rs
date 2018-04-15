@@ -393,7 +393,8 @@ fn for_every_col_pair_inner<
     let height = kdtree.get_height();
     let level = kdtree.get_level_desc();
     let dt = kdtree.get_iter_mut();
-    let dt = compt::LevelIter::new(dt, level);
+    //let dt = compt::LevelIter::new(dt, level);
+    let dt=dt.with_depth();
     let mut sweeper = Sweeper::new();
 
     let h = K::new(height);

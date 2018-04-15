@@ -51,7 +51,7 @@ fn main() {
             clear([1.0; 4], g);
 
 
-            let ray=Ray{point:Vec2{x:cursor[0] as isize,y:cursor[1] as isize},dir:Vec2{x:1,y:1},tmax:None};
+            let ray=Ray{point:Vec2{x:cursor[0] as isize,y:cursor[1] as isize},dir:Vec2{x:0,y:-1},tmax:None};
 
             //https://tavianator.com/fast-branchless-raybounding-box-intersections/
 
@@ -68,10 +68,11 @@ fn main() {
                             let square = rectangle::square(x1 as f64, y1 as f64, 8.0);
                     
 
-                            rectangle([0.0,0.0,1.0,0.3], square, c.transform, g);
+                            rectangle([0.0,0.0,1.0,0.8], square, c.transform, g);
                         }
                         let point=ray.point;
                         let dir=ray.dir;
+
 
                         //top and bottom
                         //s(t)=point+t*dir
@@ -85,6 +86,10 @@ fn main() {
                             tmin=tmin.max(tx1.min(tx2));
                             tmax=tmax.min(tx1.max(tx2));
                             
+                        }else{
+                            if point.x < x1 || point.x > x2 {
+                                return None; // parallel AND outside box : no intersection possible
+                            }
                         }
                         if dir.y!=0{
                             let ty1=(y1-point.y)/dir.y;
@@ -92,9 +97,14 @@ fn main() {
 
                             tmin=tmin.max(ty1.min(ty2));
                             tmax=tmax.min(ty1.max(ty2));
+                        }else{
+                            if point.y < y1 || point.y > y2 {
+                                return None; // parallel AND outside box : no intersection possible
+                            }
                         }
-                        if tmax>=tmin && tmin>=0{
-                            return Some(tmin);
+                        if tmax>=tmin && tmax>=0{
+                            //println!("bla=max:{:?} min:{:?}",tmax,tmin);
+                            return Some(tmin.max(0));
                         }
                         
                         return None
@@ -112,6 +122,7 @@ fn main() {
                     let ppy=ray.point.y+ray.dir.y*800;
                     (ppx,ppy)
                 };
+                //println!("{:?} {:?}",(ray.point.x,ray.point.y),(ppx,ppy));
 
                 let arr=[ray.point.x as f64,ray.point.y as f64,ppx as f64,ppy as f64];
                 line([0.0, 0.0, 0.0, 1.0], // black

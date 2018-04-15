@@ -151,7 +151,7 @@ pub mod ray{
             }
 
             let t=(div-point.get(axis))/dir.get(axis);
-            /*
+            
             if t>0{
                 let r1=Ray{point,dir,tmax:None};
 
@@ -161,8 +161,8 @@ pub mod ray{
                 Val::BothTouch((r1,r2))
             }else{
                 Val::OneTouch((*self,first))
-            }*/
-            
+            }
+            /*
             match tmax{
                 Some(tmax)=>{
                     if t>0 && t<tmax{
@@ -193,6 +193,7 @@ pub mod ray{
                     }
                 }
             }
+            */
         }
 
         //Returns the closest possible tvalue to something that intersects this divider.
@@ -300,6 +301,7 @@ fn recc<'x,'a,
                     //This node doesnt have anything.
                 }
             }
+            //closest.consider(&mut nn.range,func);
             
             /*
             //Only bother considering the bots in this node,
@@ -345,7 +347,7 @@ fn recc<'x,'a,
             //So only in the case where we literally could not find a single bot 
             //that intersected the ray, do we recurse the side of the node that is
             //further away from the ray's origin.
-            if closest.is_empty(){ //TODO 
+            if closest.is_empty(){ 
                 recc(axis.next(),second,func,ray,closest);
             }
 

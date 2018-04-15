@@ -71,7 +71,10 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
     let level = gentree.get_level_desc();
     let d1 = gentree.get_iter();
     let d2 = vert_tree.create_down_mut();
-    let zip = compt::LevelIter::new(d1.zip(d2), level);
+    let zip=d1.zip(d2).with_depth();
+    //let zip = compt::LevelIter::new(d1.zip(d2), level);
+
+    
 
     fn recc<
         'a,
