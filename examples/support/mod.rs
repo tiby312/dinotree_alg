@@ -24,10 +24,10 @@ pub fn make_rect(a: (isize, isize), b: (isize, isize)) -> axgeom::Rect<isize> {
 }
 
 pub fn create_rect_from_point(a: (isize, isize)) -> AABBox<isize> {
-    let r: isize = 4;
+    let r: isize = 8;
     let x = a.0;
     let y = a.1;
-    AABBox(make_rect((x - r, x + r), (y - r, y + r)))
+    AABBox(make_rect((x , x + r), (y , y + r)))
 }
 pub fn create_unordered(a: &Bot, b: &Bot) -> (usize, usize) {
     if a.id < b.id {

@@ -276,7 +276,7 @@ fn recc<'x,'a,
 
             //Only bother considering the bots in this node,
             
-            match nn.cont{
+            let recurse=match nn.cont{
                 Some(cont)=>{
                     match ray.closest_distance_to_cyclinder(axis,cont){
                         Some(closest_possible)=>{
@@ -284,25 +284,34 @@ fn recc<'x,'a,
                                 Some(dis)=>{
                                     if closest_possible<=dis{
                                         closest.consider(&mut nn.range,func);
+                                        true
+                                    }else{
+                                        false
                                     }
                                 },
                                 None=>{
                                     //We have to check them all since there isnt a closest 
                                     closest.consider(&mut nn.range,func);
+                                    true
                                 }
                             }
                         },
                         None=>{
+
                             //Impossible for anything in this node to touch the ray
+                            true
                         }
                     }
                 },
                 None=>{
                     //This node doesnt have anything.
+                    true
                 }
+            };
+
+            if recurse{
+                 recc(axis.next(),second,func,ray,closest);
             }
-            //closest.consider(&mut nn.range,func);
-            
             /*
             //Only bother considering the bots in this node,
             match closest.get_dis(){
@@ -347,9 +356,9 @@ fn recc<'x,'a,
             //So only in the case where we literally could not find a single bot 
             //that intersected the ray, do we recurse the side of the node that is
             //further away from the ray's origin.
-            if closest.is_empty(){ 
-                recc(axis.next(),second,func,ray,closest);
-            }
+            //if closest.is_empty(){ 
+            //    recc(axis.next(),second,func,ray,closest);
+            //}
 
         }
         _ => {
