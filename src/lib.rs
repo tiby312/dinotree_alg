@@ -85,6 +85,7 @@ mod k_nearest;
 mod raycast;
 pub use raycast::ray::Ray;
 pub use raycast::Vec2;
+pub use raycast::RectInf;
 
 mod rect;
 
@@ -300,7 +301,7 @@ mod ba {
         pub fn raycast<
             'b,MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
             R:RayTrait<N=T::Num>>
-            (&'b mut self,ray:R,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
+            (&'b mut self,ray:R,rect:raycast::RectInf<T::Num>,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
@@ -308,6 +309,7 @@ mod ba {
                         a,
                         ray,
                         func,
+                        rect
                     )
                 }
                 &mut DynTreeEnum::Ya(ref mut a) => {
@@ -315,6 +317,7 @@ mod ba {
                         a,
                         ray,
                         func,
+                        rect
                     )
                 }
             }

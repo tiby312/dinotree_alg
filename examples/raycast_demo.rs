@@ -51,7 +51,7 @@ fn main() {
             clear([1.0; 4], g);
 
 
-            let ray=Ray{point:Vec2{x:cursor[0] as isize,y:cursor[1] as isize},dir:Vec2{x:0,y:-1},tmax:None};
+            let ray=Ray{point:Vec2{x:cursor[0] as isize,y:cursor[1] as isize},dir:Vec2{x:-1,y:-1},tmax:None};
 
             //https://tavianator.com/fast-branchless-raybounding-box-intersections/
 
@@ -110,7 +110,8 @@ fn main() {
                         return None
                     };
 
-                    tree.raycast(ray,ray_touch_box)
+                    let bb=RectInf{xdiv:(0,800),ydiv:(0,800)};
+                    tree.raycast(ray,bb,ray_touch_box)
                 };
 
                 let (ppx,ppy)=if let Some(k)=k{
