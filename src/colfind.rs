@@ -73,40 +73,7 @@ mod anchor{
             let range=&mut nd.range;
             Ok(DestructuredAnchor{_p:PhantomData,cont,_div:div,range})
         }
-
-        /*
-        //get the section of the anchor that intersects this node, and return 
-        //versions of this struct for the left and right side.
-        pub fn get_section<'b>(&'b mut self,ag:AnchorSection,range:&Range<T::Num>)->(&'b mut [T],AnchorSection,AnchorSection){
-            let arr=&mut self.range[ag.start..ag.end];
-            
-            let (arr,l,r)=oned::Sweeper::get_section_general::<AnchorAxis::Next>(arr,range);
-
-
-            //IMPORTANT r and l are flipped!!!!
-            let left=AnchorSection{start:ag.start,end:ag.start+l};
-            let right=AnchorSection{start:ag.start+r,end:ag.end};
-            //println!("{:?},{:?},{:?}",ag,left,right);
-            //let left=AnchorSection{start:ag.start,end:ag.end};
-            //let right=AnchorSection{start:ag.start,end:ag.end};
-            
-            (arr,left,right)
-        }
-
-        pub fn pass_level(&mut self,ag:AnchorSection)->(AnchorSection,AnchorSection){
-            let a=AnchorSection{start:ag.start,end:ag.end};
-            let b=AnchorSection{start:ag.start,end:ag.end};
-            (a,b)
-        }
-        */
     }
-    /*
-    #[derive(Debug)]
-    pub struct AnchorSection{
-        start:usize,
-        end:usize
-    }
-    */
 }
 
 

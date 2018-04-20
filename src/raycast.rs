@@ -1,6 +1,9 @@
 use inner_prelude::*;
 use super::*;
 
+
+/*
+//TODO remove
 #[derive(Copy,Clone)]
 pub struct Vec2<N:Copy>{
     pub x:N,
@@ -15,15 +18,16 @@ impl<N:Copy> Vec2<N>{
         }
     }
 }
+*/
 
 pub fn raycast<
     'a,A:AxisTrait,
     T:SweepTrait,
     MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
-    MFFast:FnMut(&RectInf<T::Num>)->Option<T::Num>,
-    >(tree:&'a mut DynTree<A,T>,ray:&Ray<T::Num>,mut func:MF,mut func_fast:MFFast,rect:RectInf<T::Num>)->Option<(ColSingle<'a,T>,T::Num)>{
+    MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
+    >(tree:&'a mut DynTree<A,T>,point:(T::Num,T::Num),dir:(T::Num,T::Num),mut func:MF,mut func_fast:MFFast,rect:AABBox<T::Num>)->Option<(ColSingle<'a,T>,T::Num)>{
 
-
+    let ray=&Ray{point,dir};
     let dt = tree.get_iter_mut();
 
     let mut closest=Closest{closest:None};
@@ -73,7 +77,7 @@ impl<T:SweepTrait> Closest<T>{
         } 
     }
 
-    fn check_and_do<MFFast:FnMut(&RectInf<T::Num>)->Option<T::Num>>(&self,rect:&RectInf<T::Num>,func:&mut MFFast)->bool{
+    fn check_and_do<MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>>(&self,rect:&AABBox<T::Num>,func:&mut MFFast)->bool{
         match func(rect){
             Some(closest_possible)=>{
                 match self.get_dis(){
@@ -107,32 +111,35 @@ impl<T:SweepTrait> Closest<T>{
     }
 }
 
-pub struct RectInf<N:NumTrait>{
-    pub xdiv:(N,N),
-    pub ydiv:(N,N)
+
+fn subdivide<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,axis:A,div:N)->(AABBox<N>,AABBox<N>){
+
+    let (a,b)=r.0.subdivide(div,A::get());
+    (AABBox(a),AABBox(b))
+    /*
+    let r=axgeom::Rect::new(0)
+    if axis.is_xaxis(){
+        let r1=RectInf{xdiv:(self.xdiv.0,div),ydiv:self.ydiv};
+        let r2=RectInf{xdiv:(div,self.xdiv.1),ydiv:self.ydiv};
+        (r1,r2)
+    }else{
+        let r1=RectInf{xdiv:self.xdiv,ydiv:(self.ydiv.0,div)};
+        let r2=RectInf{xdiv:self.xdiv,ydiv:(div,self.ydiv.1)};
+        (r1,r2)
+    }
+    */
 }
-impl<N:NumTrait> RectInf<N>{
-
-    fn subdivide<A:AxisTrait>(&self,axis:A,div:N)->(RectInf<N>,RectInf<N>){
-        if axis.is_xaxis(){
-            let r1=RectInf{xdiv:(self.xdiv.0,div),ydiv:self.ydiv};
-            let r2=RectInf{xdiv:(div,self.xdiv.1),ydiv:self.ydiv};
-            (r1,r2)
-        }else{
-            let r1=RectInf{xdiv:self.xdiv,ydiv:(self.ydiv.0,div)};
-            let r2=RectInf{xdiv:self.xdiv,ydiv:(div,self.ydiv.1)};
-            (r1,r2)
-        }
-    }
 
 
-    fn create_middile_box<A:AxisTrait>(&self,axis:A,cont:Range<N>)->RectInf<N>{
-        if axis.is_xaxis(){
-            RectInf{xdiv:(cont.start,cont.end),ydiv:self.ydiv}
-        }else{
-            RectInf{xdiv:self.xdiv,ydiv:(cont.start,cont.end)}
-        }
-    }
+fn create_middile_box<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,axis:A,cont:Range<N>)->AABBox<N>{
+    //if axis.is_xaxis(){
+    let mut r=r.clone();
+    *r.0.get_range_mut(A::get())=cont;
+    r
+    /*
+    }else{
+        RectInf{xdiv:self.xdiv,ydiv:(cont.start,cont.end)}
+    }*/
 }
 
 
@@ -145,8 +152,8 @@ pub mod ray{
     //A finite ray
     #[derive(Copy,Clone)]
     pub struct Ray<N:NumTrait>{
-        pub point:Vec2<N>,
-        pub dir:Vec2<N>,
+        pub point:(N,N),
+        pub dir:(N,N),
     }
 
     pub enum Val<X>{
@@ -163,8 +170,8 @@ fn recc<'x,'a,
     T: SweepTrait<Num=N> + 'x,
     C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
     MF:FnMut(ColSingle<T>)->Option<N>, //User returns distance to ray origin if it collides with ray
-    MFFast:FnMut(&RectInf<N>)->Option<N>,
-    >(axis:A,stuff:C,func:&mut MF,func_fast:&mut MFFast,ray:&Ray<N>,closest:&mut Closest<T>,rectinf:RectInf<T::Num>){
+    MFFast:FnMut(&AABBox<N>)->Option<N>,
+    >(axis:A,stuff:C,func:&mut MF,func_fast:&mut MFFast,ray:&Ray<N>,closest:&mut Closest<T>,rectinf:AABBox<T::Num>){
 
 
     let (nn,rest)=stuff.next();
@@ -182,12 +189,12 @@ fn recc<'x,'a,
 
             //We want to recurse the side that is closer to the origin of the ray.
             let ((left,right),(aa,bb))={
-                let (aa,bb)=rectinf.subdivide(axis,div);
+                let (aa,bb)=subdivide(&rectinf,axis,div);
 
                 let ray_point=if axis.is_xaxis(){
-                    ray.point.x
+                    ray.point.0
                 }else{
-                    ray.point.y
+                    ray.point.1
                 };
 
                 if ray_point<div{
@@ -209,7 +216,7 @@ fn recc<'x,'a,
             //Check this node only after recursing children.
             match &nn.cont{
                 &Some(cont)=>{
-                    let mid=rectinf.create_middile_box(axis,cont);
+                    let mid=create_middile_box(&rectinf,axis,cont);
                     if closest.check_and_do(&mid,func_fast){
                         closest.consider(&mut nn.range,func);
                     }

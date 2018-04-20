@@ -130,6 +130,9 @@ split_at_mut()
 
 # think about it like a sponge. the lower you go into the tree, the more stable the calculates get 
 
+#
+One problem with this tree is that it mutably borrows the slice that you pass it. The user might want to use properties of the tree without mutating any of the elements at all. For example, if you just want to draw the colliding pairs, or just get a reference to an object a ray touches. However, I couldnt find a simple way to do this. Maybe once rust allowed you to paramaterize mutability, it would be easier.
+
 
 # Talk about bfs vs dfs ordering. Better space locality if in dfs ordering.
 

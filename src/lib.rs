@@ -83,9 +83,9 @@ mod colfind;
 mod k_nearest;
 
 mod raycast;
-pub use raycast::ray::Ray;
-pub use raycast::Vec2;
-pub use raycast::RectInf;
+//pub use raycast::ray::Ray;
+//pub use raycast::Vec2;
+//pub use raycast::RectInf;
 
 mod rect;
 
@@ -104,6 +104,8 @@ pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::SweepTrait;
 use dinotree_inner::TreeTimerTrait;
 use dinotree_inner::par;
+use dinotree_inner::DynTreeRaw;
+
 use axgeom::Rect;
 use axgeom::XAXISS;
 use axgeom::YAXISS;
@@ -147,9 +149,7 @@ mod ba {
     use DynTree;
 
     mod closure_struct {
-        //use std::marker::PhantomData;
         use super::*;
-        //use std::marker::PhantomData;
         use ColSingle;
         use ColMulti;
 
@@ -201,6 +201,7 @@ mod ba {
         }
     }
 
+
     pub(crate) enum DynTreeEnum<'a, T: SweepTrait + 'a> {
         Xa(DynTree<'a, XAXISS, T>),
         Ya(DynTree<'a, YAXISS, T>),
@@ -218,6 +219,8 @@ mod ba {
             }
         }
     }
+
+
     ///This is the struct that this crate revolves around.
     pub struct DinoTree<'a, T: SweepTrait + 'a>(pub(crate) DynTreeEnum<'a, T>);
 
@@ -318,15 +321,16 @@ mod ba {
         ///The slow function is used to do expensive checking to determine if this particular bot intersects the ray.
         pub fn raycast<
             'b,
-            MFFast:FnMut(&RectInf<T::Num>)->Option<T::Num>,
+            MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
             MF:FnMut(ColSingle<T>)->Option<T::Num>> //called to test if this object touches the ray. if it does, return distance to start of ray
-            (&'b mut self,ray:&Ray<T::Num>,rect:raycast::RectInf<T::Num>,mut func_fast:MFFast,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
+            (&'b mut self,point:(T::Num,T::Num),dir:(T::Num,T::Num),rect:AABBox<T::Num>,mut func_fast:MFFast,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
                     raycast::raycast::<XAXISS,_,_, _>(
                         a,
-                        ray,
+                        point,
+                        dir,
                         func,
                         func_fast,
                         rect
@@ -335,7 +339,8 @@ mod ba {
                 &mut DynTreeEnum::Ya(ref mut a) => {
                     raycast::raycast::<YAXISS,_, _,_>(
                         a,
-                        ray,
+                        point,
+                        dir,
                         func,
                         func_fast,
                         rect

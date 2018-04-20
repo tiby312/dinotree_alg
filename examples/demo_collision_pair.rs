@@ -46,8 +46,7 @@ fn main() {
             clear([1.0; 4], g);
 
 
-            let ray=&Ray{point:Vec2{x:cursor[0] as isize,y:cursor[1] as isize},dir:Vec2{x:-1,y:-1}};
-
+            
             //https://tavianator.com/fast-branchless-raybounding-box-intersections/
 
             for bot in bots.iter(){

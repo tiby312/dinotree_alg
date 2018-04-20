@@ -13,35 +13,33 @@ use support::*;
 
 
 
-fn intersects_box(ray:&Ray<isize>,rect:&RectInf<isize>)->Option<isize>{
-    let ((x1,x2),(y1,y2))=(rect.xdiv,rect.ydiv);
+fn intersects_box(point:(isize,isize),dir:(isize,isize),rect:&AABBox<isize>)->Option<isize>{
+    let ((x1,x2),(y1,y2))=rect.get();
 
-    let point=ray.point;
-    let dir=ray.dir;
 
     let mut tmin=isize::min_value();
     let mut tmax=isize::max_value();
 
-    if dir.x!=0{
-        let tx1=(x1-point.x)/dir.x;
-        let tx2=(x2-point.x)/dir.x;
+    if dir.0!=0{
+        let tx1=(x1-point.0)/dir.0;
+        let tx2=(x2-point.0)/dir.0;
 
         tmin=tmin.max(tx1.min(tx2));
         tmax=tmax.min(tx1.max(tx2));
         
     }else{
-        if point.x < x1 || point.x > x2 {
+        if point.0 < x1 || point.0 > x2 {
             return None; // parallel AND outside box : no intersection possible
         }
     }
-    if dir.y!=0{
-        let ty1=(y1-point.y)/dir.y;
-        let ty2=(y2-point.y)/dir.y;
+    if dir.1!=0{
+        let ty1=(y1-point.1)/dir.1;
+        let ty2=(y2-point.1)/dir.1;
 
         tmin=tmin.max(ty1.min(ty2));
         tmax=tmax.min(ty1.max(ty2));
     }else{
-        if point.y < y1 || point.y > y2 {
+        if point.1 < y1 || point.1 > y2 {
             return None; // parallel AND outside box : no intersection possible
         }
     }
@@ -87,8 +85,8 @@ fn main() {
             clear([1.0; 4], g);
 
 
-            let ray=&Ray{point:Vec2{x:cursor[0] as isize,y:cursor[1] as isize},dir:Vec2{x:-1,y:-1}};
-
+            let ray_point=(cursor[0] as isize,cursor[1] as isize);
+            let ray_dir=(-1,-2);
             //https://tavianator.com/fast-branchless-raybounding-box-intersections/
 
 
@@ -106,9 +104,9 @@ fn main() {
 
 
                 let k={
-                    let bb=RectInf{xdiv:(0+100,800-100),ydiv:(0+100,800-100)};
+                    let bb=AABBox::new((0+100,800-100),(0+100,800-100));
                     {
-                        let ((x1,x2),(y1,y2))=(bb.xdiv,bb.ydiv);
+                        let ((x1,x2),(y1,y2))=bb.get();//(bb.xdiv,bb.ydiv);
                         let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
                         let square = [x1,y1,x2-x1,y2-y1];
                         rectangle([0.0,1.0,0.0,0.2], square, c.transform, g);
@@ -116,8 +114,8 @@ fn main() {
 
 
 
-                    let fast_func=|rect:&RectInf<isize>|->Option<isize>{
-                        let ((x1,x2),(y1,y2))=(rect.xdiv,rect.ydiv);
+                    let fast_func=|rect:&AABBox<isize>|->Option<isize>{
+                        let ((x1,x2),(y1,y2))=rect.get();//(rect.xdiv,rect.ydiv);
                         /*
                         {
                             let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
@@ -127,7 +125,7 @@ fn main() {
                         }
                         */
 
-                        intersects_box(ray,rect)
+                        intersects_box(ray_point,ray_dir,rect)
                     };
 
 
@@ -139,27 +137,25 @@ fn main() {
                             let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
                             rectangle([0.0,0.0,1.0,0.8], square, c.transform, g);
                         }
-                        
-                        let point=ray.point;
-                        let dir=ray.dir;
-                        intersects_box(ray,&RectInf{xdiv:(x1,x2),ydiv:(y1,y2)})
+                        //RectInf{xdiv:(x1,x2),ydiv:(y1,y2)
+                        intersects_box(ray_point,ray_dir,a.rect)
                     };
 
                     
-                    tree.raycast(ray,bb,fast_func,ray_touch_box)
+                    tree.raycast(ray_point,ray_dir,bb,fast_func,ray_touch_box)
                 };
 
                 let (ppx,ppy)=if let Some(k)=k{
-                    let ppx=ray.point.x+ray.dir.x*k.1;
-                    let ppy=ray.point.y+ray.dir.y*k.1;
+                    let ppx=ray_point.0+ray_dir.0*k.1;
+                    let ppy=ray_point.1+ray_dir.1*k.1;
                     (ppx,ppy)
                 }else{
-                    let ppx=ray.point.x+ray.dir.x*800;
-                    let ppy=ray.point.y+ray.dir.y*800;
+                    let ppx=ray_point.0+ray_dir.0*800;
+                    let ppy=ray_point.1+ray_dir.1*800;
                     (ppx,ppy)
                 };
 
-                let arr=[ray.point.x as f64,ray.point.y as f64,ppx as f64,ppy as f64];
+                let arr=[ray_point.0 as f64,ray_point.1 as f64,ppx as f64,ppy as f64];
                 line([0.0, 0.0, 0.0, 1.0], // black
                      2.0, // radius of line
                      arr, // [x0, y0, x1,y1] coordinates of line

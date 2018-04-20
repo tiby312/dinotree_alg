@@ -1,6 +1,76 @@
 use inner_prelude::*;
 use super::*;
 
+/*
+//test
+mod stuff{
+    use super::*;
+
+
+    pub trait NodeTrait{
+        type N:NumTrait;
+        type T;
+        fn get_div(&self)->Option<Self::N>;
+        fn get_cont(&self)->Option<Range<Self::N>>;
+        fn for_every<F:FnMut(Self::T)>(&mut self,func:F);
+    }
+
+    pub trait Callback{
+        type T;
+        type N:NumTrait;
+        fn get(&self,a:Self::T)->&Rect<Self::N>;
+        fn callback(&mut self,a:Self::T,a:Self::N);
+    }
+
+
+    struct Blag2<'a,T:SweepTrait+'a>(&'a mut NodeDyn<T>);
+
+    impl<'a,T:SweepTrait+'a> NodeTrait for Blag2<'a,T>{
+        type N=T::Num;
+        type T=&'a mut T;
+        fn get_div(&self)->Option<Self::N>{
+            self.0.div
+        }
+        fn get_cont(&self)->Option<Range<Self::N>>{
+            self.0.cont
+        }
+        fn for_every<F:FnMut(Self::T)>(&mut self,mut func:F){
+            for bot in self.0.range.iter_mut(){
+                func(bot);
+            }
+        }
+    }
+
+    struct Blag<'a,T:'a,F>((PhantomData<&'a T>,F));
+
+    impl<'a,T:SweepTrait,F:FnMut(ColSingle<T>,T::Num)> Callback for Blag<'a,T,F>{
+        type T=&'a mut T;
+        type N=T::Num;
+        fn get(&self,a:&'a mut T)->&Rect<T::Num>{
+            &(a.get().0).0
+        }
+        fn callback(&mut self,a:&mut T,b:T::Num){
+            let j=a.get_mut();
+            let c=ColSingle{inner:j.1,rect:j.0};
+            let dis=b;
+            ((self.0).1)(c,dis)
+        }
+    }
+
+
+
+
+    pub fn test<BB:NodeTrait,A:AxisTrait,C: CTreeIterator<Item = BB>,H:Callback<T=BB::T,N=BB::N>>(stuff:C,callback:H){
+        let (mut nn,rest)=stuff.next();
+
+        nn.for_every(|bot|{
+            let r=callback.get(bot);
+        });
+
+    }
+}*/
+
+
 pub fn k_nearest<'b,
     A:AxisTrait,
     T:SweepTrait,
