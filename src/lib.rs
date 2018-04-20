@@ -112,7 +112,7 @@ use smallvec::SmallVec;
 use dinotree_inner::TreeTimer2;
 use dinotree_inner::TreeTimerEmpty;
 use dinotree_inner::Bag;
-use raycast::ray::RayTrait;
+//use raycast::ray::RayTrait;
 use dinotree_inner::compute_tree_height;
 
 ///Represents a destructured SweepTrait into the immutable bounding box reference,
@@ -121,6 +121,8 @@ pub struct ColSingle<'a, T: SweepTrait + 'a> {
     pub rect: &'a AABBox<T::Num>,
     pub inner: &'a mut T::Inner,
 }
+
+
 
 use dinotree_inner::DynTree;
 
@@ -298,10 +300,27 @@ mod ba {
             }
         }
 
+        ///A dinotree paritions an infinite plane. On creation, you dont specify a bounding area in which all then nodes live.
+        ///The result of this is that the nodes on the outer edges of the tree in 2d space own an infinite amount of space in which
+        ///bots might live.
+        ///The calculation to determine if a ray intersects a finite rectangle, is simplier than an infinite rectangle.
+        ///Simply using a rectangle that is the max size of the primitive number type being used leads to the user having
+        ///to be very careful of overflow.
+        ///So I thought the best option would be to have the user supply a finite rectangle in the area
+        ///in which they are interested in finding bots that intersect the ray.
+        ///I did not think it would be neccesary to stricly enfource that only bots inside of this rectangle be considered.
+        ///This would have added extra checking that every bounding box considered was within this max rectangle.
+        ///Or the user would have had to supply an additional function to calculate the maximum possible tvalue that the ray could have
+        ///and still be within the box.
+        ///The result is that all bots within the rectangle are considred, but those outside of it may or may not be considered.
+        ///So the user just has to make this rectangle "big enough" to encomposs all thay he is interested in.
+        ///The fast fuction is used to prune node bounding boxes from being considerd.
+        ///The slow function is used to do expensive checking to determine if this particular bot intersects the ray.
         pub fn raycast<
-            'b,MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
-            R:RayTrait<N=T::Num>>
-            (&'b mut self,ray:R,rect:raycast::RectInf<T::Num>,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
+            'b,
+            MFFast:FnMut(&RectInf<T::Num>)->Option<T::Num>,
+            MF:FnMut(ColSingle<T>)->Option<T::Num>> //called to test if this object touches the ray. if it does, return distance to start of ray
+            (&'b mut self,ray:&Ray<T::Num>,rect:raycast::RectInf<T::Num>,mut func_fast:MFFast,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
@@ -309,6 +328,7 @@ mod ba {
                         a,
                         ray,
                         func,
+                        func_fast,
                         rect
                     )
                 }
@@ -317,6 +337,7 @@ mod ba {
                         a,
                         ray,
                         func,
+                        func_fast,
                         rect
                     )
                 }
@@ -330,17 +351,18 @@ mod ba {
         ///compute distance between points. So instead of giving the NumTrait arithmetic and thus
         ///add uneeded bounds for general use of this tree, the user must provide functions for arithmetic
         ///specifically for this function.
-        ///The use can also specify what the minimum distance function is minizing based off of. For example
+        ///The user can also specify what the minimum distance function is minizing based off of. For example
         ///minimizing based off the square distance will give you the same answer as minimizing based off 
         ///of the distant. 
         ///The callback function will be called on the closest object, then the second closest, and so on up 
         ///until k.
-        pub fn k_nearest<
-            F: FnMut(ColSingle<T>,T::Num),
-            MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
-            MF2:Fn(T::Num,T::Num)->T::Num,
+        ///User can also this way choose whether to use manhatan distance or not.
+        pub fn k_nearest<'b,
+            F: FnMut(ColSingle<'b,T>,T::Num),
+            MF:FnMut((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
+            MF2:FnMut(T::Num,T::Num)->T::Num,
         >(
-            &mut self,
+            &'b mut self,
             
             point: (T::Num, T::Num),
             num:usize,

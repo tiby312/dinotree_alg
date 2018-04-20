@@ -1,18 +1,18 @@
 use inner_prelude::*;
 use super::*;
 
-pub fn k_nearest<
+pub fn k_nearest<'b,
     A:AxisTrait,
     T:SweepTrait,
-    F: FnMut(ColSingle<T>,T::Num),
-    MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
-    MF2:Fn(T::Num,T::Num)->T::Num,
-    >(tree:&mut DynTree<A,T>,point:(T::Num,T::Num),num:usize,mut func:F,mf:MF,mf2:MF2){
+    F: FnMut(ColSingle<'b,T>,T::Num),
+    MF:FnMut((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
+    MF2:FnMut(T::Num,T::Num)->T::Num,
+    >(tree:&'b mut DynTree<A,T>,point:(T::Num,T::Num),num:usize,mut func:F,mut mf:MF,mut mf2:MF2){
 
     let dt = tree.get_iter_mut();
 
     let mut c=ClosestCand::new(num);
-    recc(A::new(),dt,&mf,&mf2,point,&mut c);
+    recc(A::new(),dt,&mut mf,&mut mf2,point,&mut c);
  
     for i in c.into_sorted(){
         let j=unsafe{&mut *i.0}.get_mut();
@@ -92,13 +92,30 @@ mod cand{
     }
 }
 
+
+fn traverse_other<T:SweepTrait,MF2:FnMut(T::Num,T::Num)->T::Num>(res:&ClosestCand<T>,mf2:&mut MF2,pp:T::Num,div:T::Num)->bool{
+    match res.full_and_max_distance(){
+        Some(max)=>{
+            if mf2(pp,div)<max{
+                true
+            }else{
+                false
+            }
+        },
+        None=>{
+            true
+        }
+    }
+}
+
+
 fn recc<'x,'a,
     A: AxisTrait,
     T: SweepTrait + 'x,
     C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-    MF:Fn((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
-    MF2:Fn(T::Num,T::Num)->T::Num,
-    >(axis:A,stuff:C,mf:&MF,mf2:&MF2,point:(T::Num,T::Num),res:&mut ClosestCand<T>){
+    MF:FnMut((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
+    MF2:FnMut(T::Num,T::Num)->T::Num,
+    >(axis:A,stuff:C,mf:&mut MF,mf2:&mut MF2,point:(T::Num,T::Num),res:&mut ClosestCand<T>){
 
     let (nn,rest)=stuff.next();
 
@@ -109,7 +126,6 @@ fn recc<'x,'a,
         point.1
     };
 
-    
     match rest {
         Some((left, right)) => {
             let div = nn.div.unwrap();
@@ -123,53 +139,26 @@ fn recc<'x,'a,
 
             recc(axis.next(), first,mf,mf2,point,res);
            
-            let traverse_other=match res.full_and_max_distance(){
-                Some(max)=>{
-                    if mf2(pp,div)<max{
-                        true
-                    }else{
-                        false
-                    }
-                },
-                None=>{
-                    true
-                }
-            };
-
-            if traverse_other{
+            if traverse_other(res,mf2,pp,div){
                 recc(axis.next(),other,mf,mf2,point,res);
             }
-        }
-        _ => {
-            
-        }
-    }
 
-    let traverse_other=match res.full_and_max_distance(){
-        Some(max)=>{
-            match nn.div{
-                Some(div)=>{
-                    if mf2(pp,div)<max{
-                        true
-                    }else{
-                        false
-                    }
-                },
-                None=>{
-                    true
+            //Check again incase the other recursion took care of everything
+            //We are hoping that it is more likely that the closest points are found
+            //in decendant nodes instead of ancestor nodes.
+            if traverse_other(res,mf2,pp,div){
+                for i in nn.range.iter_mut(){            
+                    let dis_sqr=mf(point,i.get().0);
+                    res.consider((i,dis_sqr));
                 }
             }
-        },
-        None=>{
-            true
-        }
-    };
 
-    if traverse_other{
-        for i in nn.range.iter_mut(){            
-            let dis_sqr=mf(point,i.get().0);
-            res.consider((i,dis_sqr));
+        }
+        _ => {
+            for i in nn.range.iter_mut(){            
+                let dis_sqr=mf(point,i.get().0);
+                res.consider((i,dis_sqr));
+            }        
         }
     }
-
 }
