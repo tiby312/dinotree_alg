@@ -20,29 +20,8 @@ pub fn get_num_verticies(height: usize) -> usize {
 }
 
 
-/*
-pub fn update2<A:AxisTrait,T:SweepTrait,FX:FnMut(usize,N),FY:FnMut(usize,N)>(gentree:&DynTree<A,T>){
-    let g=gentree.create_down();
-    fn recc<X,C:CTreeIterator<Item=X>,A:par::AxisTrait>(a:C,mut b:&mut AC,axis:A){
 
-        let (n,rest)=a.next();
-        
-        b.handle::<A>(n);
-
-        match rest{
-            Some((left,right))=>{
-                recc(left,b,axis.next());
-                recc(right,b,axis.next());
-            },
-            None=>{
-
-            }
-        }
-    }
-
-}*/
-
-
+//TODO fix this to hide rect.
 ///Meant to then be drawn using triangles.
 ///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
 pub fn update<V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(

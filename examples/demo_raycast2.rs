@@ -11,17 +11,24 @@ mod support;
 use dinotree::*;
 use dinotree::support::*;
 use support::*;
+use ordered_float::*;
 
 
-
-fn intersects_box(point:(isize,isize),dir:(isize,isize),rect:&AABBox<isize>)->Option<isize>{
+fn intersects_box(point:(NotNaN<f64>,NotNaN<f64>),dir:(NotNaN<f64>,NotNaN<f64>),rect:&AABBox<NotNaN<f64>>)->Option<NotNaN<f64>>{
     let ((x1,x2),(y1,y2))=rect.get();
 
+    let x1=x1.into_inner();
+    let x2=x2.into_inner();
+    let y1=y1.into_inner();
+    let y2=y2.into_inner();
 
-    let mut tmin=isize::min_value();
-    let mut tmax=isize::max_value();
+    let mut tmin=std::f64::MIN;//min_value();
+    let mut tmax=std::f64::MAX;//max_value();
 
-    if dir.0!=0{
+    let point=(point.0.into_inner(),point.1.into_inner());
+    let dir=(dir.0.into_inner(),dir.1.into_inner());
+
+    if dir.0!=0.0{
         let tx1=(x1-point.0)/dir.0;
         let tx2=(x2-point.0)/dir.0;
 
@@ -33,7 +40,7 @@ fn intersects_box(point:(isize,isize),dir:(isize,isize),rect:&AABBox<isize>)->Op
             return None; // parallel AND outside box : no intersection possible
         }
     }
-    if dir.1!=0{
+    if dir.1!=0.0{
         let ty1=(y1-point.1)/dir.1;
         let ty2=(y2-point.1)/dir.1;
 
@@ -44,8 +51,8 @@ fn intersects_box(point:(isize,isize),dir:(isize,isize),rect:&AABBox<isize>)->Op
             return None; // parallel AND outside box : no intersection possible
         }
     }
-    if tmax>=tmin && tmax>=0{
-        return Some(tmin.max(0));
+    if tmax>=tmin && tmax>=0.0{
+        return Some(NotNaN::new(tmin.max(0.0)).unwrap());
     }else{
         return None;
     }
@@ -61,7 +68,8 @@ fn main() {
     let mut bots = Vec::new();
     for id in 0..1000 {
         let ppp = p.random_point();
-        let k = support::create_rect_from_point(ppp);
+        let ppp = (ppp.0 as f64, ppp.1 as f64);
+        let k = support::create_rect_from_point_f64(ppp);
         bots.push(BBox::new(
             Bot {
                 id,
@@ -83,20 +91,18 @@ fn main() {
         });
 
         window.draw_2d(&e, |c, g| {
-            clear([1.0; 4], g);
+            clear([0.0; 4], g);
 
 
-            let ray_point=(cursor[0] as isize,cursor[1] as isize);
-            let ray_dir=(-1,-2);
             //https://tavianator.com/fast-branchless-raybounding-box-intersections/
 
 
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
-                let arr=[x1 as f64,y1 as f64,x2 as f64,y2 as f64];
-                let square = rectangle::square(x1 as f64, y1 as f64, 8.0);
+                let arr=[x1 ,y1 ,x2 ,y2 ];
+                let square = rectangle::square(x1.into_inner(), y1.into_inner(), 8.0);
         
-                rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
+                rectangle([0.0,1.0,0.0,1.0], square, c.transform, g);
             }
         
         
@@ -104,18 +110,25 @@ fn main() {
                 let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
 
-                let k={
-                    let bb=AABBox::new((0+100,800-100),(0+100,800-100));
-                    {
-                        let ((x1,x2),(y1,y2))=bb.get();//(bb.xdiv,bb.ydiv);
-                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                        let square = [x1,y1,x2-x1,y2-y1];
-                        rectangle([0.0,1.0,0.0,0.2], square, c.transform, g);
-                    }
+            
+                let bb=AABBox::new((NotNaN::new(0.0).unwrap(),NotNaN::new(800.0).unwrap()),(NotNaN::new(0.0).unwrap(),NotNaN::new(800.0).unwrap()));
+                
 
 
 
-                    let fast_func=|rect:&AABBox<isize>|->Option<isize>{
+                for i in 0..360{
+                    let i=i as f64*(std::f64::consts::PI/180.0);
+                    let x=(i.cos()*20.0) as f64 ;
+                    let y=(i.sin()*20.0) as f64;
+
+                    let ray_point=(cursor[0] as f64,cursor[1] as f64);
+                    let ray_dir=(x,y);
+
+                    let ray_point=(NotNaN::new(ray_point.0).unwrap(),NotNaN::new(ray_point.1).unwrap());
+                    let ray_dir=(NotNaN::new(ray_dir.0).unwrap(),NotNaN::new(ray_dir.1).unwrap());
+
+
+                    let fast_func=|rect:&AABBox<NotNaN<f64>>|->Option<NotNaN<f64>>{
                         let ((x1,x2),(y1,y2))=rect.get();//(rect.xdiv,rect.ydiv);
                         /*
                         {
@@ -130,38 +143,42 @@ fn main() {
                     };
 
 
-                    let ray_touch_box=|a:ColSingle<BBox<isize,Bot>>|->Option<isize>{
+                    let ray_touch_box=|a:ColSingle<BBox<NotNaN<f64>,Bot>>|->Option<NotNaN<f64>>{
                         let ((x1,x2),(y1,y2))=a.rect.get();
-                        
+                        /*
                         {
                             let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
                             let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
                             rectangle([0.0,0.0,1.0,0.8], square, c.transform, g);
                         }
+                        */
                         //RectInf{xdiv:(x1,x2),ydiv:(y1,y2)
                         intersects_box(ray_point,ray_dir,a.rect)
                     };
 
                     
-                    tree.raycast(ray_point,ray_dir,bb,fast_func,ray_touch_box)
-                };
+                    let k=tree.raycast(ray_point,ray_dir,bb,fast_func,ray_touch_box);
 
-                let (ppx,ppy)=if let Some(k)=k{
-                    let ppx=ray_point.0+ray_dir.0*k.1;
-                    let ppy=ray_point.1+ray_dir.1*k.1;
-                    (ppx,ppy)
-                }else{
-                    let ppx=ray_point.0+ray_dir.0*800;
-                    let ppy=ray_point.1+ray_dir.1*800;
-                    (ppx,ppy)
-                };
+                    let (ppx,ppy)=if let Some(k)=k{
+                        let ppx=ray_point.0+ray_dir.0*k.1;
+                        let ppy=ray_point.1+ray_dir.1*k.1;
+                        (ppx,ppy)
+                    }else{
+                        let ppx=ray_point.0+ray_dir.0*800.0;
+                        let ppy=ray_point.1+ray_dir.1*800.0;
+                        (ppx,ppy)
+                    };
 
-                let arr=[ray_point.0 as f64,ray_point.1 as f64,ppx as f64,ppy as f64];
-                line([0.0, 0.0, 0.0, 1.0], // black
-                     2.0, // radius of line
-                     arr, // [x0, y0, x1,y1] coordinates of line
-                     c.transform,
-                     g);
+                    let arr=[ray_point.0.into_inner() ,ray_point.1.into_inner() ,ppx.into_inner() ,ppy.into_inner() ];
+                    line([1.0, 1.0, 1.0, 0.2], // black
+                         1.0, // radius of line
+                         arr, // [x0, y0, x1,y1] coordinates of line
+                         c.transform,
+                         g);
+
+                }
+                
+
             }
 
         });

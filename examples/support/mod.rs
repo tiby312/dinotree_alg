@@ -7,6 +7,10 @@ use rand;
 use rand::{SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};
 use dinotree::*;
+
+use ordered_float::*;
+
+
 #[derive(Clone, Debug)]
 pub struct Bot {
     pub id: usize,
@@ -29,6 +33,21 @@ pub fn create_rect_from_point(a: (isize, isize)) -> AABBox<isize> {
     let y = a.1;
     AABBox(make_rect((x , x + r), (y , y + r)))
 }
+
+
+pub fn create_rect_from_point_f64(a: (f64, f64)) -> AABBox<NotNaN<f64>> {
+    let r = 8.0;
+    let x = a.0;
+    let y = a.1;
+
+    let x1=NotNaN::new(x).unwrap();
+    let x2=NotNaN::new(x+r).unwrap();
+    let y1=NotNaN::new(y).unwrap();
+    let y2=NotNaN::new(y+r).unwrap();
+    AABBox(axgeom::Rect::new(x1,x2,y1,y2))
+    //AABBox(make_rect((x , x + r), (y , y + r)))
+}
+
 pub fn create_unordered(a: &Bot, b: &Bot) -> (usize, usize) {
     if a.id < b.id {
         (a.id, b.id)
