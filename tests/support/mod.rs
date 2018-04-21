@@ -53,6 +53,7 @@ pub fn compair_bot_pair(a: &(usize, usize), b: &(usize, usize)) -> std::cmp::Ord
 }
 
 
+
 pub struct PointGenerator {
     rng: StdRng,
     xdist: Range<isize>,

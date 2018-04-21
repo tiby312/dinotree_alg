@@ -22,8 +22,8 @@ fn intersects_box(point:(NotNaN<f64>,NotNaN<f64>),dir:(NotNaN<f64>,NotNaN<f64>),
     let y1=y1.into_inner();
     let y2=y2.into_inner();
 
-    let mut tmin=std::f64::MIN;//min_value();
-    let mut tmax=std::f64::MAX;//max_value();
+    let mut tmin=std::f64::MIN;
+    let mut tmax=std::f64::MAX;
 
     let point=(point.0.into_inner(),point.1.into_inner());
     let dir=(dir.0.into_inner(),dir.1.into_inner());
@@ -59,28 +59,16 @@ fn intersects_box(point:(NotNaN<f64>,NotNaN<f64>),dir:(NotNaN<f64>,NotNaN<f64>),
                 
 }
 
-fn main() {
-    let mut p = PointGenerator::new(
-        &support::make_rect((0, 800), (0, 800)),
-        &[100, 42, 6],
-    );
 
-    let mut bots = Vec::new();
-    for id in 0..1000 {
-        let ppp = p.random_point();
-        let ppp = (ppp.0 as f64, ppp.1 as f64);
-        let k = support::create_rect_from_point_f64(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
+
+fn main() {
+
+    let mut bots=create_bots_f64(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
+
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
         .exit_on_esc(true)
+        .samples(4)
         .build()
         .unwrap();
 
@@ -95,27 +83,19 @@ fn main() {
 
 
             //https://tavianator.com/fast-branchless-raybounding-box-intersections/
-
-
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
-                let arr=[x1 ,y1 ,x2 ,y2 ];
-                let square = rectangle::square(x1.into_inner(), y1.into_inner(), 8.0);
-        
-                rectangle([0.0,1.0,0.0,1.0], square, c.transform, g);
+                let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+                    
+                let square = [x1,y1,x2-x1,y2-y1];
+                rectangle([1.0,1.0,1.0,0.3], square, c.transform, g);
             }
-        
         
             {
                 let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
-
-            
                 let bb=AABBox::new((NotNaN::new(0.0).unwrap(),NotNaN::new(800.0).unwrap()),(NotNaN::new(0.0).unwrap(),NotNaN::new(800.0).unwrap()));
                 
-
-
-
                 for i in 0..360{
                     let i=i as f64*(std::f64::consts::PI/180.0);
                     let x=(i.cos()*20.0) as f64 ;
@@ -130,29 +110,13 @@ fn main() {
 
                     let fast_func=|rect:&AABBox<NotNaN<f64>>|->Option<NotNaN<f64>>{
                         let ((x1,x2),(y1,y2))=rect.get();//(rect.xdiv,rect.ydiv);
-                        /*
-                        {
-                            let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                            let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
-                            let g=0u32;
-                            rectangle([0.0,1.0,0.0,0.1], square, c.transform, g);
-                        }
-                        */
-
+  
                         intersects_box(ray_point,ray_dir,rect)
                     };
 
 
                     let ray_touch_box=|a:ColSingle<BBox<NotNaN<f64>,Bot>>|->Option<NotNaN<f64>>{
                         let ((x1,x2),(y1,y2))=a.rect.get();
-                        /*
-                        {
-                            let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                            let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
-                            rectangle([0.0,0.0,1.0,0.8], square, c.transform, g);
-                        }
-                        */
-                        //RectInf{xdiv:(x1,x2),ydiv:(y1,y2)
                         intersects_box(ray_point,ray_dir,a.rect)
                     };
 
@@ -175,13 +139,8 @@ fn main() {
                          arr, // [x0, y0, x1,y1] coordinates of line
                          c.transform,
                          g);
-
                 }
-                
-
             }
-
         });
     }
-
 }
