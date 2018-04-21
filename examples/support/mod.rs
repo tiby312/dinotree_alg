@@ -11,6 +11,7 @@ use dinotree::*;
 use ordered_float::*;
 use dinotree::support::*;
 
+/*
 //TODO use these?
 pub enum SizeDistribution{
     Uniform,
@@ -26,7 +27,55 @@ pub enum PositionDistribution{
     AllY,
     AllMedian
 }
+*/
+/*
+mod dr{
+    
+    use piston_window::*;
+    use piston_window;
+    pub fn draw<F:FnMut(&mut [RectDrawer],&mut [LineDrawer])>(mut func:F,rect_col:&[[f64;4]],line_col:&[[f64;4]]){
 
+
+        let mut window: PistonWindow = WindowSettings::new("demo test", [800, 800])
+            .exit_on_esc(true)
+            .build()
+            .unwrap();
+
+        let mut cursor=[0.0,0.0];
+        while let Some(e) = window.next() {
+            e.mouse_cursor(|x, y| {
+                cursor = [x, y];
+            });
+
+            window.draw_2d(&e, |c, g| {
+                clear([1.0; 4], g);
+
+
+                func(c,g)
+
+            
+            });
+        }
+    }
+    
+    pub struct RectDrawer{
+        a:Vec<f64>,
+        color:[f64;4]
+    }
+
+    pub struct LineDrawer{
+        a:Vec<f64>,
+        color:[f64,4]
+    }
+
+    impl RectMaker{
+        fn queue(&mut self,rect:&[f64;4]){
+            
+        }
+    }
+
+}
+*/
 
 
 pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<NotNaN<f64>,X>>{
@@ -86,33 +135,7 @@ pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;
 
 }
 
-/*
-use piston_window::*;
-use piston_window;
-pub fn draw<F:FnMut(piston_window::Context,)>(mut func:F){
 
-    let mut window: PistonWindow = WindowSettings::new("demo test", [800, 800])
-        .exit_on_esc(true)
-        .build()
-        .unwrap();
-
-    let mut cursor=[0.0,0.0];
-    while let Some(e) = window.next() {
-        e.mouse_cursor(|x, y| {
-            cursor = [x, y];
-        });
-
-        window.draw_2d(&e, |c, g| {
-            clear([1.0; 4], g);
-
-
-            func(c,g)
-
-        
-        });
-    }
-}
-*/
 
 
 
@@ -123,18 +146,13 @@ pub struct Bot {
     pub col: Vec<usize>,
 }
 
-impl Bot{
-    pub fn new(id:usize)->Bot{
-        Bot{id,col:Vec::new()}
-    }
-}
-
+/*
 pub fn make_rect(a: (isize, isize), b: (isize, isize)) -> axgeom::Rect<isize> {
     axgeom::Rect::new(a.0, a.1, b.0, b.1)
 }
+*/
 
-
-
+/*
 pub fn create_rect_from_point_f64(a: (f64, f64)) -> AABBox<NotNaN<f64>> {
     let r = 8.0;
     let x = a.0;
@@ -147,7 +165,8 @@ pub fn create_rect_from_point_f64(a: (f64, f64)) -> AABBox<NotNaN<f64>> {
     AABBox(axgeom::Rect::new(x1,x2,y1,y2))
     //AABBox(make_rect((x , x + r), (y , y + r)))
 }
-
+*/
+/*
 pub fn create_unordered(a: &Bot, b: &Bot) -> (usize, usize) {
     if a.id < b.id {
         (a.id, b.id)
@@ -170,6 +189,7 @@ pub fn compair_bot_pair(a: &(usize, usize), b: &(usize, usize)) -> std::cmp::Ord
         }
     }
 }
+*/
 
 
 pub struct UniformRangeGenerator{

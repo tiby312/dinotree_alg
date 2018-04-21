@@ -37,9 +37,8 @@ fn main() {
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                    
-                //let arr=[x1 as f64,y1 as f64,x2 as f64,y2 as f64];
-                let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
+
+                let square = [x1,y1,x2-x1,y2-y1];
         
                 rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
             }
@@ -52,7 +51,7 @@ fn main() {
                 
                 {
                     let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                    let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
+                    let square = [x1,y1,x2-x1,y2-y1];
                     rectangle([0.0,0.0,1.0,0.2], square, c.transform, g);
                 }
             }  
@@ -67,7 +66,7 @@ fn main() {
                     
                     {
                         let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                        let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
+                        let square = [x1,y1,x2-x1,y2-y1];
                         rectangle([1.0,0.0,0.0,1.0], square, c.transform, g);
                     }
 

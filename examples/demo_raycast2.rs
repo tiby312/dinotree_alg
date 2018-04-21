@@ -55,8 +55,7 @@ fn intersects_box(point:(NotNaN<f64>,NotNaN<f64>),dir:(NotNaN<f64>,NotNaN<f64>),
         return Some(NotNaN::new(tmin.max(0.0)).unwrap());
     }else{
         return None;
-    }
-                
+    }                
 }
 
 
