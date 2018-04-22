@@ -57,27 +57,8 @@ fn test_dinotree_drop() {
         let mut bots=create_bots_isize(|id|{
             let v=ii.next().unwrap();
             Bot{_id:id,drop_counter:v}
-        },&[0,1000,0,1000],10000,[2,20]);
-        /*
-        let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
-
-        
-        let spawn_world = make_rect((-990, 990), (-90, 90));
-
-        let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
-
-        for (id, dc) in (0..5000).zip(drop_counter.iter_mut()) {
-            let rect = create_rect_from_point(p.random_point());
-            let j = BBox::new(
-                Bot {
-                    _id:id,
-                    drop_counter: dc,
-                },
-                rect,
-            );
-            bots.push(j);
-        }
-        */
+        },&[0,1000,0,1000],5000,[2,20]);
+  
 
         {
             let mut dyntree:DinoTree<BBox<isize,Bot>> = DinoTree::new(&mut bots,  StartAxis::Xaxis);
@@ -283,7 +264,7 @@ fn test_panic_in_callback() {
     }
 
     {
-        let mut bots=create_bots_isize(|id|Bot{was_hit:0},&[-990,990,-90,90],500,[2,20]);
+        let mut bots=create_bots_isize(|id|Bot{was_hit:0},&[-990,990,-90,90],5000,[2,20]);
         /*
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
@@ -440,10 +421,10 @@ fn test_rect_panic(){
 
         let mut r=dyntree.rects();
         let rect=AABBox::new((0,10),(0,10));
-        r.for_all_in_rect(&rect,|a: ColSingle<BBox<isize, Bot>>|res.push(a.inner.id));
+        r.for_all_in_rect(&rect,|a: ColSingle<BBox<isize, Bot>>|res.push(a.inner.id)).unwrap();
         let rect=AABBox::new((10,20),(0,10));
 
-        r.for_all_in_rect(&rect,|a: ColSingle<BBox<isize, Bot>>|res.push(a.inner.id));
+        r.for_all_in_rect(&rect,|a: ColSingle<BBox<isize, Bot>>|res.push(a.inner.id)).unwrap();
     }
 
 }
@@ -625,7 +606,7 @@ fn test_russian_doll() {
                 let id = id_counter.next().unwrap();
 
                 //let rect = AABBox(make_rect((-1000, -100), (x, y)));
-                let rect =AABBox::new((-1000,-100),(x,y));
+                let rect =AABBox::new((-1000,-100),(y,x));
                 
                 bots.push(BBox::new(
                     Bot {
@@ -765,7 +746,7 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
 }
 
 #[test]
-fn test_dinotree() {
+fn test_fat_bots_dinotree() {
     
 
     let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,50]);
