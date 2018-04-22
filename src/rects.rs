@@ -19,7 +19,7 @@ impl<'a: 'b, 'b, T: SweepTrait + 'a> Rects<'a, 'b, T> {
         })
     }
 
-    ///Panics if user supplies a rectangle that intersects with another one used to call this same
+    ///Returns an error if user supplies a rectangle that intersects with another one used to call this same
     ///function.
     pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(&mut self, rect: &AABBox<T::Num>, func: F)->Result<(),&str>  {
         match &mut self.0 {
