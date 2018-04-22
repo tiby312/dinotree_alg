@@ -241,7 +241,7 @@ mod ba {
         }
 
         ///Create a dinotree that does not use any parallel algorithms.
-        ///Returns time each level took in nanoseconds.
+        ///Returns time each level took in seconds. First element is root time, last element is last level time.
         pub fn new_seq_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Vec<f64>) {
             let (a,b)=self::make::<_,par::Sequential,TreeTimer2>(axis,rest);
             return (a,b.into_vec());
@@ -480,7 +480,8 @@ mod ba {
             };
         }
 
-        ///Returns time each level took in nanoseconds.
+        ///Returns time each level took in seconds.
+        ///Returns time each level took in seconds. First element is root time, last element is last level time.
         pub fn intersect_every_pair_seq_debug<F: FnMut(ColSingle<T>, ColSingle<T>)>(
             &mut self,
             clos: F,
