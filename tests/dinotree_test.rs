@@ -53,7 +53,7 @@ fn test_dinotree_drop() {
 
     let mut drop_counter: Vec<isize> = (0..5000).map(|_| 1).collect();
     {
-        let ii=drop_counter.iter_mut();
+        let mut ii=drop_counter.iter_mut();
         let mut bots=create_bots_isize(|id|{
             let v=ii.next().unwrap();
             Bot{_id:id,drop_counter:v}
@@ -225,7 +225,7 @@ fn test_corners_touch() {
         if a {
             for x in (-1000..2000).step_by(20).step_by(2) {
                 let id = id_counter.next().unwrap();
-                let rect = create_rect_from_point((x, y));
+                let rect =AABBox::new((x-10,x+10),(y-10,y+10));
                 bots.push(BBox::new(
                     Bot {
                         id,
@@ -237,7 +237,9 @@ fn test_corners_touch() {
         } else {
             for x in (-1000..2000).step_by(20).skip(1).step_by(2) {
                 let id = id_counter.next().unwrap();
-                let rect = create_rect_from_point((x, y));
+                //let rect = create_rect_from_point((x, y));
+                let rect =AABBox::new((x-10,x+10),(y-10,y+10));
+                
                 bots.push(BBox::new(
                     Bot {
                         id,
@@ -364,7 +366,7 @@ fn test_zero_sized_type() {
     }
 
     {
-        let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[-990,990,-90,90],5000,[2,20]);
+        let mut bots=create_bots_isize(|id|Bot,&[-990,990,-90,90],5000,[2,20]);
         /*
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
@@ -397,15 +399,17 @@ fn test_zero_sized_type() {
 
 #[test]
 fn test_rect(){
+    struct Bot{id:usize};
+
     fn from_point(a:isize,b:isize)->AABBox<isize>{
         AABBox::new((a,a),(b,b))
     }
 
     let mut bots=Vec::new();
-    bots.push(BBox::new(Bot::new(0),from_point(0,0)));
-    bots.push(BBox::new(Bot::new(1),from_point(10,0)));
-    bots.push(BBox::new(Bot::new(2),from_point(0,10)));
-    bots.push(BBox::new(Bot::new(3),from_point(10,10)));
+    bots.push(BBox::new(Bot{id:0},from_point(0,0)));
+    bots.push(BBox::new(Bot{id:1},from_point(10,0)));
+    bots.push(BBox::new(Bot{id:2},from_point(0,10)));
+    bots.push(BBox::new(Bot{id:3},from_point(10,10)));
 
 
     let mut res=Vec::new();
@@ -447,18 +451,20 @@ fn test_rect_panic(){
 
 #[test]
 fn test_rect_intersect(){
+    struct Bot{id:usize};
+
     fn from_point(a:isize,b:isize)->AABBox<isize>{
         AABBox::new((a,a),(b,b))
     }
 
     let mut bots=Vec::new();
-    bots.push(BBox::new(Bot::new(0),from_point(0,0)));
-    bots.push(BBox::new(Bot::new(1),from_point(10,0)));
-    bots.push(BBox::new(Bot::new(2),from_point(0,10)));
-    bots.push(BBox::new(Bot::new(3),from_point(10,10)));
+    bots.push(BBox::new(Bot{id:0},from_point(0,0)));
+    bots.push(BBox::new(Bot{id:1},from_point(10,0)));
+    bots.push(BBox::new(Bot{id:2},from_point(0,10)));
+    bots.push(BBox::new(Bot{id:3},from_point(10,10)));
 
     let rect=AABBox::new((10,20),(10,20));
-    bots.push(BBox::new(Bot::new(3),rect));
+    bots.push(BBox::new(Bot{id:3},rect));
 
     let mut res=Vec::new();
     {
@@ -473,18 +479,18 @@ fn test_rect_intersect(){
 
 #[test]
 fn test_intersect_with(){
- 
+    struct Bot{id:usize};
     fn from_rect(a:isize,b:isize,c:isize,d:isize)->AABBox<isize>{
         AABBox::new((a,b),(c,d)) 
     }
 
     let mut bots=Vec::new();
-    bots.push(BBox::new(Bot::new(0),from_rect(0,10,0,10)));
-    bots.push(BBox::new(Bot::new(1),from_rect(5,10,0,10)));
+    bots.push(BBox::new(Bot{id:0},from_rect(0,10,0,10)));
+    bots.push(BBox::new(Bot{id:1},from_rect(5,10,0,10)));
 
     let mut bots2=Vec::new();
-    bots2.push(BBox::new(Bot::new(2),from_rect(-10,4,0,10)));
-    bots2.push(BBox::new(Bot::new(3),from_rect(-10,3,0,10)));
+    bots2.push(BBox::new(Bot{id:2},from_rect(-10,4,0,10)));
+    bots2.push(BBox::new(Bot{id:3},from_rect(-10,3,0,10)));
 
 
     let mut res=Vec::new();
@@ -537,7 +543,9 @@ fn test_bounding_boxes_as_points() {
 fn test_one_bot() {
     
     let mut bots:Vec<BBox<isize,Bot>> = Vec::new();
-    let rect=create_rect_from_point((0,0));
+    //let rect=create_rect_from_point((0,0));
+    let rect =AABBox::new((0-10,0+10),(0-10,0+10));
+                
     bots.push(BBox::new(Bot{id:0,col:Vec::new()},rect));
     test_bot_layout(bots);
 }
@@ -561,7 +569,9 @@ fn test_1_apart() {
     for x in (-1000..2000).step_by(21) {
         for y in (-100..200).step_by(21) {
             let id = id_counter.next().unwrap();
-            let rect = create_rect_from_point((x, y));
+            //let rect = create_rect_from_point((x, y));
+            let rect =AABBox::new((x-10,x+10),(y-10,y+10));
+                
             bots.push(BBox::new(
                 Bot {
                     id,
@@ -585,7 +595,9 @@ fn test_mesh() {
     for x in (-1000..2000).step_by(20) {
         for y in (-100..200).step_by(20) {
             let id = id_counter.next().unwrap();
-            let rect = create_rect_from_point((x, y));
+            //let rect = create_rect_from_point((x, y));
+            let rect =AABBox::new((x-10,x+10),(y-10,y+10));
+                
             bots.push(BBox::new(
                 Bot {
                     id,
@@ -612,8 +624,9 @@ fn test_russian_doll() {
             if x > y {
                 let id = id_counter.next().unwrap();
 
-                let rect = AABBox(make_rect((-1000, -100), (x, y)));
-
+                //let rect = AABBox(make_rect((-1000, -100), (x, y)));
+                let rect =AABBox::new((-1000,-100),(x,y));
+                
                 bots.push(BBox::new(
                     Bot {
                         id,

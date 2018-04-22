@@ -47,7 +47,7 @@ fn main() {
                     
                     let v={
                         //Compute distance sqr
-                        let min_rect=|point:(isize,isize),aabb:&AABBox<isize>|{
+                        let min_rect=|point:[isize;2],aabb:&AABBox<isize>|{
                             {
                                 let ((x1,x2),(y1,y2))=aabb.get();
                             
@@ -57,7 +57,7 @@ fn main() {
                                     rectangle([0.0,0.0,0.0,0.5], square, c.transform, g);
                                 }
                             }
-                            let (px,py)=(point.0,point.1);
+                            let (px,py)=(point[0],point[1]);
 
                             let ((a,b),(c,d))=aabb.get();
 
@@ -74,7 +74,7 @@ fn main() {
 
 
                         let mut v=Vec::new();
-                        tree.k_nearest((cursor[0] as isize,cursor[1] as isize),3,|a,dis|{v.push((a,dis))},min_rect,min_oned);
+                        tree.k_nearest([cursor[0] as isize,cursor[1] as isize],3,|a,dis|{v.push((a,dis))},min_rect,min_oned);
                         v
                     };
 

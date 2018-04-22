@@ -41,8 +41,8 @@ fn main() {
         let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
         //Compute distance sqr
-        let min_rect=&|point:(isize,isize),aabb:&AABBox<isize>|{
-            let (px,py)=(point.0,point.1);
+        let min_rect=&|point:[isize;2],aabb:&AABBox<isize>|{
+            let (px,py)=(point[0],point[1]);
 
             let ((a,b),(c,d))=aabb.get();
 
@@ -59,13 +59,13 @@ fn main() {
 
         {
             let mut v=Vec::new();
-            dyntree.k_nearest((100,0),1,|a,dis|{v.push((a.inner.id,dis))},min_rect,min_oned);
+            dyntree.k_nearest([100,0],1,|a,dis|{v.push((a.inner.id,dis))},min_rect,min_oned);
             assert_eq!(v[0].0,3);
             assert_eq!(v[0].1,(100-70)*(100-70));
         }
         {
             let mut v=Vec::new();
-            dyntree.k_nearest((41,0),2,|a,dis|{v.push((a.inner.id,dis))},min_rect,min_oned);
+            dyntree.k_nearest([41,0],2,|a,dis|{v.push((a.inner.id,dis))},min_rect,min_oned);
             assert_eq!(v[0].0,0);
             assert_eq!(v[1].0,2);
         }
