@@ -243,13 +243,15 @@ mod ba {
         ///Create a dinotree.
         ///Specify the starting axis along which the bots will be partitioned.
         ///So if you picked the x axis, the root divider will be a vertical line.
-        pub fn new_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Bag) {
-            self::make::<_,par::Parallel,TreeTimer2>(axis,rest)
+        pub fn new_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Vec<f64>) {
+            let (a,b)=self::make::<_,par::Parallel,TreeTimer2>(axis,rest);
+            return (a,b.into_vec());
         }
 
         ///Create a dinotree that does not use any parallel algorithms.
-        pub fn new_seq_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Bag) {
-            self::make::<_,par::Sequential,TreeTimer2>(axis,rest)
+        pub fn new_seq_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Vec<f64>) {
+            let (a,b)=self::make::<_,par::Sequential,TreeTimer2>(axis,rest);
+            return (a,b.into_vec());
         }
 
         ///Create a rect finding session.
@@ -488,7 +490,7 @@ mod ba {
         pub fn intersect_every_pair_seq_debug<F: FnMut(ColSingle<T>, ColSingle<T>)>(
             &mut self,
             clos: F,
-        ) -> Bag {
+        ) -> Vec<f64> {
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
                     colfind::for_every_col_pair_seq::<_, T, _, TreeTimer2>(
@@ -502,13 +504,13 @@ mod ba {
                         clos,
                     )
                 }
-            }.1
+            }.1.into_vec()
         }
 
         pub fn intersect_every_pair_debug<F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync>(
             &mut self,
             clos: F,
-        ) -> Bag {
+        ) -> Vec<f64> {
             let c1=|_:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
                 clos(a,b);
             };
@@ -524,7 +526,7 @@ mod ba {
                 &mut DynTreeEnum::Ya(ref mut a) => {
                     colfind::for_every_col_pair::<_, T, _, TreeTimer2>(a, clos)
                 }
-            }.1
+            }.1.into_vec()
         }
 
         pub fn get_height(&self)->usize{
