@@ -78,6 +78,9 @@ impl<I: SweepTrait> Sweeper<I> {
                         rect: that_rect,
                         inner: that_val,
                     };
+
+                    debug_assert!(curr_rect.0.get_range2::<A>().intersects(that_rect.0.get_range2::<A>()));
+                
                     func.collide(a, b);
                 }
             }
@@ -96,6 +99,8 @@ impl<I: SweepTrait> Sweeper<I> {
         let active_x = self.helper.get_empty_vec_mut();
 
         for y in ys {
+
+            //Add all the x's that are touching the y to the active x.
             while xs.peek().is_some() {
                 let v = {
                     let x = xs.peek().unwrap();
@@ -109,6 +114,9 @@ impl<I: SweepTrait> Sweeper<I> {
                 }
             }
 
+            
+
+            //Prune all the x's that are no longer touching the y.
             active_x.retain(|x: &mut &mut I| {
                 if Accessor::<A>::get(&(x.get().0).0).right()
                     < Accessor::<A>::get(&(y.get().0).0).left()
@@ -119,9 +127,18 @@ impl<I: SweepTrait> Sweeper<I> {
                 }
             });
 
+            //So at this point some of the x's could actualy not intersect y.
+            //These are the x's that are to the complete right of y.
+            //So to handle collisions, we want to make sure to not hit these.
+            //That is why we have that condition to break out of the below loop
+
             let (y_rect, y_val) = y.get_mut();
             for x in active_x.iter_mut() {
                 let (x_rect, x_val) = x.get_mut();
+
+                if Accessor::<A>::get(&x_rect.0).left()>Accessor::<A>::get(&y_rect.0).right(){
+                    break;
+                }
 
                 let a = ColSingle {
                     rect: x_rect,
@@ -131,6 +148,8 @@ impl<I: SweepTrait> Sweeper<I> {
                     rect: y_rect,
                     inner: y_val,
                 };
+
+                assert!(x_rect.0.get_range2::<A>().intersects(y_rect.0.get_range2::<A>()),"{:?}",(x_rect.0.get_range2::<A>(),y_rect.0.get_range2::<A>()));
                 func.collide(a, b);
             }
         }

@@ -789,11 +789,12 @@ fn test_fat_bots_dinotree() {
 }
 
 
+
 #[test]
 fn test_massive_bots_dinotree() {
     
 
-    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[100,200]);
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],300,[100,200]);
     /*
     let spawn_world = make_rect((-990, 990), (-90, 90));
 
