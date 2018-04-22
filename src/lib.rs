@@ -240,15 +240,8 @@ mod ba {
             self::make::<_,par::Sequential,TreeTimerEmpty>(axis,rest).0
         }
 
-        ///Create a dinotree.
-        ///Specify the starting axis along which the bots will be partitioned.
-        ///So if you picked the x axis, the root divider will be a vertical line.
-        pub fn new_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Vec<f64>) {
-            let (a,b)=self::make::<_,par::Parallel,TreeTimer2>(axis,rest);
-            return (a,b.into_vec());
-        }
-
         ///Create a dinotree that does not use any parallel algorithms.
+        ///Returns time each level took in nanoseconds.
         pub fn new_seq_debug(rest: &'a mut [T], axis: StartAxis) -> (DinoTree<'a, T>, Vec<f64>) {
             let (a,b)=self::make::<_,par::Sequential,TreeTimer2>(axis,rest);
             return (a,b.into_vec());
@@ -487,6 +480,7 @@ mod ba {
             };
         }
 
+        ///Returns time each level took in nanoseconds.
         pub fn intersect_every_pair_seq_debug<F: FnMut(ColSingle<T>, ColSingle<T>)>(
             &mut self,
             clos: F,
@@ -503,28 +497,6 @@ mod ba {
                         a,
                         clos,
                     )
-                }
-            }.1.into_vec()
-        }
-
-        pub fn intersect_every_pair_debug<F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync>(
-            &mut self,
-            clos: F,
-        ) -> Vec<f64> {
-            let c1=|_:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
-                clos(a,b);
-            };
-            let c2=|_:()|((),());
-            let c3=|_:(),_:()|();
-
-            let clos = self::closure_struct::ColMultiStruct{aa:(),a:&c1,f2:&c2,f3:&c3,_p:PhantomData};
-
-            match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
-                    colfind::for_every_col_pair::<_, T, _, TreeTimer2>(a, clos)
-                }
-                &mut DynTreeEnum::Ya(ref mut a) => {
-                    colfind::for_every_col_pair::<_, T, _, TreeTimer2>(a, clos)
                 }
             }.1.into_vec()
         }
