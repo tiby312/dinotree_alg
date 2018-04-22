@@ -12,6 +12,13 @@ use test::*;
 use dinotree::*;
 use support::*;
 
+
+#[test]
+fn test_k_nearest_not_enough_bots(){
+    //TODO test requesting 5 nearest when there only 4 bots.
+}
+
+
 #[test]
 fn test_k_nearest(){
     fn from_point(a:isize,b:isize)->AABBox<isize>{
@@ -89,9 +96,7 @@ fn k_nearest_par_point(b: &mut Bencher) {
         ));
     }
 
-
-    //println!("bot 716={:?}",&bots[716]);
-    //println!("point 19={:?} bot19={:?}",&points[19],&bots[19]);    
+ 
     let mut tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
 
