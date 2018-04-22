@@ -649,7 +649,7 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
         let mut src: Vec<(usize, usize)> = Vec::new();
 
         {
-            let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
+            let mut dyntree = DinoTree::new_seq(&mut bots,  StartAxis::Xaxis);
 
             let clos = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
                 //let (a,b)=(ca,ca.1);
@@ -694,52 +694,65 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
             .collect::<Vec<_>>();
 
         if diff.len() != 0 {
+            //println!("diff={:?}",diff);
+
+            //println!("first={:?}",(&bots[diff[0].0],&bots[diff[0].1]));
             //let bots_copy = bots.clone();
 
-            //let mut dyntree = DinoTree::new(&mut bots, false);
 
+            let mut dyntree = DinoTree::new(&mut bots, StartAxis::Xaxis);
+
+            for i in diff.iter(){
+                let id1=i.0;
+                let id2=i.1;
+                println!("------------------");
+                println!("{:?}",dyntree.find_element(|bla|{bla.val.id==id1}));
+                println!("{:?}",dyntree.find_element(|bla|{bla.val.id==id2}));
+
+                println!("------------------");
+            }
             //use compt::CTreeIterator;
-        /*
-        for i in diff.iter(){
-            let level=dyntree.0.get_level_desc();
-            let first={
-              let dd=dyntree.0.get_iter_mut();
-              let ll=compt::LevelIter::new(dd,level);
-              let mut first=None;
-              'bla:for (level,n) in ll.dfs_preorder_iter(){
-                 for bot in n.range.iter(){
-                    if bot.get().1.id==i.0{
-                      first=Some(level.get_depth());
-                      break 'bla;
-                    }
-                 }
-              }
-              first
-            };
+            /*
+            for i in diff.iter(){
+                let level=dyntree.0.get_level_desc();
+                let first={
+                  let dd=dyntree.0.get_iter_mut();
+                  let ll=compt::LevelIter::new(dd,level);
+                  let mut first=None;
+                  'bla:for (level,n) in ll.dfs_preorder_iter(){
+                     for bot in n.range.iter(){
+                        if bot.get().1.id==i.0{
+                          first=Some(level.get_depth());
+                          break 'bla;
+                        }
+                     }
+                  }
+                  first
+                };
 
-            let second={
-              let dd=dyntree.0.get_iter_mut();
-              let ll=compt::LevelIter::new(dd,level);
-              
-              let mut second=None;
-              'bla2:for (level,n) in ll.dfs_preorder_iter(){
-                 for bot in n.range.iter(){
-                    if bot.get().1.id==i.1{
-                      second=Some(level.get_depth());
-                      break 'bla2;
-                    }
-                 }
-              }
-              second
-            };
+                let second={
+                  let dd=dyntree.0.get_iter_mut();
+                  let ll=compt::LevelIter::new(dd,level);
+                  
+                  let mut second=None;
+                  'bla2:for (level,n) in ll.dfs_preorder_iter(){
+                     for bot in n.range.iter(){
+                        if bot.get().1.id==i.1{
+                          second=Some(level.get_depth());
+                          break 'bla2;
+                        }
+                     }
+                  }
+                  second
+                };
 
-            println!("debug={:?}",(first,second));
- 
-            let first_bot=bots_copy.iter().find(|a|a.get().1.id==i.0).unwrap();
-            let second_bot=bots_copy.iter().find(|a|a.get().1.id==i.1).unwrap();
-            println!("{:?}",(first_bot.get().0,second_bot.get().0));
+                println!("debug={:?}",(first,second));
+     
+                let first_bot=bots_copy.iter().find(|a|a.get().1.id==i.0).unwrap();
+                let second_bot=bots_copy.iter().find(|a|a.get().1.id==i.1).unwrap();
+                println!("{:?}",(first_bot.get().0,second_bot.get().0));
+            }*/
         }
-        */        }
 
         assert!(diff.len() == 0);
     }
@@ -749,7 +762,7 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
 fn test_fat_bots_dinotree() {
     
 
-    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,50]);
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[-800,0,-800,0],200,[2,50]);
     /*
     let spawn_world = make_rect((-990, 990), (-90, 90));
 

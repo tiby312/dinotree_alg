@@ -512,6 +512,23 @@ mod ba {
                 }
             }
         }
+
+        pub fn find_element<F:FnMut(&T)->bool>(&self,func:F)->Option<(usize,Vec<bool>)>{
+            match &self.0 {
+                &DynTreeEnum::Xa(ref a) => {
+                    colfind::find_element::<_, T, _>(
+                        a,
+                        func,
+                    )
+                }
+                &DynTreeEnum::Ya(ref a) => {
+                    colfind::find_element::<_, T, _>(
+                        a,
+                        func,
+                    )
+                }
+            }
+        }
     }
 
 }
