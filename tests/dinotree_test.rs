@@ -774,3 +774,34 @@ fn test_fat_bots_dinotree() {
     test_bot_layout(bots);
 
 }
+
+
+#[test]
+fn test_massive_bots_dinotree() {
+    
+
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[100,200]);
+    /*
+    let spawn_world = make_rect((-990, 990), (-90, 90));
+
+    let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
+
+    let bots: Vec<BBox<isize, Bot>> = {
+        (0..2000)
+            .map(|id| {
+                let rect = create_rect_from_point(p.random_point());
+                BBox::new(
+                    Bot {
+                        id,
+                        col: Vec::new(),
+                    },
+                    rect,
+                )
+            })
+            .collect()
+    };
+    */
+
+    test_bot_layout(bots);
+
+}

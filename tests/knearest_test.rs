@@ -16,6 +16,8 @@ use dinotree::*;
 use support::*;
 
 
+
+
 #[test]
 fn test_k_nearest_not_enough_bots(){
     //TODO test requesting 5 nearest when there only 4 bots.
