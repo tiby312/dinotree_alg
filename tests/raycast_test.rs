@@ -1,11 +1,14 @@
  #![feature(test)]
-mod support;
 
 extern crate dinotree;
 extern crate test;
 extern crate num;
 extern crate axgeom;
 extern crate rand;
+extern crate ordered_float;
+
+mod support;
+
 
 use dinotree::support::BBox;
 use test::*;

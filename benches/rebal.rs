@@ -1,27 +1,20 @@
+#![feature(test)]
 
-
-
+mod support;
+extern crate axgeom;
+extern crate num;
+extern crate rand;
+extern crate dinotree;
+extern crate ordered_float;
+extern crate test;
+use test::*;
+use support::*;
+use dinotree::*;
+use dinotree::support::*;
 #[bench]
 fn rebal_seq(b: &mut Bencher) {
-    use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 1000), (0, 1000)),
-        &[100, 42, 6],
-    );
 
-    let mut bots = Vec::new();
-    for id in 0..10000 {
-        let ppp = p.random_point();
-        let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
-
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,1000,0,1000],10000,[2,20]);
     
     b.iter(|| {
 
@@ -32,24 +25,8 @@ fn rebal_seq(b: &mut Bencher) {
 }
 #[bench]
 fn rebal_par(b: &mut Bencher) {
-    use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 1000), (0, 1000)),
-        &[100, 42, 6],
-    );
-
-    let mut bots = Vec::new();
-    for id in 0..10000 {
-        let ppp = p.random_point();
-        let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,1000,0,1000],10000,[2,20]);
+   
 
     b.iter(|| {
 

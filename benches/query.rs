@@ -1,5 +1,16 @@
+#![feature(test)]
 
-
+mod support;
+extern crate axgeom;
+extern crate num;
+extern crate rand;
+extern crate dinotree;
+extern crate ordered_float;
+extern crate test;
+use test::*;
+use support::*;
+use dinotree::*;
+use dinotree::support::*;
 #[test]
 fn naive(){
 
@@ -49,27 +60,8 @@ fn all_same_x_value_median(){
 
 #[bench]
 fn colfind(b: &mut Bencher) {
-    use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 1000), (0, 1000)),
-        &[100, 42, 6],
-    );
-
-    let mut bots = Vec::new();
-    for id in 0..10000 {
-        let ppp = p.random_point();
-        let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
-
-    //let height = compute_tree_height(bots.len());
-
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,1000,0,1000],10000,[2,20]);
+    
     let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
     let mut fu = |a: ColSingle<BBox<isize, Bot>>, b: ColSingle<BBox<isize, Bot>>| {
@@ -84,25 +76,8 @@ fn colfind(b: &mut Bencher) {
 
 #[bench]
 fn colfind_par(b: &mut Bencher) {
-    use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 1000), (0, 1000)),
-        &[100, 42, 6],
-    );
-
-    let mut bots = Vec::new();
-    for id in 0..10000 {
-        let ppp = p.random_point();
-        let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
-
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,1000,0,1000],10000,[2,20]);
+    
 
     let mut tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
@@ -118,31 +93,15 @@ fn colfind_par(b: &mut Bencher) {
 
 #[bench]
 fn colfind_par_point(b: &mut Bencher) {
-    use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 200), (0, 200)),
-        &[100, 42, 6],
-    );
-
-    let mut bots = Vec::new();
-    for id in 0..2000 {
-        let ppp = p.random_point();
-        //let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            AABBox::<isize>::new((ppp.0,ppp.0),(ppp.1,ppp.1)),
-        ));
-    }
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,1000,0,1000],10000,[2,20]);
+    
 
     
     let mut tree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
     b.iter(|| {
 
-        let k=tree.intersect_every_pair_debug(|a, b| {
+        let k=tree.intersect_every_pair(|a, b| {
             a.inner.col.push(b.inner.id);
             b.inner.col.push(a.inner.id);
         });
@@ -156,31 +115,14 @@ fn colfind_par_point(b: &mut Bencher) {
 
 #[bench]
 fn colfind_par_dense(b: &mut Bencher) {
-    use test_support::*;
-    let mut p = PointGenerator::new(
-        &test_support::make_rect((0, 200), (0, 200)),
-        &[100, 42, 6],
-    );
-
-    let mut bots = Vec::new();
-    for id in 0..2000 {
-        let ppp = p.random_point();
-        let k = test_support::create_rect_from_point(ppp);
-        bots.push(BBox::new(
-            Bot {
-                id,
-                col: Vec::new(),
-            },
-            k,
-        ));
-    }
-
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,1000,0,1000],10000,[2,20]);
+    
     
     let mut tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
     b.iter(|| {
 
-        let k=tree.intersect_every_pair_debug(|a, b| {
+        let k=tree.intersect_every_pair(|a, b| {
             a.inner.col.push(b.inner.id);
             b.inner.col.push(a.inner.id);
         });

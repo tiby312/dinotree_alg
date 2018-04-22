@@ -1,7 +1,7 @@
 
 #![feature(test)]
 #![feature(iterator_step_by)]
-mod support;
+
 
 extern crate dinotree;
 extern crate rand;
@@ -9,6 +9,8 @@ extern crate axgeom;
 extern crate test;
 extern crate num;
 extern crate rayon;
+extern crate ordered_float;
+mod support;
 
 use axgeom::XAXISS;
 use axgeom::YAXISS;
@@ -51,6 +53,12 @@ fn test_dinotree_drop() {
 
     let mut drop_counter: Vec<isize> = (0..5000).map(|_| 1).collect();
     {
+        let ii=drop_counter.iter_mut();
+        let mut bots=create_bots_isize(|id|{
+            let v=ii.next().unwrap();
+            Bot{_id:id,drop_counter:v}
+        },&[0,1000,0,1000],10000,[2,20]);
+        /*
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
         
@@ -69,6 +77,7 @@ fn test_dinotree_drop() {
             );
             bots.push(j);
         }
+        */
 
         {
             let mut dyntree:DinoTree<BBox<isize,Bot>> = DinoTree::new(&mut bots,  StartAxis::Xaxis);
@@ -84,6 +93,9 @@ fn test_dinotree_drop() {
 #[test]
 fn test_dinotree_move_back() {
 
+    
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[-990,990,-90,90],5000,[2,20]);
+    /*
     let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
     
@@ -103,6 +115,7 @@ fn test_dinotree_move_back() {
         );
         bots.push(j);
     }
+    */
     let bots_control=bots.clone();
 
     {
@@ -123,6 +136,8 @@ fn test_dinotree_move_back() {
 #[test]
 fn test_dinotree_adv() {
 
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[-990,990,-90,90],5000,[2,20]);
+    /*
     let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
     
@@ -142,6 +157,7 @@ fn test_dinotree_adv() {
         );
         bots.push(j);
     }
+    */
     let bots_control=bots.clone();
 
 
@@ -265,6 +281,8 @@ fn test_panic_in_callback() {
     }
 
     {
+        let mut bots=create_bots_isize(|id|Bot{was_hit:0},&[-990,990,-90,90],500,[2,20]);
+        /*
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
         
@@ -281,6 +299,7 @@ fn test_panic_in_callback() {
             );
             bots.push(j);
         }
+        */
 
         {
             struct Point(*mut [BBox<isize,Bot>]);
@@ -345,6 +364,8 @@ fn test_zero_sized_type() {
     }
 
     {
+        let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[-990,990,-90,90],5000,[2,20]);
+        /*
         let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 
         
@@ -361,7 +382,7 @@ fn test_zero_sized_type() {
             );
             bots.push(j);
         }
-
+    */
         {
             let mut dyntree = DinoTree::new(&mut bots,  StartAxis::Xaxis);
 
@@ -483,6 +504,8 @@ fn test_intersect_with(){
 fn test_bounding_boxes_as_points() {
     
 
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,3]);
+    /*
     let spawn_world = make_rect((-990, 990), (-90, 90));
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
@@ -502,6 +525,7 @@ fn test_bounding_boxes_as_points() {
             })
             .collect()
     };
+    */
 
     test_bot_layout(bots);
 
@@ -731,6 +755,8 @@ fn test_bot_layout(mut bots: Vec<BBox<isize, Bot>>) {
 fn test_dinotree() {
     
 
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,50]);
+    /*
     let spawn_world = make_rect((-990, 990), (-90, 90));
 
     let mut p = PointGenerator::new(&spawn_world, &[1, 2, 3, 4, 5]);
@@ -749,6 +775,7 @@ fn test_dinotree() {
             })
             .collect()
     };
+    */
 
     test_bot_layout(bots);
 
