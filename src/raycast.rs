@@ -2,24 +2,6 @@ use inner_prelude::*;
 use super::*;
 
 
-/*
-//TODO remove
-#[derive(Copy,Clone)]
-pub struct Vec2<N:Copy>{
-    pub x:N,
-    pub y:N
-}
-impl<N:Copy> Vec2<N>{
-    pub fn get<A:AxisTrait>(&self,axis:A)->N{
-        if axis.is_xaxis(){
-            self.x
-        }else{
-            self.y
-        }
-    }
-}
-*/
-
 pub fn raycast<
     'a,A:AxisTrait,
     T:SweepTrait,
@@ -113,43 +95,21 @@ impl<T:SweepTrait> Closest<T>{
 
 
 fn subdivide<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,axis:A,div:N)->(AABBox<N>,AABBox<N>){
-
     let (a,b)=r.0.subdivide(div,A::get());
     (AABBox(a),AABBox(b))
-    /*
-    let r=axgeom::Rect::new(0)
-    if axis.is_xaxis(){
-        let r1=RectInf{xdiv:(self.xdiv.0,div),ydiv:self.ydiv};
-        let r2=RectInf{xdiv:(div,self.xdiv.1),ydiv:self.ydiv};
-        (r1,r2)
-    }else{
-        let r1=RectInf{xdiv:self.xdiv,ydiv:(self.ydiv.0,div)};
-        let r2=RectInf{xdiv:self.xdiv,ydiv:(div,self.ydiv.1)};
-        (r1,r2)
-    }
-    */
 }
 
 
 fn create_middile_box<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,axis:A,cont:Range<N>)->AABBox<N>{
-    //if axis.is_xaxis(){
     let mut r=r.clone();
     *r.0.get_range_mut(A::get())=cont;
     r
-    /*
-    }else{
-        RectInf{xdiv:self.xdiv,ydiv:(cont.start,cont.end)}
-    }*/
 }
 
-
 use self::ray::Ray;
-//use self::ray::RayTrait;
 pub mod ray{
     use super::*;
 
-
-    //A finite ray
     #[derive(Copy,Clone)]
     pub struct Ray<N:NumTrait>{
         pub point:[N;2],

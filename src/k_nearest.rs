@@ -198,7 +198,10 @@ fn recc<'x,'a,
 
     match rest {
         Some((left, right)) => {
-            let div = nn.div.unwrap();
+            let div=match nn.div{
+                Some(div)=>{div},
+                None=>{return;}
+            };
     
 
             let (first,other)=if pp<div {
