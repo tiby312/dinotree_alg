@@ -324,7 +324,7 @@ mod ba {
             'b,
             MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
             MF:FnMut(ColSingle<T>)->Option<T::Num>> //called to test if this object touches the ray. if it does, return distance to start of ray
-            (&'b mut self,point:(T::Num,T::Num),dir:(T::Num,T::Num),rect:AABBox<T::Num>,mut func_fast:MFFast,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
+            (&'b mut self,point:[T::Num;2],dir:[T::Num;2],rect:AABBox<T::Num>,mut func_fast:MFFast,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
@@ -365,12 +365,11 @@ mod ba {
         ///User can also this way choose whether to use manhatan distance or not.
         pub fn k_nearest<'b,
             F: FnMut(ColSingle<'b,T>,T::Num),
-            MF:FnMut((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
+            MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
             MF2:FnMut(T::Num,T::Num)->T::Num,
         >(
             &'b mut self,
-            
-            point: (T::Num, T::Num),
+            point: [T::Num;2],
             num:usize,
             clos: F,
             mf:MF,

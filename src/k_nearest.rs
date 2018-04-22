@@ -75,9 +75,9 @@ pub fn k_nearest<'b,
     A:AxisTrait,
     T:SweepTrait,
     F: FnMut(ColSingle<'b,T>,T::Num),
-    MF:FnMut((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
+    MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
     MF2:FnMut(T::Num,T::Num)->T::Num,
-    >(tree:&'b mut DynTree<A,T>,point:(T::Num,T::Num),num:usize,mut func:F,mut mf:MF,mut mf2:MF2){
+    >(tree:&'b mut DynTree<A,T>,point:[T::Num;2],num:usize,mut func:F,mut mf:MF,mut mf2:MF2){
 
     let dt = tree.get_iter_mut();
 
@@ -183,17 +183,17 @@ fn recc<'x,'a,
     A: AxisTrait,
     T: SweepTrait + 'x,
     C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
-    MF:FnMut((T::Num,T::Num),&AABBox<T::Num>)->T::Num,
+    MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
     MF2:FnMut(T::Num,T::Num)->T::Num,
-    >(axis:A,stuff:C,mf:&mut MF,mf2:&mut MF2,point:(T::Num,T::Num),res:&mut ClosestCand<T>){
+    >(axis:A,stuff:C,mf:&mut MF,mf2:&mut MF2,point:[T::Num;2],res:&mut ClosestCand<T>){
 
     let (nn,rest)=stuff.next();
 
     //known at compile time.
     let pp=if axis.is_xaxis(){
-        point.0
+        point[0]
     }else{
-        point.1
+        point[1]
     };
 
     match rest {

@@ -25,7 +25,7 @@ pub fn raycast<
     T:SweepTrait,
     MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
     MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
-    >(tree:&'a mut DynTree<A,T>,point:(T::Num,T::Num),dir:(T::Num,T::Num),mut func:MF,mut func_fast:MFFast,rect:AABBox<T::Num>)->Option<(ColSingle<'a,T>,T::Num)>{
+    >(tree:&'a mut DynTree<A,T>,point:[T::Num;2],dir:[T::Num;2],mut func:MF,mut func_fast:MFFast,rect:AABBox<T::Num>)->Option<(ColSingle<'a,T>,T::Num)>{
 
     let ray=&Ray{point,dir};
     let dt = tree.get_iter_mut();
@@ -152,8 +152,8 @@ pub mod ray{
     //A finite ray
     #[derive(Copy,Clone)]
     pub struct Ray<N:NumTrait>{
-        pub point:(N,N),
-        pub dir:(N,N),
+        pub point:[N;2],
+        pub dir:[N;2],
     }
 
     pub enum Val<X>{
@@ -192,9 +192,9 @@ fn recc<'x,'a,
                 let (aa,bb)=subdivide(&rectinf,axis,div);
 
                 let ray_point=if axis.is_xaxis(){
-                    ray.point.0
+                    ray.point[0]
                 }else{
-                    ray.point.1
+                    ray.point[1]
                 };
 
                 if ray_point<div{
