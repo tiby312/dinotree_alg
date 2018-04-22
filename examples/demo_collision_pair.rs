@@ -28,11 +28,6 @@ fn main() {
 
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
-
-
-            
-            //https://tavianator.com/fast-branchless-raybounding-box-intersections/
-
             
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();

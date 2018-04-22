@@ -71,11 +71,8 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
 
-
             let ray_point=(cursor[0] as isize,cursor[1] as isize);
-            let ray_dir=(-1,-2);
-            //https://tavianator.com/fast-branchless-raybounding-box-intersections/
-
+            let ray_dir=(-1,-2);           
 
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
@@ -102,15 +99,7 @@ fn main() {
 
 
                     let fast_func=|rect:&AABBox<isize>|->Option<isize>{
-                        let ((x1,x2),(y1,y2))=rect.get();//(rect.xdiv,rect.ydiv);
-                        /*
-                        {
-                            let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                            let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
-                            let g=0u32;
-                            rectangle([0.0,1.0,0.0,0.1], square, c.transform, g);
-                        }
-                        */
+                        let ((x1,x2),(y1,y2))=rect.get();
 
                         intersects_box(ray_point,ray_dir,rect)
                     };
@@ -121,10 +110,10 @@ fn main() {
                         
                         {
                             let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                            let square = [x1,y1,x2-x1,y2-y1];//rectangle::square(x1 as f64, y1 as f64, 8.0);
+                            let square = [x1,y1,x2-x1,y2-y1];
                             rectangle([0.0,0.0,1.0,0.8], square, c.transform, g);
                         }
-                        //RectInf{xdiv:(x1,x2),ydiv:(y1,y2)
+                        
                         intersects_box(ray_point,ray_dir,a.rect)
                     };
 

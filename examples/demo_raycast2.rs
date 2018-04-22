@@ -80,8 +80,6 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([0.0; 4], g);
 
-
-            //https://tavianator.com/fast-branchless-raybounding-box-intersections/
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
@@ -108,7 +106,7 @@ fn main() {
 
 
                     let fast_func=|rect:&AABBox<NotNaN<f64>>|->Option<NotNaN<f64>>{
-                        let ((x1,x2),(y1,y2))=rect.get();//(rect.xdiv,rect.ydiv);
+                        let ((x1,x2),(y1,y2))=rect.get();
   
                         intersects_box(ray_point,ray_dir,rect)
                     };

@@ -543,6 +543,22 @@ mod ba {
 }
 
 
+/*
+struct Vc<N:Copy>(pub [N;2]);
+impl<N:Copy> Vc<N>{
+
+}
+struct Rec<N:Copy>(pub [N;4]);
+impl<N:Copy> Rec<N>{
+    fn getx(&self)->[N;2]{
+        [self.0[0],self.0[1]]
+    }
+    fn gety(&self)->[N;2]{
+        [self.0[2],self.0[3]]
+    }
+}
+*/
+
 //Pub so benches can access
 //#[cfg(test)]
 //mod test_support;
