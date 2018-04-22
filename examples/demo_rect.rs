@@ -57,31 +57,29 @@ fn main() {
                 let mut rects=tree.rects();
 
 
+                let mut to_draw=Vec::new();
                 let _=rects.for_all_in_rect(&r1, |a| {
-                    let ((x1,x2),(y1,y2))=a.rect.get();
-                    
-                    {
-                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                        let square = [x1,y1,x2-x1,y2-y1];
-                        rectangle([1.0,0.0,0.0,1.0], square, c.transform, g);
-                    }
-
+                    to_draw.push(a)
 	            });
 
 
                 let r2=AABBox::new((20,200),(20,200));
                 let res= rects.for_all_in_rect(&r2, |a| {
-                    let ((x1,x2),(y1,y2))=a.rect.get();
-                    
-                    {
-                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                        let square = [x1,y1,x2-x1,y2-y1];
-                        rectangle([1.0,0.0,0.0,1.0], square, c.transform, g);
-                    }
-
+                    to_draw.push(a);
                 });
+
+                
                 match res{
                     Ok(())=>{
+                        for r in to_draw.iter(){
+                            let ((x1,x2),(y1,y2))=r.rect.get();
+                            
+                            {
+                                let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+                                let square = [x1,y1,x2-x1,y2-y1];
+                                rectangle([1.0,0.0,0.0,1.0], square, c.transform, g);
+                            }
+                        }
 
                     },
                     Err(st)=>{

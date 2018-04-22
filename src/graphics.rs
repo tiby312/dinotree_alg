@@ -11,21 +11,7 @@ pub use axgeom::XAXISS;
 pub use axgeom::YAXISS;
 use ordered_float::NotNaN;
 
-/*
-///The trait that your vertex object needs to implement to be used
-///in the functions in this crate.
-pub trait Vertex: std::default::Default + std::clone::Clone + Send {
-    fn set_pos(&mut self, x: f32, y: f32);
-}
-*/
 
-/*
-///Returns the number of verticies. Pass a slice of this size to update().
-pub fn get_num_verticies(height: usize) -> usize {
-    let num_nodes = compt::compute_num_nodes(height);
-    (num_nodes / 2) * 6
-}
-*/
 
 pub trait DividerDrawer{
     type N:NumTrait;
