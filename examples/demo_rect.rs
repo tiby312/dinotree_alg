@@ -57,7 +57,7 @@ fn main() {
                 let mut rects=tree.rects();
 
 
-                rects.for_all_in_rect(&r1, |a| {
+                let _=rects.for_all_in_rect(&r1, |a| {
                     let ((x1,x2),(y1,y2))=a.rect.get();
                     
                     {
@@ -67,6 +67,27 @@ fn main() {
                     }
 
 	            });
+
+
+                let r2=AABBox::new((20,200),(20,200));
+                let res= rects.for_all_in_rect(&r2, |a| {
+                    let ((x1,x2),(y1,y2))=a.rect.get();
+                    
+                    {
+                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+                        let square = [x1,y1,x2-x1,y2-y1];
+                        rectangle([1.0,0.0,0.0,1.0], square, c.transform, g);
+                    }
+
+                });
+                match res{
+                    Ok(())=>{
+
+                    },
+                    Err(st)=>{
+                        println!("{}",st);
+                    }
+                }
 
             }
 
