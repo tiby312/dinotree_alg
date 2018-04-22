@@ -3,23 +3,84 @@ use inner_prelude::*;
 use compt::GenTree;
 
 pub use dinotree_inner::compute_tree_height;
+pub use compt::compute_num_nodes;
+pub use axgeom::AxisTrait;
 
+pub use axgeom::XAXISS;
+
+pub use axgeom::YAXISS;
 use ordered_float::NotNaN;
 
-
+/*
 ///The trait that your vertex object needs to implement to be used
 ///in the functions in this crate.
 pub trait Vertex: std::default::Default + std::clone::Clone + Send {
     fn set_pos(&mut self, x: f32, y: f32);
 }
+*/
 
+/*
 ///Returns the number of verticies. Pass a slice of this size to update().
 pub fn get_num_verticies(height: usize) -> usize {
     let num_nodes = compt::compute_num_nodes(height);
     (num_nodes / 2) * 6
 }
+*/
+
+pub trait DividerDrawer{
+    type N:NumTrait;
+    fn draw_divider<A:AxisTrait>(&mut self,div:Self::N,length:[Self::N;2],depth:usize);
+}
 
 
+//TODO fix this to hide rect.
+///Meant to then be drawn using triangles.
+///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
+pub fn draw<T: SweepTrait,D:DividerDrawer<N=T::Num>>(
+    gentree: &DinoTree<T>,
+    dr:&mut D,
+    rect:AABBox<T::Num>
+) {
+    fn recc<'a,A:AxisTrait,T:SweepTrait+'a,D:DividerDrawer<N=T::Num>,C:CTreeIterator<Item=(Depth,&'a NodeDyn<T>)>>
+        (stuff:C,dr:&mut D,rect:Rect<T::Num>){
+        let ((depth,nn),rest)=stuff.next();
+
+
+        let div=match nn.div{
+            Some(div)=>{
+                let rr=rect.get_range2::<A::Next>();
+                dr.draw_divider::<A>(div,[rr.start,rr.end],depth.0);
+                div
+            },
+            None=>{
+                return;
+            }
+        };
+        match rest{
+            Some((left,right))=>{
+
+                let (a,b)=rect.subdivide(div,A::get());
+
+                recc::<A::Next,T,D,C>(left,dr,a);
+                recc::<A::Next,T,D,C>(right,dr,b);
+            },
+            None=>{
+
+            }
+        }
+    }
+
+    match &gentree.0 {
+        &DynTreeEnum::Xa(ref a) => {
+            recc::<XAXISS,T,D,_>(a.get_iter().with_depth(),dr,rect.0);
+        }
+        &DynTreeEnum::Ya(ref a) => {
+            recc::<YAXISS, T,D,_>(a.get_iter().with_depth(),dr,rect.0);
+        }
+    }
+}
+
+/*
 
 //TODO fix this to hide rect.
 ///Meant to then be drawn using triangles.
@@ -38,8 +99,9 @@ pub fn update<V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
             self::update_inner::<YAXISS, V, T>(rect, a, verticies, start_width);
         }
     }
-}
+}*/
 
+/*
 ///Panics if the slice given has a length not equal to what is returned by get_num_verticies().
 fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
     rect: axgeom::Rect<NotNaN<f32>>,
@@ -117,6 +179,7 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
     recc::<A, _, _, _>(height, rect, zip, start_width);
 }
 
+
 fn draw_node<V: Vertex>(
     height: usize,
     range: Range<NotNaN<f32>>,
@@ -193,3 +256,5 @@ fn draw_line<V: Vertex>(verticies: &mut [V], p1: &axgeom::Vec2, p2: &axgeom::Vec
             .set_pos(*topright.0, *topright.1);
     }
 }
+
+*/

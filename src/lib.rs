@@ -35,6 +35,7 @@
 #![feature(iterator_step_by)]
 #![feature(test)]
 
+
 extern crate axgeom;
 extern crate compt;
 extern crate ordered_float;
@@ -525,6 +526,17 @@ mod ba {
                     colfind::for_every_col_pair::<_, T, _, TreeTimer2>(a, clos)
                 }
             }.1
+        }
+
+        pub fn get_height(&self)->usize{
+            match &self.0 {
+                &DynTreeEnum::Xa(ref a) => {
+                    a.get_height()
+                }
+                &DynTreeEnum::Ya(ref a) => {
+                    a.get_height()
+                }
+            }
         }
     }
 
