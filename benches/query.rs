@@ -13,11 +13,12 @@ use dinotree::*;
 use dinotree::support::*;
 #[test]
 fn naive(){
-
+    //TODO finish
 }
 
 #[test]
 fn all_same_x_value_median(){
+    //TODO finish
     /*
     let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
 

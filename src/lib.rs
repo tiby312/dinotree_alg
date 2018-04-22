@@ -41,6 +41,9 @@ extern crate compt;
 extern crate ordered_float;
 extern crate pdqselect;
 extern crate rayon;
+extern crate unsafe_unwrap;
+extern crate smallvec;
+extern crate dinotree_inner;
 
 #[cfg(test)]
 extern crate num;
@@ -48,10 +51,8 @@ extern crate num;
 extern crate cgmath;
 #[cfg(test)]
 extern crate collision;
-extern crate dinotree_inner;
 #[cfg(test)]
 extern crate rand;
-extern crate smallvec;
 #[cfg(test)]
 extern crate test;
 

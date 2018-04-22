@@ -1,5 +1,8 @@
 use inner_prelude::*;
-//use rayon::prelude::*;
+use unsafe_unwrap::UnsafeUnwrap;
+
+//TODO bench these without bounds checking and unwrap()ing.
+
 
 pub trait Bleek {
     type T: SweepTrait;
@@ -69,7 +72,7 @@ impl<I: SweepTrait> Sweeper<I> {
                 });
                 for that_bot_ind in active.iter_mut() {
                     let (that_rect, that_val) = that_bot_ind.get_mut();
-                    //let brr=Accessor::<A>::get(that_rect);
+                    
                     let a = ColSingle {
                         rect: curr_rect,
                         inner: curr_bot_id_val,
@@ -102,15 +105,17 @@ impl<I: SweepTrait> Sweeper<I> {
 
             //Add all the x's that are touching the y to the active x.
             while xs.peek().is_some() {
-                let v = {
-                    let x = xs.peek().unwrap();
-                    Accessor::<A>::get(&(x.get().0).0).left()
-                        > Accessor::<A>::get(&(y.get().0).0).right()
-                };
-                if v {
-                    break;
-                } else {
-                    active_x.push(xs.next().unwrap());
+                unsafe{
+                    let v = {
+                        let x = xs.peek().unsafe_unwrap();
+                        Accessor::<A>::get(&(x.get().0).0).left()
+                            > Accessor::<A>::get(&(y.get().0).0).right()
+                    };
+                    if v {
+                        break;
+                    } else {
+                        active_x.push(xs.next().unsafe_unwrap());
+                    }
                 }
             }
 
@@ -149,7 +154,7 @@ impl<I: SweepTrait> Sweeper<I> {
                     inner: y_val,
                 };
 
-                assert!(x_rect.0.get_range2::<A>().intersects(y_rect.0.get_range2::<A>()),"{:?}",(x_rect.0.get_range2::<A>(),y_rect.0.get_range2::<A>()));
+                debug_assert!(x_rect.0.get_range2::<A>().intersects(y_rect.0.get_range2::<A>()),"{:?}",(x_rect.0.get_range2::<A>(),y_rect.0.get_range2::<A>()));
                 func.collide(a, b);
             }
         }

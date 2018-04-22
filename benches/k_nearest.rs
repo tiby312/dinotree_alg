@@ -1,8 +1,21 @@
+#![feature(test)]
+
+mod support;
+extern crate axgeom;
+extern crate num;
+extern crate rand;
+extern crate dinotree;
+extern crate ordered_float;
+extern crate test;
+use test::*;
+use support::*;
+use dinotree::*;
+use dinotree::support::*;
 
 #[bench]
 fn k_nearest_par_point(b: &mut Bencher) {
     
-    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,200,0,200],2000,[2,20]);
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,200,0,200],2000,[0,1]);
     /*
     let mut p = PointGenerator::new(
         &support::make_rect((0, 200), (0, 200)),
@@ -25,7 +38,11 @@ fn k_nearest_par_point(b: &mut Bencher) {
     }
     */
 
- 
+    let points:Vec<[isize;2]>=bots.iter().map(|b|{
+        let ((x1,_),(y1,_))=b.rect.get();
+        [x1,y1]
+    }).collect();
+
     let mut tree = DinoTree::new(&mut bots,  StartAxis::Yaxis);
 
 
@@ -34,8 +51,8 @@ fn k_nearest_par_point(b: &mut Bencher) {
     b.iter(|| {
 
         for (i,p) in points.iter().enumerate(){
-            let min_rect=|point:(isize,isize),aabb:&AABBox<isize>|{
-                let (px,py)=(point.0,point.1);
+            let min_rect=|point:[isize;2],aabb:&AABBox<isize>|{
+                let (px,py)=(point[0],point[1]);
                 //let (px,py)=(px.0,py.0);
 
                 let ((a,b),(c,d))=aabb.get();
@@ -54,10 +71,10 @@ fn k_nearest_par_point(b: &mut Bencher) {
             tree.k_nearest(*p,1,|a,_|{
                 if a.inner.id!=i{
                     let ((a,b),(c,d))=a.rect.get();
-                    assert_eq!(a,p.0);
-                    assert_eq!(b,p.0);
-                    assert_eq!(c,p.1);
-                    assert_eq!(d,p.1);
+                    assert_eq!(a,p[0]);
+                    assert_eq!(b,p[0]);
+                    assert_eq!(c,p[1]);
+                    assert_eq!(d,p[1]);
                 }
                 
             },min_rect,min_oned);
@@ -78,7 +95,7 @@ fn k_nearest_par_point(b: &mut Bencher) {
 
 #[bench]
 fn k_nearest_par_point2(b: &mut Bencher) {
-    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
+    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[0,1]);
     /*
     let mut p = PointGenerator::new(
         &support::make_rect((0, 200), (0, 200)),
@@ -101,6 +118,12 @@ fn k_nearest_par_point2(b: &mut Bencher) {
     }
     */
 
+    let points:Vec<[isize;2]>=bots.iter().map(|b|{
+        let ((x1,_),(y1,_))=b.rect.get();
+        [x1,y1]
+    }).collect();
+
+
 
     //println!("bot 716={:?}",&bots[716]);
     //println!("point 19={:?} bot19={:?}",&points[19],&bots[19]);    
@@ -114,8 +137,8 @@ fn k_nearest_par_point2(b: &mut Bencher) {
         let mut total_dis=0;
         let mut num_found=0;
         for (i,p) in points.iter().enumerate(){
-            let min_rect=|point:(isize,isize),aabb:&AABBox<isize>|{
-                let (px,py)=(point.0,point.1);
+            let min_rect=|point:[isize;2],aabb:&AABBox<isize>|{
+                let (px,py)=(point[0],point[1]);
                 //let (px,py)=(px.0,py.0);
 
                 let ((a,b),(c,d))=aabb.get();
@@ -148,7 +171,9 @@ fn k_nearest_par_point2(b: &mut Bencher) {
         //println!("avg dis={:?}",));
         //Check that the average distance the the nearest object to every other object
         //is small
-        assert!(avg<10);
+
+        assert!(avg < 10, " avg={:?} ",avg);
+
         assert_eq!(num_found,points.len());
         /*
         let k=tree.intersect_every_pair_debug(|a, b| {
