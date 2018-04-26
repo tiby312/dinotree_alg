@@ -84,6 +84,11 @@ mod colfind;
 
 mod k_nearest;
 
+
+pub use nbody::NodeMass;
+pub use nbody::NbodyTrait;
+mod nbody;
+
 mod raycast;
 //pub use raycast::ray::Ray;
 //pub use raycast::Vec2;

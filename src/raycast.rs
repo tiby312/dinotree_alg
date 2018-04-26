@@ -2,6 +2,9 @@ use inner_prelude::*;
 use super::*;
 
 
+//TODO use the property that the trees are sorted somehow.
+
+
 pub fn raycast<
     'a,A:AxisTrait,
     T:SweepTrait,

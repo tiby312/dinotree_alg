@@ -92,6 +92,8 @@ pub fn k_nearest<'b,
 
 }
 
+//TODO use the property that the trees are sorted somehow.
+
 
 use self::cand::ClosestCand;
 mod cand{
