@@ -73,7 +73,7 @@ impl NodeMassTrait for NodeMass{
         gravity::gravitate(self,&mut b.val);
     }
     fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool{
-        distance_from(&self.rect,&rectnotnan_to_f64(*b))>100.0
+        distance_sqr_from(&self.rect,&rectnotnan_to_f64(*b))>100.0*100.0
     }
     fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>{
         rectf64_to_notnan(self.rect)
@@ -81,15 +81,23 @@ impl NodeMassTrait for NodeMass{
     fn undo(&self,b:&mut [Self::T]){
         let mass_per_bot=self.mass/(self.numbots as f64);
 
-        //TODO or something to this effect???
-        //can be optimized
 
-        let mag=(mass_per_bot/self.numbots as f64);
-        let forcex=self.acc[0]*mag;
-        let forcey=self.acc[1]*mag;
+        let len_sqr=self.acc[0]*self.acc[0]+self.acc[1]+self.acc[1];
 
-        for i in b.iter_mut(){
-            i.val.apply_force([forcex,forcey]);
+        if len_sqr>0.00001{
+            let len=len_sqr.sqrt();
+            //TODO or something to this effect???
+            //can be optimized
+
+            let mag=mass_per_bot/len;
+            let forcex=self.acc[0]*mag;
+            let forcey=self.acc[1]*mag;
+
+            for i in b.iter_mut(){
+                i.val.apply_force([forcex,forcey]);
+            }
+        }else{
+            //No acceleration was applied to this node mass.
         }
     }
 }
@@ -97,7 +105,7 @@ impl NodeMassTrait for NodeMass{
 
 
 
-const BOT_MASS:f64=0.005;
+const BOT_MASS:f64=1.0;
 struct Bot{
     pos:[f64;2],
     vel:[f64;2],
@@ -189,38 +197,70 @@ mod gravity{
         let m2=b.mass();
 
         let diffx=p2[0]-p1[0];
-        let diffy=p2[1]-p2[1];
+        let diffy=p2[1]-p1[1];
         let dis_sqr=diffx*diffx+diffy*diffy;
 
-        const GRAVITY_CONSTANT:f64=0.001;
+        if dis_sqr>0.00001{
+            const GRAVITY_CONSTANT:f64=0.1;
 
-        //newtons law of gravitation
-        let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
+            //newtons law of gravitation
+            let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
 
 
-        let dis=dis_sqr.sqrt();
-        let finalx=diffx*(force/dis);
-        let finaly=diffx*(force/dis);
-        a.apply_force([finalx,finaly]);
-        b.apply_force([-finalx,-finaly]);
+            let dis=dis_sqr.sqrt();
+            let finalx=diffx*(force/dis);
+            let finaly=diffy*(force/dis);
+            
+            a.apply_force([finalx,finaly]);
+            b.apply_force([-finalx,-finaly]);
+        }else{
+            //TODO handle this case
+        }
     }
 }
 
 
-fn distance_from(recta:&Rect<f64>,rectb:&Rect<f64>)->f64{
-    unimplemented!();
+fn distance_sqr_from(recta:&Rect<f64>,rectb:&Rect<f64>)->f64{
+    let ((ax1,ax2),(ay1,ay2))=recta.get();
+    let ((bx1,bx2),(by1,by2))=rectb.get();
+
+
+    //Closest point in rectb to the top left of recta. 
+    //let xx=num::clamp(ax1,bx1,bx2);
+    //let yy=num::clamp(ay1,by1,by2);
+
+    //This describes the outer rectangle.
+    //https://gamedev.stackexchange.com/questions/154036/efficient-minimum-distance-between-two-axis-aligned-squares
+    let rx1=ax1.min(bx1);
+    let rx2=ax2.max(bx2);
+    let ry1=ay1.min(by1);
+    let ry2=ay2.max(by2);
+
+    //inner_width = max(0, rect_outer.width - square_a.width - square_b.width)
+    //inner_height = max(0, rect_outer.height - square_a.height - square_b.height)
+
+    //negative if rectangles are touching, in which case, we want
+    //the distance to just be zero.
+    let inner_width= 0.0f64.max( (rx2-rx1)-(ax2-ax1)-(bx2-bx1));
+    let inner_height=0.0f64.max( (ry2-ry1)-(ay2-ay1)-(by2-by1));
+
+    //return the squre
+    return inner_width*inner_width+inner_height*inner_height;
 }
 fn rectf64_to_notnan(rect:Rect<f64>)->Rect<NotNaN<f64>>{
-    unimplemented!();
+    let ((a,b),(c,d))=rect.get();
+
+    Rect::new(NotNaN::new(a).unwrap(),NotNaN::new(b).unwrap(),NotNaN::new(c).unwrap(),NotNaN::new(d).unwrap())
 }
 fn rectnotnan_to_f64(rect:Rect<NotNaN<f64>>)->Rect<f64>{
-    unimplemented!();
+    let ((a,b),(c,d))=rect.get();
+    Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())
 }
 
 
 fn main() {
 
-    let mut bots=create_bots_f64(|id|Bot{pos:[0.0;2],vel:[0.0;2],acc:[0.0;2]},&[0,800,0,800],500,[2,20]);
+    let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],acc:[0.0;2]},&[0,800,0,800],500,[2,20]);
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
         .exit_on_esc(true)
@@ -236,6 +276,9 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
 
+            for bot in bots.iter_mut(){
+                bot.val.acc=[0.0;2];
+            }
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
@@ -249,14 +292,27 @@ fn main() {
 
 
                 let k={
-                    
-                    
                     let rect=rectf64_to_notnan(Rect::new(0.0,800.0,0.0,800.0));
                     tree.n_body::<NodeMass>(AABBox(rect));
-                    
-       
                 };
             }
+
+            for bot in bots.iter(){
+                let p1x=bot.val.pos[0];
+                let p1y=bot.val.pos[1];
+                let p2x=p1x+bot.val.acc[0]*2000.0;
+                let p2y=p1y+bot.val.acc[1]*2000.0;
+
+                //println!("acc={:?}",bot.val.acc);
+                let arr=[p1x,p1y,p2x,p2y];
+                line([0.0, 0.0, 0.0, 1.0], // black
+                     2.0, // radius of line
+                     arr, // [x0, y0, x1,y1] coordinates of line
+                     c.transform,
+                     g);
+            }
+
+
         });
     }
 }

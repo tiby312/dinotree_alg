@@ -83,7 +83,7 @@ fn buildtree<'a,
                 recc(axis.next(),righ,rightr,vec);
             },
             None=>{
-
+                vec.push(nodeb);
             }
         }
 
@@ -105,7 +105,7 @@ fn buildtree<'a,
 
     }
 
-
+    //TODO with capcaity
     let mut vec=Vec::new();
     let height=tree.get_height();
     let stuff=tree.get_iter();

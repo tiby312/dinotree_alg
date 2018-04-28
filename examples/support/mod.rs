@@ -12,7 +12,7 @@ use ordered_float::*;
 use dinotree::support::*;
 
 
-pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<NotNaN<f64>,X>>{
+pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<NotNaN<f64>,X>>{
     
     let arr:&[usize]=&[100,42,6];
     let mut rng =  SeedableRng::from_seed(arr);
@@ -32,7 +32,7 @@ pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;4]
         let ry=NotNaN::new(radiusgen.get(rng) as f64).unwrap();
 
         bots.push(BBox::new(
-            func(id),
+            func(id,[px.into_inner(),py.into_inner()]),
             AABBox::new((px-rx,px+rx),(py-ry,py+ry))
         ));
     }
