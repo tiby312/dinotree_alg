@@ -78,26 +78,36 @@ fn buildtree<'a,
 
         match rest{
             Some((mut left,mut righ))=>{
-                let div=match nn.div{
-                    Some(div)=>{div},
-                    None=>{return}
-                };
-
-                let (leftr,rightr)=rect.subdivide(div,A::get());
                 
-                {
-                    let left=left.create_wrap();
-                    let righ=righ.create_wrap();
 
-                    recc2(&mut nodeb,left);
-                    recc2(&mut nodeb,righ);
+                match nn.div{
+                    Some(div)=>{
+                        let (leftr,rightr)=rect.subdivide(div,A::get());
+                        
+                        {
+                            let left=left.create_wrap();
+                            let righ=righ.create_wrap();
+
+                            recc2(&mut nodeb,left);
+                            recc2(&mut nodeb,righ);
+                        }
+
+                        recc(axis.next(),left,leftr,vec);
+                        
+                        vec.push(nodeb);
+                        
+                        recc(axis.next(),righ,rightr,vec);
+                    },
+                    None=>{
+                        //recurse anyway even though there is no divider.
+                        //we want to populate this tree entirely.
+                       recc(axis.next(),left,rect,vec);
+                        
+                        vec.push(nodeb);
+                        
+                        recc(axis.next(),righ,rect,vec); 
+                    }
                 }
-
-                recc(axis.next(),left,leftr,vec);
-                
-                vec.push(nodeb);
-                
-                recc(axis.next(),righ,rightr,vec);
             },
             None=>{
                 vec.push(nodeb);
@@ -128,7 +138,14 @@ fn buildtree<'a,
     let stuff=tree.get_iter();
     recc(A::new(),stuff,rect,&mut vec);
 
-    compt::dfs::GenTreeDfsOrder::from_vec(vec,height).unwrap()
+
+    let len=vec.len();
+    match compt::dfs::GenTreeDfsOrder::from_vec(vec,height){
+        Ok(a)=>a,
+        Err(e)=>{
+            panic!("vec size={:?}",len);
+        }
+    }
 
 }
 

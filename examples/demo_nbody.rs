@@ -74,7 +74,10 @@ impl NodeMassTrait for NodeMass{
     }
     fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool{
         //false
-        distance_sqr_from(&self.rect,&rectnotnan_to_f64(*b))>100.0*100.0
+        let k=distance_sqr_from(&self.rect,&rectnotnan_to_f64(*b))>100.0*100.0;
+        
+        k
+        //false
     }
     fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>{
         rectf64_to_notnan(self.rect)
@@ -128,59 +131,6 @@ impl GravityTrait for Bot{
 
 
 
-/*
-impl NodeMassTrait for NodeMass{
-    type T=BBox<NotNaN<f64>,Bot>;
-
-    fn handle_with(&self,b:&mut Self){
-        gravity::gravitate(a,b);
-    }
-    fn handle_bot(a:&mut Self::T,b:&mut Self::T){
-        gravity::gravitate(a,b);
-    }
-    fn new(rect:&Rect<NotNaN<f64>>,b:&[Self::T])->Self{
-        let mass=b.iter().fold(0,|a,b|a+b.mass);
-        NodeMass{aabb:rect,center:get_center(rect),mass,moved_amount:[0.0;2]}
-    }
-    fn apply(&mut self,b:&mut [Self::T]){
-        let diffx=a.moved_amount[0];
-        let diffy=a.moved_amount[1];
-
-        let dis_sqr=(diffx*diffx)+(diffy*diffy);
-        let dis=dis_sqr.sqrt();
-
-        //The magnitude of the vector for each individual bot.
-        let bot_dis=dis/b.len();
-
-        //let diffx=diffx*(bot_dis/dis);
-        //let diffy=diffy*(bot_dis/dis);
-        let ll=b.len() as f64;
-        let diffx=diffx/ll;
-        let diffy=diffy/ll;
-
-
-        for i in b{
-            b.apply_force([diffx,diffy]);
-        }
-    }
-    fn is_far_enough(&self,b:&NodeMass<Self::N>)->bool{
-        //TODO check rect distance, not point.
-        let p1=a.point;
-        let p2=b.point;
-
-        let mut dis=0;
-        for i in 0..2{
-            dis+=(p2[i]-p1[i])
-        }
-        if dis>1000.0{
-            true
-        }else{
-            false
-        }
-    }
-}
-*/
-
 use gravity::GravityTrait;
 mod gravity{
     pub trait GravityTrait{
@@ -201,14 +151,17 @@ mod gravity{
         let diffy=p2[1]-p1[1];
         let dis_sqr=diffx*diffx+diffy*diffy;
 
+
         if dis_sqr>0.01{
+            let dis=dis_sqr.sqrt();
+
             const GRAVITY_CONSTANT:f64=5.0;
 
-            //newtons law of gravitation
+            //newtons law of gravitation (modified for 2d??? divide by len instead of sqr)
             let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
 
             //clamp the gravity to not be too extreme if two bots are extremly close together
-            let force=force.min(1.0);
+            let force=force.min(0.01);
 
             let dis=dis_sqr.sqrt();
             let finalx=diffx*(force/dis);
@@ -261,6 +214,25 @@ fn rectnotnan_to_f64(rect:Rect<NotNaN<f64>>)->Rect<f64>{
 }
 
 
+fn clamp_position(a:&mut [f64;2]){
+    a[0]=num::clamp(a[0],0.0,800.0);
+    a[1]=num::clamp(a[1],0.0,800.0);
+}
+fn wrap_position(a:&mut [f64;2]){
+    if a[0]>800.0{
+        a[0]=0.0
+    }
+    if a[0]<0.0{
+        a[0]=800.0;
+    }
+    if a[1]>800.0{
+        a[1]=0.0
+    }
+    if a[1]<0.0{
+        a[1]=800.0;
+    }
+}
+
 fn main() {
 
     let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],acc:[0.0;2]},&[0,800,0,800],500,[2,20]);
@@ -282,11 +254,18 @@ fn main() {
             for bot in bots.iter_mut(){
                 let b=&mut bot.val;
 
+                
                 b.pos[0]+=b.vel[0];
+
+                wrap_position(&mut b.pos);
+
+                b.vel[0]*=0.99;
+                b.vel[1]*=0.99;
+
                 b.pos[1]+=b.vel[1];
                 b.vel[0]+=b.acc[0];
                 b.vel[1]+=b.acc[1];
-
+                
 
                 let mut rect=rectnotnan_to_f64(bot.rect.0);
 
@@ -326,12 +305,12 @@ fn main() {
                 };
             }
 
-
+            /*
             for bot in bots.iter(){
                 let p1x=bot.val.pos[0];
                 let p1y=bot.val.pos[1];
-                let p2x=p1x+bot.val.acc[0]*200.0;
-                let p2y=p1y+bot.val.acc[1]*200.0;
+                let p2x=p1x+bot.val.acc[0]*2000.0;
+                let p2y=p1y+bot.val.acc[1]*2000.0;
 
                 //println!("acc={:?}",bot.val.acc);
                 let arr=[p1x,p1y,p2x,p2y];
@@ -341,7 +320,8 @@ fn main() {
                      c.transform,
                      g);
             }
-
+            */
+            
 
         });
     }
