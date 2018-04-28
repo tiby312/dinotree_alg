@@ -37,8 +37,8 @@ impl GravityTrait for NodeMass{
         BOT_MASS
     }
     fn apply_force(&mut self,a:[f64;2]){
-        self.acc[0]+=a[0];
-        self.acc[1]+=a[1];
+        self.acc[0]+=a[0]/self.mass;
+        self.acc[1]+=a[1]/self.mass;
     }
 }
 
@@ -73,6 +73,7 @@ impl NodeMassTrait for NodeMass{
         gravity::gravitate(self,&mut b.val);
     }
     fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool{
+        //false
         distance_sqr_from(&self.rect,&rectnotnan_to_f64(*b))>100.0*100.0
     }
     fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>{
@@ -84,7 +85,7 @@ impl NodeMassTrait for NodeMass{
 
         let len_sqr=self.acc[0]*self.acc[0]+self.acc[1]+self.acc[1];
 
-        if len_sqr>0.00001{
+        if len_sqr>0.01{
             let len=len_sqr.sqrt();
             //TODO or something to this effect???
             //can be optimized
@@ -120,8 +121,8 @@ impl GravityTrait for Bot{
         BOT_MASS
     }
     fn apply_force(&mut self,a:[f64;2]){
-        self.acc[0]+=a[0];
-        self.acc[1]+=a[1];
+        self.acc[0]+=a[0]/BOT_MASS;
+        self.acc[1]+=a[1]/BOT_MASS;
     }
 }
 
@@ -200,12 +201,14 @@ mod gravity{
         let diffy=p2[1]-p1[1];
         let dis_sqr=diffx*diffx+diffy*diffy;
 
-        if dis_sqr>0.00001{
-            const GRAVITY_CONSTANT:f64=0.1;
+        if dis_sqr>0.01{
+            const GRAVITY_CONSTANT:f64=5.0;
 
             //newtons law of gravitation
             let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
 
+            //clamp the gravity to not be too extreme if two bots are extremly close together
+            let force=force.min(1.0);
 
             let dis=dis_sqr.sqrt();
             let finalx=diffx*(force/dis);
@@ -277,7 +280,33 @@ fn main() {
             clear([1.0; 4], g);
 
             for bot in bots.iter_mut(){
-                bot.val.acc=[0.0;2];
+                let b=&mut bot.val;
+
+                b.pos[0]+=b.vel[0];
+                b.pos[1]+=b.vel[1];
+                b.vel[0]+=b.acc[0];
+                b.vel[1]+=b.acc[1];
+
+
+                let mut rect=rectnotnan_to_f64(bot.rect.0);
+
+                {
+                    let r1=rect.get_range2_mut::<axgeom::XAXISS>();
+                    let width=r1.end-r1.start;
+
+                    r1.start=b.pos[0]-width/2.0;
+                    r1.end=b.pos[0]+width/2.0;                
+                }
+                {
+                    let r2=rect.get_range2_mut::<axgeom::YAXISS>();
+                    let height=r2.end-r2.start;
+
+                    r2.start=b.pos[1]-height/2.0;
+                    r2.end=b.pos[1]+height/2.0;
+                }
+                bot.rect.0=rectf64_to_notnan(rect);
+
+                b.acc=[0.0;2];
             }
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
@@ -297,16 +326,17 @@ fn main() {
                 };
             }
 
+
             for bot in bots.iter(){
                 let p1x=bot.val.pos[0];
                 let p1y=bot.val.pos[1];
-                let p2x=p1x+bot.val.acc[0]*2000.0;
-                let p2y=p1y+bot.val.acc[1]*2000.0;
+                let p2x=p1x+bot.val.acc[0]*200.0;
+                let p2y=p1y+bot.val.acc[1]*200.0;
 
                 //println!("acc={:?}",bot.val.acc);
                 let arr=[p1x,p1y,p2x,p2y];
-                line([0.0, 0.0, 0.0, 1.0], // black
-                     2.0, // radius of line
+                line([0.0, 0.0, 0.0, 0.4], // black
+                     1.0, // radius of line
                      arr, // [x0, y0, x1,y1] coordinates of line
                      c.transform,
                      g);

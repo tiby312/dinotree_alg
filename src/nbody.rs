@@ -29,13 +29,30 @@ mod tools{
 
 pub trait NodeMassTrait:Send{
     type T:SweepTrait;
+
+    //gravitate this nodemass with another node mass
     fn handle_with(&mut self,b:&mut Self);
+
+    //gravitate a bot with a bot
     fn handle_bot(&mut Self::T,&mut Self::T);
+
+    //create a new node mass that has the combined mass of all the bots in the slice
     fn new(rect:Rect<<Self::T as SweepTrait>::Num>,b:&[Self::T])->Self;
+
+    //increase the mass of a node mass by adding the masses of all the bots in the list
     fn increase_mass(&mut self,b:&[Self::T]);
+
+    //gravitate a nodemass with a bot
     fn apply(&mut self,b:&mut Self::T);
+
+    //check if the rect is far enough away from the nodemass.
+    //if it is we will use this nodemass instead of gravitating all the bots
     fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool;
+
+    //get the bounding box of this nodemass
     fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>;
+
+    //apply the forces that this node mass has to all of the bots in it.
     fn undo(&self,b:&mut [Self::T]);
 }
 
@@ -276,12 +293,6 @@ fn handle_left_with_right<'a,
     }
 
 
-
-
-
-
-
-
     fn recc3<'a:'b,'b,
         T:SweepTrait+'a,
         N:NodeMassTrait<T=T>+'a,
@@ -294,6 +305,10 @@ fn handle_left_with_right<'a,
             rects.push(nn.0);
             return;
         }
+        for i in nn.1.range.iter_mut(){
+            bots.push(i)
+        }
+    
 
         match rest{
             Some((left,right))=>{
@@ -301,9 +316,7 @@ fn handle_left_with_right<'a,
                 recc3(right,rects,bots,other);
             },
             None=>{
-                for i in nn.1.range.iter_mut(){
-                    bots.push(i)
-                }
+                
             }
         }
         
@@ -332,21 +345,28 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
 
                 let (mut left2,mut right2)=rest2.unwrap();
 
-                {
-                    let l1=left2.create_wrap_mut().zip(left.create_wrap_mut());
-                    let l2=right2.create_wrap_mut().zip(right.create_wrap_mut());
+                match nn1.cont{
+                    Some(cont)=>{
+                        let l1=left2.create_wrap_mut().zip(left.create_wrap_mut());
+                        let l2=right2.create_wrap_mut().zip(right.create_wrap_mut());
 
-                    let mut anchor={
-                        //Create a new mass that is only the rect of that contains all the bots intersecting the divider.
-                        //let rect=rect.constrain_by(nn1.cont); //TODO
-                        let rect=rect;
-                        let m=N::new(rect,&nn1.range);
-                        Anchor{mass:m,node:nn1}
-                    };
+                        let mut anchor={
+                            //Create a new mass that is only the rect of that contains all the bots intersecting the divider.
+                            //let rect=rect.constrain_by(nn1.cont); //TODO
 
-                    handle_anchor_with_children(&mut anchor,l1,l2);
+                            let mut rect=rect;
+                            *rect.get_range2_mut::<A>()=cont;
+                            let m=N::new(rect,&nn1.range);
+                            Anchor{mass:m,node:nn1}
+                        };
 
-                    anchor.mass.undo(&mut anchor.node.range);
+                        handle_anchor_with_children(&mut anchor,l1,l2);
+
+                        anchor.mass.undo(&mut anchor.node.range);
+                    },
+                    None=>{
+
+                    }
                 }
                 //At this point, everything has been handled with the root.
                 //before we can fully remove the root, and reduce this problem to two smaller trees,
