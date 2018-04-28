@@ -36,6 +36,7 @@ pub trait NodeMassTrait:Send{
     fn apply(&mut self,b:&mut Self::T);
     fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool;
     fn get_box(&self)->&Rect<<Self::T as SweepTrait>::Num>;
+    fn undo(&self,b:&mut [Self::T]);
 }
 
 
@@ -114,6 +115,75 @@ fn buildtree<'a,
 
 }
 
+fn apply_tree<'a,
+    A:AxisTrait,
+    T:SweepTrait+'a,
+    N:NodeMassTrait<T=T>
+    >
+    (tree:&mut DynTree<A,T>,tree2:compt::dfs::GenTreeDfsOrder<N>){
+
+    fn recc<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
+        (mut stuff:NdIterMut<T>,stuff2:compt::dfs::DownT<N>){
+
+        let (nn1,rest)=stuff.next();
+        let (nodeb,rest2)=stuff2.next();
+        
+
+
+        nodeb.undo(&mut nn1.range);
+
+
+        match rest{
+            Some((mut left,mut righ))=>{
+                let (left2,right2)=rest2.unwrap();
+
+                let div=match nn1.div{
+                    Some(div)=>{div},
+                    None=>{return}
+                };
+
+                
+                {
+                    let left=left.create_wrap_mut();
+                    let righ=righ.create_wrap_mut();
+
+                    recc2(nodeb,left);
+                    recc2(nodeb,righ);
+                }
+
+                recc(left,left2);
+                recc(righ,right2);
+            },
+            None=>{
+
+            }
+        }
+
+        fn recc2<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>(nodeb:&N,stuff:NdIterMut<T>){
+            let (nn,rest)=stuff.next();
+
+            nodeb.undo(&mut nn.range);
+
+            match rest{
+                Some((left,right))=>{
+                    recc2(nodeb,left);
+                    recc2(nodeb,right);
+                },
+                None=>{
+
+                }
+            }
+        }
+
+    }
+
+
+    let stuff=tree.get_iter_mut();
+    let stuff2=tree2.create_down();
+    recc(stuff,stuff2);
+
+
+}
 
 
 //Construct anchor from cont!!!
@@ -311,9 +381,13 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
      //tree containing the nodemass of each node (and decendants)
     let mut tree2=buildtree::<_,_,N>(tree,*rect);
 
-    let it1=tree.get_iter_mut();
-    let it2=tree2.create_down_mut();
+    {
+        let it1=tree.get_iter_mut();
+        let it2=tree2.create_down_mut();
+        recc(A::new(),it1,it2,*rect);
+    }
 
-    recc(A::new(),it1,it2,*rect);
 
+    apply_tree(tree,tree2);
+    //Now lets go through and apply the results of the node masses
 }

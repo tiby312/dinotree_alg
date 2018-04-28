@@ -363,6 +363,7 @@ mod ba {
         ///The callback function will be called on the closest object, then the second closest, and so on up 
         ///until k.
         ///User can also this way choose whether to use manhatan distance or not.
+        //TODO pass trait instead? So that the user can mutably borrow something between the closures.
         pub fn k_nearest<'b,
             F: FnMut(ColSingle<'b,T>,T::Num),
             MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
@@ -397,6 +398,18 @@ mod ba {
                     )
                 }
             };
+        }
+
+        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self,rect:AABBox<T::Num>){
+            let rect=&rect.0;
+            match &mut self.0{
+                &mut DynTreeEnum::Xa(ref mut a)=>{
+                    nbody::nbody_seq::<XAXISS,_,N>(a,rect);
+                },
+                &mut DynTreeEnum::Ya(ref mut a)=>{
+                    nbody::nbody_seq::<YAXISS,_,N>(a,rect);
+                }
+            }
         }
 
         ///Find all intersecting pairs sequentially.
