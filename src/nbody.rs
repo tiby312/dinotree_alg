@@ -29,13 +29,13 @@ mod tools{
 
 pub trait NodeMassTrait:Send{
     type T:SweepTrait;
-    fn handle_with(&self,b:&mut Self);
+    fn handle_with(&mut self,b:&mut Self);
     fn handle_bot(&mut Self::T,&mut Self::T);
     fn new(rect:Rect<<Self::T as SweepTrait>::Num>,b:&[Self::T])->Self;
     fn increase_mass(&mut self,b:&[Self::T]);
     fn apply(&mut self,b:&mut Self::T);
     fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool;
-    fn get_box(&self)->&Rect<<Self::T as SweepTrait>::Num>;
+    fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>;
     fn undo(&self,b:&mut [Self::T]);
 }
 
@@ -206,7 +206,7 @@ fn handle_anchor_with_children<'a,
         let (mut nn,rest)=stuff.next();
         
 
-        if anchor.mass.is_far_enough(nn.0.get_box()){
+        if anchor.mass.is_far_enough(&nn.0.get_box()){
             anchor.mass.handle_with(nn.0);
             return;
         }
@@ -345,6 +345,8 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
                     };
 
                     handle_anchor_with_children(&mut anchor,l1,l2);
+
+                    anchor.mass.undo(&mut anchor.node.range);
                 }
                 //At this point, everything has been handled with the root.
                 //before we can fully remove the root, and reduce this problem to two smaller trees,
@@ -356,8 +358,8 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
                 //collide the two.
                 {
                     let (left_rect,right_rect)={
-                        let l=*left2.create_wrap_mut().next().0.get_box();
-                        let r=*right2.create_wrap_mut().next().0.get_box();
+                        let l=left2.create_wrap_mut().next().0.get_box();
+                        let r=right2.create_wrap_mut().next().0.get_box();
                         (l,r)
                     };
 

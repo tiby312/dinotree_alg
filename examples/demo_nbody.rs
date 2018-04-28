@@ -21,6 +21,82 @@ use support::*;
 
 
 
+struct NodeMass{
+    center:[f64;2],
+    numbots:usize,
+    mass:f64,
+    acc:[f64;2],
+    rect:Rect<f64>
+}
+
+impl GravityTrait for NodeMass{
+    fn pos(&self)->[f64;2]{
+        self.center
+    }
+    fn mass(&self)->f64{
+        BOT_MASS
+    }
+    fn apply_force(&mut self,a:[f64;2]){
+        self.acc[0]+=a[0];
+        self.acc[1]+=a[1];
+    }
+}
+
+impl NodeMassTrait for NodeMass{
+    type T=BBox<NotNaN<f64>,Bot>;
+    fn handle_with(&mut self,b:&mut Self){
+        gravity::gravitate(self,b);
+    }
+    fn handle_bot(a:&mut Self::T,b:&mut Self::T){
+        gravity::gravitate(&mut a.val,&mut b.val);
+    }
+    fn new(rect:Rect<NotNaN<f64>>,b:&[Self::T])->Self{
+        fn get_center(a:&Rect<f64>)->[f64;2]{
+            let x=a.get_range2::<axgeom::XAXISS>();
+            let y=a.get_range2::<axgeom::YAXISS>();
+
+            let dx=(x.end-x.start)/2.0;
+            let dy=(y.end-y.start)/2.0;
+            [x.start+dx,y.start+dy]
+        }
+        let rect=rectnotnan_to_f64(rect);
+
+        NodeMass{center:get_center(&rect),numbots:b.len(),mass:b.iter().fold(0.0,|a,b|a+b.val.mass()),acc:[0.0;2],rect:rect}
+    }
+    fn increase_mass(&mut self,b:&[Self::T]){
+        for i in b.iter(){
+            self.mass+=i.val.mass();
+        }
+        self.numbots+=b.len();
+    }
+    fn apply(&mut self,b:&mut Self::T){
+        gravity::gravitate(self,&mut b.val);
+    }
+    fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool{
+        distance_from(&self.rect,&rectnotnan_to_f64(*b))>100.0
+    }
+    fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>{
+        rectf64_to_notnan(self.rect)
+    }
+    fn undo(&self,b:&mut [Self::T]){
+        let mass_per_bot=self.mass/(self.numbots as f64);
+
+        //TODO or something to this effect???
+        //can be optimized
+
+        let mag=(mass_per_bot/self.numbots as f64);
+        let forcex=self.acc[0]*mag;
+        let forcey=self.acc[1]*mag;
+
+        for i in b.iter_mut(){
+            i.val.apply_force([forcex,forcey]);
+        }
+    }
+}
+
+
+
+
 const BOT_MASS:f64=0.005;
 struct Bot{
     pos:[f64;2],
@@ -43,42 +119,7 @@ impl GravityTrait for Bot{
 
 
 
-
-
-fn get_center(a:&Rect<NotNaN<f64>>)->[NotNaN<f64>;2]{
-    let x=a.get_range2::<axgeom::XAXISS>();
-    let y=a.get_range2::<axgeom::YAXISS>();
-
-    let dx=x.last-x.start;
-    let dy=y.last-y.start;
-    [dx,dy]
-}
-
-
-struct NodeMass{
-    center:[f64;2],
-    box:Rect<f64>,
-    mass:f64,
-    acc:[f64;2]
-}
-
-
-//struct NodeMass2<N:NumTrait>(NodeMass<N>);
-impl GravityTrait for NodeMass{
-
-    fn pos(&self)->[f64;2]{
-        self.center
-    }
-    fn mass(&self)->f64{
-        self.mass
-    }
-    fn apply_force(&mut self,a:[f64;2]){
-        self.moved_amount[0]+=a[0];
-        self.moved_amount[1]+=a[1];
-    }   
-}
-
-
+/*
 impl NodeMassTrait for NodeMass{
     type T=BBox<NotNaN<f64>,Bot>;
 
@@ -129,6 +170,7 @@ impl NodeMassTrait for NodeMass{
         }
     }
 }
+*/
 
 use gravity::GravityTrait;
 mod gravity{
@@ -140,7 +182,7 @@ mod gravity{
 
     //Returns the force to be exerted to the first object.
     //The force to the second object can be retrieved simply by negating the first.
-    pub fn gravitate<T:GravityTrait>(a:&mut T,b:&mut T){
+    pub fn gravitate<T:GravityTrait,T2:GravityTrait>(a:&mut T,b:&mut T2){
         let p1=a.pos();
         let p2=b.pos();
         let m1=a.mass();
@@ -153,7 +195,7 @@ mod gravity{
         const GRAVITY_CONSTANT:f64=0.001;
 
         //newtons law of gravitation
-        let force=GRAVITY_CONSTANT*(m1&m2)/dis_sqr;
+        let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
 
 
         let dis=dis_sqr.sqrt();
@@ -165,10 +207,20 @@ mod gravity{
 }
 
 
+fn distance_from(recta:&Rect<f64>,rectb:&Rect<f64>)->f64{
+    unimplemented!();
+}
+fn rectf64_to_notnan(rect:Rect<f64>)->Rect<NotNaN<f64>>{
+    unimplemented!();
+}
+fn rectnotnan_to_f64(rect:Rect<NotNaN<f64>>)->Rect<f64>{
+    unimplemented!();
+}
+
 
 fn main() {
 
-    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
+    let mut bots=create_bots_f64(|id|Bot{pos:[0.0;2],vel:[0.0;2],acc:[0.0;2]},&[0,800,0,800],500,[2,20]);
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
         .exit_on_esc(true)
@@ -186,8 +238,8 @@ fn main() {
 
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
-                let arr=[x1 as f64,y1 as f64,x2 as f64,y2 as f64];
-                let square = rectangle::square(x1 as f64, y1 as f64, 8.0);
+                let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
+                let square = rectangle::square(x1.into_inner() as f64, y1.into_inner() as f64, 8.0);
         
                 rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
             }
@@ -198,55 +250,11 @@ fn main() {
 
                 let k={
                     
-                    let v={
-                        //Compute distance sqr
-                        let min_rect=|point:[isize;2],aabb:&AABBox<isize>|{
-                            {
-                                let ((x1,x2),(y1,y2))=aabb.get();
-                            
-                                {
-                                    let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                                    let square = [x1,y1,x2-x1,y2-y1];
-                                    rectangle([0.0,0.0,0.0,0.5], square, c.transform, g);
-                                }
-                            }
-                            let (px,py)=(point[0],point[1]);
-
-                            let ((a,b),(c,d))=aabb.get();
-
-                            let xx=num::clamp(px,a,b);
-                            let yy=num::clamp(py,c,d);
-
-                            (xx-px)*(xx-px) + (yy-py)*(yy-py)
-                        };
-
-                        //Compute distance sqr in 1d cases.
-                        let min_oned=&|p1:isize,p2:isize|{
-                            (p2-p1)*(p2-p1)
-                        };
-
-
-                        let mut v=Vec::new();
-                        tree.k_nearest([cursor[0] as isize,cursor[1] as isize],3,|a,dis|{v.push((a,dis))},min_rect,min_oned);
-                        v
-                    };
-
-                    let cols=[
-                        [1.0,0.0,0.0,0.8], //red closest
-                        [0.0,1.0,0.0,0.8], //green second closest
-                        [0.0,0.0,1.0,0.8]  //blue third closets
                     
-                    ];
-
-                    for (i,a) in v.iter().enumerate(){
-                        let ((x1,x2),(y1,y2))=a.0.rect.get();
-                        
-                        {
-                            let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                            let square = [x1,y1,x2-x1,y2-y1];
-                            rectangle(cols[i], square, c.transform, g);
-                        }
-                    }                    
+                    let rect=rectf64_to_notnan(Rect::new(0.0,800.0,0.0,800.0));
+                    tree.n_body::<NodeMass>(AABBox(rect));
+                    
+       
                 };
             }
         });
