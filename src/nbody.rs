@@ -363,7 +363,7 @@ impl<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a> CTreeIterator for BothIter<'a,T
 fn handle_left_with_right2<
     T:SweepTrait,
     N:NodeMassTrait<T=T>,
-    >(bo:BothIter<T,N>,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
+    >(left:BothIter<T,N>,right:BothIter<T,N>,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
 
 
     fn recc_left(it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>){
@@ -376,12 +376,15 @@ fn handle_left_with_right2<
         }
 
     }
-}
-*/
-fn handle_left_with_right<'a,
-    T:SweepTrait+'a,
-    N:NodeMassTrait<T=T>+'a>
-    //C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
+}*/
+
+
+
+
+
+fn handle_left_with_right<
+    T:SweepTrait,
+    N:NodeMassTrait<T=T>>
     (left:BothIter<T,N>,right:BothIter<T,N>,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
     //TODO improve this algorithm so that it does not use dynamic allocation.
     
@@ -402,11 +405,6 @@ fn handle_left_with_right<'a,
         recc3(right,&mut right_mass,&mut right_bots,left_rect);
         (right_mass,right_bots)
     };
-    /*
-    if left_bots.len()>100{
-        println!("bots={:?}",(left_bots.len(),right_bots.len()));
-    }
-    */
             
 
     //handle the mass pairs
@@ -434,11 +432,9 @@ fn handle_left_with_right<'a,
         }
     }
 
-    
-    fn recc3<'a:'b,'b,
-        T:SweepTrait+'a,
-        N:NodeMassTrait<T=T>+'a>
-        //C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
+    fn recc3<'b,
+        T:SweepTrait,
+        N:NodeMassTrait<T=T>>
     (mut stuff:BothIter<'b,T,N>,nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&CenterOfMass<T::Num>)
     {
         let ((nn1,nn2),rest)=stuff.next();
