@@ -287,28 +287,28 @@ struct Anchor<'a,N:NodeMassTrait+'a>{
 
 fn handle_anchor_with_children<'a,
     T:SweepTrait+'a,
-    N:NodeMassTrait<T=T>+'a,
-    C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
-(anchor:&mut Anchor<N>,left:C,right:C){
+    N:NodeMassTrait<T=T>+'a>
+    //C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
+(anchor:&mut Anchor<N>,left:BothIter<T,N>,right:BothIter<T,N>){
     {
         recc2(anchor,left);
         recc2(anchor,right);
     }
 
-    fn recc2<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a,C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>(anchor:&mut Anchor<N>,stuff:C){
-        let (mut nn,rest)=stuff.next();
+    fn recc2<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a>(anchor:&mut Anchor<N>,stuff:BothIter<T,N>){
+        let ((mut nn1,nn2),rest)=stuff.next();
         
 
         {
-            if N::is_far_enough(&anchor.mass.create_center(),&nn.0.create_center()){
-                anchor.mass.nm.handle_with(&mut nn.0.nm);
+            if N::is_far_enough(&anchor.mass.create_center(),&nn2.create_center()){
+                anchor.mass.nm.handle_with(&mut nn2.nm);
                 return;
             }
         }
 
 
         for b in anchor.node.range.iter_mut(){
-            for b2 in nn.1.range.iter_mut(){
+            for b2 in nn1.range.iter_mut(){
                 N::handle_bot(b,b2);
             }
         }
@@ -326,25 +326,63 @@ fn handle_anchor_with_children<'a,
 }
 
 
-//TODO use this
-fn handle_left_with_right2<'a,
-    T:SweepTrait+'a,
-    N:NodeMassTrait<T=T>+'a,
-    >(it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>){
-
-
-    fn recc_left(){
-
+struct BothIter<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a>{
+    it1:NdIterMut<'a,T>,
+    it2:compt::dfs::DownTMut<'a,NodeMassWrapper<N>>
+}
+impl<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a> BothIter<'a,T,N>{
+    fn create_wrap_mut<'b>(&'b mut self)->BothIter<'b,T,N>{
+        let it1=self.it1.create_wrap_mut();
+        let it2=self.it2.create_wrap_mut();
+        BothIter{it1,it2}
     }
-    fn recc_right(){
+}
+
+impl<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a> CTreeIterator for BothIter<'a,T,N>{
+    type Item=(&'a mut NodeDyn<T>,&'a mut NodeMassWrapper<N>);
+    fn next(self)->(Self::Item,Option<(Self,Self)>){
+        let (n1,rest1)=self.it1.next();
+        let (n2,rest2)=self.it2.next();
+        
+        match rest1{
+            Some((left,right))=>{
+                let (ll,rr)=rest2.unwrap();
+
+                ((n1,n2),Some((BothIter{it1:left,it2:ll},BothIter{it1:right,it2:rr})))
+            },
+            None=>{
+                ((n1,n2),None)  
+            }
+        }
+    }
+}
+
+
+/*
+//TODO use this
+fn handle_left_with_right2<
+    T:SweepTrait,
+    N:NodeMassTrait<T=T>,
+    >(bo:BothIter<T,N>,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
+
+
+    fn recc_left(it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>){
+
+        let k1=it1.create_wrap_mut();
+        let k2=it2.create_wrap_mut();
+
+        fn recc_right(it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>){
+
+        }
 
     }
 }
+*/
 fn handle_left_with_right<'a,
     T:SweepTrait+'a,
-    N:NodeMassTrait<T=T>+'a,
-    C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
-    (left:C,right:C,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
+    N:NodeMassTrait<T=T>+'a>
+    //C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
+    (left:BothIter<T,N>,right:BothIter<T,N>,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
     //TODO improve this algorithm so that it does not use dynamic allocation.
     
     let (mut left_mass,mut left_bots)={
@@ -399,21 +437,21 @@ fn handle_left_with_right<'a,
     
     fn recc3<'a:'b,'b,
         T:SweepTrait+'a,
-        N:NodeMassTrait<T=T>+'a,
-        C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
-    (mut stuff:C,nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&CenterOfMass<T::Num>)
+        N:NodeMassTrait<T=T>+'a>
+        //C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
+    (mut stuff:BothIter<'b,T,N>,nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&CenterOfMass<T::Num>)
     {
-        let (nn,rest)=stuff.next();
+        let ((nn1,nn2),rest)=stuff.next();
         
         //handle_a_node(nn,nms,bots,other);
         
-        if N::is_far_enough(&nn.0.create_center(),other){
+        if N::is_far_enough(&nn2.create_center(),other){
             //anchor.mass.nm.handle_with(&mut nn.0.nm);
-            nms.push(nn.0);
+            nms.push(nn2);
             return;
         }
     
-        for i in nn.1.range.iter_mut(){
+        for i in nn1.range.iter_mut(){
             bots.push(i)
         }
         
@@ -437,28 +475,27 @@ fn handle_left_with_right<'a,
 pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,T>,rect:&Rect<T::Num>){
 
    
-    fn recc<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(axis:A,it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>,rect:Rect<T::Num>){
-        let (nn1,rest1)=it1.next();
-        let (nn2,rest2)=it2.next();
+    fn recc<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(axis:A,it:BothIter<T,N>,rect:Rect<T::Num>){
+        let ((nn1,nn2),rest)=it.next();
+        
 
         //handle bots in itself
         tools::for_every_pair(&mut nn1.range,|a,b|{N::handle_bot(a,b)});
         
 
-        match rest1{
+        match rest{
             Some((mut left,mut right))=>{
                 let div=match nn1.div{
                     Some(div)=>{div},
                     None=>{return;}
                 };
 
-                let (mut left2,mut right2)=rest2.unwrap();
-
                 match nn1.cont{
                     Some(cont)=>{
-                        let l1=left2.create_wrap_mut().zip(left.create_wrap_mut());
-                        let l2=right2.create_wrap_mut().zip(right.create_wrap_mut());
-
+                        //let l1=left.create_wrap_mut().zip(left.create_wrap_mut());
+                        //let l2=right.create_wrap_mut().zip(right.create_wrap_mut());
+                        let l1=left.create_wrap_mut();
+                        let l2=right.create_wrap_mut();
                         let mut anchor={
                             //Create a new mass that is only the rect of that contains all the bots intersecting the divider.
                             //let rect=rect.constrain_by(nn1.cont); //TODO
@@ -489,14 +526,14 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
 
                 {
                     let (lcenter,rcenter)={
-                        let l=left2.create_wrap_mut().next().0;
-                        let r=right2.create_wrap_mut().next().0;
-                        let lcenter=l.create_center();//CenterOfMass{center:l.nm.center_of_mass(),rect:l.nm.rect};
-                        let rcenter=r.create_center();//CenterOfMass{center:r.nm.center_of_mass(),rect:r.nm.rect};
+                        let l=left.create_wrap_mut().next().0;
+                        let r=right.create_wrap_mut().next().0;
+                        let lcenter=l.1.create_center();//CenterOfMass{center:l.nm.center_of_mass(),rect:l.nm.rect};
+                        let rcenter=r.1.create_center();//CenterOfMass{center:r.nm.center_of_mass(),rect:r.nm.rect};
                         (lcenter,rcenter)
                     };
-                    let l1=left2.create_wrap_mut().zip(left.create_wrap_mut());
-                    let l2=right2.create_wrap_mut().zip(right.create_wrap_mut());
+                    let l1=left.create_wrap_mut();
+                    let l2=right.create_wrap_mut();
                     handle_left_with_right(l1,l2,&lcenter,&rcenter);
                 }
                 //at this point we have successfully broken up this problem
@@ -504,8 +541,8 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
                 //potentially in parlalel.
                 //TODO parallelize.
                 let (rect1,rect2)=rect.subdivide(div,A::get());
-                recc(axis.next(),left,left2,rect1);
-                recc(axis.next(),right,right2,rect2);
+                recc(axis.next(),left,rect1);
+                recc(axis.next(),right,rect2);
             },
             None=>{
 
@@ -525,7 +562,7 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
     {
         let it1=tree.get_iter_mut();
         let it2=tree2.create_down_mut();
-        recc(A::new(),it1,it2,*rect);
+        recc(A::new(),BothIter{it1,it2},*rect);
     }
     println!("main alg={:?}",timer.elapsed());
     let timer=Timer2::new();
