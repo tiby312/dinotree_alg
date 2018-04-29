@@ -1,7 +1,7 @@
 use inner_prelude::*;
 use oned::Bleek;
 use compt::LevelIter;
-use compt::WrapGen;
+//use compt::WrapGen;
 use std::cell::UnsafeCell;
 use dinotree_inner::par::Joiner;
 
@@ -94,12 +94,13 @@ fn go_down<
     parent_axis: B,
     sweeper: &mut Sweeper<F::T>,
     anchor: &mut anchor::DestructuredAnchor<X,B>,
-    m: WrapGen<LevelIter<C>>,
-    func: &mut F
+    m: C,
+    func: &mut F,
+    depth:Depth
 ) {
     {
-        let (mut bo, rest) = m.next();
-        let &mut (_, ref mut nn) = bo.get_mut();
+        //let (mut bo, rest) = m.next();
+        let (nn,rest) = m.next();
 
         match rest {
             Some((left, right)) => {
@@ -115,14 +116,14 @@ fn go_down<
                 //This can be evaluated at compile time!
                 if B::get() == A::get() {
                     if !(div < anchor.get().0.start) {
-                        self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
+                        self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func,depth.next_down());
                     };
                     if !(div > anchor.get().0.end) {
-                        self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func);
+                        self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func,depth.next_down());
                     };
                 } else {
-                    self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func);
-                    self::go_down(this_axis.next(), parent_axis, sweeper, anchor,right, func);
+                    self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func,depth.next_down());
+                    self::go_down(this_axis.next(), parent_axis, sweeper, anchor,right, func,depth.next_down());
                 }
                
             }
@@ -139,19 +140,20 @@ fn recurse<
     JJ: par::Joiner,
     X: SweepTrait + 'x,
     F: ColMulti<T = X>,
-    C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
+    //C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
     K: TreeTimerTrait
 >(
     this_axis: A,
     par: JJ,
     sweeper: &mut Sweeper<F::T>,
-    m: LevelIter<C>,
+    m: NdIterMut<X>,
     mut clos: F,
-    mut timer_log: K
+    mut timer_log: K,
+    level:Depth
 ) -> (F,K::Bag) {
     timer_log.start();
 
-    let ((level, nn), rest) = m.next();
+    let (nn, rest) = m.next();
 
     let k = match rest {
         None => {
@@ -165,11 +167,14 @@ fn recurse<
                 Ok(mut nn)=>{
                     self::sweeper_find_2d::<A::Next, _>(sweeper, nn.get().1, ColMultiWrapper(&mut clos));
 
-                    let left = compt::WrapGen::new(&mut left);
-                    let right = compt::WrapGen::new(&mut right);
+                    //let left = compt::WrapGen::new(&mut left);
+                    //let right = compt::WrapGen::new(&mut right);
+                    //left.create_wrap();
+                    let left=left.create_wrap_mut();
+                    let right=right.create_wrap_mut();
 
-                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos);
-                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos);
+                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos,level.next_down());
+                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos,level.next_down());
                 },
                 Err(e)=>{
                     match e{
@@ -198,6 +203,7 @@ fn recurse<
                         left,
                         aa,
                         ta,
+                        level.next_down()
                         
                     )
                 };
@@ -210,6 +216,7 @@ fn recurse<
                         right,
                         bb,
                         tb,
+                        level.next_down()
                         
                     )
                 };
@@ -225,6 +232,7 @@ fn recurse<
                     left,
                     clos,
                     ta,
+                    level.next_down()
                     
                 );
                 let (clos,tb) = self::recurse(
@@ -234,6 +242,7 @@ fn recurse<
                     right,
                     clos,
                     tb,
+                    level.next_down()
                     
                 );
 
@@ -285,7 +294,7 @@ pub fn find_element<A:AxisTrait,T:SweepTrait,F:FnMut(&T)->bool>(tree:&DynTree<A,
 
        }
 
-    recc(A::new(),&mut func,tree.get_iter().with_depth(),Vec::new())
+    recc(A::new(),&mut func,tree.get_iter().with_depth(Depth(0)),Vec::new())
 }
 
 
@@ -404,11 +413,11 @@ fn for_every_col_pair_inner<
     let level = kdtree.get_level_desc();
     let dt = kdtree.get_iter_mut();
     //let dt = compt::LevelIter::new(dt, level);
-    let dt=dt.with_depth();
+    //let dt=dt.with_depth(Depth(0));
     let mut sweeper = Sweeper::new();
 
     let h = K::new(height);
-    let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h);
+    let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h,Depth(0));
     bag
 }
 

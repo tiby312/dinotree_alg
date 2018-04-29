@@ -58,10 +58,10 @@ pub fn draw<T: SweepTrait,D:DividerDrawer<N=T::Num>>(
 
     match &gentree.0 {
         &DynTreeEnum::Xa(ref a) => {
-            recc::<XAXISS,T,D,_>(a.get_iter().with_depth(),dr,rect.0);
+            recc::<XAXISS,T,D,_>(a.get_iter().with_depth(Depth(0)),dr,rect.0);
         }
         &DynTreeEnum::Ya(ref a) => {
-            recc::<YAXISS, T,D,_>(a.get_iter().with_depth(),dr,rect.0);
+            recc::<YAXISS, T,D,_>(a.get_iter().with_depth(Depth(0)),dr,rect.0);
         }
     }
 }

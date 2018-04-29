@@ -36,28 +36,38 @@ pub trait NodeMassTrait:Send{
     //gravitate a bot with a bot
     fn handle_bot(&mut Self::T,&mut Self::T);
 
-    //create a new node mass that has the combined mass of all the bots in the slice
-    fn new(rect:Rect<<Self::T as SweepTrait>::Num>,b:&[Self::T])->Self;
-
+  
     //increase the mass of a node mass by adding the masses of all the bots in the list
-    fn increase_mass(&mut self,b:&[Self::T]);
+    //fn increase_mass(&mut self,b:&[Self::T]);
 
     //gravitate a nodemass with a bot
     fn apply(&mut self,b:&mut Self::T);
 
     //check if the rect is far enough away from the nodemass.
     //if it is we will use this nodemass instead of gravitating all the bots
-    fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool;
+    fn is_far_enough(a:(&Self,&Rect<<Self::T as SweepTrait>::Num>),b:(&Self,&Rect<<Self::T as SweepTrait>::Num>))->bool;
 
     //get the bounding box of this nodemass
-    fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>;
+    //TODO get rid of this one
+    //fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>;
 
     //apply the forces that this node mass has to all of the bots in it.
-    fn undo(&self,b:&mut [Self::T]);
+    //fn undo(&self,b:&mut [Self::T]);
+    //returns all bots inside of this nodemass.
+    fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&self,it:I,len:usize) where Self::T:'a;
+
+      //create a new node mass that has the combined mass of all the bots in the slice
+    //fn new(rect:Rect<<Self::T as SweepTrait>::Num>,b:&[Self::T])->Self;
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (it:I,len:usize)->Self where Self::T:'a;
+
 }
 
 
 
+struct NodeMassWrapper<N:NodeMassTrait>{
+    nm:N,
+    rect:Rect<<N::T as SweepTrait>::Num>
+}
 
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
@@ -66,15 +76,14 @@ fn buildtree<'a,
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>
     >
-    (tree:&DynTree<A,T>,rect:Rect<T::Num>)->compt::dfs::GenTreeDfsOrder<N>{
+    (tree:&DynTree<A,T>,rect:Rect<T::Num>)->compt::dfs::GenTreeDfsOrder<NodeMassWrapper<N>>{
 
 
     fn recc<'a,A:AxisTrait,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
-        (axis:A,stuff:NdIter<T>,rect:Rect<T::Num>,vec:&mut Vec<N>){
+        (axis:A,stuff:NdIter<T>,rect:Rect<T::Num>,vec:&mut Vec<NodeMassWrapper<N>>){
 
         let (nn,rest)=stuff.next();
 
-        let mut nodeb=N::new(rect,&nn.range);
 
         match rest{
             Some((mut left,mut righ))=>{
@@ -82,16 +91,27 @@ fn buildtree<'a,
 
                 match nn.div{
                     Some(div)=>{
-                        let (leftr,rightr)=rect.subdivide(div,A::get());
                         
-                        {
+                        
+                        let nodeb={
+                            //We know this vec will atleast have the size of the number of bots in this node.
+                            let mut bots_to_add:Vec<&T>=Vec::with_capacity(nn.range.len());
+                            for i in nn.range.iter(){
+                                bots_to_add.push(i);
+                            }
+                            
                             let left=left.create_wrap();
                             let righ=righ.create_wrap();
 
-                            recc2(&mut nodeb,left);
-                            recc2(&mut nodeb,righ);
-                        }
+                            recc2(&mut bots_to_add,left);
+                            recc2(&mut bots_to_add,righ);
+                            let len=bots_to_add.len();
+                            let mut nodeb=NodeMassWrapper{nm:N::new(bots_to_add.drain(..),len),rect};
+                            nodeb
+                        };
 
+                        let (leftr,rightr)=rect.subdivide(div,A::get());
+                   
                         recc(axis.next(),left,leftr,vec);
                         
                         vec.push(nodeb);
@@ -103,6 +123,7 @@ fn buildtree<'a,
                         //we want to populate this tree entirely.
                        recc(axis.next(),left,rect,vec);
                         
+                        let mut nodeb=NodeMassWrapper{nm:N::new(nn.range.iter(),nn.range.len()),rect};
                         vec.push(nodeb);
                         
                         recc(axis.next(),righ,rect,vec); 
@@ -110,14 +131,18 @@ fn buildtree<'a,
                 }
             },
             None=>{
+                let mut nodeb=NodeMassWrapper{nm:N::new(nn.range.iter(),nn.range.len()),rect};
                 vec.push(nodeb);
             }
         }
 
-        fn recc2<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>(nodeb:&mut N,stuff:NdIter<T>){
+        fn recc2<'a,T:SweepTrait+'a>(nodeb:&mut Vec<&'a T>,stuff:NdIter<'a,T>){
             let (nn,rest)=stuff.next();
 
-            nodeb.increase_mass(&nn.range);
+            for i in nn.range.iter(){
+                nodeb.push(i);
+            }
+            //nodeb.increase_mass(&nn.range);
 
             match rest{
                 Some((left,right))=>{
@@ -154,17 +179,17 @@ fn apply_tree<'a,
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>
     >
-    (tree:&mut DynTree<A,T>,tree2:compt::dfs::GenTreeDfsOrder<N>){
+    (tree:&mut DynTree<A,T>,tree2:compt::dfs::GenTreeDfsOrder<NodeMassWrapper<N>>){
 
     fn recc<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
-        (mut stuff:NdIterMut<T>,stuff2:compt::dfs::DownT<N>){
+        (mut stuff:NdIterMut<T>,stuff2:compt::dfs::DownT<NodeMassWrapper<N>>){
 
         let (nn1,rest)=stuff.next();
         let (nodeb,rest2)=stuff2.next();
         
 
 
-        nodeb.undo(&mut nn1.range);
+        //nodeb.undo(&mut nn1.range);
 
 
         match rest{
@@ -173,42 +198,59 @@ fn apply_tree<'a,
 
                 let div=match nn1.div{
                     Some(div)=>{div},
-                    None=>{return}
+                    None=>{return;}
                 };
 
                 
                 {
+                    let mut bots_to_undo:Vec<&mut T>=Vec::new();
+
                     let left=left.create_wrap_mut();
                     let righ=righ.create_wrap_mut();
 
-                    recc2(nodeb,left);
-                    recc2(nodeb,righ);
+                    recc2(&mut bots_to_undo,left);
+                    recc2(&mut bots_to_undo,righ);
+
+                    let l=bots_to_undo.len();
+                    nodeb.nm.undo(bots_to_undo.drain(..),l);
                 }
 
                 recc(left,left2);
                 recc(righ,right2);
             },
             None=>{
-
+                let l=nn1.range.len();
+                nodeb.nm.undo(nn1.range.iter_mut(),l);
+                //nodeb.undo()
             }
         }
 
-        fn recc2<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>(nodeb:&N,stuff:NdIterMut<T>){
+        fn recc2<'a,T:SweepTrait+'a>(bots:&mut Vec<&'a mut T>,stuff:NdIterMut<'a,T>){
             let (nn,rest)=stuff.next();
-
-            nodeb.undo(&mut nn.range);
 
             match rest{
                 Some((left,right))=>{
-                    recc2(nodeb,left);
-                    recc2(nodeb,right);
+                    match nn.div{
+                        Some(div)=>{
+                            for i in nn.range.iter_mut(){
+                                bots.push(i);
+                            }
+                            recc2(bots,left);
+                            recc2(bots,right);
+                        },
+                        None=>{
+                            return;
+                        }
+                    }
+                    
                 },
                 None=>{
-
+                    for i in nn.range.iter_mut(){
+                        bots.push(i);
+                    }
                 }
             }
         }
-
     }
 
 
@@ -222,27 +264,29 @@ fn apply_tree<'a,
 
 //Construct anchor from cont!!!
 struct Anchor<'a,N:NodeMassTrait+'a>{
-    mass:N,
+    mass:NodeMassWrapper<N>,
     node:&'a mut NodeDyn<N::T>
 }
 
 fn handle_anchor_with_children<'a,
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>+'a,
-    C:CTreeIterator<Item=(&'a mut N,&'a mut NodeDyn<T>)>>
+    C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
 (anchor:&mut Anchor<N>,left:C,right:C){
     {
         recc2(anchor,left);
         recc2(anchor,right);
     }
 
-    fn recc2<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a,C:CTreeIterator<Item=(&'a mut N,&'a mut NodeDyn<T>)>>(anchor:&mut Anchor<N>,stuff:C){
+    fn recc2<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a,C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>(anchor:&mut Anchor<N>,stuff:C){
         let (mut nn,rest)=stuff.next();
         
 
-        if anchor.mass.is_far_enough(&nn.0.get_box()){
-            anchor.mass.handle_with(nn.0);
-            return;
+        {
+            if N::is_far_enough((&anchor.mass.nm,&anchor.mass.rect),(&nn.0.nm,&nn.0.rect)){
+                anchor.mass.nm.handle_with(&mut nn.0.nm);
+                return;
+            }
         }
 
         match rest{
@@ -265,29 +309,54 @@ fn handle_anchor_with_children<'a,
 fn handle_left_with_right<'a,
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>+'a,
-    C:CTreeIterator<Item=(&'a mut N,&'a mut NodeDyn<T>)>>
-    (left:C,right:C,left_rect:&Rect<T::Num>,right_rect:&Rect<T::Num>){
+    C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
+    (left:C,right:C){
     
-    let (mut left_mass,mut left_bots)={
-    
+
+    let (left_anchor,left_rest)=left.next();
+    let (right_anchor,right_rest)=right.next();
+
+
+    let (mut left_mass,mut left_bots,left_anchor)={
+        
         let mut left_mass=Vec::new();
         let mut left_bots=Vec::new();
-        recc3(left,&mut left_mass,&mut left_bots,right_rect);
-        (left_mass,left_bots)
+        match left_rest{
+            Some((left,right))=>{
+                recc3(left,&mut left_mass,&mut left_bots,&right_anchor.0);
+                recc3(right,&mut left_mass,&mut left_bots,&right_anchor.0);
+            },
+            None=>{
+                return;
+            }
+        }
+        (left_mass,left_bots,left_anchor)
     };
 
     let (mut right_mass,mut right_bots)={
 
         let mut right_mass=Vec::new();
         let mut right_bots=Vec::new();
-        recc3(right,&mut right_mass,&mut right_bots,left_rect);
+        match right_rest{
+            Some((left,right))=>{
+                recc3(left,&mut right_mass,&mut right_bots,&left_anchor.0);
+                recc3(right,&mut right_mass,&mut right_bots,&left_anchor.0);
+            },
+            None=>{
+                return;
+            }
+        }
         (right_mass,right_bots)
     };
+
+    handle_a_node(left_anchor,&mut left_mass,&mut left_bots,&right_anchor.0);
+    handle_a_node(right_anchor,&mut right_mass,&mut right_bots,&left_anchor.0);
+            
 
     //handle the mass pairs
     for i in left_mass.iter_mut(){
         for j in right_mass.iter_mut(){
-            i.handle_with(j);
+            i.nm.handle_with(&mut j.nm);
         }
     }
     //handle the bot pairs
@@ -300,37 +369,65 @@ fn handle_left_with_right<'a,
     //handle the mass/bot pairs.
     for i in left_mass.iter_mut(){
         for j in right_bots.iter_mut(){
-            i.apply(j);
+            i.nm.apply(j);
         }
     }
     for i in right_mass.iter_mut(){
         for j in left_bots.iter_mut(){
-            i.apply(j);
+            i.nm.apply(j);
         }
     }
 
 
-    fn recc3<'a:'b,'b,
+    fn handle_a_node<'a:'b,'b,
         T:SweepTrait+'a,
-        N:NodeMassTrait<T=T>+'a,
-        C:CTreeIterator<Item=(&'a mut N,&'a mut NodeDyn<T>)>>
-    (mut stuff:C,rects:&mut Vec<&'b mut N>,bots:&mut Vec<&'b mut T>,other:&Rect<T::Num>)
+        N:NodeMassTrait<T=T>+'a>
+        (nn:(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>),nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&NodeMassWrapper<N>)
     {
-        let (nn,rest)=stuff.next();
-        
+        if N::is_far_enough((&nn.0.nm,&nn.0.rect),(&other.nm,&other.rect)){
+            //anchor.mass.nm.handle_with(&mut nn.0.nm);
+            nms.push(nn.0);
+            return;
+        }
+    
+        /*
         if nn.0.is_far_enough(other){
             rects.push(nn.0);
             return;
         }
+        */
         for i in nn.1.range.iter_mut(){
             bots.push(i)
         }
+
+    
+    }
+    fn recc3<'a:'b,'b,
+        T:SweepTrait+'a,
+        N:NodeMassTrait<T=T>+'a,
+        C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
+    (mut stuff:C,nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&NodeMassWrapper<N>)
+    {
+        let (nn,rest)=stuff.next();
+        
+        handle_a_node(nn,nms,bots,other);
+        /*
+        if N::is_far_enough((&nn.0.nm,&nn.0.rect),(&other.nm,&other.rect)){
+            //anchor.mass.nm.handle_with(&mut nn.0.nm);
+            nms.push(nn.0);
+            return;
+        }
+    
+        for i in nn.1.range.iter_mut(){
+            bots.push(i)
+        }
+        */
     
 
         match rest{
             Some((left,right))=>{
-                recc3(left,rects,bots,other);
-                recc3(right,rects,bots,other);
+                recc3(left,nms,bots,other);
+                recc3(right,nms,bots,other);
             },
             None=>{
                 
@@ -345,7 +442,7 @@ fn handle_left_with_right<'a,
 pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,T>,rect:&Rect<T::Num>){
 
    
-    fn recc<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(axis:A,it1:NdIterMut<T>,it2:compt::dfs::DownTMut<N>,rect:Rect<T::Num>){
+    fn recc<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(axis:A,it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>,rect:Rect<T::Num>){
         let (nn1,rest1)=it1.next();
         let (nn2,rest2)=it2.next();
 
@@ -373,13 +470,13 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
 
                             let mut rect=rect;
                             *rect.get_range2_mut::<A>()=cont;
-                            let m=N::new(rect,&nn1.range);
+                            let m=NodeMassWrapper{nm:N::new(nn1.range.iter(),nn1.range.len()),rect};
                             Anchor{mass:m,node:nn1}
                         };
 
                         handle_anchor_with_children(&mut anchor,l1,l2);
-
-                        anchor.mass.undo(&mut anchor.node.range);
+                        let l=anchor.node.range.len();
+                        anchor.mass.nm.undo(anchor.node.range.iter_mut(),l);
                     },
                     None=>{
 
@@ -393,16 +490,16 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
                 //from the left side,get a list of nodemases.
                 //from the right side,get a list of nodemases.
                 //collide the two.
+
+
                 {
-                    let (left_rect,right_rect)={
-                        let l=left2.create_wrap_mut().next().0.get_box();
-                        let r=right2.create_wrap_mut().next().0.get_box();
-                        (l,r)
-                    };
+                    //let (l,left_rest)=left2.create_wrap_mut().next();
+                    //let (r,right_rest)=right2.create_wrap_mut().next();
+                 
 
                     let l1=left2.create_wrap_mut().zip(left.create_wrap_mut());
                     let l2=right2.create_wrap_mut().zip(right.create_wrap_mut());
-                    handle_left_with_right(l1,l2,&left_rect,&right_rect);
+                    handle_left_with_right(l1,l2);
                 }
                 //at this point we have successfully broken up this problem
                 //into two independant ones, and we can do this all over again for the two children.
@@ -417,16 +514,26 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
             }
         }
     }
-     //tree containing the nodemass of each node (and decendants)
+
+    use dinotree_inner::tools::Timer2;
+    let timer=Timer2::new();
+
+    //tree containing the nodemass of each node (and decendants)
     let mut tree2=buildtree::<_,_,N>(tree,*rect);
 
+    println!("build timer={:?}",timer.elapsed());
+    let timer=Timer2::new();
     {
         let it1=tree.get_iter_mut();
         let it2=tree2.create_down_mut();
         recc(A::new(),it1,it2,*rect);
     }
+    println!("main alg={:?}",timer.elapsed());
+    let timer=Timer2::new();
 
 
     apply_tree(tree,tree2);
+
+    println!("application={:?}",timer.elapsed());
     //Now lets go through and apply the results of the node masses
 }

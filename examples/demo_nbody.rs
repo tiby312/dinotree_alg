@@ -25,8 +25,9 @@ struct NodeMass{
     center:[f64;2],
     numbots:usize,
     mass:f64,
-    acc:[f64;2],
-    rect:Rect<f64>
+
+    //TODO force
+    force:[f64;2]
 }
 
 impl GravityTrait for NodeMass{
@@ -37,8 +38,8 @@ impl GravityTrait for NodeMass{
         BOT_MASS
     }
     fn apply_force(&mut self,a:[f64;2]){
-        self.acc[0]+=a[0]/self.mass;
-        self.acc[1]+=a[1]/self.mass;
+        self.force[0]+=a[0];
+        self.force[1]+=a[1];
     }
 }
 
@@ -50,7 +51,57 @@ impl NodeMassTrait for NodeMass{
     fn handle_bot(a:&mut Self::T,b:&mut Self::T){
         gravity::gravitate(&mut a.val,&mut b.val);
     }
-    fn new(rect:Rect<NotNaN<f64>>,b:&[Self::T])->Self{
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (it:I,len:usize)->Self where Self::T:'a{
+        let mut total_x=0.0;
+        let mut total_y=0.0;
+        let mut total_mass=0.0;
+        for i in it{
+            total_mass+=i.val.mass();
+            total_x+=i.val.pos[0];
+            total_y+=i.val.pos[1];
+        }
+        //println!("mass={:?}",total_mass);
+        //let total_mass*==3.0;
+        let avg_x=total_x/len as f64;
+        let avg_y=total_y/len as f64;
+        NodeMass{center:[avg_x,avg_y],numbots:len,mass:total_mass,force:[0.0;2]}
+    }
+
+
+    fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&self,it:I,len:usize) where Self::T:'a{
+        //F=ma
+
+
+        //let mass_per_bot=self.mass/(self.numbots as f64);
+
+
+        let len_sqr=self.force[0]*self.force[0]+self.force[1]+self.force[1];
+
+        if len_sqr>0.01{
+
+            let dis=len_sqr.sqrt();
+            let total_forcex=self.force[0];
+            let total_forcey=self.force[1];
+
+
+            //TODO or something to this effect???
+            //can be optimized
+
+            //let mag=mass_per_bot/dis;
+            //let forcex=self.acc[0]*mag;
+            //let forcey=self.acc[1]*mag;
+            let forcex=total_forcex/self.numbots as f64;
+            let forcey=total_forcey/self.numbots as f64;
+
+            for i in it{
+                i.val.apply_force([forcex,forcey]);
+            }
+        }else{
+            //No acceleration was applied to this node mass.
+        }
+    }
+    /*
+    fn new(b:&[Self::T])->Self{
         fn get_center(a:&Rect<f64>)->[f64;2]{
             let x=a.get_range2::<axgeom::XAXISS>();
             let y=a.get_range2::<axgeom::YAXISS>();
@@ -63,25 +114,36 @@ impl NodeMassTrait for NodeMass{
 
         NodeMass{center:get_center(&rect),numbots:b.len(),mass:b.iter().fold(0.0,|a,b|a+b.val.mass()),acc:[0.0;2],rect:rect}
     }
+    */
+    /*
     fn increase_mass(&mut self,b:&[Self::T]){
         for i in b.iter(){
             self.mass+=i.val.mass();
         }
         self.numbots+=b.len();
     }
+    
+    */
     fn apply(&mut self,b:&mut Self::T){
         gravity::gravitate(self,&mut b.val);
     }
-    fn is_far_enough(&self,b:&Rect<<Self::T as SweepTrait>::Num>)->bool{
+    fn is_far_enough(a:(&Self,&Rect<NotNaN<f64>>),b:(&Self,&Rect<NotNaN<f64>>))->bool{
         //false
-        let k=distance_sqr_from(&self.rect,&rectnotnan_to_f64(*b))>100.0*100.0;
-        
-        k
-        //false
+        let r1=&rectnotnan_to_f64(*a.1);
+        let r2=&rectnotnan_to_f64(*b.1);
+        let k=distance_sqr_from(r1,r2)>400.0*400.0;
+
+
+
+        //k
+        false
     }
+    /*
     fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>{
         rectf64_to_notnan(self.rect)
     }
+    */
+    /*
     fn undo(&self,b:&mut [Self::T]){
         let mass_per_bot=self.mass/(self.numbots as f64);
 
@@ -103,7 +165,7 @@ impl NodeMassTrait for NodeMass{
         }else{
             //No acceleration was applied to this node mass.
         }
-    }
+    }*/
 }
 
 
@@ -113,7 +175,7 @@ const BOT_MASS:f64=1.0;
 struct Bot{
     pos:[f64;2],
     vel:[f64;2],
-    acc:[f64;2]
+    force:[f64;2]
 }
 
 impl GravityTrait for Bot{
@@ -124,8 +186,8 @@ impl GravityTrait for Bot{
         BOT_MASS
     }
     fn apply_force(&mut self,a:[f64;2]){
-        self.acc[0]+=a[0]/BOT_MASS;
-        self.acc[1]+=a[1]/BOT_MASS;
+        self.force[0]+=a[0];
+        self.force[1]+=a[1];
     }
 }
 
@@ -233,9 +295,12 @@ fn wrap_position(a:&mut [f64;2]){
     }
 }
 
+
+
+use std::time::Instant;
 fn main() {
 
-    let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],acc:[0.0;2]},&[0,800,0,800],500,[2,20]);
+    let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[0,800,0,800],5000,[2,20]);
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
         .exit_on_esc(true)
@@ -251,6 +316,7 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
 
+            let tim=Instant::now();
             for bot in bots.iter_mut(){
                 let b=&mut bot.val;
 
@@ -263,9 +329,17 @@ fn main() {
                 b.vel[1]*=0.99;
 
                 b.pos[1]+=b.vel[1];
-                b.vel[0]+=b.acc[0];
-                b.vel[1]+=b.acc[1];
-                
+
+                {
+                    //F=MA
+                    //A=F/M
+
+                    let accx=b.force[0]/BOT_MASS;
+                    let accy=b.force[1]/BOT_MASS;
+
+                    b.vel[0]+=accx;
+                    b.vel[1]+=accy;
+                }
 
                 let mut rect=rectnotnan_to_f64(bot.rect.0);
 
@@ -285,7 +359,7 @@ fn main() {
                 }
                 bot.rect.0=rectf64_to_notnan(rect);
 
-                b.acc=[0.0;2];
+                b.force=[0.0;2];
             }
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
@@ -294,6 +368,9 @@ fn main() {
         
                 rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
             }
+            println!("other={:?}",tim.elapsed());
+            
+            
             
             {
                 let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
@@ -304,8 +381,29 @@ fn main() {
                     tree.n_body::<NodeMass>(AABBox(rect));
                 };
             }
+            
+            
 
+            
+            
             /*
+            use std::time::Instant;
+
+            let t=Instant::now();
+            for i in 0..bots.len(){
+                let b1=&mut bots[i] as *mut BBox<NotNaN<f64>,Bot>;
+                for j in i+1..bots.len(){
+                    let b1=unsafe{&mut *b1};
+                    let b2=&mut bots[j];
+                    NodeMass::handle_bot(b1,b2);
+                }
+            }
+            println!("naive={:?}",t.elapsed());
+            */
+            
+            
+            
+            /*  
             for bot in bots.iter(){
                 let p1x=bot.val.pos[0];
                 let p1y=bot.val.pos[1];
