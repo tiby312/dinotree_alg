@@ -62,9 +62,13 @@ impl NodeMassTrait for NodeMass{
         }
         //println!("mass={:?}",total_mass);
         //let total_mass*==3.0;
-        let avg_x=total_x/len as f64;
-        let avg_y=total_y/len as f64;
-        NodeMass{center:[avg_x,avg_y],numbots:len,mass:total_mass,force:[0.0;2]}
+        let center=if len!=0{
+            [total_x/len as f64,
+            total_y/len as f64]
+        }else{
+            [0.0;2]
+        };
+        NodeMass{center,numbots:len,mass:total_mass,force:[0.0;2]}
     }
 
 
@@ -127,16 +131,19 @@ impl NodeMassTrait for NodeMass{
     fn apply(&mut self,b:&mut Self::T){
         gravity::gravitate(self,&mut b.val);
     }
-    fn is_far_enough(a:(&Self,&Rect<NotNaN<f64>>),b:(&Self,&Rect<NotNaN<f64>>))->bool{
+    fn is_far_enough(a:&CenterOfMass<NotNaN<f64>>,b:&CenterOfMass<NotNaN<f64>>)->bool{
         //false
-        let r1=&rectnotnan_to_f64(*a.1);
-        let r2=&rectnotnan_to_f64(*b.1);
-        let k=distance_sqr_from(r1,r2)>400.0*400.0;
+        let r1=&rectnotnan_to_f64(a.rect);
+        let r2=&rectnotnan_to_f64(b.rect);
+        let k=distance_sqr_from(r1,r2)>100.0*100.0;
 
 
 
-        //k
-        false
+        k
+        //false
+    }
+    fn center_of_mass(&self)->[NotNaN<f64>;2]{
+        [NotNaN::new(self.center[0]).unwrap(),NotNaN::new(self.center[1]).unwrap()]
     }
     /*
     fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>{

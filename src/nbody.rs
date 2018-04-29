@@ -27,6 +27,7 @@ mod tools{
 }
 
 
+
 pub trait NodeMassTrait:Send{
     type T:SweepTrait;
 
@@ -45,8 +46,11 @@ pub trait NodeMassTrait:Send{
 
     //check if the rect is far enough away from the nodemass.
     //if it is we will use this nodemass instead of gravitating all the bots
-    fn is_far_enough(a:(&Self,&Rect<<Self::T as SweepTrait>::Num>),b:(&Self,&Rect<<Self::T as SweepTrait>::Num>))->bool;
+    //fn is_far_enough(a:(&Self,&Rect<<Self::T as SweepTrait>::Num>),b:(&Self,&Rect<<Self::T as SweepTrait>::Num>))->bool;
+    fn is_far_enough(a:&CenterOfMass<<Self::T as SweepTrait>::Num>,b:&CenterOfMass<<Self::T as SweepTrait>::Num>)->bool;
 
+
+    fn center_of_mass(&self)->[<Self::T as SweepTrait>::Num;2];
     //get the bounding box of this nodemass
     //TODO get rid of this one
     //fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>;
@@ -68,6 +72,19 @@ struct NodeMassWrapper<N:NodeMassTrait>{
     nm:N,
     rect:Rect<<N::T as SweepTrait>::Num>
 }
+
+impl<N:NodeMassTrait> NodeMassWrapper<N>{
+    fn create_center(&self)->CenterOfMass<<N::T as SweepTrait>::Num>{
+        CenterOfMass{rect:self.rect,center:self.nm.center_of_mass()}
+    }
+}
+
+pub struct CenterOfMass<N:NumTrait>{
+    pub rect:Rect<N>,
+    pub center:[N;2]
+}
+
+
 
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
@@ -283,12 +300,19 @@ fn handle_anchor_with_children<'a,
         
 
         {
-            if N::is_far_enough((&anchor.mass.nm,&anchor.mass.rect),(&nn.0.nm,&nn.0.rect)){
+            if N::is_far_enough(&anchor.mass.create_center(),&nn.0.create_center()){
                 anchor.mass.nm.handle_with(&mut nn.0.nm);
                 return;
             }
         }
 
+
+        for b in anchor.node.range.iter_mut(){
+            for b2 in nn.1.range.iter_mut(){
+                N::handle_bot(b,b2);
+            }
+        }
+        
         match rest{
             Some((left,right))=>{
                 recc2(anchor,left);
@@ -296,61 +320,55 @@ fn handle_anchor_with_children<'a,
             },
             None=>{
 
-                for b in anchor.node.range.iter_mut(){
-                    for b2 in nn.1.range.iter_mut(){
-                        N::handle_bot(b,b2);
-                    }
-                }
             }
         }
     }
 }
 
+
 fn handle_left_with_right<'a,
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>+'a,
     C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
-    (left:C,right:C){
+    (left:C,right:C,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
     
+        /*
+    //let (left_anchor,left_rest)=left.next();
+    //let (right_anchor,right_rest)=right.next();
 
-    let (left_anchor,left_rest)=left.next();
-    let (right_anchor,right_rest)=right.next();
+    //handle_a_node(left_anchor,&mut left_mass,&mut left_bots,&right_anchor.0);
+    //handle_a_node(right_anchor,&mut right_mass,&mut right_bots,&left_anchor.0);
+    if N::is_far_enough((&left_anchor.0.nm,&left_anchor.0.rect),(&right_anchor.0.nm,&right_anchor.0.rect)){
+        left_anchor.0.nm.handle_with(&mut right_anchor.0.nm);
+    }else{
+        for i in left_anchor.1.range.iter_mut(){
+            for j in right_anchor.1.range.iter_mut(){
+                N::handle_bot(i,j);
+            }
+        }
+    }
+    */
 
-
-    let (mut left_mass,mut left_bots,left_anchor)={
+    
+    let (mut left_mass,mut left_bots)={
         
         let mut left_mass=Vec::new();
         let mut left_bots=Vec::new();
-        match left_rest{
-            Some((left,right))=>{
-                recc3(left,&mut left_mass,&mut left_bots,&right_anchor.0);
-                recc3(right,&mut left_mass,&mut left_bots,&right_anchor.0);
-            },
-            None=>{
-                return;
-            }
-        }
-        (left_mass,left_bots,left_anchor)
+       
+        recc3(left,&mut left_mass,&mut left_bots,right_rect);
+       
+        (left_mass,left_bots)
     };
 
     let (mut right_mass,mut right_bots)={
 
         let mut right_mass=Vec::new();
         let mut right_bots=Vec::new();
-        match right_rest{
-            Some((left,right))=>{
-                recc3(left,&mut right_mass,&mut right_bots,&left_anchor.0);
-                recc3(right,&mut right_mass,&mut right_bots,&left_anchor.0);
-            },
-            None=>{
-                return;
-            }
-        }
+        recc3(right,&mut right_mass,&mut right_bots,left_rect);
         (right_mass,right_bots)
     };
+    
 
-    handle_a_node(left_anchor,&mut left_mass,&mut left_bots,&right_anchor.0);
-    handle_a_node(right_anchor,&mut right_mass,&mut right_bots,&left_anchor.0);
             
 
     //handle the mass pairs
@@ -378,7 +396,9 @@ fn handle_left_with_right<'a,
         }
     }
 
+    
 
+    /*
     fn handle_a_node<'a:'b,'b,
         T:SweepTrait+'a,
         N:NodeMassTrait<T=T>+'a>
@@ -390,29 +410,24 @@ fn handle_left_with_right<'a,
             return;
         }
     
-        /*
-        if nn.0.is_far_enough(other){
-            rects.push(nn.0);
-            return;
-        }
-        */
         for i in nn.1.range.iter_mut(){
             bots.push(i)
         }
 
     
     }
+    */
     fn recc3<'a:'b,'b,
         T:SweepTrait+'a,
         N:NodeMassTrait<T=T>+'a,
         C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
-    (mut stuff:C,nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&NodeMassWrapper<N>)
+    (mut stuff:C,nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&CenterOfMass<T::Num>)
     {
         let (nn,rest)=stuff.next();
         
-        handle_a_node(nn,nms,bots,other);
-        /*
-        if N::is_far_enough((&nn.0.nm,&nn.0.rect),(&other.nm,&other.rect)){
+        //handle_a_node(nn,nms,bots,other);
+        
+        if N::is_far_enough(&nn.0.create_center(),other){
             //anchor.mass.nm.handle_with(&mut nn.0.nm);
             nms.push(nn.0);
             return;
@@ -421,7 +436,7 @@ fn handle_left_with_right<'a,
         for i in nn.1.range.iter_mut(){
             bots.push(i)
         }
-        */
+        
     
 
         match rest{
@@ -493,13 +508,16 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
 
 
                 {
-                    //let (l,left_rest)=left2.create_wrap_mut().next();
-                    //let (r,right_rest)=right2.create_wrap_mut().next();
-                 
-
+                    let (lcenter,rcenter)={
+                        let l=left2.create_wrap_mut().next().0;
+                        let r=right2.create_wrap_mut().next().0;
+                        let lcenter=l.create_center();//CenterOfMass{center:l.nm.center_of_mass(),rect:l.nm.rect};
+                        let rcenter=r.create_center();//CenterOfMass{center:r.nm.center_of_mass(),rect:r.nm.rect};
+                        (lcenter,rcenter)
+                    };
                     let l1=left2.create_wrap_mut().zip(left.create_wrap_mut());
                     let l2=right2.create_wrap_mut().zip(right.create_wrap_mut());
-                    handle_left_with_right(l1,l2);
+                    handle_left_with_right(l1,l2,&lcenter,&rcenter);
                 }
                 //at this point we have successfully broken up this problem
                 //into two independant ones, and we can do this all over again for the two children.

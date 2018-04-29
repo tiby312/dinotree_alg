@@ -85,6 +85,7 @@ mod colfind;
 mod k_nearest;
 
 
+pub use nbody::CenterOfMass;
 pub use nbody::NodeMassTrait;
 mod nbody;
 
