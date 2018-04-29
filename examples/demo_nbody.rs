@@ -104,30 +104,7 @@ impl NodeMassTrait for NodeMass{
             //No acceleration was applied to this node mass.
         }
     }
-    /*
-    fn new(b:&[Self::T])->Self{
-        fn get_center(a:&Rect<f64>)->[f64;2]{
-            let x=a.get_range2::<axgeom::XAXISS>();
-            let y=a.get_range2::<axgeom::YAXISS>();
 
-            let dx=(x.end-x.start)/2.0;
-            let dy=(y.end-y.start)/2.0;
-            [x.start+dx,y.start+dy]
-        }
-        let rect=rectnotnan_to_f64(rect);
-
-        NodeMass{center:get_center(&rect),numbots:b.len(),mass:b.iter().fold(0.0,|a,b|a+b.val.mass()),acc:[0.0;2],rect:rect}
-    }
-    */
-    /*
-    fn increase_mass(&mut self,b:&[Self::T]){
-        for i in b.iter(){
-            self.mass+=i.val.mass();
-        }
-        self.numbots+=b.len();
-    }
-    
-    */
     fn apply(&mut self,b:&mut Self::T){
         gravity::gravitate(self,&mut b.val);
     }
@@ -140,39 +117,10 @@ impl NodeMassTrait for NodeMass{
 
 
         k
-        //false
     }
     fn center_of_mass(&self)->[NotNaN<f64>;2]{
         [NotNaN::new(self.center[0]).unwrap(),NotNaN::new(self.center[1]).unwrap()]
     }
-    /*
-    fn get_box(&self)->Rect<<Self::T as SweepTrait>::Num>{
-        rectf64_to_notnan(self.rect)
-    }
-    */
-    /*
-    fn undo(&self,b:&mut [Self::T]){
-        let mass_per_bot=self.mass/(self.numbots as f64);
-
-
-        let len_sqr=self.acc[0]*self.acc[0]+self.acc[1]+self.acc[1];
-
-        if len_sqr>0.01{
-            let len=len_sqr.sqrt();
-            //TODO or something to this effect???
-            //can be optimized
-
-            let mag=mass_per_bot/len;
-            let forcex=self.acc[0]*mag;
-            let forcey=self.acc[1]*mag;
-
-            for i in b.iter_mut(){
-                i.val.apply_force([forcex,forcey]);
-            }
-        }else{
-            //No acceleration was applied to this node mass.
-        }
-    }*/
 }
 
 
@@ -248,11 +196,6 @@ mod gravity{
 fn distance_sqr_from(recta:&Rect<f64>,rectb:&Rect<f64>)->f64{
     let ((ax1,ax2),(ay1,ay2))=recta.get();
     let ((bx1,bx2),(by1,by2))=rectb.get();
-
-
-    //Closest point in rectb to the top left of recta. 
-    //let xx=num::clamp(ax1,bx1,bx2);
-    //let yy=num::clamp(ay1,by1,by2);
 
     //This describes the outer rectangle.
     //https://gamedev.stackexchange.com/questions/154036/efficient-minimum-distance-between-two-axis-aligned-squares

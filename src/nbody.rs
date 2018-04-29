@@ -312,7 +312,7 @@ fn handle_anchor_with_children<'a,
                 N::handle_bot(b,b2);
             }
         }
-        
+
         match rest{
             Some((left,right))=>{
                 recc2(anchor,left);
@@ -326,29 +326,26 @@ fn handle_anchor_with_children<'a,
 }
 
 
+//TODO use this
+fn handle_left_with_right2<'a,
+    T:SweepTrait+'a,
+    N:NodeMassTrait<T=T>+'a,
+    >(it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>){
+
+
+    fn recc_left(){
+
+    }
+    fn recc_right(){
+
+    }
+}
 fn handle_left_with_right<'a,
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>+'a,
     C:CTreeIterator<Item=(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>)>>
     (left:C,right:C,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
-    
-        /*
-    //let (left_anchor,left_rest)=left.next();
-    //let (right_anchor,right_rest)=right.next();
-
-    //handle_a_node(left_anchor,&mut left_mass,&mut left_bots,&right_anchor.0);
-    //handle_a_node(right_anchor,&mut right_mass,&mut right_bots,&left_anchor.0);
-    if N::is_far_enough((&left_anchor.0.nm,&left_anchor.0.rect),(&right_anchor.0.nm,&right_anchor.0.rect)){
-        left_anchor.0.nm.handle_with(&mut right_anchor.0.nm);
-    }else{
-        for i in left_anchor.1.range.iter_mut(){
-            for j in right_anchor.1.range.iter_mut(){
-                N::handle_bot(i,j);
-            }
-        }
-    }
-    */
-
+    //TODO improve this algorithm so that it does not use dynamic allocation.
     
     let (mut left_mass,mut left_bots)={
         
@@ -367,8 +364,11 @@ fn handle_left_with_right<'a,
         recc3(right,&mut right_mass,&mut right_bots,left_rect);
         (right_mass,right_bots)
     };
-    
-
+    /*
+    if left_bots.len()>100{
+        println!("bots={:?}",(left_bots.len(),right_bots.len()));
+    }
+    */
             
 
     //handle the mass pairs
@@ -397,26 +397,6 @@ fn handle_left_with_right<'a,
     }
 
     
-
-    /*
-    fn handle_a_node<'a:'b,'b,
-        T:SweepTrait+'a,
-        N:NodeMassTrait<T=T>+'a>
-        (nn:(&'a mut NodeMassWrapper<N>,&'a mut NodeDyn<T>),nms:&mut Vec<&'b mut NodeMassWrapper<N>>,bots:&mut Vec<&'b mut T>,other:&NodeMassWrapper<N>)
-    {
-        if N::is_far_enough((&nn.0.nm,&nn.0.rect),(&other.nm,&other.rect)){
-            //anchor.mass.nm.handle_with(&mut nn.0.nm);
-            nms.push(nn.0);
-            return;
-        }
-    
-        for i in nn.1.range.iter_mut(){
-            bots.push(i)
-        }
-
-    
-    }
-    */
     fn recc3<'a:'b,'b,
         T:SweepTrait+'a,
         N:NodeMassTrait<T=T>+'a,
@@ -537,6 +517,7 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
     let timer=Timer2::new();
 
     //tree containing the nodemass of each node (and decendants)
+    //TODO add this to the existing tree isntead of making a new tree???
     let mut tree2=buildtree::<_,_,N>(tree,*rect);
 
     println!("build timer={:?}",timer.elapsed());
