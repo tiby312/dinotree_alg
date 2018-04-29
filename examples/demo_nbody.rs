@@ -75,7 +75,7 @@ impl NodeMassTrait for NodeMass{
     fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&self,it:I,len:usize) where Self::T:'a{
         //F=ma
 
-
+        assert_eq!(len,self.numbots);
         //let mass_per_bot=self.mass/(self.numbots as f64);
 
 
@@ -117,6 +117,7 @@ impl NodeMassTrait for NodeMass{
 
 
         k
+        //false
     }
     fn center_of_mass(&self)->[NotNaN<f64>;2]{
         [NotNaN::new(self.center[0]).unwrap(),NotNaN::new(self.center[1]).unwrap()]
@@ -245,10 +246,63 @@ fn wrap_position(a:&mut [f64;2]){
     }
 }
 
+fn test_nodemass(){
+    let mut b1=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[0,100,0,100],50,[2,20]);
+    let mut b2=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[800,900,800,900],50,[2,20]);
 
+    let control={
+        for i in b1.iter_mut(){
+            for j in b2.iter_mut(){
+                NodeMass::handle_bot(i,j);
+            }
+        }
+
+        let control:Vec<[f64;2]> =b1.iter().chain(b2.iter()).map(|a|a.val.force).collect();
+        for b in b1.iter_mut().chain(b2.iter_mut()){
+            b.val.force=[0.0;2]
+        }
+        control
+    };
+
+
+    let test={
+        let mut n1=NodeMass::new(b1.iter(),b1.len());
+        let mut n2=NodeMass::new(b2.iter(),b2.len());
+
+        n1.handle_with(&mut n2);
+        
+
+        let b1len=b1.len();
+        let b2len=b2.len();
+        n1.undo(b1.iter_mut(),b1len);
+        n2.undo(b2.iter_mut(),b2len);
+
+        let test:Vec<[f64;2]>=b1.iter().chain(b2.iter()).map(|a|a.val.force).collect();
+        for b in b1.iter_mut().chain(b2.iter_mut()){
+            b.val.force=[0.0;2]
+        }
+        test
+    };
+
+    for (a,b) in control.iter().zip(test.iter()){
+        let diffx=(a[0]-b[0]).abs();
+        let diffy=(a[1]-b[1]).abs();
+        println!("diff={:?}",(diffx,diffy));
+    }
+
+    //one list of bots.
+    //second list of bots.
+
+    //handle as node masses
+
+
+
+}
 
 use std::time::Instant;
 fn main() {
+    //test_nodemass();
+    //return;
 
     let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[0,800,0,800],5000,[2,20]);
 
@@ -266,7 +320,6 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
 
-            let tim=Instant::now();
             for bot in bots.iter_mut(){
                 let b=&mut bot.val;
 
@@ -275,8 +328,8 @@ fn main() {
 
                 wrap_position(&mut b.pos);
 
-                b.vel[0]*=0.99;
-                b.vel[1]*=0.99;
+                //b.vel[0]*=0.99;
+                //b.vel[1]*=0.99;
 
                 b.pos[1]+=b.vel[1];
 
@@ -318,10 +371,25 @@ fn main() {
         
                 rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
             }
-            println!("other={:?}",tim.elapsed());
             
             
+            for i in 0..bots.len(){
+                let b1=&mut bots[i] as *mut BBox<NotNaN<f64>,Bot>;
+                for j in i+1..bots.len(){
+                    let b1=unsafe{&mut *b1};
+                    let b2=&mut bots[j];
+                    NodeMass::handle_bot(b1,b2);
+                }
+            }
             
+            let forces_control:Vec<[f64;2]>=bots.iter().map(|b|{b.val.force}).collect();
+
+
+            for b in bots.iter_mut(){
+                b.val.force=[0.0;2];
+            }
+            
+
             {
                 let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
@@ -333,23 +401,19 @@ fn main() {
             }
             
             
-
+            let forces:Vec<[f64;2]>=bots.iter().map(|b|{b.val.force}).collect();
             
             
-            /*
-            use std::time::Instant;
-
-            let t=Instant::now();
-            for i in 0..bots.len(){
-                let b1=&mut bots[i] as *mut BBox<NotNaN<f64>,Bot>;
-                for j in i+1..bots.len(){
-                    let b1=unsafe{&mut *b1};
-                    let b2=&mut bots[j];
-                    NodeMass::handle_bot(b1,b2);
-                }
+            let mut max_err=[0.0f64;2];
+            for (i,(a,b)) in forces.iter().zip(forces_control.iter()).enumerate(){
+                let diffx=(a[0]-b[0]).abs();
+                let diffy=(a[1]-b[1]).abs();
+                max_err[0]=max_err[0].max(diffx);
+                max_err[1]=max_err[1].max(diffy);
+                //assert!(diffx+diffy<0.1,"mismatch:diff{:?}",(i,(diffx,diffy)));
             }
-            println!("naive={:?}",t.elapsed());
-            */
+            println!("max err sum={:?}",max_err[0]+max_err[1]);
+
             
             
             

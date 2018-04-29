@@ -220,8 +220,10 @@ fn apply_tree<'a,
 
                 
                 {
-                    let mut bots_to_undo:Vec<&mut T>=Vec::new();
-
+                    let mut bots_to_undo:Vec<&mut T>=Vec::with_capacity(nn1.range.len());
+                    for b in nn1.range.iter_mut(){
+                        bots_to_undo.push(b);
+                    }
                     let left=left.create_wrap_mut();
                     let righ=righ.create_wrap_mut();
 
@@ -358,25 +360,70 @@ impl<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>+'a> CTreeIterator for BothIter<'a,T
 }
 
 
-/*
+
 //TODO use this
 fn handle_left_with_right2<
     T:SweepTrait,
     N:NodeMassTrait<T=T>,
     >(left:BothIter<T,N>,right:BothIter<T,N>,left_rect:&CenterOfMass<T::Num>,right_rect:&CenterOfMass<T::Num>){
 
+    recc_left(left,right);
 
-    fn recc_left(it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>){
+    fn recc_left<T:SweepTrait,N:NodeMassTrait<T=T>>(left:BothIter<T,N>,mut right_anchor:BothIter<T,N>){
 
-        let k1=it1.create_wrap_mut();
-        let k2=it2.create_wrap_mut();
 
-        fn recc_right(it1:NdIterMut<T>,it2:compt::dfs::DownTMut<NodeMassWrapper<N>>){
+        fn recc_right<T:SweepTrait,N:NodeMassTrait<T=T>>(nn1:&mut (&mut NodeDyn<T>,&mut NodeMassWrapper<N>),it2:BothIter<T,N>){
+            let (nn2,rest)=it2.next();
+        
+            //now we can handle nn1 and nn2
+            
+            //TODo ugly
+            if N::is_far_enough(&nn1.1.create_center(),&nn2.1.create_center()){
+                nn1.1.nm.handle_with(&mut nn2.1.nm);
+                return;
+            }
 
+
+            for i in nn1.0.range.iter_mut(){
+                for j in nn2.0.range.iter_mut(){
+                    N::handle_bot(i,j);
+                }
+            }        
+            
+            match rest{
+                Some((left,right))=>{
+                    recc_right(nn1,left);
+                    recc_right(nn1,right);
+                },
+                None=>{
+
+                }
+            }
         }
 
+
+        let (mut nn,rest)=left.next();
+        
+        {
+            let right_temp=right_anchor.create_wrap_mut();
+            recc_right(&mut nn,right_temp);
+        }
+
+        match rest{
+            Some((left,right))=>{
+                {
+                    let right_temp=right_anchor.create_wrap_mut();
+                    recc_left(left,right_temp);
+                }
+                //let right_temp=right_anchor.create_wrap_mut();
+                recc_left(right,right_anchor);
+            },
+            None=>{
+
+            }
+        }
     }
-}*/
+}
 
 
 
@@ -446,7 +493,8 @@ fn handle_left_with_right<
             nms.push(nn2);
             return;
         }
-    
+        
+        //TODO use another container that doesnt include the internals
         for i in nn1.range.iter_mut(){
             bots.push(i)
         }
@@ -524,8 +572,8 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
                     let (lcenter,rcenter)={
                         let l=left.create_wrap_mut().next().0;
                         let r=right.create_wrap_mut().next().0;
-                        let lcenter=l.1.create_center();//CenterOfMass{center:l.nm.center_of_mass(),rect:l.nm.rect};
-                        let rcenter=r.1.create_center();//CenterOfMass{center:r.nm.center_of_mass(),rect:r.nm.rect};
+                        let lcenter=l.1.create_center();
+                        let rcenter=r.1.create_center();
                         (lcenter,rcenter)
                     };
                     let l1=left.create_wrap_mut();
@@ -553,19 +601,13 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
     //TODO add this to the existing tree isntead of making a new tree???
     let mut tree2=buildtree::<_,_,N>(tree,*rect);
 
-    println!("build timer={:?}",timer.elapsed());
-    let timer=Timer2::new();
     {
         let it1=tree.get_iter_mut();
         let it2=tree2.create_down_mut();
         recc(A::new(),BothIter{it1,it2},*rect);
     }
-    println!("main alg={:?}",timer.elapsed());
-    let timer=Timer2::new();
-
+    
 
     apply_tree(tree,tree2);
 
-    println!("application={:?}",timer.elapsed());
-    //Now lets go through and apply the results of the node masses
 }
