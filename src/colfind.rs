@@ -1,7 +1,5 @@
 use inner_prelude::*;
 use oned::Bleek;
-use compt::LevelIter;
-//use compt::WrapGen;
 use std::cell::UnsafeCell;
 use dinotree_inner::par::Joiner;
 
@@ -410,7 +408,7 @@ fn for_every_col_pair_inner<
     clos: F,
 ) -> (F,K::Bag) {
     let height = kdtree.get_height();
-    let level = kdtree.get_level_desc();
+    //let level = kdtree.get_level_desc();
     let dt = kdtree.get_iter_mut();
     //let dt = compt::LevelIter::new(dt, level);
     //let dt=dt.with_depth(Depth(0));

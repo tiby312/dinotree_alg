@@ -1,15 +1,10 @@
 //!Provides capability to draw the dividers of each node.
 use inner_prelude::*;
-use compt::GenTree;
-
 pub use dinotree_inner::compute_tree_height;
 pub use compt::compute_num_nodes;
 pub use axgeom::AxisTrait;
-
 pub use axgeom::XAXISS;
-
 pub use axgeom::YAXISS;
-use ordered_float::NotNaN;
 
 
 

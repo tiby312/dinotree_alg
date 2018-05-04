@@ -85,7 +85,7 @@ mod colfind;
 mod k_nearest;
 
 
-pub use nbody::CenterOfMass;
+//pub use nbody::CenterOfMass;
 pub use nbody::NodeMassTrait;
 mod nbody;
 
@@ -111,8 +111,6 @@ pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::SweepTrait;
 use dinotree_inner::TreeTimerTrait;
 use dinotree_inner::par;
-use dinotree_inner::DynTreeRaw;
-
 use axgeom::Rect;
 use axgeom::XAXISS;
 use axgeom::YAXISS;
@@ -120,8 +118,6 @@ use colfind::ColMulti;
 use smallvec::SmallVec;
 use dinotree_inner::TreeTimer2;
 use dinotree_inner::TreeTimerEmpty;
-use dinotree_inner::Bag;
-//use raycast::ray::RayTrait;
 use dinotree_inner::compute_tree_height;
 
 ///Represents a destructured SweepTrait into the immutable bounding box reference,
@@ -325,7 +321,7 @@ mod ba {
             'b,
             MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
             MF:FnMut(ColSingle<T>)->Option<T::Num>> //called to test if this object touches the ray. if it does, return distance to start of ray
-            (&'b mut self,point:[T::Num;2],dir:[T::Num;2],rect:AABBox<T::Num>,mut func_fast:MFFast,mut func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
+            (&'b mut self,point:[T::Num;2],dir:[T::Num;2],rect:AABBox<T::Num>,func_fast:MFFast,func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
 
             match &mut self.0 {
                 &mut DynTreeEnum::Xa(ref mut a) => {
@@ -401,14 +397,13 @@ mod ba {
             };
         }
 
-        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self,rect:AABBox<T::Num>){
-            let rect=&rect.0;
+        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self){
             match &mut self.0{
                 &mut DynTreeEnum::Xa(ref mut a)=>{
-                    nbody::nbody_seq::<XAXISS,_,N>(a,rect);
+                    nbody::nbody_seq::<XAXISS,_,N>(a);
                 },
                 &mut DynTreeEnum::Ya(ref mut a)=>{
-                    nbody::nbody_seq::<YAXISS,_,N>(a,rect);
+                    nbody::nbody_seq::<YAXISS,_,N>(a);
                 }
             }
         }

@@ -97,13 +97,13 @@ impl<T:SweepTrait> Closest<T>{
 }
 
 
-fn subdivide<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,axis:A,div:N)->(AABBox<N>,AABBox<N>){
+fn subdivide<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,_axis:A,div:N)->(AABBox<N>,AABBox<N>){
     let (a,b)=r.0.subdivide(div,A::get());
     (AABBox(a),AABBox(b))
 }
 
 
-fn create_middile_box<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,axis:A,cont:Range<N>)->AABBox<N>{
+fn create_middile_box<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,_axis:A,cont:Range<N>)->AABBox<N>{
     let mut r=r.clone();
     *r.0.get_range_mut(A::get())=cont;
     r

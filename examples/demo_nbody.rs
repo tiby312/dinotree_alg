@@ -108,20 +108,16 @@ impl NodeMassTrait for NodeMass{
     fn apply(&mut self,b:&mut Self::T){
         gravity::gravitate(self,&mut b.val);
     }
-    fn is_far_enough(a:&CenterOfMass<NotNaN<f64>>,b:&CenterOfMass<NotNaN<f64>>)->bool{
-        //false
-        let r1=&rectnotnan_to_f64(a.rect);
-        let r2=&rectnotnan_to_f64(b.rect);
-        let k=distance_sqr_from(r1,r2)>100.0*100.0;
 
 
-
-        k
-        //false
+    fn is_far_enough(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+        (a-b).abs()>10.0
     }
-    fn center_of_mass(&self)->[NotNaN<f64>;2]{
-        [NotNaN::new(self.center[0]).unwrap(),NotNaN::new(self.center[1]).unwrap()]
+
+    fn is_far_enough_half(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+        (a-b).abs()/2.0>10.0
     }
+
 }
 
 
@@ -372,7 +368,7 @@ fn main() {
                 rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
             }
             
-            
+            /*
             for i in 0..bots.len(){
                 let b1=&mut bots[i] as *mut BBox<NotNaN<f64>,Bot>;
                 for j in i+1..bots.len(){
@@ -388,19 +384,20 @@ fn main() {
             for b in bots.iter_mut(){
                 b.val.force=[0.0;2];
             }
+            */
             
-
+            
             {
                 let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
 
                 let k={
                     let rect=rectf64_to_notnan(Rect::new(0.0,800.0,0.0,800.0));
-                    tree.n_body::<NodeMass>(AABBox(rect));
+                    tree.n_body::<NodeMass>();
                 };
             }
             
-            
+            /*
             let forces:Vec<[f64;2]>=bots.iter().map(|b|{b.val.force}).collect();
             
             
@@ -413,7 +410,7 @@ fn main() {
                 //assert!(diffx+diffy<0.1,"mismatch:diff{:?}",(i,(diffx,diffy)));
             }
             println!("max err sum={:?}",max_err[0]+max_err[1]);
-
+            */
             
             
             
