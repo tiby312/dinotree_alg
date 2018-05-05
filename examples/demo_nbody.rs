@@ -25,8 +25,6 @@ struct NodeMass{
     center:[f64;2],
     numbots:usize,
     mass:f64,
-
-    //TODO force
     force:[f64;2]
 }
 
@@ -109,15 +107,18 @@ impl NodeMassTrait for NodeMass{
         gravity::gravitate(self,&mut b.val);
     }
 
-
-    fn is_far_enough(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+    //depth is the depth of the anchor.
+    //its possible the bots belong to the same node?
+    fn is_far_enough(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         //false
-        (a-b).abs()>10.0
+        (1+depth) as f64*(a-b).abs()>200.0
+        //(a-b).abs()>200.0
     }
 
-    fn is_far_enough_half(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+    fn is_far_enough_half(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         //false
-        (a-b).abs()>5.0
+        (1+depth) as f64*(a-b).abs()>100.0
+        //(a-b).abs()>100.0
     }
 
 }

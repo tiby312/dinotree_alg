@@ -42,9 +42,9 @@ pub trait NodeMassTrait:Send{
     //gravitate a nodemass with a bot
     fn apply(&mut self,b:&mut Self::T);
 
-    fn is_far_enough(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    fn is_far_enough(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
 
-    fn is_far_enough_half(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    fn is_far_enough_half(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
 
     fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&self,it:I,len:usize) where Self::T:'a;
 
@@ -277,7 +277,7 @@ fn handle_anchor_with_children<'a,
 	A:AxisTrait,
 	B:AxisTrait,
     N:NodeMassTrait+'a>
-(thisa:A,anchor:&mut Anchor<B,N::T>,left:BothIter<N>,right:BothIter<N>){
+(thisa:A,anchor:&mut Anchor<B,N::T>,left:DIter<N>,right:DIter<N>){
     
     struct Bo<B:AxisTrait,N:NodeMassTrait>{
         _anchor_axis:B,
@@ -301,10 +301,40 @@ fn handle_anchor_with_children<'a,
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),_p:PhantomData};
-    generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |a,b|N::is_far_enough(a,b));  
-    generic_rec(Right,A::new(),anchor,right,&mut bo,&mut |a,b|N::is_far_enough(a,b));  
+    generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |d,a,b|N::is_far_enough(d,a,b));  
+    generic_rec(Right,A::new(),anchor,right,&mut bo,&mut |d,a,b|N::is_far_enough(d,a,b));  
 }
 
+
+struct DIter<'a,N:NodeMassTrait+'a>{
+    a:BothIter<'a,N>,
+    depth:usize
+}
+impl<'a,N:NodeMassTrait+'a> DIter<'a,N>{
+    fn create_wrap_mut<'b>(&'b mut self)->DIter<'b,N>{
+        
+        let a=self.a.create_wrap_mut();
+        DIter{a,depth:self.depth}
+    }
+}
+
+impl<'a,N:NodeMassTrait+'a> CTreeIterator for DIter<'a,N>{
+    type Item=(Depth,(&'a mut NodeDyn<N::T>,&'a mut N));
+    fn next(self)->(Self::Item,Option<(Self,Self)>){
+        let (n1,rest1)=self.a.next();
+        
+        let n1=(Depth(self.depth),n1);
+        match rest1{
+            Some((left,right))=>{
+                let depth=self.depth+1;
+                (n1,Some((DIter{a:left,depth},DIter{a:right,depth})))
+            },
+            None=>{
+                (n1,None)  
+            }
+        }
+    }
+}
 
 struct BothIter<'a,N:NodeMassTrait+'a>{
     it1:NdIterMut<'a,N::T>,
@@ -340,7 +370,7 @@ impl<'a,N:NodeMassTrait+'a> CTreeIterator for BothIter<'a,N>{
 
 
 fn handle_left_with_right<A:AxisTrait,B:AxisTrait,N:NodeMassTrait>
-    (_axis:A,anchor:&mut Anchor<B,N::T>,left:BothIter<N>,mut right:BothIter<N>){
+    (_axis:A,anchor:&mut Anchor<B,N::T>,left:DIter<N>,mut right:DIter<N>){
 
 	struct Bo4<'a,B:AxisTrait,N:NodeMassTrait+'a,>{
         _anchor_axis:B,
@@ -377,7 +407,7 @@ fn handle_left_with_right<A:AxisTrait,B:AxisTrait,N:NodeMassTrait>
 
     struct Bo<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
-        right:&'b mut BothIter<'a,N>,
+        right:&'b mut DIter<'a,N>,
     }
     
     impl<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a> Bok for Bo<'a,'b,B,N>{
@@ -386,15 +416,15 @@ fn handle_left_with_right<A:AxisTrait,B:AxisTrait,N:NodeMassTrait>
         type B=B;
         fn handle_every_node<A:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),node:b},&mut |a,b|N::is_far_enough_half(a,b))
+    		generic_rec(Right,A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),node:b},&mut |d,a,b|N::is_far_enough_half(d,a,b))
     	}
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a},&mut |a,b|N::is_far_enough_half(a,b))
+    		generic_rec(Right,A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a},&mut |d,a,b|N::is_far_enough_half(d,a,b))
     	}
     }
     let mut bo= Bo{_anchor_axis:B::new(),right:&mut right};
-    generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |a,b|N::is_far_enough_half(a,b));  
+    generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |d,a,b|N::is_far_enough_half(d,a,b));  
 }
 
 trait Bok{
@@ -413,7 +443,7 @@ fn generic_rec<
     N:NodeMassTrait<T=T>,
     T:SweepTrait,
     L:LeftOrRight,
-    F:FnMut(T::Num,T::Num)->bool>(side:L,this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:BothIter<B::N>,bok:&mut B,func:&mut F){
+    F:FnMut(usize,T::Num,T::Num)->bool>(side:L,this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:DIter<B::N>,bok:&mut B,func:&mut F){
 
 	    
     fn recc4<
@@ -422,8 +452,8 @@ fn generic_rec<
         B:Bok<N=N,T=T,B=AnchorAxis>,
         N:NodeMassTrait<T=T>,
         T:SweepTrait,
-        >(axis:A,bok:&mut B,stuff:BothIter<B::N>,anchor:&mut Anchor<AnchorAxis,T>){
-        let ((nn1,_),rest)=stuff.next();
+        >(axis:A,bok:&mut B,stuff:DIter<B::N>,anchor:&mut Anchor<AnchorAxis,T>){
+        let ((depth,(nn1,_)),rest)=stuff.next();
         
         for i in nn1.range.iter_mut(){
             bok.handle_every_node::<A>(i,anchor);
@@ -439,7 +469,7 @@ fn generic_rec<
         }
     }
 
-	let ((nn1,_),rest)=stuff.next();
+	let ((depth,(nn1,_)),rest)=stuff.next();
     
     
 
@@ -461,7 +491,7 @@ fn generic_rec<
 			if A::get()==AnchorAxis::get(){
 	        	
                 //B::N::is_far_enough_half(div,anchor.div)
-	        	if func(div,anchor.div){
+	        	if func(depth.0,div,anchor.div){
                     let (mut side_to_stop,side_to_continue)=if side.is_left(){
                         (left,right)
                     }else{
@@ -469,9 +499,9 @@ fn generic_rec<
                     };
 	    			//the left node is far enough away.
 	    			//handle the left as a whole, and recurse the right only.
-		        	let a=side_to_stop.create_wrap_mut().next().0;
+		        	let (dd1,(nn1,nn2))=side_to_stop.create_wrap_mut().next().0;
 		        	
-		        	bok.handle_far_enough::<A>(a.1,anchor);//handle_node(a,&mut right_tree,div);
+		        	bok.handle_far_enough::<A>(nn2,anchor);//handle_node(a,&mut right_tree,div);
 
 		        	recc4(this_axis.next(),bok,side_to_continue,anchor);
 
@@ -499,74 +529,110 @@ fn generic_rec<
 
 
 
-pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,T>){
+fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait>(join:J,axis:A,it:DIter<N>){
+    let ((depth,(nn1,_)),rest)=it.next();
+    
 
-   
-    fn recc<A:AxisTrait,N:NodeMassTrait>(axis:A,it:BothIter<N>){
-        let ((nn1,_),rest)=it.next();
-        
+    //handle bots in itself
+    tools::for_every_pair(&mut nn1.range,|a,b|{N::handle_bot(a,b)});
+    
 
-        //handle bots in itself
-        tools::for_every_pair(&mut nn1.range,|a,b|{N::handle_bot(a,b)});
-        
+    match rest{
+        Some((mut left,mut right))=>{
+            let div=match nn1.div{
+                Some(div)=>{div},
+                None=>{return;}
+            };
 
-        match rest{
-            Some((mut left,mut right))=>{
-                let div=match nn1.div{
-                    Some(div)=>{div},
-                    None=>{return;}
-                };
-
-                match nn1.cont{
-                    Some(_cont)=>{
-                        let l1=left.create_wrap_mut();
-                        let l2=right.create_wrap_mut();
-                        let mut anchor=Anchor{_axis:axis,range:&mut nn1.range,div};
-
-                        handle_anchor_with_children(axis.next(),&mut anchor,l1,l2);
-                    },
-                    None=>{
-
-                    }
-                }
-
-                //At this point, everything has been handled with the root.
-                //before we can fully remove the root, and reduce this problem to two smaller trees,
-                //we have to do one more thing.
-                //we have to handle all the bots on the left of the root with all the bots on the right of the root.
-
-                //from the left side,get a list of nodemases.
-                //from the right side,get a list of nodemases.
-                //collide the two.
-
-
-                {
+            match nn1.cont{
+                Some(_cont)=>{
                     let l1=left.create_wrap_mut();
                     let l2=right.create_wrap_mut();
                     let mut anchor=Anchor{_axis:axis,range:&mut nn1.range,div};
 
-                    handle_left_with_right(axis.next(),&mut anchor,l1,l2);
-                }
-                //at this point we have successfully broken up this problem
-                //into two independant ones, and we can do this all over again for the two children.
-                //potentially in parlalel.
-               
-                
-                recc(axis.next(),left);
-                recc(axis.next(),right);
-                /*
-                rayon::join(
-                ||recc(axis.next(),left),
-                ||recc(axis.next(),right)
-                );
-                */
-                
-            },
-            None=>{
+                    handle_anchor_with_children(axis.next(),&mut anchor,l1,l2);
+                },
+                None=>{
 
+                }
             }
+
+            //At this point, everything has been handled with the root.
+            //before we can fully remove the root, and reduce this problem to two smaller trees,
+            //we have to do one more thing.
+            //we have to handle all the bots on the left of the root with all the bots on the right of the root.
+
+            //from the left side,get a list of nodemases.
+            //from the right side,get a list of nodemases.
+            //collide the two.
+
+
+            {
+                let l1=left.create_wrap_mut();
+                let l2=right.create_wrap_mut();
+                let mut anchor=Anchor{_axis:axis,range:&mut nn1.range,div};
+
+                handle_left_with_right(axis.next(),&mut anchor,l1,l2);
+            }
+            //at this point we have successfully broken up this problem
+            //into two independant ones, and we can do this all over again for the two children.
+            //potentially in parlalel.
+           
+            if join.should_switch_to_sequential(depth){
+                recc(join.into_seq(),axis.next(),left);
+                recc(join.into_seq(),axis.next(),right);
+            }else{
+                rayon::join(
+                ||recc(join,axis.next(),left),
+                ||recc(join,axis.next(),right)
+                );
+            }
+            
+            
+            
+        },
+        None=>{
+
         }
     }
+}
+
+pub fn nbody_par<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,T>){
+
+
+
+    //use dinotree_inner::tools::Timer2;
+    //let timer=Timer2::new();
+
+    //tree containing the nodemass of each node (and decendants)
+    //TODO add this to the existing tree isntead of making a new tree???
+    let mut tree2=buildtree::<_,_,N>(tree);
+
+    {
+        let height=tree.get_height();
+        let it1=tree.get_iter_mut();
+        let it2=tree2.create_down_mut();
+        let b=BothIter{it1,it2};
+        let d=DIter{a:b,depth:0};
+
+        let kk=if height<5{
+            0
+        }else{
+            height-5
+        };
+
+
+        recc(par::Parallel(Depth(kk)),A::new(),d);
+    }
+    
+
+    apply_tree(tree,tree2);
+
+}
+
+pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,T>){
+
+
 
     //use dinotree_inner::tools::Timer2;
     //let timer=Timer2::new();
@@ -578,7 +644,9 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
     {
         let it1=tree.get_iter_mut();
         let it2=tree2.create_down_mut();
-        recc(A::new(),BothIter{it1,it2});
+        let b=BothIter{it1,it2};
+        let d=DIter{a:b,depth:0};
+        recc(par::Sequential,A::new(),d);
     }
     
 
