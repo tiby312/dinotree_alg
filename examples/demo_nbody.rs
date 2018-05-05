@@ -111,11 +111,13 @@ impl NodeMassTrait for NodeMass{
 
 
     fn is_far_enough(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+        //false
         (a-b).abs()>10.0
     }
 
     fn is_far_enough_half(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()/2.0>10.0
+        //false
+        (a-b).abs()>5.0
     }
 
 }

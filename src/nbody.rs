@@ -127,8 +127,7 @@ fn buildtree<'a,
             for i in nn.range.iter(){
                 nodeb.push(i);
             }
-            //nodeb.increase_mass(&nn.range);
-
+         
             match rest{
                 Some((left,right))=>{
                     recc2(nodeb,left);
@@ -278,29 +277,30 @@ fn handle_anchor_with_children<'a,
 	A:AxisTrait,
 	B:AxisTrait,
     N:NodeMassTrait+'a>
-(thisa:B,anchor:&mut Anchor<A,N::T>,left:BothIter<N>,right:BothIter<N>){
+(thisa:A,anchor:&mut Anchor<B,N::T>,left:BothIter<N>,right:BothIter<N>){
     
-    struct Bo<A:AxisTrait,N:NodeMassTrait>{
-        _axis:A,
+    struct Bo<B:AxisTrait,N:NodeMassTrait>{
+        _anchor_axis:B,
         _p:PhantomData<N>
     }
     
-    impl<A:AxisTrait,N:NodeMassTrait> Bok for Bo<A,N>{
+    impl<B:AxisTrait,N:NodeMassTrait> Bok for Bo<B,N>{
         type N=N;
         type T=N::T;
+        type B=B;
 
-        fn handle_every_node<B:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        fn handle_every_node<A:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
                 N::handle_bot(i,b);
             }
         }
-        fn handle_far_enough<B:AxisTrait>(&mut self,a:&mut N,anchor:&mut Anchor<B,Self::T>){
+        fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
                 a.apply(i);
             }
         }
     }
-    let mut bo= Bo{_axis:A::new(),_p:PhantomData};
+    let mut bo= Bo{_anchor_axis:B::new(),_p:PhantomData};
     generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |a,b|N::is_far_enough(a,b));  
     generic_rec(Right,A::new(),anchor,right,&mut bo,&mut |a,b|N::is_far_enough(a,b));  
 }
@@ -342,65 +342,74 @@ impl<'a,N:NodeMassTrait+'a> CTreeIterator for BothIter<'a,N>{
 fn handle_left_with_right<A:AxisTrait,B:AxisTrait,N:NodeMassTrait>
     (_axis:A,anchor:&mut Anchor<B,N::T>,left:BothIter<N>,mut right:BothIter<N>){
 
-	struct Bo4<'a,N:NodeMassTrait+'a>(&'a mut N::T);
-
-    impl<'a,N:NodeMassTrait+'a> Bok for Bo4<'a,N>{
-    	type N=N;
-        type T=N::T;
-    	fn handle_every_node<B:AxisTrait>(&mut self,b:&mut Self::T,_anchor:&mut Anchor<B,Self::T>){
-    		N::handle_bot(self.0,b);
-    	}
-    	fn handle_far_enough<B:AxisTrait>(&mut self,a:&mut N,_anchor:&mut Anchor<B,Self::T>){
-    		a.apply(self.0);
-    	}
-    }
-    struct Bo2<'a,N:NodeMassTrait+'a>(&'a mut N);
-
-    impl<'a,N:NodeMassTrait+'a> Bok for Bo2<'a,N>{
-    	type N=N;
-        type T=N::T;
-        fn handle_every_node<B:AxisTrait>(&mut self,b:&mut N::T,_anchor:&mut Anchor<B,Self::T>){
-    		self.0.apply(b);
-    	}
-    	fn handle_far_enough<B:AxisTrait>(&mut self,a:&mut N,_anchor:&mut Anchor<B,Self::T>){
-    		a.handle_with(self.0);
-    	}
+	struct Bo4<'a,B:AxisTrait,N:NodeMassTrait+'a,>{
+        _anchor_axis:B,
+        node:&'a mut N::T
     }
 
-    struct Bo<'a:'b,'b,A:AxisTrait,N:NodeMassTrait+'a>{
-    	_axis:A,
-        right:&'b mut BothIter<'a,N>
+    impl<'a,B:AxisTrait,N:NodeMassTrait+'a,> Bok for Bo4<'a,B,N>{
+    	type N=N;
+        type T=N::T;
+        type B=B;
+    	fn handle_every_node<A:AxisTrait>(&mut self,b:&mut Self::T,_anchor:&mut Anchor<B,Self::T>){
+    		N::handle_bot(self.node,b);
+    	}
+    	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N,_anchor:&mut Anchor<B,Self::T>){
+    		a.apply(self.node);
+    	}
+    }
+    struct Bo2<'a,B:AxisTrait,N:NodeMassTrait+'a>{
+        _anchor_axis:B,
+        node:&'a mut N
+    }
+
+    impl<'a,B:AxisTrait,N:NodeMassTrait+'a> Bok for Bo2<'a,B,N>{
+    	type N=N;
+        type T=N::T;
+        type B=B;
+        fn handle_every_node<A:AxisTrait>(&mut self,b:&mut N::T,_anchor:&mut Anchor<B,Self::T>){
+    		self.node.apply(b);
+    	}
+    	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N,_anchor:&mut Anchor<B,Self::T>){
+    		a.handle_with(self.node);
+    	}
+    }
+
+    struct Bo<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a>{
+        _anchor_axis:B,
+        right:&'b mut BothIter<'a,N>,
     }
     
-    impl<'a:'b,'b,A:AxisTrait,N:NodeMassTrait+'a> Bok for Bo<'a,'b,A,N>{
+    impl<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a> Bok for Bo<'a,'b,B,N>{
     	type N=N;
         type T=N::T;
-
-        fn handle_every_node<B:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        type B=B;
+        fn handle_every_node<A:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo4(b),&mut |a,b|N::is_far_enough_half(a,b))
+    		generic_rec(Right,A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),node:b},&mut |a,b|N::is_far_enough_half(a,b))
     	}
-    	fn handle_far_enough<B:AxisTrait>(&mut self,a:&mut N,anchor:&mut Anchor<B,Self::T>){
+    	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo2(a),&mut |a,b|N::is_far_enough_half(a,b))
+    		generic_rec(Right,A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a},&mut |a,b|N::is_far_enough_half(a,b))
     	}
     }
-    let mut bo= Bo{_axis:A::new(),right:&mut right};
+    let mut bo= Bo{_anchor_axis:B::new(),right:&mut right};
     generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |a,b|N::is_far_enough_half(a,b));  
 }
 
 trait Bok{
 	type N:NodeMassTrait<T=Self::T>;
 	type T:SweepTrait;
-	fn handle_every_node<A:AxisTrait>(&mut self,n:&mut Self::T,anchor:&mut Anchor<A,Self::T>);
-	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut Self::N,anchor:&mut Anchor<A,Self::T>);
+    type B:AxisTrait;
+	fn handle_every_node<A:AxisTrait>(&mut self,n:&mut Self::T,anchor:&mut Anchor<Self::B,Self::T>);
+	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut Self::N,anchor:&mut Anchor<Self::B,Self::T>);
 }
 
 
 fn generic_rec<
     A:AxisTrait,
     AnchorAxis:AxisTrait,
-    B:Bok<N=N,T=T>,
+    B:Bok<N=N,T=T,B=AnchorAxis>,
     N:NodeMassTrait<T=T>,
     T:SweepTrait,
     L:LeftOrRight,
@@ -408,20 +417,21 @@ fn generic_rec<
 
 	    
     fn recc4<
+        A:AxisTrait,
         AnchorAxis:AxisTrait,
-        B:Bok<N=N,T=T>,
+        B:Bok<N=N,T=T,B=AnchorAxis>,
         N:NodeMassTrait<T=T>,
         T:SweepTrait,
-        >(bok:&mut B,stuff:BothIter<B::N>,anchor:&mut Anchor<AnchorAxis,T>){
+        >(axis:A,bok:&mut B,stuff:BothIter<B::N>,anchor:&mut Anchor<AnchorAxis,T>){
         let ((nn1,_),rest)=stuff.next();
         
         for i in nn1.range.iter_mut(){
-            bok.handle_every_node(i,anchor);
+            bok.handle_every_node::<A>(i,anchor);
         }
         match rest{
             Some((left,right))=>{
-                recc4(bok,left,anchor);
-                recc4(bok,right,anchor);
+                recc4(axis.next(),bok,left,anchor);
+                recc4(axis.next(),bok,right,anchor);
             },
             None=>{
 
@@ -431,17 +441,23 @@ fn generic_rec<
 
 	let ((nn1,_),rest)=stuff.next();
     
-    let div=match nn1.div{
-    	Some(div)=>div,
-    	None=>return
-    };
+    
 
     for i in nn1.range.iter_mut(){
-        bok.handle_every_node(i,anchor);    
+        bok.handle_every_node::<A>(i,anchor);    
     }
+
     
     match rest{
         Some((left,right))=>{
+            let div=match nn1.div{
+                Some(div)=>div,
+                None=>{
+                    return;
+                }
+            };
+            
+            
 			if A::get()==AnchorAxis::get(){
 	        	
                 //B::N::is_far_enough_half(div,anchor.div)
@@ -455,9 +471,9 @@ fn generic_rec<
 	    			//handle the left as a whole, and recurse the right only.
 		        	let a=side_to_stop.create_wrap_mut().next().0;
 		        	
-		        	bok.handle_far_enough(a.1,anchor);//handle_node(a,&mut right_tree,div);
+		        	bok.handle_far_enough::<A>(a.1,anchor);//handle_node(a,&mut right_tree,div);
 
-		        	recc4(bok,side_to_continue,anchor);
+		        	recc4(this_axis.next(),bok,side_to_continue,anchor);
 
 	            }else{
 
@@ -468,6 +484,9 @@ fn generic_rec<
 	        	generic_rec(side,this_axis.next(),anchor,left,bok,func);
 	        	generic_rec(side,this_axis.next(),anchor,right,bok,func);
 	        }
+            //generic_rec(side,this_axis.next(),anchor,left,bok,func);
+            //generic_rec(side,this_axis.next(),anchor,right,bok,func);
+            
 	    },
 	    None=>{
 
@@ -504,7 +523,7 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
                         let l2=right.create_wrap_mut();
                         let mut anchor=Anchor{_axis:axis,range:&mut nn1.range,div};
 
-                        handle_anchor_with_children(axis,&mut anchor,l1,l2);
+                        handle_anchor_with_children(axis.next(),&mut anchor,l1,l2);
                     },
                     None=>{
 
@@ -526,7 +545,7 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
                     let l2=right.create_wrap_mut();
                     let mut anchor=Anchor{_axis:axis,range:&mut nn1.range,div};
 
-                    handle_left_with_right(A::new(),&mut anchor,l1,l2);
+                    handle_left_with_right(axis.next(),&mut anchor,l1,l2);
                 }
                 //at this point we have successfully broken up this problem
                 //into two independant ones, and we can do this all over again for the two children.
