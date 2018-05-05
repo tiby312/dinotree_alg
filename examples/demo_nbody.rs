@@ -111,14 +111,14 @@ impl NodeMassTrait for NodeMass{
     //its possible the bots belong to the same node?
     fn is_far_enough(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         //false
-        (1+depth) as f64*(a-b).abs()>200.0
-        //(a-b).abs()>200.0
+        //(1+depth) as f64*(a-b).abs()>2000.0
+        (a-b).abs()>200.0
     }
 
     fn is_far_enough_half(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         //false
-        (1+depth) as f64*(a-b).abs()>100.0
-        //(a-b).abs()>100.0
+        //(1+depth) as f64*(a-b).abs()>1000.0
+        (a-b).abs()>100.0
     }
 
 }
@@ -303,7 +303,7 @@ fn main() {
     //test_nodemass();
     //return;
 
-    let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[0,800,0,800],5000,[2,20]);
+    let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[0,800,0,800],5000,[1,2]);
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
         .exit_on_esc(true)
@@ -366,7 +366,7 @@ fn main() {
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
-                let square = rectangle::square(x1.into_inner() as f64, y1.into_inner() as f64, 8.0);
+                let square = rectangle::square(x1.into_inner() as f64, y1.into_inner() as f64, 4.0);
         
                 rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
             }

@@ -397,7 +397,7 @@ mod ba {
             };
         }
 
-        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self){
+        pub fn n_body_seq<N:NodeMassTrait<T=T>>(&mut self){
             match &mut self.0{
                 &mut DynTreeEnum::Xa(ref mut a)=>{
                     nbody::nbody_seq::<XAXISS,_,N>(a);
@@ -408,6 +408,16 @@ mod ba {
             }
         }
 
+        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self){
+            match &mut self.0{
+                &mut DynTreeEnum::Xa(ref mut a)=>{
+                    nbody::nbody_par::<XAXISS,_,N>(a);
+                },
+                &mut DynTreeEnum::Ya(ref mut a)=>{
+                    nbody::nbody_par::<YAXISS,_,N>(a);
+                }
+            }
+        }
         ///Find all intersecting pairs sequentially.
         ///Notice that in this case, a FnMut is supplied instead of a Fn.
         pub fn intersect_every_pair_seq<F: FnMut(ColSingle<T>, ColSingle<T>)>(&mut self, clos: F) {
