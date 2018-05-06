@@ -475,6 +475,9 @@ mod ba {
 
         ///Find all intersecting pairs.
         ///Optionally return time data of each level of the tree.
+        ///if a and b collide only one ordering of the pair is returned. The ordering is undefined. 
+        ///if a pair collides the callback function is called exactly once for that pair.
+        ///if the pair does not collide the callback function is not called.
         pub fn intersect_every_pair<F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync>(
             &mut self,
             clos: F,

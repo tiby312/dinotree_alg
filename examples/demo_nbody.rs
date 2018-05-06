@@ -33,7 +33,7 @@ impl GravityTrait for NodeMass{
         self.center
     }
     fn mass(&self)->f64{
-        BOT_MASS
+        self.mass
     }
     fn apply_force(&mut self,a:[f64;2]){
         self.force[0]+=a[0];
@@ -126,11 +126,12 @@ impl NodeMassTrait for NodeMass{
 
 
 
-const BOT_MASS:f64=1.0;
+const BOT_MASS:f64=10.0;
 struct Bot{
     pos:[f64;2],
     vel:[f64;2],
-    force:[f64;2]
+    force:[f64;2],
+    mass:f64
 }
 
 impl GravityTrait for Bot{
@@ -138,7 +139,7 @@ impl GravityTrait for Bot{
         self.pos
     }
     fn mass(&self)->f64{
-        BOT_MASS
+        self.mass
     }
     fn apply_force(&mut self,a:[f64;2]){
         self.force[0]+=a[0];
@@ -169,16 +170,16 @@ mod gravity{
         let dis_sqr=diffx*diffx+diffy*diffy;
 
 
-        if dis_sqr>0.01{
+        if dis_sqr>0.0001{
             let dis=dis_sqr.sqrt();
 
-            const GRAVITY_CONSTANT:f64=5.0;
+            const GRAVITY_CONSTANT:f64=0.002;
 
             //newtons law of gravitation (modified for 2d??? divide by len instead of sqr)
             let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
 
             //clamp the gravity to not be too extreme if two bots are extremly close together
-            let force=force.min(0.01);
+            //let force=force.min(1000.0);
 
             let dis=dis_sqr.sqrt();
             let finalx=diffx*(force/dis);
@@ -246,8 +247,8 @@ fn wrap_position(a:&mut [f64;2]){
 }
 
 fn test_nodemass(){
-    let mut b1=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[0,100,0,100],50,[2,20]);
-    let mut b2=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[800,900,800,900],50,[2,20]);
+    let mut b1=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2],mass:BOT_MASS},&[0,100,0,100],50,[2,20]);
+    let mut b2=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2],mass:BOT_MASS},&[800,900,800,900],50,[2,20]);
 
     let control={
         for i in b1.iter_mut(){
@@ -300,10 +301,16 @@ fn test_nodemass(){
 
 use std::time::Instant;
 fn main() {
-    //test_nodemass();
-    //return;
 
-    let mut bots=create_bots_f64(|id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2]},&[0,800,0,800],5000,[1,2]);
+
+    let mut bots=create_bots_f64(|id,pos|{
+        let velx=((id as isize%3)-1) as f64;
+        let vely=(((id+1) as isize % 3)-1) as f64;
+        Bot{pos,vel:[velx,vely],force:[0.0;2],mass:BOT_MASS}
+    },&[0,800,0,800],5000,[1,2]);
+    let mut bots_pruned:&mut [BBox<NotNaN<f64>,Bot>]=&mut bots;
+
+
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
         .exit_on_esc(true)
@@ -315,34 +322,43 @@ fn main() {
         e.mouse_cursor(|x, y| {
             cursor = [x, y];
         });
-
+        if let Some(Button::Mouse(button)) = e.press_args() {
+            println!("Pressed mouse button '{:?}'", button);
+        }
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
 
-            for bot in bots.iter_mut(){
+            for bot in bots_pruned.iter_mut(){
                 let b=&mut bot.val;
 
-                
                 b.pos[0]+=b.vel[0];
+                b.pos[1]+=b.vel[1];
+            
 
                 wrap_position(&mut b.pos);
 
                 //b.vel[0]*=0.99;
                 //b.vel[1]*=0.99;
-
-                b.pos[1]+=b.vel[1];
-
+                
+                assert!(!b.mass.is_nan(),"mass nan!");
+                
+                
                 {
                     //F=MA
                     //A=F/M
 
-                    let accx=b.force[0]/BOT_MASS;
-                    let accy=b.force[1]/BOT_MASS;
+                    let accx=b.force[0]/b.mass;
+                    let accy=b.force[1]/b.mass;
 
                     b.vel[0]+=accx;
                     b.vel[1]+=accy;
+                
                 }
 
+                assert!(!b.pos[0].is_nan(),"xpos nan!");
+                assert!(!b.pos[1].is_nan(),"ypos nan!");
+                
+                /*
                 let mut rect=rectnotnan_to_f64(bot.rect.0);
 
                 {
@@ -359,28 +375,52 @@ fn main() {
                     r2.start=b.pos[1]-height/2.0;
                     r2.end=b.pos[1]+height/2.0;
                 }
+                */
+                let r=b.mass.sqrt()/10.0;
+                //println!("radius={:?}",r);
+                let x1=b.pos[0]-r;
+                let x2=b.pos[0]+r;
+                let y1=b.pos[1]-r;
+                let y2=b.pos[1]+r;
+                let mut rect=Rect::new(x1,x2,y1,y2);
                 bot.rect.0=rectf64_to_notnan(rect);
+                
 
                 b.force=[0.0;2];
             }
-            for bot in bots.iter(){
+            for bot in bots_pruned.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
+                /*
+                let pos=bot.val.pos;//get();
+
+                let r=bot.val.mass.sqrt()/20.0;
+                println!("radius={:?}",r);
+                let x1=pos[0]-r;
+                let x2=pos[0]+r;
+                let y1=pos[1]-r;
+                let y2=pos[1]+r;
+               */
+
                 let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
-                let square = rectangle::square(x1.into_inner() as f64, y1.into_inner() as f64, 4.0);
-        
-                rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
+                //let square = rectangle::square(x1.into_inner() as f64, y1.into_inner() as f64, bot.val.mass.sqrt()*2.0);
+                let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];
+                  
+                //let square = [x1,y1,x2-x1,y2-y1];
+                        
+                rectangle([0.0,0.0,0.0,1.0], square, c.transform, g);
             }
             
             /*
-            for i in 0..bots.len(){
-                let b1=&mut bots[i] as *mut BBox<NotNaN<f64>,Bot>;
-                for j in i+1..bots.len(){
+            for i in 0..bots_pruned.len(){
+                let b1=&mut bots_pruned[i] as *mut BBox<NotNaN<f64>,Bot>;
+                for j in i+1..bots_pruned.len(){
                     let b1=unsafe{&mut *b1};
-                    let b2=&mut bots[j];
+                    let b2=&mut bots_pruned[j];
                     NodeMass::handle_bot(b1,b2);
                 }
             }
-            
+            */
+            /*
             let forces_control:Vec<[f64;2]>=bots.iter().map(|b|{b.val.force}).collect();
 
 
@@ -391,14 +431,60 @@ fn main() {
             
             
             {
-                let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
+                let mut tree = DinoTree::new(bots_pruned, StartAxis::Xaxis);
 
-
+                
                 let k={
                     let rect=rectf64_to_notnan(Rect::new(0.0,800.0,0.0,800.0));
                     tree.n_body::<NodeMass>();
                 };
+                
+
+                
+                tree.intersect_every_pair_seq(|a, b| {
+                    let (a,b)=if a.inner.mass>b.inner.mass{
+                        (a,b)
+                    }else{
+                        (b,a)
+                    };
+
+                    a.inner.mass+=b.inner.mass;
+                    a.inner.force[0]+=b.inner.force[0];
+                    a.inner.force[1]+=b.inner.force[1];
+                    b.inner.mass=0.0;
+                    b.inner.force[0]=0.0;
+                    b.inner.force[1]=0.0;
+                
+                });
             }
+
+            let last_bot_with_mass={
+                let mut last=bots_pruned.len();
+                let mut counter=0;
+                for _ in 0..bots_pruned.len(){
+                    
+                    if bots_pruned[counter].val.mass==0.0{
+                        last-=1;
+                        bots_pruned.swap(counter,last);
+                    }else{
+                        counter+=1;
+                    }
+                }
+                assert!(counter==last);
+
+                for (ii,i) in bots_pruned[0..last].iter().enumerate(){
+                    assert!(i.val.mass!=0.0,"i:{:?}  val={:?}",ii,i.val.mass);
+                }
+
+                for (ii,i) in bots_pruned[last..].iter().enumerate(){
+                    assert!(i.val.mass==0.0,"i:{:?}  val={:?}",ii,i.val.mass);
+                }
+                
+                last
+            };
+            let bb=std::mem::replace(&mut bots_pruned,&mut []);
+            std::mem::replace(&mut bots_pruned,&mut bb[0..last_bot_with_mass]);
+            //println!("len={:?}",bots_pruned.len());
             
             /*
             let forces:Vec<[f64;2]>=bots.iter().map(|b|{b.val.force}).collect();

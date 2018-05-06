@@ -63,7 +63,7 @@ fn intersects_box(point:[NotNaN<f64>;2],dir:[NotNaN<f64>;2],rect:&AABBox<NotNaN<
 
 fn main() {
 
-    let mut bots=create_bots_f64(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
+    let mut bots=create_bots_f64(|id,_pos|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
 
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
