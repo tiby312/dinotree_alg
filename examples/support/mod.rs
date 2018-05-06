@@ -36,11 +36,10 @@ pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[
 
 }
 
+
 #[allow(dead_code)]
-pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
-    
-    let arr:&[usize]=&[100,42,6];
-    let mut rng =  SeedableRng::from_seed(arr);
+pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
+    let mut rng =  SeedableRng::from_seed(seed);
     let rng=&mut rng;
 
     let xvaluegen=UniformRangeGenerator::new(area[0],area[1]);
@@ -62,6 +61,12 @@ pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;
         ));
     }
     bots
+}
+#[allow(dead_code)]
+pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
+    
+    let arr:&[usize]=&[100,42,6];
+    create_bots_isize_seed(arr,func,area,num_bots,radius)
 
 }
 

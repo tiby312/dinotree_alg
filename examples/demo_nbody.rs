@@ -138,7 +138,7 @@ impl Bot{
             b.vel[0]+=accx;
             b.vel[1]+=accy;            
 
-            let r=b.mass.sqrt()/10.0;
+            let r=20.0f64.min(b.mass.sqrt()/10.0);
             let x1=b.pos[0]-r;
             let x2=b.pos[0]+r;
             let y1=b.pos[1]-r;
@@ -188,7 +188,7 @@ mod gravity{
 
         if dis_sqr>0.0001{
             
-            const GRAVITY_CONSTANT:f64=0.002;
+            const GRAVITY_CONSTANT:f64=0.004;
 
             //newtons law of gravitation (modified for 2d??? divide by len instead of sqr)
             let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
@@ -226,7 +226,7 @@ fn main() {
         e.mouse_cursor(|x, y| {
             cursor = [x, y];
         });
-        if let Some(Button::Mouse(button)) = e.press_args() {
+        if let Some(Button::Mouse(_button)) = e.press_args() {
 
             if last_bot_with_mass<bots.len(){
                 let b=&mut bots[last_bot_with_mass];
@@ -235,11 +235,12 @@ fn main() {
                 b.val.pos[1]=cursor[1];
                 b.val.force=[0.0;2];
                 b.val.vel=[0.0;2];
+
+                last_bot_with_mass+=1;
                 println!("added bot");
             }else{
                 println!("already maxxed");
             }
-            last_bot_with_mass+=1;
         }
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
@@ -289,13 +290,32 @@ fn main() {
                             (b,a)
                         };
 
-                        a.inner.mass+=b.inner.mass;
-                        a.inner.force[0]+=b.inner.force[0];
-                        a.inner.force[1]+=b.inner.force[1];
-                        b.inner.mass=0.0;
-                        b.inner.force[0]=0.0;
-                        b.inner.force[1]=0.0;
-                    
+                        if b.inner.mass!=0.0{
+                            
+                            let ma=a.inner.mass;
+                            let mb=b.inner.mass;
+                            let ua=a.inner.vel;
+                            let ub=b.inner.vel;
+
+                            //Do perfectly inelastic collision.
+                            let vx=(ma*ua[0]+mb*ub[0])/(ma+mb);
+                            let vy=(ma*ua[1]+mb*ub[1])/(ma+mb);
+                            assert!(!vx.is_nan()&&!vy.is_nan());
+                            a.inner.mass+=b.inner.mass;
+                            a.inner.force[0]+=b.inner.force[0];
+                            a.inner.force[1]+=b.inner.force[1];
+                            a.inner.vel[0]=vx;
+                            a.inner.vel[1]=vy;
+
+
+                            b.inner.mass=0.0;
+                            b.inner.force[0]=0.0;
+                            b.inner.force[1]=0.0;
+                            b.inner.vel[0]=0.0;
+                            b.inner.vel[1]=0.0;
+                        }
+                        //a.inner.vel[0]=(a.inner.vel[0]+b.inner.vel[0])/2.0;
+                        //a.inner.vel[1]=(a.inner.vel[0]+b.inner.vel[0])/2.0;
                     });
                     
                 }
@@ -326,7 +346,31 @@ fn main() {
                 
                 last
             };
+
+            {
+                let seed:&[usize]=&[40,20];
+                let mut rng:rand::StdRng =  rand::SeedableRng::from_seed(seed);
+                let xdist = rand::distributions::Range::new(0,800);
+                let vdist = rand::distributions::Range::new(-1,1);
         
+                if last_bot_with_mass<bots.len(){
+                    //for i in 0..(bots.len()-last_bot_with_mass){
+                        let b=&mut bots[last_bot_with_mass];
+                        b.val.mass=10.0;
+
+                        use rand::distributions::IndependentSample;
+                        let x1=xdist.ind_sample(&mut rng);
+                        let y1=xdist.ind_sample(&mut rng);
+                        b.val.pos[0]=x1 as f64;
+                        b.val.pos[1]=y1 as f64;
+                        b.val.force=[0.0;2];
+                        let v1=vdist.ind_sample(&mut rng);
+                        let v2=vdist.ind_sample(&mut rng);
+                        b.val.vel=[v1 as f64,v2 as f64];
+                        last_bot_with_mass+=1;
+                    //}
+                }
+            }
 
 
             
