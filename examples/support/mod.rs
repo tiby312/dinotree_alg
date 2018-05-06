@@ -1,8 +1,4 @@
-
-
-
-use axgeom;
-use std;
+use axgeom::*;
 use rand;
 use rand::{SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};
@@ -11,7 +7,7 @@ use dinotree::*;
 use ordered_float::*;
 use dinotree::support::*;
 
-
+#[allow(dead_code)]
 pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<NotNaN<f64>,X>>{
     
     let arr:&[usize]=&[100,42,6];
@@ -40,7 +36,7 @@ pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[
 
 }
 
-
+#[allow(dead_code)]
 pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
     
     let arr:&[usize]=&[100,42,6];
@@ -70,8 +66,12 @@ pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;
 }
 
 
+#[allow(dead_code)]
+pub fn rectf64_to_notnan(rect:Rect<f64>)->Rect<NotNaN<f64>>{
+    let ((a,b),(c,d))=rect.get();
 
-
+    Rect::new(NotNaN::new(a).unwrap(),NotNaN::new(b).unwrap(),NotNaN::new(c).unwrap(),NotNaN::new(d).unwrap())
+}
 
 
 #[derive(Clone, Debug)]

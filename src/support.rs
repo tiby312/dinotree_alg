@@ -34,16 +34,16 @@ pub fn choose_best_axis<N:NumTrait+std::ops::Sub<Output=N>>(a:&AABBox<N>)->Start
 ///So the bots may not actually collide in 2d space, but collide alone the x or y axis.
 ///This is useful when implementing "wrap around" behavior of bots that pass over a rectangular border.
 pub fn collide_two_rect_parallel<
-    A: AxisTrait,
+    'a,A: AxisTrait,
     Num: NumTrait,
     T: SweepTrait<Num = Num>,
     F: FnMut(ColSingle<T>, ColSingle<T>),
 >(
-    tree: &mut DinoTree<T>,
+    tree: &'a mut DinoTree<T>,
     rect1: &AABBox<T::Num>,
     rect2: &AABBox<T::Num>,
     mut func: F,
-) {
+)->Result<(),rects::RectIntersectErr> {
     struct Ba<'z, J: SweepTrait + Send + 'z>(ColSingle<'z, J>);
     impl<'z, J: SweepTrait + Send + 'z> RebalTrait for Ba<'z, J> {
         type Num = J::Num;
@@ -72,10 +72,10 @@ pub fn collide_two_rect_parallel<
     let mut rects = tree.rects();
 
     let mut buffer1 = Vec::new();
-    rects.for_all_in_rect(rect1, |a: ColSingle<T>| buffer1.push(Ba(a)));
+    rects.for_all_in_rect(rect1, |a: ColSingle<T>| buffer1.push(Ba(a)))?;
 
     let mut buffer2 = Vec::new();
-    rects.for_all_in_rect(rect2, |a: ColSingle<T>| buffer2.push(Ba(a)));
+    rects.for_all_in_rect(rect2, |a: ColSingle<T>| buffer2.push(Ba(a)))?;
 
     {
         rayon::join(
@@ -111,4 +111,5 @@ pub fn collide_two_rect_parallel<
         let b = Bo(func2, PhantomData);
         sweeper.find_bijective_parallel::<A, _>((&mut buffer1, &mut buffer2), b);
     }
+    Ok(())
 }

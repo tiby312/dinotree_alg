@@ -16,15 +16,6 @@ mod tools{
             }
         }
     }
-    /*
-    pub fn for_bijective_pair<T,F:FnMut(&mut T,&mut T)>(arr1:&mut [T],arr2:&mut [T],mut func:F){
-        for x in arr1.iter_mut(){
-            for j in arr2.iter_mut(){
-                func(x,j);
-            }
-        }
-    }
-    */
 }
 
 
@@ -42,9 +33,9 @@ pub trait NodeMassTrait:Send{
     //gravitate a nodemass with a bot
     fn apply(&mut self,b:&mut Self::T);
 
-    fn is_far_enough(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    fn is_far_enough(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
 
-    fn is_far_enough_half(depth:usize,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    fn is_far_enough_half(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
 
     fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&self,it:I,len:usize) where Self::T:'a;
 
@@ -301,8 +292,8 @@ fn handle_anchor_with_children<'a,
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),_p:PhantomData};
-    generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |d,a,b|N::is_far_enough(d,a,b));  
-    generic_rec(Right,A::new(),anchor,right,&mut bo,&mut |d,a,b|N::is_far_enough(d,a,b));  
+    generic_rec(Left,thisa,anchor,left,&mut bo,&mut |a,b|N::is_far_enough(a,b));  
+    generic_rec(Right,thisa,anchor,right,&mut bo,&mut |a,b|N::is_far_enough(a,b));  
 }
 
 
@@ -416,15 +407,15 @@ fn handle_left_with_right<A:AxisTrait,B:AxisTrait,N:NodeMassTrait>
         type B=B;
         fn handle_every_node<A:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),node:b},&mut |d,a,b|N::is_far_enough_half(d,a,b))
+    		generic_rec(Right,A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),node:b},&mut |a,b|N::is_far_enough_half(a,b))
     	}
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a},&mut |d,a,b|N::is_far_enough_half(d,a,b))
+    		generic_rec(Right,A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a},&mut |a,b|N::is_far_enough_half(a,b))
     	}
     }
     let mut bo= Bo{_anchor_axis:B::new(),right:&mut right};
-    generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |d,a,b|N::is_far_enough_half(d,a,b));  
+    generic_rec(Left,A::new(),anchor,left,&mut bo,&mut |a,b|N::is_far_enough_half(a,b));  
 }
 
 trait Bok{
@@ -443,7 +434,7 @@ fn generic_rec<
     N:NodeMassTrait<T=T>,
     T:SweepTrait,
     L:LeftOrRight,
-    F:FnMut(usize,T::Num,T::Num)->bool>(side:L,this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:DIter<B::N>,bok:&mut B,func:&mut F){
+    F:FnMut(T::Num,T::Num)->bool>(side:L,this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:DIter<B::N>,bok:&mut B,func:&mut F){
 
 	    
     fn recc4<
@@ -453,7 +444,7 @@ fn generic_rec<
         N:NodeMassTrait<T=T>,
         T:SweepTrait,
         >(axis:A,bok:&mut B,stuff:DIter<B::N>,anchor:&mut Anchor<AnchorAxis,T>){
-        let ((depth,(nn1,_)),rest)=stuff.next();
+        let ((_depth,(nn1,_)),rest)=stuff.next();
         
         for i in nn1.range.iter_mut(){
             bok.handle_every_node::<A>(i,anchor);
@@ -469,7 +460,7 @@ fn generic_rec<
         }
     }
 
-	let ((depth,(nn1,_)),rest)=stuff.next();
+	let ((_depth,(nn1,_)),rest)=stuff.next();
     
     
 
@@ -491,7 +482,7 @@ fn generic_rec<
 			if A::get()==AnchorAxis::get(){
 	        	
                 //B::N::is_far_enough_half(div,anchor.div)
-	        	if func(depth.0,div,anchor.div){
+	        	if func(div,anchor.div){
                     let (mut side_to_stop,side_to_continue)=if side.is_left(){
                         (left,right)
                     }else{
@@ -499,7 +490,7 @@ fn generic_rec<
                     };
 	    			//the left node is far enough away.
 	    			//handle the left as a whole, and recurse the right only.
-		        	let (dd1,(nn1,nn2))=side_to_stop.create_wrap_mut().next().0;
+		        	let (_dd1,(_nn1,nn2))=side_to_stop.create_wrap_mut().next().0;
 		        	
 		        	bok.handle_far_enough::<A>(nn2,anchor);//handle_node(a,&mut right_tree,div);
 

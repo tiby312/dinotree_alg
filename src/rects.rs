@@ -21,7 +21,7 @@ impl<'a: 'b, 'b, T: SweepTrait + 'a> Rects<'a, 'b, T> {
 
     ///Returns an error if user supplies a rectangle that intersects with another one used to call this same
     ///function.
-    pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(&mut self, rect: &AABBox<T::Num>, func: F)->Result<(),&str>  {
+    pub fn for_all_in_rect<F: FnMut(ColSingle<'b, T>)>(&mut self, rect: &AABBox<T::Num>, func: F)->Result<(),RectIntersectErr>  {
         match &mut self.0 {
             &mut RectsEnum::Xa(ref mut a) => {
                 a.for_all_in_rect(rect, func)
@@ -32,6 +32,8 @@ impl<'a: 'b, 'b, T: SweepTrait + 'a> Rects<'a, 'b, T> {
         }
     }
 }
+
+pub struct RectIntersectErr;
 
 enum RectsEnum<'a: 'b, 'b, T: SweepTrait + 'a> {
     Xa(RectsInner<'a, 'b, XAXISS, T>),
@@ -59,10 +61,10 @@ impl<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> RectsInner<'a, 'b, A, T>
         &mut self,
         rect: &AABBox<T::Num>,
         mut func: F,
-    )->Result<(),&str> {
+    )->Result<(),RectIntersectErr> {
         for k in self.rects.iter() {
             if rect.0.intersects_rect(&k.0) {
-                return Err("Rects cannot intersect!");
+                return Err(RectIntersectErr);
             }
         }
 

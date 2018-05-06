@@ -119,10 +119,6 @@ pub mod ray{
         pub dir:[N;2],
     }
 
-    pub enum Val<X>{
-        BothTouch((X,X)),
-        OneTouch(X),
-    }
 }
 
 
