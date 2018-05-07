@@ -63,7 +63,7 @@ pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut f
     bots
 }
 #[allow(dead_code)]
-pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
+pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
     
     let arr:&[usize]=&[100,42,6];
     create_bots_isize_seed(arr,func,area,num_bots,radius)

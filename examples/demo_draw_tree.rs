@@ -9,14 +9,12 @@ use piston_window::*;
 
 mod support;
 use dinotree::*;
-use dinotree::support::*;
-use support::*;
 
 
 
 fn main() {
 
-    let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
+    let mut bots=support::create_bots_isize(|id|support::Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
 
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -33,9 +31,6 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([1.0; 4], g);
 
-            let ray_point=(cursor[0] as isize,cursor[1] as isize);
-            let ray_dir=(-1,-2);
-            
             for bot in bots.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
@@ -46,7 +41,7 @@ fn main() {
         
         
             {
-                let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
+                let tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
             
                 struct Bla<'a,'b:'a>{
                     c:&'a Context,

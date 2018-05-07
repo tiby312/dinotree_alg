@@ -34,15 +34,33 @@ impl GravityTrait for NodeMass{
     }
 }
 
-impl NodeMassTrait for NodeMass{
+#[derive(Clone,Copy)]
+struct Bla;
+impl NodeMassTrait for Bla{
     type T=BBox<NotNaN<f64>,Bot>;
-    fn handle_with(&mut self,b:&mut Self){
-        gravity::gravitate(self,b);
+    type No=NodeMass;
+
+
+    //gravitate this nodemass with another node mass
+    fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
+        gravity::gravitate(a,b);
     }
-    fn handle_bot(a:&mut Self::T,b:&mut Self::T){
+
+    //gravitate a bot with a bot
+    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
         gravity::gravitate(&mut a.val,&mut b.val);
     }
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (it:I,len:usize)->Self where Self::T:'a{
+
+    //gravitate a nodemass with a bot
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
+        gravity::gravitate(a,&mut b.val);
+    }
+    fn div(self)->(Self,Self){
+        (Bla,Bla)
+    }
+
+
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,len:usize)->Self::No{
         let mut total_x=0.0;
         let mut total_y=0.0;
         let mut total_mass=0.0;
@@ -62,14 +80,14 @@ impl NodeMassTrait for NodeMass{
     }
 
 
-    fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&self,it:I,len:usize) where Self::T:'a{
+    fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
 
-        let len_sqr=self.force[0]*self.force[0]+self.force[1]+self.force[1];
+        let len_sqr=a.force[0]*a.force[0]+a.force[1]+a.force[1];
 
         if len_sqr>0.01{
 
-            let total_forcex=self.force[0];
-            let total_forcey=self.force[1];
+            let total_forcex=a.force[0];
+            let total_forcey=a.force[1];
 
             let forcex=total_forcex/len as f64;
             let forcey=total_forcey/len as f64;
@@ -82,15 +100,12 @@ impl NodeMassTrait for NodeMass{
         }
     }
 
-    fn apply(&mut self,b:&mut Self::T){
-        gravity::gravitate(self,&mut b.val);
-    }
 
-    fn is_far_enough(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+    fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         (a-b).abs()>200.0
     }
 
-    fn is_far_enough_half(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+    fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         (a-b).abs()>100.0
     }
 
@@ -281,7 +296,7 @@ fn main() {
                 {
                     let mut tree = DinoTree::new(bots_pruned, StartAxis::Xaxis);
         
-                    tree.n_body::<NodeMass>();
+                    tree.n_body(Bla);
                                 
                     tree.intersect_every_pair_seq(|a, b| {
                         let (a,b)=if a.inner.mass>b.inner.mass{

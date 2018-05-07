@@ -259,7 +259,7 @@ mod ba {
         ///Find all intersects between the elements in this dinotree, and the specified elements.
         ///No intersecting pairs within each group are looked for.
         ///Only those between the two groups.
-        ///Ideally the group that this tree is built around should be the bigger of the two groups.
+        ///For best performance the group that this tree is built around should be the bigger of the two groups.
         pub fn intersect_with_seq<X: SweepTrait<Num = T::Num>, F: FnMut(ColSingle<T>, ColSingle<X>)>(
             &mut self,
             b: &mut [X],
@@ -268,7 +268,6 @@ mod ba {
             //todo find better algorithn?
             //todo do this before axis specialization?
             //ideally you'd bin the new group using the existing dividers and query that.
-            //let func = &func;
             for i in b.iter_mut() {
                 let jj = i.get_mut();
 
@@ -397,24 +396,25 @@ mod ba {
             };
         }
 
-        pub fn n_body_seq<N:NodeMassTrait<T=T>>(&mut self){
+        pub fn n_body_seq<N:NodeMassTrait<T=T>>(&mut self,ncontext:N){
             match &mut self.0{
                 &mut DynTreeEnum::Xa(ref mut a)=>{
-                    nbody::nbody_seq::<XAXISS,_,N>(a);
+                    nbody::nbody_seq::<XAXISS,_,N>(a,ncontext);
                 },
                 &mut DynTreeEnum::Ya(ref mut a)=>{
-                    nbody::nbody_seq::<YAXISS,_,N>(a);
+                    nbody::nbody_seq::<YAXISS,_,N>(a,ncontext);
                 }
             }
         }
 
-        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self){
+        ///Perform an nbody simulation.
+        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self,ncontext:N){
             match &mut self.0{
                 &mut DynTreeEnum::Xa(ref mut a)=>{
-                    nbody::nbody_par::<XAXISS,_,N>(a);
+                    nbody::nbody_par::<XAXISS,_,N>(a,ncontext);
                 },
                 &mut DynTreeEnum::Ya(ref mut a)=>{
-                    nbody::nbody_par::<YAXISS,_,N>(a);
+                    nbody::nbody_par::<YAXISS,_,N>(a,ncontext);
                 }
             }
         }

@@ -8,7 +8,6 @@ use piston_window::*;
 
 mod support;
 use dinotree::*;
-use dinotree::support::*;
 use support::*;
 
 
@@ -40,29 +39,26 @@ fn main() {
             {
                 let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
-
-                let k={
+             
+                tree.intersect_every_pair_seq(|a, b| {
+                   
+                    let ((x1,x2),(y1,y2))=a.rect.get();
                     
-                                
-                    tree.intersect_every_pair_seq(|a, b| {
-                       
-                        let ((x1,x2),(y1,y2))=a.rect.get();
-                        
-                        {
-                            let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                            let square = [x1,y1,x2-x1,y2-y1];
-                            rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
-                        }
+                    {
+                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+                        let square = [x1,y1,x2-x1,y2-y1];
+                        rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
+                    }
 
-                        let ((x1,x2),(y1,y2))=b.rect.get();
-                        
-                        {
-                            let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                            let square = [x1,y1,x2-x1,y2-y1];
-                            rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
-                        }
-                    });
-                };
+                    let ((x1,x2),(y1,y2))=b.rect.get();
+                    
+                    {
+                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+                        let square = [x1,y1,x2-x1,y2-y1];
+                        rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
+                    }
+                });
+            
             }
         });
     }
