@@ -206,18 +206,18 @@ mod ba {
 
 
     pub(crate) enum DynTreeEnum<'a, T: SweepTrait + 'a> {
-        Xa(DynTree<'a, XAXISS, T>),
-        Ya(DynTree<'a, YAXISS, T>),
+        Xa(DynTree<'a, XAXISS,(), T>),
+        Ya(DynTree<'a, YAXISS,(), T>),
     }
     fn make<'a,T:SweepTrait,JJ:par::Joiner,K:TreeTimerTrait>(axis:StartAxis,rest:&'a mut [T])->(DinoTree<'a,T>,K::Bag){
         let height = self::compute_tree_height(rest.len());
         match axis{
             StartAxis::Xaxis=>{
-                let k=DynTree::<XAXISS,T>::new::<JJ,K>(rest,height);
+                let k=DynTree::<XAXISS,(),T>::new::<JJ,K>(rest,height);
                 (DinoTree(DynTreeEnum::Xa(k.0)),k.1)
             },
             StartAxis::Yaxis=>{
-                let k=DynTree::<YAXISS,T>::new::<JJ,K>(rest,height);
+                let k=DynTree::<YAXISS,(),T>::new::<JJ,K>(rest,height);
                 (DinoTree(DynTreeEnum::Ya(k.0)),k.1)
             }
         }

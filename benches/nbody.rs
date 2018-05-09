@@ -18,6 +18,8 @@ use dinotree::support::*;
 use support::*;
 use test::*;
 
+
+#[derive(Copy,Clone)]
 struct NodeMass{
     center:[f64;2],
     mass:f64,
@@ -37,15 +39,37 @@ impl GravityTrait for NodeMass{
     }
 }
 
-impl NodeMassTrait for NodeMass{
+#[derive(Clone,Copy)]
+struct Bla;
+impl NodeMassTrait for Bla{
     type T=BBox<NotNaN<f64>,Bot>;
-    fn handle_with(&mut self,b:&mut Self){
-        gravity::gravitate(self,b);
+    type No=NodeMass;
+
+    fn create_empty(&self)->Self::No{
+        NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2]}
     }
-    fn handle_bot(a:&mut Self::T,b:&mut Self::T){
+
+
+    //gravitate this nodemass with another node mass
+    fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
+        gravity::gravitate(a,b);
+    }
+
+    //gravitate a bot with a bot
+    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
         gravity::gravitate(&mut a.val,&mut b.val);
     }
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (it:I,len:usize)->Self where Self::T:'a{
+
+    //gravitate a nodemass with a bot
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
+        gravity::gravitate(a,&mut b.val);
+    }
+    fn div(self)->(Self,Self){
+        (Bla,Bla)
+    }
+
+
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,len:usize)->Self::No{
         let mut total_x=0.0;
         let mut total_y=0.0;
         let mut total_mass=0.0;
@@ -65,14 +89,14 @@ impl NodeMassTrait for NodeMass{
     }
 
 
-    fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&self,it:I,len:usize) where Self::T:'a{
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
 
-        let len_sqr=self.force[0]*self.force[0]+self.force[1]+self.force[1];
+        let len_sqr=a.force[0]*a.force[0]+a.force[1]+a.force[1];
 
         if len_sqr>0.01{
 
-            let total_forcex=self.force[0];
-            let total_forcey=self.force[1];
+            let total_forcex=a.force[0];
+            let total_forcey=a.force[1];
 
             let forcex=total_forcex/len as f64;
             let forcey=total_forcey/len as f64;
@@ -85,19 +109,17 @@ impl NodeMassTrait for NodeMass{
         }
     }
 
-    fn apply(&mut self,b:&mut Self::T){
-        gravity::gravitate(self,&mut b.val);
-    }
-
-    fn is_far_enough(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()>200.0
-    }
-
-    fn is_far_enough_half(a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+    //TODO improve accuracy by relying on depth???
+    fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         (a-b).abs()>100.0
     }
 
+    fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
+        (a-b).abs()>50.0
+    }
+
 }
+
 
 
 
@@ -218,15 +240,16 @@ fn nbody_naive(bench:&mut Bencher){
         let velx=((id as isize%3)-1) as f64;
         let vely=(((id+1) as isize % 3)-1) as f64;
         Bot{pos,vel:[velx,vely],force:[0.0;2],mass:20.0}
-    },&[0,800,0,800],5000,[1,2]);
+    },&[0,800,0,800],500,[1,2]);
    
+    let b=Bla;
     bench.iter(||{
         for i in 0..bots.len(){
             let b1=&mut bots[i] as *mut BBox<NotNaN<f64>,Bot>;
             for j in i+1..bots.len(){
                 let b1=unsafe{&mut *b1};
                 let b2=&mut bots[j];
-                NodeMass::handle_bot(b1,b2);
+                b.handle_bot_with_bot(b1,b2);
             }
         }    
     });
@@ -240,13 +263,13 @@ fn nbody_seq(bench:&mut Bencher) {
         let velx=((id as isize%3)-1) as f64;
         let vely=(((id+1) as isize % 3)-1) as f64;
         Bot{pos,vel:[velx,vely],force:[0.0;2],mass:20.0}
-    },&[0,800,0,800],5000,[1,2]);
+    },&[0,800,0,800],500,[1,2]);
     
 
     let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
                 
     bench.iter(||{
-        tree.n_body_seq::<NodeMass>();
+        tree.n_body_seq(Bla);
     }); 
 
     black_box(tree);      
@@ -273,13 +296,82 @@ fn nbody_par(bench:&mut Bencher) {
         let velx=((id as isize%3)-1) as f64;
         let vely=(((id+1) as isize % 3)-1) as f64;
         Bot{pos,vel:[velx,vely],force:[0.0;2],mass:20.0}
-    },&[0,800,0,800],5000,[1,2]);
+    },&[0,800,0,800],500,[1,2]);
     
 
     let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
                 
     bench.iter(||{
-        tree.n_body::<NodeMass>();
+        tree.n_body(Bla);
+
+    }); 
+
+    black_box(tree);      
+            /*
+            let forces:Vec<[f64;2]>=bots_pruned.iter().map(|b|{b.val.force}).collect();
+            
+            
+            let mut max_err=[0.0f64;2];
+            for (i,(a,b)) in forces.iter().zip(forces_control.iter()).enumerate(){
+                let diffx=(a[0]-b[0]).abs();
+                let diffy=(a[1]-b[1]).abs();
+                max_err[0]=max_err[0].max(diffx);
+                max_err[1]=max_err[1].max(diffy);
+                //assert!(diffx+diffy<0.1,"mismatch:diff{:?}",(i,(diffx,diffy)));
+            }
+            println!("max err sum={:?}",max_err[0]+max_err[1]);
+            */
+            
+}
+
+
+#[bench]
+fn nbody_seq_long(bench:&mut Bencher) {
+
+    let mut bots=create_bots_f64(|id,pos|{
+        let velx=((id as isize%3)-1) as f64;
+        let vely=(((id+1) as isize % 3)-1) as f64;
+        Bot{pos,vel:[velx,vely],force:[0.0;2],mass:20.0}
+    },&[0,800,0,800],10000,[1,2]);
+    
+
+    let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
+                
+    bench.iter(||{
+        tree.n_body_seq(Bla);
+    }); 
+
+    black_box(tree);      
+            /*
+            let forces:Vec<[f64;2]>=bots_pruned.iter().map(|b|{b.val.force}).collect();
+            
+            
+            let mut max_err=[0.0f64;2];
+            for (i,(a,b)) in forces.iter().zip(forces_control.iter()).enumerate(){
+                let diffx=(a[0]-b[0]).abs();
+                let diffy=(a[1]-b[1]).abs();
+                max_err[0]=max_err[0].max(diffx);
+                max_err[1]=max_err[1].max(diffy);
+                //assert!(diffx+diffy<0.1,"mismatch:diff{:?}",(i,(diffx,diffy)));
+            }
+            println!("max err sum={:?}",max_err[0]+max_err[1]);
+            */
+            
+}
+#[bench]
+fn nbody_par_long(bench:&mut Bencher) {
+
+    let mut bots=create_bots_f64(|id,pos|{
+        let velx=((id as isize%3)-1) as f64;
+        let vely=(((id+1) as isize % 3)-1) as f64;
+        Bot{pos,vel:[velx,vely],force:[0.0;2],mass:20.0}
+    },&[0,800,0,800],10000,[1,2]);
+    
+
+    let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
+                
+    bench.iter(||{
+        tree.n_body(Bla);
 
     }); 
 

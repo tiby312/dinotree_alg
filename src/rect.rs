@@ -6,7 +6,7 @@ fn rect_recurse<
     'x,
     A: AxisTrait,
     T: SweepTrait + 'x,
-    C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
+    C: CTreeIterator<Item = &'x mut NodeDyn<(),T>>,
     F: FnMut(ColSingle<T>),
 >(
     this_axis: A,
@@ -50,7 +50,7 @@ fn rect_recurse<
 }
 
 pub fn for_all_intersect_rect<A: AxisTrait, T: SweepTrait, F: FnMut(ColSingle<T>)>(
-    tree: &mut DynTree<A, T>,
+    tree: &mut DynTree<A,(),T>,
     rect: &Rect<T::Num>,
     mut closure: F,
 ) {
@@ -65,7 +65,7 @@ pub fn for_all_intersect_rect<A: AxisTrait, T: SweepTrait, F: FnMut(ColSingle<T>
 }
 
 pub fn for_all_in_rect<A: AxisTrait, T: SweepTrait, F: FnMut(ColSingle<T>)>(
-    tree: &mut DynTree<A, T>,
+    tree: &mut DynTree<A,(),T>,
     rect: &Rect<T::Num>,
     mut closure: F,
 ) {

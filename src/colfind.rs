@@ -60,7 +60,7 @@ mod anchor{
         pub fn get(&mut self)->(&Range<T::Num>,&mut [T]){
             (self.cont,self.range)
         }
-        pub fn new(nd:&'a mut NodeDyn<T>)->Result<DestructuredAnchor<'a,T,AnchorAxis>,ErrEnum>{
+        pub fn new(nd:&'a mut NodeDyn<(),T>)->Result<DestructuredAnchor<'a,T,AnchorAxis>,ErrEnum>{
             let cont=match &nd.cont{
                 &Some(ref x)=>{x},
                 &None=>return Err(ErrEnum::NoBots)
@@ -84,7 +84,7 @@ fn go_down<
     'x,
     A: AxisTrait, //this axis
     B: AxisTrait, //parent axis
-    C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
+    C: CTreeIterator<Item = &'x mut NodeDyn<(),X>> + Send,
     X: SweepTrait + 'x,
     F: ColMulti<T = X>
 >(
@@ -144,7 +144,7 @@ fn recurse<
     this_axis: A,
     par: JJ,
     sweeper: &mut Sweeper<F::T>,
-    m: NdIterMut<X>,
+    m: NdIterMut<(),X>,
     mut clos: F,
     mut timer_log: K,
     level:Depth
@@ -257,8 +257,8 @@ fn recurse<
 
 
 
-pub fn find_element<A:AxisTrait,T:SweepTrait,F:FnMut(&T)->bool>(tree:&DynTree<A,T>,mut func:F)->Option<(usize,Vec<bool>)>{
-       fn recc<'a,A:AxisTrait,T:SweepTrait+'a,F:FnMut(&T)->bool,C:CTreeIterator<Item=(Depth,&'a NodeDyn<T>)>>(axis:A,func:&mut F,stuff:C,trail:Vec<bool>)->Option<(usize,Vec<bool>)>{
+pub fn find_element<A:AxisTrait,T:SweepTrait,F:FnMut(&T)->bool>(tree:&DynTree<A,(),T>,mut func:F)->Option<(usize,Vec<bool>)>{
+       fn recc<'a,A:AxisTrait,T:SweepTrait+'a,F:FnMut(&T)->bool,C:CTreeIterator<Item=(Depth,&'a NodeDyn<(),T>)>>(axis:A,func:&mut F,stuff:C,trail:Vec<bool>)->Option<(usize,Vec<bool>)>{
             let ((depth,nn),rest)=stuff.next();
 
             for b in nn.range.iter(){
@@ -303,7 +303,7 @@ pub fn for_every_col_pair_seq<
     F: FnMut(ColSingle<T>, ColSingle<T>),
     K: TreeTimerTrait,
 >(
-    kdtree: &mut DynTree<A, T>,
+    kdtree: &mut DynTree<A,(), T>,
     mut clos: F,
 ) -> (F,K::Bag) {
 
@@ -372,7 +372,7 @@ pub fn for_every_col_pair<
     F: ColMulti<T = T>,
     K: TreeTimerTrait,
 >(
-    kdtree: &mut DynTree<A, T>,
+    kdtree: &mut DynTree<A,(), T>,
     clos: F,
 ) -> (F,K::Bag) {
 
@@ -404,7 +404,7 @@ fn for_every_col_pair_inner<
 >(
     this_axis: A,
     par: JJ,
-    kdtree: &mut DynTree<A, T>,
+    kdtree: &mut DynTree<A,(), T>,
     clos: F,
 ) -> (F,K::Bag) {
     let height = kdtree.get_height();
@@ -422,7 +422,7 @@ fn for_every_col_pair_inner<
 
 
 fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F: Bleek,L:LeafTracker>(
-    this: &mut NodeDyn<F::T>,
+    this: &mut NodeDyn<(),F::T>,
     parent: &mut anchor::DestructuredAnchor<F::T,B>,
     sweeper: &mut Sweeper<F::T>,
     mut func: F,

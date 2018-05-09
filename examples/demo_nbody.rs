@@ -15,6 +15,9 @@ use dinotree::support::*;
 use support::*;
 
 
+
+
+#[derive(Copy,Clone)]
 struct NodeMass{
     center:[f64;2],
     mass:f64,
@@ -40,6 +43,9 @@ impl NodeMassTrait for Bla{
     type T=BBox<NotNaN<f64>,Bot>;
     type No=NodeMass;
 
+    fn create_empty(&self)->Self::No{
+        NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2]}
+    }
 
     //gravitate this nodemass with another node mass
     fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
@@ -80,7 +86,7 @@ impl NodeMassTrait for Bla{
     }
 
 
-    fn undo<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
 
         let len_sqr=a.force[0]*a.force[0]+a.force[1]+a.force[1];
 
@@ -100,13 +106,13 @@ impl NodeMassTrait for Bla{
         }
     }
 
-
+    //TODO improve accuracy by relying on depth???
     fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()>200.0
+        (a-b).abs()>100.0
     }
 
     fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()>100.0
+        (a-b).abs()>50.0
     }
 
 }

@@ -77,7 +77,7 @@ pub fn k_nearest<'b,
     F: FnMut(ColSingle<'b,T>,T::Num),
     MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
     MF2:FnMut(T::Num,T::Num)->T::Num,
-    >(tree:&'b mut DynTree<A,T>,point:[T::Num;2],num:usize,mut func:F,mut mf:MF,mut mf2:MF2){
+    >(tree:&'b mut DynTree<A,(),T>,point:[T::Num;2],num:usize,mut func:F,mut mf:MF,mut mf2:MF2){
 
     let dt = tree.get_iter_mut();
 
@@ -184,7 +184,7 @@ fn traverse_other<T:SweepTrait,MF2:FnMut(T::Num,T::Num)->T::Num>(res:&ClosestCan
 fn recc<'x,'a,
     A: AxisTrait,
     T: SweepTrait + 'x,
-    C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
+    C: CTreeIterator<Item = &'x mut NodeDyn<(),T>>,
     MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
     MF2:FnMut(T::Num,T::Num)->T::Num,
     >(axis:A,stuff:C,mf:&mut MF,mf2:&mut MF2,point:[T::Num;2],res:&mut ClosestCand<T>){

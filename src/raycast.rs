@@ -10,7 +10,7 @@ pub fn raycast<
     T:SweepTrait,
     MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
     MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
-    >(tree:&'a mut DynTree<A,T>,point:[T::Num;2],dir:[T::Num;2],mut func:MF,mut func_fast:MFFast,rect:AABBox<T::Num>)->Option<(ColSingle<'a,T>,T::Num)>{
+    >(tree:&'a mut DynTree<A,(),T>,point:[T::Num;2],dir:[T::Num;2],mut func:MF,mut func_fast:MFFast,rect:AABBox<T::Num>)->Option<(ColSingle<'a,T>,T::Num)>{
 
     let ray=&Ray{point,dir};
     let dt = tree.get_iter_mut();
@@ -127,7 +127,7 @@ fn recc<'x,'a,
     N:NumTrait,
     A: AxisTrait,
     T: SweepTrait<Num=N> + 'x,
-    C: CTreeIterator<Item = &'x mut NodeDyn<T>>,
+    C: CTreeIterator<Item = &'x mut NodeDyn<(),T>>,
     MF:FnMut(ColSingle<T>)->Option<N>, //User returns distance to ray origin if it collides with ray
     MFFast:FnMut(&AABBox<N>)->Option<N>,
     >(axis:A,stuff:C,func:&mut MF,func_fast:&mut MFFast,ray:&Ray<N>,closest:&mut Closest<T>,rectinf:AABBox<T::Num>){

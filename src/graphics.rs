@@ -22,7 +22,7 @@ pub fn draw<T: SweepTrait,D:DividerDrawer<N=T::Num>>(
     dr:&mut D,
     rect:AABBox<T::Num>
 ) {
-    fn recc<'a,A:AxisTrait,T:SweepTrait+'a,D:DividerDrawer<N=T::Num>,C:CTreeIterator<Item=(Depth,&'a NodeDyn<T>)>>
+    fn recc<'a,A:AxisTrait,T:SweepTrait+'a,D:DividerDrawer<N=T::Num>,C:CTreeIterator<Item=(Depth,&'a NodeDyn<(),T>)>>
         (stuff:C,dr:&mut D,rect:Rect<T::Num>){
         let ((depth,nn),rest)=stuff.next();
 

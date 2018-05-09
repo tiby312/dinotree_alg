@@ -41,7 +41,7 @@ enum RectsEnum<'a: 'b, 'b, T: SweepTrait + 'a> {
 }
 
 struct RectsInner<'a: 'b, 'b, A: AxisTrait + 'a, T: SweepTrait + 'a> {
-    tree: &'b mut DynTree<'a, A, T>,
+    tree: &'b mut DynTree<'a, A,(),T>,
     rects: SmallVec<[AABBox<T::Num>; 16]>,
 }
 use axgeom::AxisTrait;
