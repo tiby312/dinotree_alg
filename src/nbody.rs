@@ -34,10 +34,12 @@ pub trait NodeMassTrait:Send+Clone{
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,&mut Self::No,b:&mut Self::T);
 
-    fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    //fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
 
     //This is its own function so that thie crate does not have to add trait bounds to do arithmatic on the number type.
-    fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    //fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    fn is_far_enough<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots. It is distributed evenly.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I,len:usize);
@@ -231,7 +233,7 @@ fn apply_tree<'a,
     recc(node,ncontext);
 }
 
-
+/*
 use self::ll::*;
 mod ll{
 
@@ -251,6 +253,7 @@ mod ll{
         fn is_left(&self)->bool;
     }
 }
+*/
 
 
 
@@ -288,13 +291,13 @@ fn handle_anchor_with_children<'a,
                 self.ncontext.handle_node_with_bot(a,i);
             }
         }
-        fn is_far_enough(&mut self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-            self.ncontext.is_far_enough(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough::<A>(a,b)
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),_p:PhantomData,ncontext:ncontext};
-    generic_rec(Left,thisa,anchor,left,&mut bo);  
-    generic_rec(Right,thisa,anchor,right,&mut bo);  
+    generic_rec(thisa,anchor,left,&mut bo);  
+    generic_rec(thisa,anchor,right,&mut bo);  
 }
 
 /*
@@ -381,8 +384,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_bot(a,self.bot);
     	}
-        fn is_far_enough(&mut self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-            self.ncontext.is_far_enough_half(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half::<A>(a,b)
         }
     }
     struct Bo2<'a,B:AxisTrait,N:NodeMassTrait+'a>{
@@ -401,8 +404,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_node(self.node,a);
     	}
-        fn is_far_enough(&mut self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-            self.ncontext.is_far_enough_half(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half::<A>(a,b)
         }
     }
 
@@ -418,18 +421,18 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         type B=B;
         fn handle_every_node<A:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),bot:b,ncontext:self.ncontext})
+    		generic_rec(A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),bot:b,ncontext:self.ncontext})
     	}
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
     		let r=self.right.create_wrap_mut();
-    		generic_rec(Right,A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a,ncontext:self.ncontext})
+    		generic_rec(A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a,ncontext:self.ncontext})
     	}
-        fn is_far_enough(&mut self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-            self.ncontext.is_far_enough_half(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half::<A>(a,b)
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),right:&mut right,ncontext};
-    generic_rec(Left,A::new(),anchor,left,&mut bo);  
+    generic_rec(A::new(),anchor,left,&mut bo);  
 }
 
 
@@ -513,7 +516,7 @@ trait Bok{
     type N:NodeMassTrait<T=Self::T>;
     type T:SweepTrait;
     type B:AxisTrait;
-    fn is_far_enough(&mut self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
+    fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
     fn handle_every_node<A:AxisTrait>(&mut self,n:&mut Self::T,anchor:&mut Anchor<Self::B,Self::T>);
     fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut <Self::N as NodeMassTrait>::No,anchor:&mut Anchor<Self::B,Self::T>);
 }
@@ -525,8 +528,7 @@ fn generic_rec<
     B:Bok<N=N,T=T,B=AnchorAxis>,
     N:NodeMassTrait<T=T>,
     T:SweepTrait,
-    L:LeftOrRight,
-    >(side:L,this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:NdIterMut<N::No,T>,bok:&mut B){
+    >(this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:NdIterMut<N::No,T>,bok:&mut B){
 
         
     fn recc4<
@@ -561,6 +563,8 @@ fn generic_rec<
     }
 
     
+
+
     match rest{
         Some((left,right))=>{
             let div=match nn1.div{
@@ -570,32 +574,15 @@ fn generic_rec<
                 }
             };
             
-            
             if A::get()==AnchorAxis::get(){
-                
-                if bok.is_far_enough(div,anchor.div){
-                    let (mut side_to_stop,side_to_continue)=if side.is_left(){
-                        (left,right)
-                    }else{
-                        (right,left)
-                    };
-                    //the left node is far enough away.
-                    //handle the left as a whole, and recurse the right only.
-                    let nn2=side_to_stop.create_wrap_mut().next().0;
-                    
-                    bok.handle_far_enough::<A>(&mut nn2.misc,anchor);//handle_node(a,&mut right_tree,div);
+                if bok.is_far_enough::<A>(&nn1.misc,[div,anchor.div]){
+                    bok.handle_far_enough::<A>(&mut nn1.misc,anchor);
+                    return;
+                }        
+            }
 
-                    recc4(this_axis.next(),bok,side_to_continue,anchor);
-
-                }else{
-
-                    generic_rec(side,this_axis.next(),anchor,left,bok);
-                    generic_rec(side,this_axis.next(),anchor,right,bok);
-                }
-            }else{
-                generic_rec(side,this_axis.next(),anchor,left,bok);
-                generic_rec(side,this_axis.next(),anchor,right,bok);
-            }   
+            generic_rec(this_axis.next(),anchor,left,bok);
+            generic_rec(this_axis.next(),anchor,right,bok);
         },
         None=>{
 
@@ -636,13 +623,24 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
     let height=tree.get_height();
     let axis=A::new();
     
+    use std::time::Instant;
+
+    let timer=Instant::now();
+
     let mut t1=tree.create_copy(ncontext.create_empty());
-    
+    println!("a={:?}",timer.elapsed());
+
+
+
+    let timer=Instant::now();
     
     //let mut tree2=buildtree(tree,ncontext.clone());
     buildtree(axis,t1.tree.get_iter_mut(),ncontext.clone());
 
+    println!("b={:?}",timer.elapsed());
 
+
+    let timer=Instant::now();
 
     {
         let kk=if height<3{
@@ -653,7 +651,11 @@ pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
         let d=t1.tree.get_iter_mut().with_depth(Depth(0));
         recc(par::Sequential,axis,d,ncontext.clone());    
     }
+    println!("c={:?}",timer.elapsed());
+    let timer=Instant::now();
 
     apply_tree(axis,t1.tree.get_iter_mut(),ncontext);
+    println!("d={:?}",timer.elapsed());
+
 }
 

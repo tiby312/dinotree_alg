@@ -90,8 +90,7 @@ impl NodeMassTrait for Bla{
 
         let len_sqr=a.force[0]*a.force[0]+a.force[1]+a.force[1];
 
-        if len_sqr>0.01{
-
+        if len_sqr>0.000001{
             let total_forcex=a.force[0];
             let total_forcey=a.force[1];
 
@@ -107,12 +106,31 @@ impl NodeMassTrait for Bla{
     }
 
     //TODO improve accuracy by relying on depth???
-    fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()>100.0
+    fn is_far_enough<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+        
+        //false
+        let a=if A::new().is_xaxis(){
+            a.center[0]
+        }else{
+            a.center[1]
+        };
+
+        //let a=b[0];
+
+        (a-b[1].into_inner()).abs()>400.0
     }
 
-    fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()>50.0
+    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+        //false
+        //(a-b).abs()>100.0
+        let a=if A::new().is_xaxis(){
+            a.center[0]
+        }else{
+            a.center[1]
+        };
+
+        //let a=b[0];
+        (a-b[1].into_inner()).abs()>200.0
     }
 
 }
@@ -124,6 +142,7 @@ struct Bot{
     pos:[f64;2],
     vel:[f64;2],
     force:[f64;2],
+    force_naive:[f64;2],
     mass:f64
 }
 impl Bot{
@@ -167,7 +186,9 @@ impl Bot{
             let mut rect=Rect::new(x1,x2,y1,y2);
             bot.rect.0=support::rectf64_to_notnan(rect);                
 
+
             b.force=[0.0;2];
+            b.force_naive=[0.0;2];
         }        
     }
 }
@@ -221,8 +242,8 @@ mod gravity{
             a.apply_force([finalx,finaly]);
             b.apply_force([-finalx,-finaly]);
         }else{
-            a.apply_force([1.0,00.0]);
-            b.apply_force([-1.0,0.0]);
+            //a.apply_force([1.0,0.0]);
+            //b.apply_force([-1.0,0.0]);
         }
     }
 }
@@ -233,7 +254,7 @@ fn main() {
     let mut bots=create_bots_f64(|id,pos|{
         let velx=((id as isize%3)-1) as f64;
         let vely=(((id+1) as isize % 3)-1) as f64;
-        Bot{pos,vel:[velx,vely],force:[0.0;2],mass:20.0}
+        Bot{pos,vel:[velx,vely],force:[0.0;2],force_naive:[0.0;2],mass:20.0}
     },&[0,800,0,800],5000,[1,2]);
     let mut last_bot_with_mass=bots.len();
    
@@ -271,13 +292,6 @@ fn main() {
                 Bot::handle(bots_pruned);
 
 
-                for bot in bots_pruned.iter(){
-                    let ((x1,x2),(y1,y2))=bot.rect.get();
-                    let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
-                    let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
-                    rectangle([0.0,0.0,0.0,1.0], square, c.transform, g);
-                }
-                
                 
                 /*
                 for i in 0..bots_pruned.len(){
@@ -285,25 +299,31 @@ fn main() {
                     for j in i+1..bots_pruned.len(){
                         let b1=unsafe{&mut *b1};
                         let b2=&mut bots_pruned[j];
-                        NodeMass::handle_bot(b1,b2);
+
+                        struct Bo<'a>(&'a mut Bot);
+                        impl<'a> GravityTrait for Bo<'a>{
+                            fn pos(&self)->[f64;2]{
+                                self.0.pos
+                            }
+                            fn mass(&self)->f64{
+                                self.0.mass
+                            }
+                            fn apply_force(&mut self,a:[f64;2]){
+                                self.0.force_naive[0]+=a[0];
+                                self.0.force_naive[1]+=a[1];
+                            }
+                        }
+                        gravity::gravitate(&mut Bo(&mut b1.val),&mut Bo(&mut b2.val));
+                        //Bla.handle_bot_with_bot(b1,b2);
                     }
-                }
-                
-                
-                let forces_control:Vec<[f64;2]>=bots_pruned.iter().map(|b|{b.val.force}).collect();
-
-
-                for b in bots_pruned.iter_mut(){
-                    b.val.force=[0.0;2];
                 }*/
                 
                 
-                
                 {
-                    let mut tree = DinoTree::new(bots_pruned, StartAxis::Xaxis);
+                    let mut tree = DinoTree::new(bots_pruned, StartAxis::Yaxis);
         
-                    tree.n_body(Bla);
-                                
+                    tree.n_body_seq(Bla);
+                    
                     tree.intersect_every_pair_seq(|a, b| {
                         let (a,b)=if a.inner.mass>b.inner.mass{
                             (a,b)
@@ -323,8 +343,13 @@ fn main() {
                             let vy=(ma*ua[1]+mb*ub[1])/(ma+mb);
                             assert!(!vx.is_nan()&&!vy.is_nan());
                             a.inner.mass+=b.inner.mass;
+                            //cap the mass!
+                            //a.inner.mass=a.inner.mass.min(80000.0);
+                            
                             a.inner.force[0]+=b.inner.force[0];
                             a.inner.force[1]+=b.inner.force[1];
+                            a.inner.force_naive[0]+=b.inner.force_naive[0];
+                            a.inner.force_naive[1]+=b.inner.force_naive[1];
                             a.inner.vel[0]=vx;
                             a.inner.vel[1]=vy;
 
@@ -332,14 +357,66 @@ fn main() {
                             b.inner.mass=0.0;
                             b.inner.force[0]=0.0;
                             b.inner.force[1]=0.0;
+                            b.inner.force_naive[0]=0.0;
+                            b.inner.force_naive[1]=0.0;
                             b.inner.vel[0]=0.0;
                             b.inner.vel[1]=0.0;
                         }
-                        //a.inner.vel[0]=(a.inner.vel[0]+b.inner.vel[0])/2.0;
-                        //a.inner.vel[1]=(a.inner.vel[0]+b.inner.vel[0])/2.0;
                     });
                     
+                    
                 }
+
+
+                let mut max_mag=0.0f64;
+                for bot in bots_pruned.iter(){
+                    let mag={
+                        let b=&bot.val;
+                        let x=b.force[0]-b.force_naive[0];
+                        let y=b.force[1]-b.force_naive[1];
+                        let dis=x*x+y*y;
+                        dis.sqrt()
+                    };
+                    max_mag=max_mag.max(mag);
+                    let mag=mag*0.1;
+                    let ((x1,x2),(y1,y2))=bot.rect.get();
+                    let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
+                    let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
+                    rectangle([mag as f32,0.0,0.0,1.0], square, c.transform, g);
+                }
+                println!("max mag={:?}",max_mag);
+                
+
+
+                /*
+                let forces:Vec<[f64;2]>=bots_pruned.iter().map(|b|{b.val.force}).collect();
+                
+                
+                let mut max_err=[0.0f64;2];
+                let mut total_err=[0.0f64;2];
+                
+                for (i,(a,b)) in forces.iter().zip(forces_control.iter()).enumerate(){
+                    let diffx=(a[0]-b[0]).abs();
+                    let diffy=(a[1]-b[1]).abs();
+                    
+                    total_err[0]+=diffx;
+                    total_err[1]+=diffy;
+
+                    if diffx>max_err[0]{
+                        max_err[0]=diffx;
+                    }
+                    if diffy>max_err[1]{
+                        max_err[1]=diffy;
+                    }
+                    //assert!(diffx+diffy<0.1,"mismatch:diff{:?}",(i,(diffx,diffy)));
+                }
+
+
+                let avg_err=[total_err[0]/forces.len() as f64,total_err[1]/forces.len() as f64];
+                println!("avg err={:?}",avg_err);
+                println!("max err={:?}",max_err);
+                */
+
             }
             
             last_bot_with_mass={
@@ -375,7 +452,8 @@ fn main() {
                 let vdist = rand::distributions::Range::new(-1,1);
         
                 if last_bot_with_mass<bots.len(){
-                    //for i in 0..(bots.len()-last_bot_with_mass){
+                    //for _ in 0..bots.len()-last_bot_with_mass{
+                    for _ in 0..2{
                         let b=&mut bots[last_bot_with_mass];
                         b.val.mass=10.0;
 
@@ -389,31 +467,12 @@ fn main() {
                         let v2=vdist.ind_sample(&mut rng);
                         b.val.vel=[v1 as f64,v2 as f64];
                         last_bot_with_mass+=1;
-                    //}
+                    }
                 }
+
+
+                
             }
-
-
-            
-            /*
-            let forces:Vec<[f64;2]>=bots_pruned.iter().map(|b|{b.val.force}).collect();
-            
-            
-            let mut max_err=[0.0f64;2];
-            for (i,(a,b)) in forces.iter().zip(forces_control.iter()).enumerate(){
-                let diffx=(a[0]-b[0]).abs();
-                let diffy=(a[1]-b[1]).abs();
-                max_err[0]=max_err[0].max(diffx);
-                max_err[1]=max_err[1].max(diffy);
-                //assert!(diffx+diffy<0.1,"mismatch:diff{:?}",(i,(diffx,diffy)));
-            }
-            println!("max err sum={:?}",max_err[0]+max_err[1]);
-            */
-            
-            
-            
-            
-
         });
     }
 }
