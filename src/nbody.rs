@@ -3,7 +3,7 @@ use inner_prelude::*;
 //TODO somehow take advantage of sorted property?????
 
 mod tools{
-    pub fn for_every_pair<T,F:FnMut(&mut T,&mut T)>(arr:&mut [T],mut func:F){
+    pub fn for_every_pair<T>(arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
         unsafe{
             for x in 0..arr.len(){
                 let xx=arr.get_unchecked_mut(x) as *mut T;
@@ -56,15 +56,14 @@ pub trait NodeMassTrait:Send+Clone{
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
 fn buildtree<'a,
-    A:AxisTrait,
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>
     >
-    (axis:A,node:NdIterMut<N::No,T>,ncontext:N){
+    (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:N){
 
 
-    fn recc<'a,A:AxisTrait,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
-        (axis:A,stuff:NdIterMut<N::No,T>,ncontext:N){
+    fn recc<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
+        (axis:impl AxisTrait,stuff:NdIterMut<N::No,T>,ncontext:N){
 
         let (nn,rest)=stuff.next();
 
@@ -143,24 +142,13 @@ fn buildtree<'a,
     //let height=tree.get_height();
     //let stuff=tree.get_iter();
     recc(axis,node,ncontext);
-
-    /*
-    let len=vec.len();
-    match compt::dfs::GenTreeDfsOrder::from_vec(vec,height){
-        Ok(a)=>a,
-        Err(e)=>{
-            panic!("vec size={:?} {:?}",len,e);
-        }
-    }
-    */
 }
 
-fn apply_tree<'a,
-    A:AxisTrait,
+fn apply_tree<'a,   
     T:SweepTrait+'a,
     N:NodeMassTrait<T=T>
     >
-    (axis:A,node:NdIterMut<N::No,T>,ncontext:N){
+    (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:N){
 
     fn recc<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
         (stuff:NdIterMut<N::No,T>,ncontext:N){

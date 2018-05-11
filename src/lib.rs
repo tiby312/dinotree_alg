@@ -260,10 +260,10 @@ mod ba {
         ///No intersecting pairs within each group are looked for.
         ///Only those between the two groups.
         ///For best performance the group that this tree is built around should be the bigger of the two groups.
-        pub fn intersect_with_seq<X: SweepTrait<Num = T::Num>, F: FnMut(ColSingle<T>, ColSingle<X>)>(
+        pub fn intersect_with_seq<X: SweepTrait<Num = T::Num>>(
             &mut self,
             b: &mut [X],
-            mut func: F,
+            mut func: impl FnMut(ColSingle<T>, ColSingle<X>),
         ) {
             //todo find better algorithn?
             //todo do this before axis specialization?
@@ -285,16 +285,16 @@ mod ba {
         ///rectangle AND all those that intersect with it. This more relaxed requirement means that
         ///we can no longer query non intersecting rectangles and be assured that the two respective
         ///sets of bots are disjoint.
-        pub fn for_all_intersect_rect<F: FnMut(ColSingle<T>)>(
+        pub fn for_all_intersect_rect(
             &mut self,
             rect: &AABBox<T::Num>,
-            fu: F,
+            fu: impl FnMut(ColSingle<T>),
         ) {
             match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
+                DynTreeEnum::Xa(a) => {
                     rect::for_all_intersect_rect(a, &rect.0, fu);
                 }
-                &mut DynTreeEnum::Ya(ref mut a) => {
+                DynTreeEnum::Ya(a) => {
                     rect::for_all_intersect_rect(a, &rect.0, fu);
                 }
             }
@@ -316,14 +316,18 @@ mod ba {
         ///So the user just has to make this rectangle "big enough" to encomposs all thay he is interested in.
         ///The fast fuction is used to prune node bounding boxes from being considerd.
         ///The slow function is used to do expensive checking to determine if this particular bot intersects the ray.
-        pub fn raycast<
-            'b,
-            MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
-            MF:FnMut(ColSingle<T>)->Option<T::Num>> //called to test if this object touches the ray. if it does, return distance to start of ray
-            (&'b mut self,point:[T::Num;2],dir:[T::Num;2],rect:AABBox<T::Num>,func_fast:MFFast,func:MF)->Option<(ColSingle<'b,T>,T::Num)>{
+        pub fn raycast<'b> //called to test if this object touches the ray. if it does, return distance to start of ray
+            (
+                &'b mut self,
+                point:[T::Num;2],
+                dir:[T::Num;2],
+                rect:AABBox<T::Num>,
+                func_fast:impl FnMut(&AABBox<T::Num>)->Option<T::Num>,
+                func:impl FnMut(ColSingle<T>)->Option<T::Num>
+                )->Option<(ColSingle<'b,T>,T::Num)>{
 
             match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
+                DynTreeEnum::Xa(a) => {
                     raycast::raycast::<XAXISS,_,_, _>(
                         a,
                         point,
@@ -333,7 +337,7 @@ mod ba {
                         rect
                     )
                 }
-                &mut DynTreeEnum::Ya(ref mut a) => {
+                DynTreeEnum::Ya(a) => {
                     raycast::raycast::<YAXISS,_, _,_>(
                         a,
                         point,
@@ -360,20 +364,16 @@ mod ba {
         ///until k.
         ///User can also this way choose whether to use manhatan distance or not.
         //TODO pass trait instead? So that the user can mutably borrow something between the closures.
-        pub fn k_nearest<'b,
-            F: FnMut(ColSingle<'b,T>,T::Num),
-            MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
-            MF2:FnMut(T::Num,T::Num)->T::Num,
-        >(
+        pub fn k_nearest<'b>(
             &'b mut self,
             point: [T::Num;2],
             num:usize,
-            clos: F,
-            mf:MF,
-            mf2:MF2,
+            clos: impl FnMut(ColSingle<'b,T>,T::Num),
+            mf:impl FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
+            mf2:impl FnMut(T::Num,T::Num)->T::Num,
         ) {
             match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
+                DynTreeEnum::Xa(a) => {
                     k_nearest::k_nearest::<XAXISS,_, _,_,_>(
                         a,
                         point,
@@ -383,7 +383,7 @@ mod ba {
                         mf2
                     )
                 }
-                &mut DynTreeEnum::Ya(ref mut a) => {
+                DynTreeEnum::Ya(a) => {
                     k_nearest::k_nearest::<YAXISS,_, _,_,_>(
                         a,
                         point,
@@ -396,39 +396,39 @@ mod ba {
             };
         }
 
-        pub fn n_body_seq<N:NodeMassTrait<T=T>>(&mut self,ncontext:N){
+        pub fn n_body_seq(&mut self,ncontext:impl NodeMassTrait<T=T>){
             match &mut self.0{
-                &mut DynTreeEnum::Xa(ref mut a)=>{
-                    nbody::nbody_seq::<XAXISS,_,N>(a,ncontext);
+                DynTreeEnum::Xa(a)=>{
+                    nbody::nbody_seq::<XAXISS,_,_>(a,ncontext);
                 },
-                &mut DynTreeEnum::Ya(ref mut a)=>{
-                    nbody::nbody_seq::<YAXISS,_,N>(a,ncontext);
+                DynTreeEnum::Ya(a)=>{
+                    nbody::nbody_seq::<YAXISS,_,_>(a,ncontext);
                 }
             }
         }
 
         ///Perform an nbody simulation.
-        pub fn n_body<N:NodeMassTrait<T=T>>(&mut self,ncontext:N){
+        pub fn n_body(&mut self,ncontext:impl NodeMassTrait<T=T>){
             match &mut self.0{
-                &mut DynTreeEnum::Xa(ref mut a)=>{
-                    nbody::nbody_par::<XAXISS,_,N>(a,ncontext);
+                DynTreeEnum::Xa(a)=>{
+                    nbody::nbody_par::<XAXISS,_,_>(a,ncontext);
                 },
-                &mut DynTreeEnum::Ya(ref mut a)=>{
-                    nbody::nbody_par::<YAXISS,_,N>(a,ncontext);
+                DynTreeEnum::Ya(a)=>{
+                    nbody::nbody_par::<YAXISS,_,_>(a,ncontext);
                 }
             }
         }
         ///Find all intersecting pairs sequentially.
         ///Notice that in this case, a FnMut is supplied instead of a Fn.
-        pub fn intersect_every_pair_seq<F: FnMut(ColSingle<T>, ColSingle<T>)>(&mut self, clos: F) {
+        pub fn intersect_every_pair_seq(&mut self, clos: impl FnMut(ColSingle<T>, ColSingle<T>)) {
             match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
+                DynTreeEnum::Xa(a) => {
                     colfind::for_every_col_pair_seq::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
-                &mut DynTreeEnum::Ya(ref mut a) => {
+                DynTreeEnum::Ya(a) => {
                     colfind::for_every_col_pair_seq::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
@@ -441,28 +441,23 @@ mod ba {
         ///Gives user the option to store some internals to the bots
         ///in vecs. Its main purpose is so that you could cache the ids 
         ///of colliding pairs.
-        pub fn intersect_every_pair_adv<
-            A:Send+Sync,
-            F: Fn(&mut A,ColSingle<T>, ColSingle<T>) + Send + Sync,
-            F2:Fn(A)->(A,A)+Sync,
-            F3:Fn(A,A)->A+Sync
-            >(
+        pub fn intersect_every_pair_adv<A:Send+Sync>(
             &mut self,
             a:A,
-            clos: F,
-            f2:F2,
-            f3:F3,
+            clos: impl Fn(&mut A,ColSingle<T>, ColSingle<T>) + Send + Sync,
+            f2:impl Fn(A)->(A,A)+Sync,
+            f3:impl Fn(A,A)->A+Sync,
         )->A {
             let clos = self::closure_struct::ColMultiStruct{aa:a,a:&clos,f2:&f2,f3:&f3,_p:PhantomData};
 
             let ans=match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
+                DynTreeEnum::Xa(a) => {
                     colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
-                &mut DynTreeEnum::Ya(ref mut a) => {
+                DynTreeEnum::Ya(a) => {
                     colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
@@ -478,9 +473,9 @@ mod ba {
         ///if a and b collide only one ordering of the pair is returned. The ordering is undefined. 
         ///if a pair collides the callback function is called exactly once for that pair.
         ///if the pair does not collide the callback function is not called.
-        pub fn intersect_every_pair<F: Fn(ColSingle<T>, ColSingle<T>) + Send + Sync>(
+        pub fn intersect_every_pair(
             &mut self,
-            clos: F,
+            clos: impl Fn(ColSingle<T>, ColSingle<T>) + Send + Sync,
         ) {
             let c1=|_:&mut (),a:ColSingle<T>,b:ColSingle<T>|{
                 clos(a,b);
@@ -492,13 +487,13 @@ mod ba {
                 :(),a:&c1,f2:&c2,f3:&c3,_p:PhantomData};
 
             match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
+                DynTreeEnum::Xa(a) => {
                     colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
-                &mut DynTreeEnum::Ya(ref mut a) => {
+                DynTreeEnum::Ya(a) => {
                     colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
                         a,
                         clos,
@@ -509,18 +504,18 @@ mod ba {
 
         ///Returns time each level took in seconds.
         ///Returns time each level took in seconds. First element is root time, last element is last level time.
-        pub fn intersect_every_pair_seq_debug<F: FnMut(ColSingle<T>, ColSingle<T>)>(
+        pub fn intersect_every_pair_seq_debug(
             &mut self,
-            clos: F,
+            clos: impl FnMut(ColSingle<T>, ColSingle<T>),
         ) -> Vec<f64> {
             match &mut self.0 {
-                &mut DynTreeEnum::Xa(ref mut a) => {
+                DynTreeEnum::Xa(a) => {
                     colfind::for_every_col_pair_seq::<_, T, _, TreeTimer2>(
                         a,
                         clos,
                     )
                 }
-                &mut DynTreeEnum::Ya(ref mut a) => {
+                DynTreeEnum::Ya(a) => {
                     colfind::for_every_col_pair_seq::<_, T, _, TreeTimer2>(
                         a,
                         clos,
@@ -531,24 +526,24 @@ mod ba {
 
         pub fn get_height(&self)->usize{
             match &self.0 {
-                &DynTreeEnum::Xa(ref a) => {
+                DynTreeEnum::Xa(a) => {
                     a.get_height()
                 }
-                &DynTreeEnum::Ya(ref a) => {
+                DynTreeEnum::Ya(a) => {
                     a.get_height()
                 }
             }
         }
 
-        pub fn find_element<F:FnMut(&T)->bool>(&self,func:F)->Option<(usize,Vec<bool>)>{
+        pub fn find_element(&self,func:impl FnMut(&T)->bool)->Option<(usize,Vec<bool>)>{
             match &self.0 {
-                &DynTreeEnum::Xa(ref a) => {
+                DynTreeEnum::Xa(a) => {
                     colfind::find_element::<_, T, _>(
                         a,
                         func,
                     )
                 }
-                &DynTreeEnum::Ya(ref a) => {
+                DynTreeEnum::Ya(a) => {
                     colfind::find_element::<_, T, _>(
                         a,
                         func,

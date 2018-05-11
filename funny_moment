@@ -1,0 +1,54 @@
+
+
+
+
+struct Foo;
+
+fn main() {
+    let arr=[Foo,Foo];
+    let [a,b]=arr;
+    
+}
+
+
+7:49 PM T<tiby312> why can't I do this? https://play.rust-lang.org/?gist=9c33d5c120caf6224cb19650661f3860&version=stable&mode=debug
+7:50 PM → alx741 joined  ⇐ kimundi quit  •  kimundi- → kimundi  
+7:51 PM G<glandium> Mike Hommey tiby312: O_o
+7:51 PM M<Moongoodboy{K}> Moonlightning Future Moonbolt: ...I have too many changes staged already right now; please take care of changing the thing to ArrayVec for me
+7:51 PM T<talchas> ... that should really work
+7:51 PM G<glandium> Mike Hommey that seems like a bug
+7:51 PM D<dgriffen> Daniel Griffen yeah, that works with tuple patterns
+7:51 PM ⇐ moony quit (moony@moz-nsniv6.dhcp.embarqhsd.net) Ping timeout: 121 seconds
+7:51 PM M<Moongoodboy{K}> Moonlightning slice patterns aren't stable yet, that's why
+7:51 PM T<talchas> they are though
+7:51 PM D<dgriffen> Daniel Griffen Moongoodboy{K}: they are as of today
+7:51 PM G<glandium> Mike Hommey Moongoodboy{K}: they are
+7:51 PM M<Moongoodboy{K}> Moonlightning :O !
+7:52 PM T<talchas> that works if it's Copy, which is the nonsense part
+7:52 PM M<Moongoodboy{K}> Moonlightning works if it's Copy...is it because [T; N] is broken maybe?
+7:52 PM L<LordRyan> ryan the error is what looks weird
+7:52 PM D<dgriffen> Daniel Griffen someone should probably report a bug
+7:52 PM T<talchas> oh, they made closures impl Copy/Clone? sweet
+7:52 PM L<LordRyan> ryan "value used after move"?
+7:53 PM G<glandium> Mike Hommey it thinks it's moved into a, and doesn't want to move again in b
+7:53 PM M<Moongoodboy{K}> Moonlightning ...I mean, I can't explain why that'd be, but /something something arrays/ + /works if it's Copy/ always sounds like /because [T; N] is broken right now/
+7:53 PM ⇐ alx741 and moosnat quit  
+7:53 PM M<Moongoodboy{K}> Moonlightning talchas: closures that don't use their environments coerce to fn now
+7:54 PM ⇐ Xinayder quit (alex@moz-kp7mbe.l35v.nihj.014c.2804.IP) Ping timeout: 121 seconds
+7:54 PM G<glandium> Mike Hommey unsurprisingly, it fails in a match too
+7:54 PM T<talchas> Moongoodboy{K}: that's been true for several versions now
+7:54 PM → alx741 joined (alx741@moz-394.a3g.152.190.IP)
+7:55 PM G<glandium> Mike Hommey so in fact, the examples in the release notes only work because they use ints
+7:55 PM M<Moongoodboy{K}> Moonlightning talchas: ...fn are Clone and Copy, aren't they?
+7:55 PM glandium: rip
+7:55 PM ⇐ cwndrws and rtn quit  
+7:55 PM M<Moongoodboy{K}> Moonlightning rookie mistake; always test your thing with `struct Foo;`s
+7:55 PM T<talchas> sure, but now all closures implement them if their environments do
+7:55 PM M<Moongoodboy{K}> Moonlightning (and also with `struct Bar(u8);`s in case you have a weird thing where it works for ZSTs but not anything else)
+7:56 PM D<dgriffen> Daniel Griffen I am very surprised that it made it through testing
+7:56 PM ⇐ cevans3326 quit (chris@moz-ap8.v16.6.209.IP) Ping timeout: 121 seconds
+7:56 PM D<dgriffen> Daniel Griffen If no one else has yet, I'll go file a bug
+7:56 PM ⇐ teddriggs quit (teddriggs@moz-9rq.lf7.79.208.IP) Quit: http://www.kiwiirc.com/ - A hand crafted IRC client
+7:57 PM G<glandium> Mike Hommey hah, I guess the second example does work because of autoref https://play.rust-lang.org/?gist=18c3118febe73c2316ab0ebce1d8f03f&version=nightly&mode=debug
+7:57 PM ⇐ hryniuk quit (hryniuk@moz-l9a6v3.dialog.net.pl) Quit: Leaving
+7:59 PM D<dgriffen> Daniel Griffen opened an issue: https://github.com/rust-lang/rust/issues/50639 is there anything else I should add?

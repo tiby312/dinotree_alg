@@ -430,6 +430,7 @@ fn nbody_seq_long(bench:&mut Bencher) {
 
     black_box(tree);                  
 }
+
 #[bench]
 fn nbody_par_long(bench:&mut Bencher) {
 
