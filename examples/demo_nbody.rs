@@ -268,7 +268,8 @@ fn main() {
         Bot{id,pos,vel:[velx,vely],force:[0.0;2],force_naive:[0.0;2],mass:20.0}
     },&[0,800,0,800],5000,[1,2]);
 
-
+    bots.last_mut().unwrap().val.mass=10000.0;
+    
     let mut last_bot_with_mass=bots.len();
    
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -392,7 +393,7 @@ fn main() {
                         dis.sqrt()/b.mass //The more mass an object has, the less impact error has
                     };
                     max_mag=max_mag.max(mag);
-                    let mag=mag*20.0;
+                    let mag=mag*100.0;
                     let ((x1,x2),(y1,y2))=bot.rect.get();
                     let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
                     let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
