@@ -71,14 +71,14 @@ impl NodeMassTrait for Bla{
         let mut total_y=0.0;
         let mut total_mass=0.0;
         for i in it{
-            total_mass+=i.val.mass();
-            total_x+=i.val.pos[0];
-            total_y+=i.val.pos[1];
+            let m=i.val.mass();
+            total_mass+=m;
+            total_x+=m*i.val.pos[0];
+            total_y+=m*i.val.pos[1];
         }
-
-        let center=if len!=0{
-            [total_x/len as f64,
-            total_y/len as f64]
+        let center=if total_mass!=0.0{
+            [total_x/total_mass,
+            total_y/total_mass]
         }else{
             [0.0;2]
         };
@@ -106,31 +106,41 @@ impl NodeMassTrait for Bla{
     }
 
     //TODO improve accuracy by relying on depth???
-    fn is_far_enough<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+    fn is_far_enough<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
         
         //false
+        
         let a=if A::new().is_xaxis(){
             a.center[0]
         }else{
             a.center[1]
         };
-
+        
+        
         //let a=b[0];
-
-        (a-b[1].into_inner()).abs()>400.0
+        let x=(depth+1) as f64;
+        (a-b[1].into_inner()).abs()*x>800.0
+        
+        //false
     }
 
-    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
         //false
         //(a-b).abs()>100.0
+        
         let a=if A::new().is_xaxis(){
             a.center[0]
         }else{
             a.center[1]
         };
-
+        
+        
         //let a=b[0];
-        (a-b[1].into_inner()).abs()>200.0
+        let x=(depth+1) as f64;
+        //let a=b[0];
+        (a-b[1].into_inner()).abs()*x>400.0
+        
+        //false
     }
 
 }
@@ -139,6 +149,7 @@ impl NodeMassTrait for Bla{
 
 
 struct Bot{
+    id:usize,
     pos:[f64;2],
     vel:[f64;2],
     force:[f64;2],
@@ -178,7 +189,7 @@ impl Bot{
             b.vel[0]+=accx;
             b.vel[1]+=accy;            
 
-            let r=20.0f64.min(b.mass.sqrt()/10.0);
+            let r=10.0f64.min(b.mass.sqrt()/10.0);
             let x1=b.pos[0]-r;
             let x2=b.pos[0]+r;
             let y1=b.pos[1]-r;
@@ -254,8 +265,13 @@ fn main() {
     let mut bots=create_bots_f64(|id,pos|{
         let velx=((id as isize%3)-1) as f64;
         let vely=(((id+1) as isize % 3)-1) as f64;
-        Bot{pos,vel:[velx,vely],force:[0.0;2],force_naive:[0.0;2],mass:20.0}
+        Bot{id,pos,vel:[velx,vely],force:[0.0;2],force_naive:[0.0;2],mass:20.0}
     },&[0,800,0,800],5000,[1,2]);
+
+
+    let test_bot=200;
+    bots[test_bot].val.mass=10000.0;
+
     let mut last_bot_with_mass=bots.len();
    
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -293,7 +309,7 @@ fn main() {
 
 
                 
-                /*
+                
                 for i in 0..bots_pruned.len(){
                     let b1=&mut bots_pruned[i] as *mut BBox<NotNaN<f64>,Bot>;
                     for j in i+1..bots_pruned.len(){
@@ -316,7 +332,7 @@ fn main() {
                         gravity::gravitate(&mut Bo(&mut b1.val),&mut Bo(&mut b2.val));
                         //Bla.handle_bot_with_bot(b1,b2);
                     }
-                }*/
+                }
                 
                 
                 {
@@ -374,6 +390,9 @@ fn main() {
                         let b=&bot.val;
                         let x=b.force[0]-b.force_naive[0];
                         let y=b.force[1]-b.force_naive[1];
+                        if bot.val.id==test_bot{
+                            println!("bot={:?}",(x,y));
+                        }
                         let dis=x*x+y*y;
                         dis.sqrt()
                     };

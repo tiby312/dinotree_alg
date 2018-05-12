@@ -83,7 +83,7 @@ fn main() {
 
                     },
                     Err(st)=>{
-                        println!("{}",st);
+                        println!("{:?}",st);
                     }
                 }
 

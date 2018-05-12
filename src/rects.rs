@@ -33,6 +33,7 @@ impl<'a: 'b, 'b, T: SweepTrait + 'a> Rects<'a, 'b, T> {
     }
 }
 
+#[derive(Copy,Clone,Debug)]
 pub struct RectIntersectErr;
 
 enum RectsEnum<'a: 'b, 'b, T: SweepTrait + 'a> {

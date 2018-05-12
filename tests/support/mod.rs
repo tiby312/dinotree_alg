@@ -1,5 +1,7 @@
 include!("../../examples/support/mod.rs");
 
+use std;
+
 pub fn create_unordered(a: &Bot, b: &Bot) -> (usize, usize) {
     if a.id < b.id {
         (a.id, b.id)

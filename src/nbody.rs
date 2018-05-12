@@ -24,7 +24,10 @@ pub trait NodeMassTrait:Send+Clone{
     type T:SweepTrait;
     type No:Send+Copy;
 
+    //TOD remove this. 
     fn create_empty(&self)->Self::No;
+
+
     //gravitate this nodemass with another node mass
     fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);
 
@@ -34,12 +37,10 @@ pub trait NodeMassTrait:Send+Clone{
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,&mut Self::No,b:&mut Self::T);
 
-    //fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
-
     //This is its own function so that thie crate does not have to add trait bounds to do arithmatic on the number type.
     //fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
-    fn is_far_enough<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
-    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots. It is distributed evenly.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I,len:usize);
@@ -256,7 +257,7 @@ fn handle_anchor_with_children<'a,
 	A:AxisTrait,
 	B:AxisTrait,
     N:NodeMassTrait+'a>
-(thisa:A,anchor:&mut Anchor<B,N::T>,left:NdIterMut<N::No,N::T>,right:NdIterMut<N::No,N::T>,ncontext:&N){
+(thisa:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<N::No,N::T>>,right:LevelIter<NdIterMut<N::No,N::T>>,ncontext:&N){
     
     struct Bo<'a,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
@@ -279,8 +280,8 @@ fn handle_anchor_with_children<'a,
                 self.ncontext.handle_node_with_bot(a,i);
             }
         }
-        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough::<A>(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough::<A>(depth.0,a,b)
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),_p:PhantomData,ncontext:ncontext};
@@ -354,7 +355,7 @@ impl<'a,N:NodeMassTrait+'a> CTreeIterator for BothIter<'a,N>{
 
 
 fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
-    (_axis:A,anchor:&mut Anchor<B,N::T>,left:NdIterMut<'a,N::No,N::T>,mut right:NdIterMut<'a,N::No,N::T>,ncontext:&N){
+    (_axis:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<'a,N::No,N::T>>,mut right:LevelIter<NdIterMut<'a,N::No,N::T>>,ncontext:&N){
 
 	struct Bo4<'a,B:AxisTrait,N:NodeMassTrait+'a,>{
         _anchor_axis:B,
@@ -372,8 +373,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_bot(a,self.bot);
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough_half::<A>(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half::<A>(depth.0,a,b)
         }
     }
     struct Bo2<'a,B:AxisTrait,N:NodeMassTrait+'a>{
@@ -392,14 +393,14 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_node(self.node,a);
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough_half::<A>(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half::<A>(depth.0,a,b)
         }
     }
 
     struct Bo<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
-        right:&'b mut NdIterMut<'a,N::No,N::T>,
+        right:&'b mut LevelIter<NdIterMut<'a,N::No,N::T>>,
         ncontext:&'b N
     }
     
@@ -408,15 +409,17 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         type T=N::T;
         type B=B;
         fn handle_every_node<A:AxisTrait>(&mut self,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
-    		let r=self.right.create_wrap_mut();
+    		let d=self.right.depth;
+            let r=self.right.inner.create_wrap_mut().with_depth(d);
     		generic_rec(A::new(),anchor,r,&mut Bo4{_anchor_axis:B::new(),bot:b,ncontext:self.ncontext})
     	}
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
-    		let r=self.right.create_wrap_mut();
+    		let d=self.right.depth;
+            let r=self.right.inner.create_wrap_mut().with_depth(d);
     		generic_rec(A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a,ncontext:self.ncontext})
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough_half::<A>(a,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half::<A>(depth.0,a,b)
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),right:&mut right,ncontext};
@@ -446,8 +449,9 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait>(join:J,axis:A,it:LevelIter<Nd
 
             match nn1.cont{
                 Some(_cont)=>{
-                    let l1=left.inner.create_wrap_mut();
-                    let l2=right.inner.create_wrap_mut();
+                    let depth=left.depth;
+                    let l1=left.inner.create_wrap_mut().with_depth(depth);
+                    let l2=right.inner.create_wrap_mut().with_depth(depth);
                     let mut anchor=Anchor{_axis:axis,range:&mut nn1.range,div};
 
                     handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,&ncontext);
@@ -468,8 +472,10 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait>(join:J,axis:A,it:LevelIter<Nd
 
 
             {
-                let l1=left.inner.create_wrap_mut();
-                let l2=right.inner.create_wrap_mut();
+                let depth=left.depth;
+                    
+                let l1=left.inner.create_wrap_mut().with_depth(depth);
+                let l2=right.inner.create_wrap_mut().with_depth(depth);
                 let mut anchor=Anchor{_axis:axis,range:&mut nn1.range,div};
 
                 handle_left_with_right(axis.next(),&mut anchor,l1,l2,&ncontext);
@@ -504,7 +510,7 @@ trait Bok{
     type N:NodeMassTrait<T=Self::T>;
     type T:SweepTrait;
     type B:AxisTrait;
-    fn is_far_enough<A:AxisTrait>(&mut self,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
     fn handle_every_node<A:AxisTrait>(&mut self,n:&mut Self::T,anchor:&mut Anchor<Self::B,Self::T>);
     fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut <Self::N as NodeMassTrait>::No,anchor:&mut Anchor<Self::B,Self::T>);
 }
@@ -516,7 +522,7 @@ fn generic_rec<
     B:Bok<N=N,T=T,B=AnchorAxis>,
     N:NodeMassTrait<T=T>,
     T:SweepTrait,
-    >(this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:NdIterMut<N::No,T>,bok:&mut B){
+    >(this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:LevelIter<NdIterMut<N::No,T>>,bok:&mut B){
 
         
     fn recc4<
@@ -525,8 +531,8 @@ fn generic_rec<
         B:Bok<N=N,T=T,B=AnchorAxis>,
         N:NodeMassTrait<T=T>,
         T:SweepTrait,
-        >(axis:A,bok:&mut B,stuff:NdIterMut<N::No,T>,anchor:&mut Anchor<AnchorAxis,T>){
-        let (nn1,rest)=stuff.next();
+        >(axis:A,bok:&mut B,stuff:LevelIter<NdIterMut<N::No,T>>,anchor:&mut Anchor<AnchorAxis,T>){
+        let ((depth,nn1),rest)=stuff.next();
         
         for i in nn1.range.iter_mut(){
             bok.handle_every_node::<A>(i,anchor);
@@ -542,7 +548,7 @@ fn generic_rec<
         }
     }
 
-    let (nn1,rest)=stuff.next();
+    let ((depth,nn1),rest)=stuff.next();
     
     
 
@@ -563,7 +569,7 @@ fn generic_rec<
             };
             
             if A::get()==AnchorAxis::get(){
-                if bok.is_far_enough::<A>(&nn1.misc,[div,anchor.div]){
+                if bok.is_far_enough::<A>(depth,&nn1.misc,[div,anchor.div]){
                     bok.handle_far_enough::<A>(&mut nn1.misc,anchor);
                     return;
                 }        

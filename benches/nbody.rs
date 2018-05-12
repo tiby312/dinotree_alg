@@ -109,102 +109,43 @@ impl NodeMassTrait for Bla{
         }
     }
 
-    //TODO improve accuracy by relying on depth???
-    fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()>100.0
-    }
-
-    fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        (a-b).abs()>50.0
-    }
-
-}
-
-
-
-
-#[derive(Clone,Copy)]
-struct Bla2;
-impl NodeMassTrait for Bla2{
-    type T=BBox<NotNaN<f64>,Bot>;
-    type No=NodeMass;
-
-    fn create_empty(&self)->Self::No{
-        NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2]}
-    }
-
-
-    //gravitate this nodemass with another node mass
-    fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
-        gravity::gravitate(a,b);
-    }
-
-    //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
-        gravity::gravitate(&mut a.val,&mut b.val);
-    }
-
-    //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
-        gravity::gravitate(a,&mut b.val);
-    }
-    fn div(self)->(Self,Self){
-        (Bla2,Bla2)
-    }
-
-
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,len:usize)->Self::No{
-        let mut total_x=0.0;
-        let mut total_y=0.0;
-        let mut total_mass=0.0;
-        for i in it{
-            total_mass+=i.val.mass();
-            total_x+=i.val.pos[0];
-            total_y+=i.val.pos[1];
-        }
-
-        let center=if len!=0{
-            [total_x/len as f64,
-            total_y/len as f64]
+   //TODO improve accuracy by relying on depth???
+    fn is_far_enough<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+          
+        let a=if A::new().is_xaxis(){
+            a.center[0]
         }else{
-            [0.0;2]
+            a.center[1]
         };
-        NodeMass{center,mass:total_mass,force:[0.0;2]}
-    }
-
-
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
-
-        let len_sqr=a.force[0]*a.force[0]+a.force[1]+a.force[1];
-
-        if len_sqr>0.01{
-
-            let total_forcex=a.force[0];
-            let total_forcey=a.force[1];
-
-            let forcex=total_forcex/len as f64;
-            let forcey=total_forcey/len as f64;
-
-            for i in it{
-                i.val.apply_force([forcex,forcey]);
-            }
-        }else{
-            //No acceleration was applied to this node mass.
-        }
-    }
-
-    //TODO improve accuracy by relying on depth???
-    fn is_far_enough(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
-        //true
-        (a-b).abs()>40.0
-    }
-
-    fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool{
         
-        (a-b).abs()>20.0
+        
+        //let a=b[0];
+        let x=(depth+1) as f64;
+        (a-b[1].into_inner()).abs()*x>800.0
+        
     }
+
+    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
+        //false
+        //(a-b).abs()>100.0
+           
+        let a=if A::new().is_xaxis(){
+            a.center[0]
+        }else{
+            a.center[1]
+        };
+        
+        
+        //let a=b[0];
+        let x=(depth+1) as f64;
+        (a-b[1].into_inner()).abs()*x>400.0
+        
+    }
+
 
 }
+
+
 
 
 
@@ -452,7 +393,7 @@ fn nbody_par_long(bench:&mut Bencher) {
 }
 
 
-
+/*
 #[bench]
 fn nbody_seq_long2(bench:&mut Bencher) {
 
@@ -471,6 +412,7 @@ fn nbody_seq_long2(bench:&mut Bencher) {
 
     black_box(tree);                  
 }
+
 #[bench]
 fn nbody_par_long2(bench:&mut Bencher) {
 
@@ -490,3 +432,4 @@ fn nbody_par_long2(bench:&mut Bencher) {
 
     black_box(tree);                  
 }
+*/
