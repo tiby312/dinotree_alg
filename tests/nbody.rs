@@ -31,6 +31,7 @@ impl GravityTrait for NodeMass{
         self.mass
     }
     fn apply_force(&mut self,a:[f64;2]){
+        println!("AAAA={:?}",a);
         self.force[0]+=a[0];
         self.force[1]+=a[1];
     }
@@ -70,14 +71,15 @@ impl NodeMassTrait for Bla{
         let mut total_y=0.0;
         let mut total_mass=0.0;
         for i in it{
-            total_mass+=i.val.mass();
-            total_x+=i.val.pos[0];
-            total_y+=i.val.pos[1];
+            let m=i.val.mass();
+            total_mass+=m;
+            total_x+=m*i.val.pos[0];
+            total_y+=m*i.val.pos[1];
         }
 
         let center=if len!=0{
-            [total_x/len as f64,
-            total_y/len as f64]
+            [total_x/total_mass,
+            total_y/total_mass]
         }else{
             [0.0;2]
         };
@@ -87,9 +89,10 @@ impl NodeMassTrait for Bla{
 
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
 
-        let len_sqr=a.force[0]*a.force[0]+a.force[1]+a.force[1];
+        let len_sqr=a.force[0]*a.force[0]+a.force[1]*a.force[1];
 
         if len_sqr>0.000001{
+            println!("AAAAAAAAAAAAAAAAAAAAAAA");
             let total_forcex=a.force[0];
             let total_forcey=a.force[1];
 
@@ -168,7 +171,7 @@ mod gravity{
         let dis_sqr=diffx*diffx+diffy*diffy;
 
 
-        if dis_sqr>0.0001{
+        if dis_sqr>0.0000001{
             
             const GRAVITY_CONSTANT:f64=0.004;
 
@@ -214,10 +217,10 @@ impl GravityTrait for Bot{
 
 #[test]
 fn test_nodemass(){
-    let mut b1=support::create_bots_f64(|_id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2],mass:1.0},&[0,100,0,100],50,[2,20]);
-    let mut b2=support::create_bots_f64(|_id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2],mass:1.0},&[800,900,800,900],50,[2,20]);
+    let mut b1=support::create_bots_f64(|_id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2],mass:1.0},&[0,1000,0,1000],10,[2,20]);
+    let mut b2=support::create_bots_f64(|_id,pos|Bot{pos,vel:[0.0;2],force:[0.0;2],mass:1.0},&[3000,4000,0,1000],10,[2,20]);
 
-    b1.last_mut().unwrap().val.mass=100000.0;
+    b1.last_mut().unwrap().val.mass=10000000.0;
 
     let control={
         for i in b1.iter_mut(){
@@ -232,6 +235,8 @@ fn test_nodemass(){
         }
         control
     };
+
+    //b1.last_mut().unwrap().val.pos=[5000.0,-5000.0];
 
 
     let test={
@@ -254,6 +259,7 @@ fn test_nodemass(){
     };
 
     for (a,b) in control.iter().zip(test.iter()){
+        //println!("control={:?}\t\t\t\ttest={:?}",a,b);
         let diffx=(a[0]-b[0]).abs();
         let diffy=(a[1]-b[1]).abs();
         println!("diff={:?}",(diffx,diffy));

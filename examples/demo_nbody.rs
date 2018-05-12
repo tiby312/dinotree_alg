@@ -88,7 +88,7 @@ impl NodeMassTrait for Bla{
 
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
 
-        let len_sqr=a.force[0]*a.force[0]+a.force[1]+a.force[1];
+        let len_sqr=(a.force[0]*a.force[0])+(a.force[1]*a.force[1]);
 
         if len_sqr>0.000001{
             let total_forcex=a.force[0];
@@ -117,8 +117,9 @@ impl NodeMassTrait for Bla{
         };
         
         
-        //let a=b[0];
+        //let depth=depth.min(1);
         let x=(depth+1) as f64;
+        
         (a-b[1].into_inner()).abs()*x>800.0
         
         //false
@@ -135,11 +136,10 @@ impl NodeMassTrait for Bla{
         };
         
         
-        //let a=b[0];
+        //let depth=depth.min(1);
         let x=(depth+1) as f64;
-        //let a=b[0];
         (a-b[1].into_inner()).abs()*x>400.0
-        
+    
         //false
     }
 
@@ -269,9 +269,6 @@ fn main() {
     },&[0,800,0,800],5000,[1,2]);
 
 
-    let test_bot=200;
-    bots[test_bot].val.mass=10000.0;
-
     let mut last_bot_with_mass=bots.len();
    
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -390,20 +387,18 @@ fn main() {
                         let b=&bot.val;
                         let x=b.force[0]-b.force_naive[0];
                         let y=b.force[1]-b.force_naive[1];
-                        if bot.val.id==test_bot{
-                            println!("bot={:?}",(x,y));
-                        }
+                        
                         let dis=x*x+y*y;
-                        dis.sqrt()
+                        dis.sqrt()/b.mass //The more mass an object has, the less impact error has
                     };
                     max_mag=max_mag.max(mag);
-                    let mag=mag*0.1;
+                    let mag=mag*20.0;
                     let ((x1,x2),(y1,y2))=bot.rect.get();
                     let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
                     let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
                     rectangle([mag as f32,0.0,0.0,1.0], square, c.transform, g);
                 }
-                println!("max mag={:?}",max_mag);
+                println!("error over mass={:?}",max_mag);
                 
 
 
