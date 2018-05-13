@@ -43,7 +43,7 @@ pub fn collide_two_rect_parallel<
     rect1: &AABBox<T::Num>,
     rect2: &AABBox<T::Num>,
     mut func: F,
-)->Result<(),rects::RectIntersectErr> {
+)->Result<(),rects::RectIntersectError> {
     struct Ba<'z, J: SweepTrait + Send + 'z>(ColSingle<'z, J>);
     impl<'z, J: SweepTrait + Send + 'z> RebalTrait for Ba<'z, J> {
         type Num = J::Num;

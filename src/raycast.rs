@@ -11,12 +11,12 @@ pub fn raycast<
     MF:FnMut(ColSingle<T>)->Option<T::Num>, //called to test if this object touches the ray. if it does, return distance to start of ray
     MFFast:FnMut(&AABBox<T::Num>)->Option<T::Num>,
     >(tree:&'a mut DynTree<A,(),T>,point:[T::Num;2],dir:[T::Num;2],mut func:MF,mut func_fast:MFFast,rect:AABBox<T::Num>)->Option<(ColSingle<'a,T>,T::Num)>{
-
+    let axis=A::new();
     let ray=&Ray{point,dir};
     let dt = tree.get_iter_mut();
 
     let mut closest=Closest{closest:None};
-    recc(A::new(),dt,&mut func,&mut func_fast,ray,&mut closest,rect);
+    recc(axis,dt,&mut func,&mut func_fast,ray,&mut closest,rect);
 
     match closest.closest{
         Some(x)=>{

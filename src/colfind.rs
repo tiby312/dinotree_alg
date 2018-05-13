@@ -20,7 +20,7 @@ impl LeafTracker for IsLeaf{
     }
 }
 
-pub trait ColMulti: Send + Sync + Sized {
+pub trait ColMulti: Send + Sized {
     type T: SweepTrait;
     fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
     fn div(self)->(Self,Self);
@@ -138,7 +138,6 @@ fn recurse<
     JJ: par::Joiner,
     X: SweepTrait + 'x,
     F: ColMulti<T = X>,
-    //C: CTreeIterator<Item = &'x mut NodeDyn<X>> + Send,
     K: TreeTimerTrait
 >(
     this_axis: A,

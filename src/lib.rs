@@ -103,6 +103,7 @@ mod oned;
 mod tools;
 
 pub use rects::Rects;
+pub use rects::RectIntersectError;
 mod rects;
 
 //use dinotree_inner::support::DefaultDepthLevel;
@@ -119,7 +120,7 @@ use smallvec::SmallVec;
 use dinotree_inner::TreeTimer2;
 use dinotree_inner::TreeTimerEmpty;
 use dinotree_inner::compute_tree_height;
-
+use axgeom::AxisTrait;
 ///Represents a destructured SweepTrait into the immutable bounding box reference,
 ///and the mutable reference to the rest of the object.
 pub struct ColSingle<'a, T: SweepTrait + 'a> {
@@ -256,9 +257,8 @@ mod ba {
             Rects::new(self)
         }
 
-        ///Find all intersects between the elements in this dinotree, and the specified elements.
-        ///No intersecting pairs within each group are looked for.
-        ///Only those between the two groups.
+        ///Find all intersecting pairs between the elements in this dinotree, and the specified elements.
+        ///No intersecting pairs within each group are looked for, only those between the two groups.
         ///For best performance the group that this tree is built around should be the bigger of the two groups.
         pub fn intersect_with_seq<X: SweepTrait<Num = T::Num>>(
             &mut self,
@@ -283,7 +283,7 @@ mod ba {
 
         ///Unlike the rects session api, this function returns all elements within the specified
         ///rectangle AND all those that intersect with it. This more relaxed requirement means that
-        ///we can no longer query non intersecting rectangles and be assured that the two respective
+        ///we can no longer query non intersecting rectangles simulatiously and be assured that the two respective
         ///sets of bots are disjoint.
         pub fn for_all_intersect_rect(
             &mut self,
@@ -303,17 +303,17 @@ mod ba {
         ///A dinotree paritions an infinite plane. On creation, you dont specify a bounding area in which all then nodes live.
         ///The result of this is that the nodes on the outer edges of the tree in 2d space own an infinite amount of space in which
         ///bots might live.
-        ///The calculation to determine if a ray intersects a finite rectangle, is simplier than an infinite rectangle.
+        ///The calculation to determine if a ray intersects a finite rectangle is simplier than an infinite rectangle.
         ///Simply using a rectangle that is the max size of the primitive number type being used leads to the user having
         ///to be very careful of overflow.
         ///So I thought the best option would be to have the user supply a finite rectangle in the area
         ///in which they are interested in finding bots that intersect the ray.
-        ///I did not think it would be neccesary to stricly enfource that only bots inside of this rectangle be considered.
+        ///I did not think it would be neccesary to stricly enforce that only bots inside of this rectangle be considered.
         ///This would have added extra checking that every bounding box considered was within this max rectangle.
         ///Or the user would have had to supply an additional function to calculate the maximum possible tvalue that the ray could have
         ///and still be within the box.
         ///The result is that all bots within the rectangle are considred, but those outside of it may or may not be considered.
-        ///So the user just has to make this rectangle "big enough" to encomposs all thay he is interested in.
+        ///So the user just has to make this rectangle "big enough" to encomposs all intersections they is interested in.
         ///The fast fuction is used to prune node bounding boxes from being considerd.
         ///The slow function is used to do expensive checking to determine if this particular bot intersects the ray.
         pub fn raycast<'b> //called to test if this object touches the ray. if it does, return distance to start of ray
@@ -328,7 +328,7 @@ mod ba {
 
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
-                    raycast::raycast::<XAXISS,_,_, _>(
+                    raycast::raycast(
                         a,
                         point,
                         dir,
@@ -338,7 +338,7 @@ mod ba {
                     )
                 }
                 DynTreeEnum::Ya(a) => {
-                    raycast::raycast::<YAXISS,_, _,_>(
+                    raycast::raycast(
                         a,
                         point,
                         dir,
@@ -374,7 +374,7 @@ mod ba {
         ) {
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
-                    k_nearest::k_nearest::<XAXISS,_, _,_,_>(
+                    k_nearest::k_nearest(
                         a,
                         point,
                         num,
@@ -384,7 +384,7 @@ mod ba {
                     )
                 }
                 DynTreeEnum::Ya(a) => {
-                    k_nearest::k_nearest::<YAXISS,_, _,_,_>(
+                    k_nearest::k_nearest(
                         a,
                         point,
                         num,
@@ -399,22 +399,23 @@ mod ba {
         pub fn n_body_seq(&mut self,ncontext:impl NodeMassTrait<T=T>){
             match &mut self.0{
                 DynTreeEnum::Xa(a)=>{
-                    nbody::nbody_seq::<XAXISS,_,_>(a,ncontext);
+                    nbody::nbody_seq(a,ncontext);
                 },
                 DynTreeEnum::Ya(a)=>{
-                    nbody::nbody_seq::<YAXISS,_,_>(a,ncontext);
+                    nbody::nbody_seq(a,ncontext);
                 }
             }
         }
 
         ///Perform an nbody simulation.
+        ///Every node of the tree is assigned a body of mass whose center of mass 
         pub fn n_body(&mut self,ncontext:impl NodeMassTrait<T=T>){
             match &mut self.0{
                 DynTreeEnum::Xa(a)=>{
-                    nbody::nbody_par::<XAXISS,_,_>(a,ncontext);
+                    nbody::nbody_par(a,ncontext);
                 },
                 DynTreeEnum::Ya(a)=>{
-                    nbody::nbody_par::<YAXISS,_,_>(a,ncontext);
+                    nbody::nbody_par(a,ncontext);
                 }
             }
         }
@@ -423,13 +424,13 @@ mod ba {
         pub fn intersect_every_pair_seq(&mut self, clos: impl FnMut(ColSingle<T>, ColSingle<T>)) {
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
-                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair_seq::<_, _, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
                 DynTreeEnum::Ya(a) => {
-                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair_seq::<_, _, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
@@ -452,13 +453,13 @@ mod ba {
 
             let ans=match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
-                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair::<_, _, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
                 DynTreeEnum::Ya(a) => {
-                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair::<_, _, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
@@ -488,13 +489,13 @@ mod ba {
 
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
-                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair::<_, _, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
                 }
                 DynTreeEnum::Ya(a) => {
-                    colfind::for_every_col_pair::<_, T, _, TreeTimerEmpty>(
+                    colfind::for_every_col_pair::<_, _, _, TreeTimerEmpty>(
                         a,
                         clos,
                     )
@@ -510,13 +511,13 @@ mod ba {
         ) -> Vec<f64> {
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
-                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimer2>(
+                    colfind::for_every_col_pair_seq::<_, _, _, TreeTimer2>(
                         a,
                         clos,
                     )
                 }
                 DynTreeEnum::Ya(a) => {
-                    colfind::for_every_col_pair_seq::<_, T, _, TreeTimer2>(
+                    colfind::for_every_col_pair_seq::<_, _, _, TreeTimer2>(
                         a,
                         clos,
                     )
@@ -538,13 +539,13 @@ mod ba {
         pub fn find_element(&self,func:impl FnMut(&T)->bool)->Option<(usize,Vec<bool>)>{
             match &self.0 {
                 DynTreeEnum::Xa(a) => {
-                    colfind::find_element::<_, T, _>(
+                    colfind::find_element(
                         a,
                         func,
                     )
                 }
                 DynTreeEnum::Ya(a) => {
-                    colfind::find_element::<_, T, _>(
+                    colfind::find_element(
                         a,
                         func,
                     )
@@ -552,27 +553,4 @@ mod ba {
             }
         }
     }
-
 }
-
-
-/*
-struct Vc<N:Copy>(pub [N;2]);
-impl<N:Copy> Vc<N>{
-
-}
-struct Rec<N:Copy>(pub [N;4]);
-impl<N:Copy> Rec<N>{
-    fn getx(&self)->[N;2]{
-        [self.0[0],self.0[1]]
-    }
-    fn gety(&self)->[N;2]{
-        [self.0[2],self.0[3]]
-    }
-}
-*/
-
-//Pub so benches can access
-//#[cfg(test)]
-//mod test_support;
-

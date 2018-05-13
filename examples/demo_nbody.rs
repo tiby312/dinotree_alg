@@ -61,21 +61,22 @@ impl NodeMassTrait for Bla{
     fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
         gravity::gravitate(a,&mut b.val);
     }
-    fn div(self)->(Self,Self){
-        (Bla,Bla)
-    }
 
 
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,len:usize)->Self::No{
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No{
         let mut total_x=0.0;
         let mut total_y=0.0;
         let mut total_mass=0.0;
+
+        let mut total=0;
         for i in it{
             let m=i.val.mass();
             total_mass+=m;
             total_x+=m*i.val.pos[0];
             total_y+=m*i.val.pos[1];
+            total+=1;
         }
+        //println!("total={:?}");
         let center=if total_mass!=0.0{
             [total_x/total_mass,
             total_y/total_mass]
@@ -86,7 +87,7 @@ impl NodeMassTrait for Bla{
     }
 
 
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I,len:usize){
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I){
 
         let len_sqr=(a.force[0]*a.force[0])+(a.force[1]*a.force[1]);
 
@@ -94,10 +95,11 @@ impl NodeMassTrait for Bla{
             let total_forcex=a.force[0];
             let total_forcey=a.force[1];
 
-            let forcex=total_forcex/len as f64;
-            let forcey=total_forcey/len as f64;
-
+            //let forcex=total_forcex/len as f64;
+            //let forcey=total_forcey/len as f64;
             for i in it{
+                let forcex=total_forcex*(i.val.mass/a.mass);
+                let forcey=total_forcey*(i.val.mass/a.mass);
                 i.val.apply_force([forcex,forcey]);
             }
         }else{
@@ -106,41 +108,20 @@ impl NodeMassTrait for Bla{
     }
 
     //TODO improve accuracy by relying on depth???
-    fn is_far_enough<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-        
-        //false
-        
-        let a=if A::new().is_xaxis(){
-            a.center[0]
-        }else{
-            a.center[1]
-        };
-        
-        
-        //let depth=depth.min(1);
+    fn is_far_enough(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool{
+                
+        let a=b[0];
+
         let x=(depth+1) as f64;
         
         (a-b[1].into_inner()).abs()*x>800.0
-        
-        //false
     }
 
-    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-        //false
-        //(a-b).abs()>100.0
+    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool{
         
-        let a=if A::new().is_xaxis(){
-            a.center[0]
-        }else{
-            a.center[1]
-        };
-        
-        
-        //let depth=depth.min(1);
+        let a=b[0];
         let x=(depth+1) as f64;
         (a-b[1].into_inner()).abs()*x>400.0
-    
-        //false
     }
 
 }
@@ -269,7 +250,7 @@ fn main() {
     },&[0,800,0,800],5000,[1,2]);
 
     bots.last_mut().unwrap().val.mass=10000.0;
-    
+
     let mut last_bot_with_mass=bots.len();
    
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -336,9 +317,9 @@ fn main() {
                 {
                     let mut tree = DinoTree::new(bots_pruned, StartAxis::Yaxis);
         
-                    tree.n_body_seq(Bla);
+                    tree.n_body(Bla);
                     
-                    tree.intersect_every_pair_seq(|a, b| {
+                    tree.intersect_every_pair(|a, b| {
                         let (a,b)=if a.inner.mass>b.inner.mass{
                             (a,b)
                         }else{

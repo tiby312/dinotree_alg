@@ -78,11 +78,11 @@ pub fn k_nearest<'b,
     MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
     MF2:FnMut(T::Num,T::Num)->T::Num,
     >(tree:&'b mut DynTree<A,(),T>,point:[T::Num;2],num:usize,mut func:F,mut mf:MF,mut mf2:MF2){
-
+    let axis=A::new();
     let dt = tree.get_iter_mut();
 
     let mut c=ClosestCand::new(num);
-    recc(A::new(),dt,&mut mf,&mut mf2,point,&mut c);
+    recc(axis,dt,&mut mf,&mut mf2,point,&mut c);
  
     for i in c.into_sorted(){
         let j=unsafe{&mut *i.0}.get_mut();

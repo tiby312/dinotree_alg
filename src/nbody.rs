@@ -24,7 +24,6 @@ pub trait NodeMassTrait:Send+Clone{
     type T:SweepTrait;
     type No:Send+Copy;
 
-    //TOD remove this. 
     fn create_empty(&self)->Self::No;
 
 
@@ -39,15 +38,13 @@ pub trait NodeMassTrait:Send+Clone{
 
     //This is its own function so that thie crate does not have to add trait bounds to do arithmatic on the number type.
     //fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
-    fn is_far_enough<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
-    fn is_far_enough_half<A:axgeom::AxisTrait>(&self,depth:usize,a:&Self::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots. It is distributed evenly.
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I,len:usize);
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I);
 
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,len:usize)->Self::No;
-
-    fn div(self)->(Self,Self);
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No;
 }
 
 
@@ -78,61 +75,42 @@ fn buildtree<'a,
                         
                         
                         let nodeb={
-                            //We know this vec will atleast have the size of the number of bots in this node.
-                            let mut bots_to_add:Vec<&T>=Vec::with_capacity(nn.range.len());
-                            for i in nn.range.iter(){
-                                bots_to_add.push(i);
-                            }
-                            
+       
                             let left=left.create_wrap_mut();
                             let righ=righ.create_wrap_mut();
 
-                            recc2(&mut bots_to_add,left);
-                            recc2(&mut bots_to_add,righ);
-                            let len=bots_to_add.len();
-                            let mut nodeb=ncontext.new(bots_to_add.drain(..),len);
+                                                    
+                            let i1=left.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
+                            let i2=righ.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
+                            let i3=nn.range.iter().chain(i1.chain(i2));
+                            
+                            let mut nodeb=ncontext.new(i3);
+                            
+
                             nodeb
                         };
 
                         nn.misc=nodeb;
 
-                        let (n1,n2)=ncontext.div();
-                        recc(axis.next(),left,n1);
+                        let n2=ncontext.clone();
+                        recc(axis.next(),left,ncontext);
                         recc(axis.next(),righ,n2);
                     },
                     None=>{
-                        let mut nodeb=ncontext.new(nn.range.iter(),nn.range.len());
+                        let mut nodeb=ncontext.new(nn.range.iter());
                         
                         nn.misc=nodeb;
-                        let (n1,n2)=ncontext.div();
+                        let n2=ncontext.clone();
                         //recurse anyway even though there is no divider.
                         //we want to populate this tree entirely.
-                        recc(axis.next(),left,n1);    
+                        recc(axis.next(),left,ncontext);    
                         recc(axis.next(),righ,n2); 
                     }
                 }
             },
             None=>{
-                let mut nodeb=ncontext.new(nn.range.iter(),nn.range.len());
+                let mut nodeb=ncontext.new(nn.range.iter());
                 nn.misc=nodeb;
-            }
-        }
-
-        fn recc2<'a,N:Send+Copy,T:SweepTrait+'a>(nodeb:&mut Vec<&'a T>,stuff:NdIterMut<'a,N,T>){
-            let (nn,rest)=stuff.next();
-
-            for i in nn.range.iter(){
-                nodeb.push(i);
-            }
-         
-            match rest{
-                Some((left,right))=>{
-                    recc2(nodeb,left);
-                    recc2(nodeb,right);
-                },
-                None=>{
-
-                }
             }
         }
 
@@ -167,6 +145,16 @@ fn apply_tree<'a,
 
                 
                 {
+                     let left=left.create_wrap_mut();
+                    let righ=righ.create_wrap_mut();
+
+                                            
+                    let i1=left.dfs_preorder_iter().flat_map(|node|{node.range.iter_mut()});
+                    let i2=righ.dfs_preorder_iter().flat_map(|node|{node.range.iter_mut()});
+                    let i3=nn1.range.iter_mut().chain(i1.chain(i2));
+                    
+                            
+                            /*
                     let mut bots_to_undo:Vec<&mut T>=Vec::with_capacity(nn1.range.len());
                     for b in nn1.range.iter_mut(){
                         bots_to_undo.push(b);
@@ -174,23 +162,25 @@ fn apply_tree<'a,
                     let left=left.create_wrap_mut();
                     let righ=righ.create_wrap_mut();
 
+
                     recc2(&mut bots_to_undo,left);
                     recc2(&mut bots_to_undo,righ);
 
                     let l=bots_to_undo.len();
-                    ncontext.apply_to_bots(nodeb,bots_to_undo.drain(..),l);
+                    */
+                    ncontext.apply_to_bots(nodeb,i3);
                 }
-                let (n1,n2)=ncontext.div();
-                recc(left,n1);
+                let n2=ncontext.clone();
+                recc(left,ncontext);
                 recc(righ,n2);
             },
             None=>{
                 let l=nn1.range.len();
-                ncontext.apply_to_bots(nodeb,nn1.range.iter_mut(),l);
+                ncontext.apply_to_bots(nodeb,nn1.range.iter_mut());
                 //nodeb.undo()
             }
         }
-
+        /*
         fn recc2<'a,N:Send+Copy,T:SweepTrait+'a>(bots:&mut Vec<&'a mut T>,stuff:NdIterMut<'a,N,T>){
             let (nn,rest)=stuff.next();
 
@@ -217,6 +207,7 @@ fn apply_tree<'a,
                 }
             }
         }
+        */
     }
 
     recc(node,ncontext);
@@ -280,8 +271,8 @@ fn handle_anchor_with_children<'a,
                 self.ncontext.handle_node_with_bot(a,i);
             }
         }
-        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough::<A>(depth.0,a,b)
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough(depth.0,b)
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),_p:PhantomData,ncontext:ncontext};
@@ -373,8 +364,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_bot(a,self.bot);
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough_half::<A>(depth.0,a,b)
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half(depth.0,b)
         }
     }
     struct Bo2<'a,B:AxisTrait,N:NodeMassTrait+'a>{
@@ -393,8 +384,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_node(self.node,a);
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough_half::<A>(depth.0,a,b)
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half(depth.0,b)
         }
     }
 
@@ -418,8 +409,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
             let r=self.right.inner.create_wrap_mut().with_depth(d);
     		generic_rec(A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a,ncontext:self.ncontext})
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool{
-            self.ncontext.is_far_enough_half::<A>(depth.0,a,b)
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+            self.ncontext.is_far_enough_half(depth.0,b)
         }
     }
     let mut bo= Bo{_anchor_axis:B::new(),right:&mut right,ncontext};
@@ -484,19 +475,16 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait>(join:J,axis:A,it:LevelIter<Nd
             //into two independant ones, and we can do this all over again for the two children.
             //potentially in parlalel.
            
-            let (n1,n2)=ncontext.div();
+            let n2=ncontext.clone();
             if join.should_switch_to_sequential(depth){
-                recc(join.into_seq(),axis.next(),left,n1);
+                recc(join.into_seq(),axis.next(),left,ncontext);
                 recc(join.into_seq(),axis.next(),right,n2);
             }else{
                 rayon::join(
-                ||recc(join,axis.next(),left,n1),
+                ||recc(join,axis.next(),left,ncontext),
                 ||recc(join,axis.next(),right,n2)
                 );
             }
-            
-            
-            
         },
         None=>{
 
@@ -510,7 +498,7 @@ trait Bok{
     type N:NodeMassTrait<T=Self::T>;
     type T:SweepTrait;
     type B:AxisTrait;
-    fn is_far_enough<A:AxisTrait>(&mut self,depth:Depth,a:&<Self::N as NodeMassTrait>::No,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool;
     fn handle_every_node<A:AxisTrait>(&mut self,n:&mut Self::T,anchor:&mut Anchor<Self::B,Self::T>);
     fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut <Self::N as NodeMassTrait>::No,anchor:&mut Anchor<Self::B,Self::T>);
 }
@@ -569,7 +557,7 @@ fn generic_rec<
             };
             
             if A::get()==AnchorAxis::get(){
-                if bok.is_far_enough::<A>(depth,&nn1.misc,[div,anchor.div]){
+                if bok.is_far_enough(depth,[div,anchor.div]){
                     bok.handle_far_enough::<A>(&mut nn1.misc,anchor);
                     return;
                 }        
@@ -584,9 +572,8 @@ fn generic_rec<
     }       
 }
 pub fn nbody_par<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,(),T>,ncontext:N){
-
-    let height=tree.get_height();
     let axis=A::new();
+    let height=tree.get_height();
     
     let mut t1=tree.create_copy(ncontext.create_empty());
     
@@ -612,10 +599,9 @@ pub fn nbody_par<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
 
 
 pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,(),T>,ncontext:N){
-
+    let axis=A::new();
 
     let height=tree.get_height();
-    let axis=A::new();
     
     use std::time::Instant;
 
