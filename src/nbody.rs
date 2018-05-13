@@ -27,7 +27,7 @@ pub trait NodeMassTrait:Send+Clone{
     fn create_empty(&self)->Self::No;
 
 
-    //gravitate this nodemass with another node mass
+    //gravitate this node mass with another node mass
     fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);
 
     //gravitate a bot with a bot
@@ -39,6 +39,8 @@ pub trait NodeMassTrait:Send+Clone{
     //This is its own function so that thie crate does not have to add trait bounds to do arithmatic on the number type.
     //fn is_far_enough_half(&self,a:<Self::T as SweepTrait>::Num,b:<Self::T as SweepTrait>::Num)->bool;
     fn is_far_enough(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool;
+
+
     fn is_far_enough_half(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots. It is distributed evenly.

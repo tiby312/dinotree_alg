@@ -407,6 +407,7 @@ mod ba {
             }
         }
 
+
         ///Perform an nbody simulation.
         ///Every node of the tree is assigned a body of mass whose center of mass 
         pub fn n_body(&mut self,ncontext:impl NodeMassTrait<T=T>){
