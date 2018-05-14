@@ -114,41 +114,34 @@ mod cand{
             ClosestCand{a,num}
         }
 
-        pub fn consider(&mut self,a:(&mut T,T::Num)){
+        pub fn consider(&mut self,a:(&mut T,T::Num))->bool{
             let a=(a.0 as *mut T,a.1);
 
             if self.a.len()<self.num{
-                
-
                 let arr=&mut self.a;
-                if arr.len()==0{
-                    arr.push(a);
-                }else{
-                    let mut inserted=false;
-                    for i in 0..arr.len(){
-                        if a.1<arr[i].1{
-                            arr.insert(i,a);
-                            inserted=true;
-                            break;
-                        }
+                
+                for i in 0..arr.len(){
+                    if a.1<arr[i].1{
+                        arr.insert(i,a);
+                        return true;
                     }
-                    if !inserted{
-                        arr.push(a);
-                    }
-
                 }
 
+                //only way we get here is if the above didnt return.
+                arr.push(a);
+                
             }else{
                 let arr=&mut self.a;
                 for i in 0..arr.len(){
                     if a.1<arr[i].1{
                         arr.pop();
                         arr.insert(i,a);
-                        break;
+                        return true;
                     }
                 }
-                
             }
+            return false;
+
         }
         pub fn full_and_max_distance(&self)->Option<T::Num>{
             match self.a.get(self.num-1){
@@ -197,6 +190,8 @@ fn recc<'x,'a,
     }else{
         point[1]
     };
+
+
 
     match rest {
         Some((left, right)) => {

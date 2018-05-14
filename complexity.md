@@ -1,4 +1,7 @@
 
+Collision finding is the only one that actually takes advantage of the sorted property.
+
+
 
 # Space and Time Complexity
 
