@@ -97,8 +97,6 @@ impl NodeMassTrait for Bla{
             let total_forcex=a.force[0];
             let total_forcey=a.force[1];
 
-            //let forcex=total_forcex/len as f64;
-            //let forcey=total_forcey/len as f64;
             for i in it{
                 let forcex=total_forcex*(i.val.mass/a.mass);
                 let forcey=total_forcey*(i.val.mass/a.mass);
@@ -109,7 +107,6 @@ impl NodeMassTrait for Bla{
         }
     }
 
-    //TODO improve accuracy by relying on depth???
     fn is_far_enough(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool{
                 
         let a=b[0];

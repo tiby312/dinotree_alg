@@ -396,6 +396,7 @@ mod ba {
             };
         }
 
+        ///Sequential version of the parallel n_body. 
         pub fn n_body_seq(&mut self,ncontext:impl NodeMassTrait<T=T>){
             match &mut self.0{
                 DynTreeEnum::Xa(a)=>{
@@ -408,8 +409,24 @@ mod ba {
         }
 
 
-        ///Perform an nbody simulation.
-        ///Every node of the tree is assigned a body of mass whose center of mass 
+        ///The nbody algorithm takes a user defined implementation of this trait.
+        ///The dinotree nbody algorithm works by first creating a tree of node masses.
+        ///Every node mass has the total mass of all the bots in the corresponding dinotree node, as well as
+        ///the mass of all the bots underneath that node. It also has a center of mass (calculated as weighted average of all the bot masses)
+        ///Once this node mass tree is constructed, the dinotree is recursed. 
+        ///For every node, do three things.
+        ///1. gravitate bots with each other that belong to this node.
+        ///2. handle all children bots with the bots in this node. (this is its own algorithm).
+        ///3. handle all children bots on the left of the divider, with all children bots on the right of the divider.
+        ///4. at this point the node can be removed from the tree, and we can handle its two children as two completely independant trees.
+        ///
+        ///step 2 is done in the following way.Recurse left until you find a node who's node mass is sufficiently far away, then
+        ///gravitate that node mass with the anchor's node mass. Do the same for the right.
+        ///
+        ///step 3 is done in the following way. Recurse left.If a node mass is sufficiently far away from the anchor's divider,
+        ///gravitate that node mass with all the nodemasses/bots found on the right side. Otherwise recurse.
+        ///For this algorithm, we care about the distance between the nodemass and the anchor's divider. So it is half as long 
+        ///as the distance we cared about in step 2.
         pub fn n_body(&mut self,ncontext:impl NodeMassTrait<T=T>){
             match &mut self.0{
                 DynTreeEnum::Xa(a)=>{
@@ -420,6 +437,8 @@ mod ba {
                 }
             }
         }
+
+
         ///Find all intersecting pairs sequentially.
         ///Notice that in this case, a FnMut is supplied instead of a Fn.
         pub fn intersect_every_pair_seq(&mut self, clos: impl FnMut(ColSingle<T>, ColSingle<T>)) {
@@ -526,6 +545,7 @@ mod ba {
             }.1.into_vec()
         }
 
+        ///Height of the tree.
         pub fn get_height(&self)->usize{
             match &self.0 {
                 DynTreeEnum::Xa(a) => {
@@ -537,6 +557,9 @@ mod ba {
             }
         }
 
+        ///Returns the depth and the trail to the element in the tree, if found.
+        ///The trail will be a sequence of bools starting from the root. true means left.
+        ///Useful for debugging.
         pub fn find_element(&self,func:impl FnMut(&T)->bool)->Option<(usize,Vec<bool>)>{
             match &self.0 {
                 DynTreeEnum::Xa(a) => {

@@ -107,21 +107,20 @@ impl NodeMassTrait for Bla{
         }
     }
 
-    //TODO improve accuracy by relying on depth???
     fn is_far_enough(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool{
                 
         let a=b[0];
 
         let x=(depth+1) as f64;
         
-        (a-b[1].into_inner()).abs()*x>800.0
+        (a-b[1].into_inner()).abs()>800.0/x
     }
 
     fn is_far_enough_half(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool{
         
         let a=b[0];
         let x=(depth+1) as f64;
-        (a-b[1].into_inner()).abs()*x>400.0
+        (a-b[1].into_inner()).abs()>400.0/x
     }
 
 }
