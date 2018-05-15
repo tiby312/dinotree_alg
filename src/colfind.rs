@@ -20,7 +20,7 @@ impl LeafTracker for IsLeaf{
     }
 }
 
-pub trait ColMulti: Send + Sized {
+pub trait ColMulti:Sized {
     type T: SweepTrait;
     fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
     fn div(self)->(Self,Self);
@@ -133,11 +133,10 @@ fn go_down<
 }
 
 fn recurse<
-    'x,
     A: AxisTrait,
     JJ: par::Joiner,
-    X: SweepTrait + 'x,
-    F: ColMulti<T = X>,
+    X: SweepTrait + Send,
+    F: ColMulti<T = X>+Send,
     K: TreeTimerTrait
 >(
     this_axis: A,
@@ -298,7 +297,7 @@ pub fn find_element<A:AxisTrait,T:SweepTrait,F:FnMut(&T)->bool>(tree:&DynTree<A,
 
 pub fn for_every_col_pair_seq<
     A: AxisTrait,
-    T: SweepTrait,
+    T: SweepTrait+Send,
     F: FnMut(ColSingle<T>, ColSingle<T>),
     K: TreeTimerTrait,
 >(
@@ -367,8 +366,8 @@ pub fn for_every_col_pair_seq<
 
 pub fn for_every_col_pair<
     A: AxisTrait,
-    T: SweepTrait,
-    F: ColMulti<T = T>,
+    T: SweepTrait+Send,
+    F: ColMulti<T = T>+Send,
     K: TreeTimerTrait,
 >(
     kdtree: &mut DynTree<A,(), T>,
@@ -397,8 +396,8 @@ pub fn for_every_col_pair<
 fn for_every_col_pair_inner<
     A: AxisTrait,
     JJ: par::Joiner,
-    T: SweepTrait,
-    F: ColMulti<T = T>,
+    T: SweepTrait+Send,
+    F: ColMulti<T = T>+Send,
     K: TreeTimerTrait,
 >(
     this_axis: A,

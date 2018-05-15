@@ -5,7 +5,7 @@ use super::*;
 ///Can be held onto for the lifetime of this struct.
 pub struct Rects<'a: 'b, 'b, T: SweepTrait + 'a>(RectsEnum<'a, 'b, T>);
 
-impl<'a: 'b, 'b, T: SweepTrait + 'a> Rects<'a, 'b, T> {
+impl<'a: 'b, 'b, T: SweepTrait +Send+ 'a> Rects<'a, 'b, T> {
     pub(crate) fn new(tree: &'b mut DinoTree<'a, T>) -> Rects<'a, 'b, T> {
         Rects(match &mut tree.0 {
             &mut DynTreeEnum::Xa(ref mut a) => RectsEnum::Xa(RectsInner {

@@ -210,7 +210,7 @@ mod ba {
         Xa(DynTree<'a, XAXISS,(), T>),
         Ya(DynTree<'a, YAXISS,(), T>),
     }
-    fn make<'a,T:SweepTrait,JJ:par::Joiner,K:TreeTimerTrait>(axis:StartAxis,rest:&'a mut [T])->(DinoTree<'a,T>,K::Bag){
+    fn make<'a,T:SweepTrait+Send,JJ:par::Joiner,K:TreeTimerTrait>(axis:StartAxis,rest:&'a mut [T])->(DinoTree<'a,T>,K::Bag){
         let height = self::compute_tree_height(rest.len());
         match axis{
             StartAxis::Xaxis=>{
@@ -226,9 +226,9 @@ mod ba {
 
 
     ///This is the struct that this crate revolves around.
-    pub struct DinoTree<'a, T: SweepTrait + 'a>(pub(crate) DynTreeEnum<'a, T>);
+    pub struct DinoTree<'a, T: SweepTrait +Send+ 'a>(pub(crate) DynTreeEnum<'a, T>);
 
-    impl<'a, T: SweepTrait + 'a> DinoTree<'a, T> {
+    impl<'a, T: SweepTrait +Send+ 'a> DinoTree<'a, T> {
         ///Create a dinotree.
         ///Specify the starting axis along which the bots will be partitioned.
         ///So if you picked the x axis, the root divider will be a vertical line.
@@ -397,7 +397,7 @@ mod ba {
         }
 
         ///Sequential version of the parallel n_body. 
-        pub fn n_body_seq(&mut self,ncontext:impl NodeMassTrait<T=T>){
+        pub fn n_body_seq<N:NodeMassTrait<T=T>+Send>(&mut self,ncontext:N) where N::No:Send{
             match &mut self.0{
                 DynTreeEnum::Xa(a)=>{
                     nbody::nbody_seq(a,ncontext);
@@ -427,7 +427,7 @@ mod ba {
         ///gravitate that node mass with all the nodemasses/bots found on the right side. Otherwise recurse.
         ///For this algorithm, we care about the distance between the nodemass and the anchor's divider. So it is half as long 
         ///as the distance we cared about in step 2.
-        pub fn n_body(&mut self,ncontext:impl NodeMassTrait<T=T>){
+        pub fn n_body<N:NodeMassTrait<T=T>+Send>(&mut self,ncontext:N) where N::No:Send{
             match &mut self.0{
                 DynTreeEnum::Xa(a)=>{
                     nbody::nbody_par(a,ncontext);

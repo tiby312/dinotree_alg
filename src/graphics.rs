@@ -17,12 +17,12 @@ pub trait DividerDrawer{
 //TODO fix this to hide rect.
 ///Meant to then be drawn using triangles.
 ///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
-pub fn draw<T: SweepTrait,D:DividerDrawer<N=T::Num>>(
+pub fn draw<T: SweepTrait+Send,D:DividerDrawer<N=T::Num>>(
     gentree: &DinoTree<T>,
     dr:&mut D,
     rect:AABBox<T::Num>
 ) {
-    fn recc<'a,A:AxisTrait,T:SweepTrait+'a,D:DividerDrawer<N=T::Num>,C:CTreeIterator<Item=(Depth,&'a NodeDyn<(),T>)>>
+    fn recc<'a,A:AxisTrait,T:SweepTrait+Send+'a,D:DividerDrawer<N=T::Num>,C:CTreeIterator<Item=(Depth,&'a NodeDyn<(),T>)>>
         (stuff:C,dr:&mut D,rect:Rect<T::Num>){
         let ((depth,nn),rest)=stuff.next();
 

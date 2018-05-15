@@ -20,9 +20,9 @@ mod tools{
 
 
 
-pub trait NodeMassTrait:Send+Clone{
+pub trait NodeMassTrait:Clone{
     type T:SweepTrait;
-    type No:Send+Copy;
+    type No:Copy;
 
     fn create_empty(&self)->Self::No;
 
@@ -52,7 +52,7 @@ pub trait NodeMassTrait:Send+Clone{
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
 fn buildtree<'a,
-    T:SweepTrait+'a,
+    T:SweepTrait+Send+'a,
     N:NodeMassTrait<T=T>
     >
     (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:N){
@@ -415,13 +415,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     generic_rec(A::new(),anchor,left,&mut bo);  
 }
 
-
-  
-
-
-
-
-fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait>(join:J,axis:A,it:LevelIter<NdIterMut<N::No,N::T>>,ncontext:N){
+fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIter<NdIterMut<N::No,N::T>>,ncontext:N) where N::T:Send,N::No:Send{
     let ((depth,nn1),rest)=it.next();
     
 
@@ -569,7 +563,7 @@ fn generic_rec<
         }
     }       
 }
-pub fn nbody_par<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,(),T>,ncontext:N){
+pub fn nbody_par<A:AxisTrait,T:SweepTrait+Send,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,(),T>,ncontext:N) where N:Send,N::No:Send{
     let axis=A::new();
     let height=tree.get_height();
     
@@ -596,7 +590,7 @@ pub fn nbody_par<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTre
 }
 
 
-pub fn nbody_seq<A:AxisTrait,T:SweepTrait,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,(),T>,ncontext:N){
+pub fn nbody_seq<A:AxisTrait,T:SweepTrait+Send,N:NodeMassTrait<T=T>+Send>(tree:&mut DynTree<A,(),T>,ncontext:N) where N::No:Send{
     let axis=A::new();
 
     let height=tree.get_height();

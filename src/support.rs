@@ -36,7 +36,7 @@ pub fn choose_best_axis<N:NumTrait+std::ops::Sub<Output=N>>(a:&AABBox<N>)->Start
 pub fn collide_two_rect_parallel<
     'a,A: AxisTrait,
     Num: NumTrait,
-    T: SweepTrait<Num = Num>,
+    T: SweepTrait<Num = Num>+Send,
     F: FnMut(ColSingle<T>, ColSingle<T>),
 >(
     tree: &'a mut DinoTree<T>,
@@ -44,7 +44,7 @@ pub fn collide_two_rect_parallel<
     rect2: &AABBox<T::Num>,
     mut func: F,
 )->Result<(),rects::RectIntersectError> {
-    struct Ba<'z, J: SweepTrait + Send + 'z>(ColSingle<'z, J>);
+    struct Ba<'z, J: SweepTrait + 'z>(ColSingle<'z, J>);
     impl<'z, J: SweepTrait + Send + 'z> RebalTrait for Ba<'z, J> {
         type Num = J::Num;
         fn get(&self) -> &axgeom::Rect<J::Num> {
@@ -52,7 +52,7 @@ pub fn collide_two_rect_parallel<
         }
     }
 
-    impl<'z, J: SweepTrait + Send + 'z> SweepTrait for Ba<'z, J> {
+    impl<'z, J: SweepTrait + 'z> SweepTrait for Ba<'z, J> {
         type Inner = J::Inner;
         type Num = J::Num;
 
