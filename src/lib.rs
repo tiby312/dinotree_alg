@@ -364,13 +364,11 @@ mod ba {
         ///until k.
         ///User can also this way choose whether to use manhatan distance or not.
         //TODO pass trait instead? So that the user can mutably borrow something between the closures.
-        pub fn k_nearest<'b>(
+        pub fn k_nearest<'b,K:k_nearest::Knearest<'b,T=T,N=T::Num>+'b>(
             &'b mut self,
             point: [T::Num;2],
             num:usize,
-            clos: impl FnMut(ColSingle<'b,T>,T::Num),
-            mf:impl FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
-            mf2:impl FnMut(T::Num,T::Num)->T::Num,
+            knear:&mut K
         ) {
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
@@ -378,9 +376,7 @@ mod ba {
                         a,
                         point,
                         num,
-                        clos,
-                        mf,
-                        mf2
+                        knear
                     )
                 }
                 DynTreeEnum::Ya(a) => {
@@ -388,9 +384,7 @@ mod ba {
                         a,
                         point,
                         num,
-                        clos,
-                        mf,
-                        mf2
+                        knear
                     )
                 }
             };

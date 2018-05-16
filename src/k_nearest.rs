@@ -1,96 +1,6 @@
 use inner_prelude::*;
 use super::*;
 
-/*
-//test
-mod stuff{
-    use super::*;
-
-
-    pub trait NodeTrait{
-        type N:NumTrait;
-        type T;
-        fn get_div(&self)->Option<Self::N>;
-        fn get_cont(&self)->Option<Range<Self::N>>;
-        fn for_every<F:FnMut(Self::T)>(&mut self,func:F);
-    }
-
-    pub trait Callback{
-        type T;
-        type N:NumTrait;
-        fn get(&self,a:Self::T)->&Rect<Self::N>;
-        fn callback(&mut self,a:Self::T,a:Self::N);
-    }
-
-
-    struct Blag2<'a,T:SweepTrait+'a>(&'a mut NodeDyn<T>);
-
-    impl<'a,T:SweepTrait+'a> NodeTrait for Blag2<'a,T>{
-        type N=T::Num;
-        type T=&'a mut T;
-        fn get_div(&self)->Option<Self::N>{
-            self.0.div
-        }
-        fn get_cont(&self)->Option<Range<Self::N>>{
-            self.0.cont
-        }
-        fn for_every<F:FnMut(Self::T)>(&mut self,mut func:F){
-            for bot in self.0.range.iter_mut(){
-                func(bot);
-            }
-        }
-    }
-
-    struct Blag<'a,T:'a,F>((PhantomData<&'a T>,F));
-
-    impl<'a,T:SweepTrait,F:FnMut(ColSingle<T>,T::Num)> Callback for Blag<'a,T,F>{
-        type T=&'a mut T;
-        type N=T::Num;
-        fn get(&self,a:&'a mut T)->&Rect<T::Num>{
-            &(a.get().0).0
-        }
-        fn callback(&mut self,a:&mut T,b:T::Num){
-            let j=a.get_mut();
-            let c=ColSingle{inner:j.1,rect:j.0};
-            let dis=b;
-            ((self.0).1)(c,dis)
-        }
-    }
-
-
-
-
-    pub fn test<BB:NodeTrait,A:AxisTrait,C: CTreeIterator<Item = BB>,H:Callback<T=BB::T,N=BB::N>>(stuff:C,callback:H){
-        let (mut nn,rest)=stuff.next();
-
-        nn.for_every(|bot|{
-            let r=callback.get(bot);
-        });
-
-    }
-}*/
-
-
-pub fn k_nearest<'b,
-    A:AxisTrait,
-    T:SweepTrait,
-    F: FnMut(ColSingle<'b,T>,T::Num),
-    MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
-    MF2:FnMut(T::Num,T::Num)->T::Num,
-    >(tree:&'b mut DynTree<A,(),T>,point:[T::Num;2],num:usize,mut func:F,mut mf:MF,mut mf2:MF2){
-    let axis=A::new();
-    let dt = tree.get_iter_mut();
-
-    let mut c=ClosestCand::new(num);
-    recc(axis,dt,&mut mf,&mut mf2,point,&mut c);
- 
-    for i in c.into_sorted(){
-        let j=unsafe{&mut *i.0}.get_mut();
-        func(ColSingle{inner:j.1,rect:j.0},i.1);
-    }
-
-
-}
 
 //TODO use the property that the trees are sorted somehow.
 
@@ -99,22 +9,22 @@ use self::cand::ClosestCand;
 mod cand{
     use super::*;
 
-    pub struct ClosestCand<T:SweepTrait>{
-        a:SmallVec<[(*mut T,T::Num);32]>,
+    pub struct ClosestCand<T:SweepTrait,D:Ord+Copy>{
+        a:SmallVec<[(*mut T,D);32]>,
         num:usize
     }
-    impl<T:SweepTrait> ClosestCand<T>{
+    impl<T:SweepTrait,D:Ord+Copy> ClosestCand<T,D>{
 
         //First is the closest
-        pub fn into_sorted(self)->SmallVec<[(*mut T,T::Num);32]>{
+        pub fn into_sorted(self)->SmallVec<[(*mut T,D);32]>{
             self.a
         }
-        pub fn new(num:usize)->ClosestCand<T>{
+        pub fn new(num:usize)->ClosestCand<T,D>{
             let a=SmallVec::with_capacity(num);
             ClosestCand{a,num}
         }
 
-        pub fn consider(&mut self,a:(&mut T,T::Num))->bool{
+        pub fn consider(&mut self,a:(&mut T,D))->bool{
             let a=(a.0 as *mut T,a.1);
 
             if self.a.len()<self.num{
@@ -143,7 +53,7 @@ mod cand{
             return false;
 
         }
-        pub fn full_and_max_distance(&self)->Option<T::Num>{
+        pub fn full_and_max_distance(&self)->Option<D>{
             match self.a.get(self.num-1){
                 Some(x)=>
                 {
@@ -158,10 +68,10 @@ mod cand{
 }
 
 
-fn traverse_other<T:SweepTrait,MF2:FnMut(T::Num,T::Num)->T::Num>(res:&ClosestCand<T>,mf2:&mut MF2,pp:T::Num,div:T::Num)->bool{
+fn traverse_other<'a,K:Knearest<'a>>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::N,div:K::N)->bool{
     match res.full_and_max_distance(){
         Some(max)=>{
-            if mf2(pp,div)<max{
+            if k.oned_check(pp,div)<max{
                 true
             }else{
                 false
@@ -172,15 +82,44 @@ fn traverse_other<T:SweepTrait,MF2:FnMut(T::Num,T::Num)->T::Num>(res:&ClosestCan
         }
     }
 }
+//(x*x)  (y*y)
+//
 
 
-fn recc<'x,'a,
+pub trait Knearest<'a>{
+    type T:SweepTrait<Num=Self::N>;
+    type N:NumTrait;
+    type D:Ord+Copy;
+    fn twod_check(&mut self, [Self::N;2],&AABBox<Self::N>)->Self::D;
+    fn oned_check(&mut self,Self::N,Self::N)->Self::D;
+
+    //create a range around n.
+    fn create_range(&mut self,Self::N,Self::D)->[Self::N;2];
+    fn handle(&mut self,ColSingle<'a,Self::T>,Self::D);
+}
+
+
+pub fn k_nearest<'b,
+    A:AxisTrait,
+    K:Knearest<'b>+'b
+    >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,knear:&mut K){
+    let axis=A::new();
+    let dt = tree.get_iter_mut();
+
+    let mut c=ClosestCand::new(num);
+    recc(axis,dt,knear,point,&mut c);
+ 
+    for i in c.into_sorted(){
+        let j=unsafe{&mut *i.0}.get_mut();
+        knear.handle(ColSingle{inner:j.1,rect:j.0},i.1);
+    }
+
+
+}
+fn recc<'a,
     A: AxisTrait,
-    T: SweepTrait + 'x,
-    C: CTreeIterator<Item = &'x mut NodeDyn<(),T>>,
-    MF:FnMut([T::Num;2],&AABBox<T::Num>)->T::Num,
-    MF2:FnMut(T::Num,T::Num)->T::Num,
-    >(axis:A,stuff:C,mf:&mut MF,mf2:&mut MF2,point:[T::Num;2],res:&mut ClosestCand<T>){
+    K:Knearest<'a>,
+    >(axis:A,stuff:NdIterMut<(),K::T>,knear:&mut K,point:[K::N;2],res:&mut ClosestCand<K::T,K::D>){
 
     let (nn,rest)=stuff.next();
 
@@ -191,7 +130,11 @@ fn recc<'x,'a,
         point[1]
     };
 
-
+    let ppother=if axis.is_xaxis(){
+        point[1]
+    }else{
+        point[0]
+    };
 
     match rest {
         Some((left, right)) => {
@@ -207,26 +150,80 @@ fn recc<'x,'a,
                 (right,left)
             };
 
-            recc(axis.next(), first,mf,mf2,point,res);
+            recc(axis.next(), first,knear,point,res);
            
-            if traverse_other(res,mf2,pp,div){
-                recc(axis.next(),other,mf,mf2,point,res);
+            if traverse_other(res,knear,pp,div){
+                recc(axis.next(),other,knear,point,res);
             }
 
             //Check again incase the other recursion took care of everything
             //We are hoping that it is more likely that the closest points are found
             //in decendant nodes instead of ancestor nodes.
-            if traverse_other(res,mf2,pp,div){
-                for i in nn.range.iter_mut(){            
-                    let dis_sqr=mf(point,i.get().0);
-                    res.consider((i,dis_sqr));
+            if traverse_other(res,knear,pp,div){
+                
+                let mut bb=nn.range.iter_mut();
+
+
+                {//Skip over all the bots that dont arnt inside the range.
+                    match res.full_and_max_distance(){
+                        Some(dis)=>{
+                            let [leftr,rightr]=knear.create_range(ppother,dis);
+
+                            for bot in &mut bb{
+
+                                let [leftbot,rightbot]={
+                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().left()]
+                                };
+                                
+                                if rightbot<leftr{
+                                    //continue
+                                }else{
+                                    break;
+                                }
+                            }
+                        },
+                        None=>{
+
+                        }
+                    }
                 }
+
+                {
+                    for bot in bb{
+                        match res.full_and_max_distance(){
+                            Some(dis)=>{
+
+                                let [leftr,rightr]=knear.create_range(ppother,dis);
+
+                                let [leftbot,rightbot]={
+                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().left()]
+                                };
+                                
+                                if leftbot>rightr{
+                                    //All the bots after this will also be too far away.
+                                    //because the bots are sorted in ascending order.
+                                    break;
+                                }else{
+                                    let dis_sqr=knear.twod_check(point,bot.get().0);
+                                    res.consider((bot,dis_sqr));
+                                }
+                            },
+                            None=>{
+                                let dis_sqr=knear.twod_check(point,bot.get().0);
+                                res.consider((bot,dis_sqr));
+                            
+                            }
+                        }                          
+                    }
+                }
+            
             }
 
         }
         _ => {
+            //If we are a child, just handle everything.
             for i in nn.range.iter_mut(){            
-                let dis_sqr=mf(point,i.get().0);
+                let dis_sqr=knear.twod_check(point,i.get().0);
                 res.consider((i,dis_sqr));
             }        
         }
