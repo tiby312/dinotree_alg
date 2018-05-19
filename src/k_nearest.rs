@@ -53,6 +53,17 @@ mod cand{
             return false;
 
         }
+        pub fn min_distance(&self)->Option<D>{
+            
+            match self.a.get(0){
+                Some(x)=>{
+                    Some(x.1)
+                },
+                None=>{
+                    None
+                }
+            }
+        }
         pub fn full_and_max_distance(&self)->Option<D>{
             match self.a.get(self.num-1){
                 Some(x)=>
@@ -68,7 +79,7 @@ mod cand{
 }
 
 
-fn traverse_other<'a,K:Knearest<'a>>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::N,div:K::N)->bool{
+fn traverse_other<K:Knearest>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::N,div:K::N)->bool{
     match res.full_and_max_distance(){
         Some(max)=>{
             if k.oned_check(pp,div)<max{
@@ -86,7 +97,7 @@ fn traverse_other<'a,K:Knearest<'a>>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::
 //
 
 
-pub trait Knearest<'a>{
+pub trait Knearest{
     type T:SweepTrait<Num=Self::N>;
     type N:NumTrait;
     type D:Ord+Copy;
@@ -95,30 +106,37 @@ pub trait Knearest<'a>{
 
     //create a range around n.
     fn create_range(&mut self,Self::N,Self::D)->[Self::N;2];
-    fn handle(&mut self,ColSingle<'a,Self::T>,Self::D);
+    //fn handle(&mut self,ColSingle<'b,Self::T>,Self::D);
 }
 
 
 pub fn k_nearest<'b,
     A:AxisTrait,
-    K:Knearest<'b>+'b
-    >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,knear:&mut K){
+    K:Knearest,
+    >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(ColSingle<'b,K::T>,K::D))
+        where K::N:'b{
     let axis=A::new();
     let dt = tree.get_iter_mut();
 
     let mut c=ClosestCand::new(num);
-    recc(axis,dt,knear,point,&mut c);
+    recc(axis,dt,&mut knear,point,&mut c);
  
     for i in c.into_sorted(){
-        let j=unsafe{&mut *i.0}.get_mut();
-        knear.handle(ColSingle{inner:j.1,rect:j.0},i.1);
+        let j:&mut K::T=unsafe{&mut *i.0};
+
+        let j=j.get_mut();
+        //let j=unsafe{&mut *i.0}.get_mut();
+        //let j:(&AABBox<<K::T as SweepTrait>::Num>,&mut <K::T as SweepTrait>::Inner)=unsafe{&mut *i.0}.get_mut();
+        //let j:(&AABBox<<K::T as SweepTrait>::Num>,&'b mut <K::T as SweepTrait>::Inner)=unsafe{std::mem::transmute(j)};
+        func(ColSingle{inner:j.1,rect:j.0},i.1);
+        //knear.handle(ColSingle{inner:j.1,rect:j.0},i.1);
     }
 
 
 }
-fn recc<'a,
+fn recc<
     A: AxisTrait,
-    K:Knearest<'a>,
+    K:Knearest,
     >(axis:A,stuff:NdIterMut<(),K::T>,knear:&mut K,point:[K::N;2],res:&mut ClosestCand<K::T,K::D>){
 
     let (nn,rest)=stuff.next();
@@ -162,20 +180,20 @@ fn recc<'a,
             if traverse_other(res,knear,pp,div){
                 
                 let mut bb=nn.range.iter_mut();
-
-
+                
                 {//Skip over all the bots that dont arnt inside the range.
                     match res.full_and_max_distance(){
-                        Some(dis)=>{
+                        Some(dis)=>{    
                             let [leftr,rightr]=knear.create_range(ppother,dis);
-
+                            //println!("left,rightr={:?}",(leftr,rightr));
                             for bot in &mut bb{
 
                                 let [leftbot,rightbot]={
-                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().left()]
+                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
                                 };
                                 
                                 if rightbot<leftr{
+                                    
                                     //continue
                                 }else{
                                     break;
@@ -188,6 +206,11 @@ fn recc<'a,
                     }
                 }
 
+                for bot in bb{
+                    let dis_sqr=knear.twod_check(point,bot.get().0);
+                    res.consider((bot,dis_sqr));
+                }
+                /*
                 {
                     for bot in bb{
                         match res.full_and_max_distance(){
@@ -196,7 +219,7 @@ fn recc<'a,
                                 let [leftr,rightr]=knear.create_range(ppother,dis);
 
                                 let [leftbot,rightbot]={
-                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().left()]
+                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
                                 };
                                 
                                 if leftbot>rightr{
@@ -216,6 +239,7 @@ fn recc<'a,
                         }                          
                     }
                 }
+                */
             
             }
 

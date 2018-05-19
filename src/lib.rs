@@ -83,7 +83,7 @@ pub mod support;
 mod colfind;
 
 mod k_nearest;
-
+pub use k_nearest::Knearest;
 
 //pub use nbody::CenterOfMass;
 pub use nbody::NodeMassTrait;
@@ -364,19 +364,22 @@ mod ba {
         ///until k.
         ///User can also this way choose whether to use manhatan distance or not.
         //TODO pass trait instead? So that the user can mutably borrow something between the closures.
-        pub fn k_nearest<'b,K:k_nearest::Knearest<'b,T=T,N=T::Num>+'b>(
+        pub fn k_nearest<'b,K:Knearest<T=T,N=T::Num>>(
             &'b mut self,
             point: [T::Num;2],
             num:usize,
-            knear:&mut K
-        ) {
+            knear:K,
+            func: impl FnMut(ColSingle<'b,K::T>,K::D)
+        ) where K::N:'b{
+            
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
                     k_nearest::k_nearest(
                         a,
                         point,
                         num,
-                        knear
+                        knear,
+                        func
                     )
                 }
                 DynTreeEnum::Ya(a) => {
@@ -384,10 +387,13 @@ mod ba {
                         a,
                         point,
                         num,
-                        knear
+                        knear,
+                        func
                     )
                 }
             };
+            
+            
         }
 
         ///Sequential version of the parallel n_body. 
