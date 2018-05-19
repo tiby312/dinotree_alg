@@ -47,7 +47,7 @@ fn main() {
                     
                     let v={
                         
-                        #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd)]
+                        #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
                         struct DisSqr(NotNaN<f64>);
                         struct Kn<'a,'c:'a>{
                             c:&'a Context,

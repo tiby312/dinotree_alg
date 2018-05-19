@@ -53,17 +53,6 @@ mod cand{
             return false;
 
         }
-        pub fn min_distance(&self)->Option<D>{
-            
-            match self.a.get(0){
-                Some(x)=>{
-                    Some(x.1)
-                },
-                None=>{
-                    None
-                }
-            }
-        }
         pub fn full_and_max_distance(&self)->Option<D>{
             match self.a.get(self.num-1){
                 Some(x)=>
@@ -100,7 +89,7 @@ fn traverse_other<K:Knearest>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::N,div:K
 pub trait Knearest{
     type T:SweepTrait<Num=Self::N>;
     type N:NumTrait;
-    type D:Ord+Copy;
+    type D:Ord+Copy+std::fmt::Debug;
     fn twod_check(&mut self, [Self::N;2],&AABBox<Self::N>)->Self::D;
     fn oned_check(&mut self,Self::N,Self::N)->Self::D;
 
@@ -116,7 +105,7 @@ pub fn k_nearest<'b,
     >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(ColSingle<'b,K::T>,K::D))
         where K::N:'b{
     let axis=A::new();
-    let dt = tree.get_iter_mut();
+    let dt = tree.get_iter_mut().with_depth(Depth(0));
 
     let mut c=ClosestCand::new(num);
     recc(axis,dt,&mut knear,point,&mut c);
@@ -137,9 +126,9 @@ pub fn k_nearest<'b,
 fn recc<
     A: AxisTrait,
     K:Knearest,
-    >(axis:A,stuff:NdIterMut<(),K::T>,knear:&mut K,point:[K::N;2],res:&mut ClosestCand<K::T,K::D>){
+    >(axis:A,stuff:LevelIter<NdIterMut<(),K::T>>,knear:&mut K,point:[K::N;2],res:&mut ClosestCand<K::T,K::D>){
 
-    let (nn,rest)=stuff.next();
+    let ((depth,nn),rest)=stuff.next();
 
     //known at compile time.
     let pp=if axis.is_xaxis(){
@@ -177,27 +166,38 @@ fn recc<
             //Check again incase the other recursion took care of everything
             //We are hoping that it is more likely that the closest points are found
             //in decendant nodes instead of ancestor nodes.
-            if traverse_other(res,knear,pp,div){
-                
-                let mut bb=nn.range.iter_mut();
+            //if traverse_other(res,knear,pp,div){
+            {  
+                let mut bb=nn.range.iter_mut().peekable();
                 
                 {//Skip over all the bots that dont arnt inside the range.
                     match res.full_and_max_distance(){
                         Some(dis)=>{    
                             let [leftr,rightr]=knear.create_range(ppother,dis);
+                            /*
+                            if depth.0==0{
+                                println!("leftr,right,dis={:?}",(leftr,rightr,dis));
+                            }
+                            */
                             //println!("left,rightr={:?}",(leftr,rightr));
-                            for bot in &mut bb{
+                            
+                            loop{
+                                let skip={
+                                    let bot=match bb.peek(){
+                                        Some(bot)=>{bot},
+                                        None=>{break}
+                                    };
 
-                                let [leftbot,rightbot]={
-                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
+                                    let [leftbot,rightbot]={
+                                        [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
+                                    };
+
+                                    if rightbot>=leftr{
+                                        break;
+                                    }
                                 };
-                                
-                                if rightbot<leftr{
-                                    
-                                    //continue
-                                }else{
-                                    break;
-                                }
+
+                                bb.next();
                             }
                         },
                         None=>{
@@ -205,12 +205,15 @@ fn recc<
                         }
                     }
                 }
-
+                
+                /*
                 for bot in bb{
                     let dis_sqr=knear.twod_check(point,bot.get().0);
                     res.consider((bot,dis_sqr));
                 }
-                /*
+                */
+                
+                
                 {
                     for bot in bb{
                         match res.full_and_max_distance(){
@@ -239,7 +242,9 @@ fn recc<
                         }                          
                     }
                 }
-                */
+                
+                
+                
             
             }
 
