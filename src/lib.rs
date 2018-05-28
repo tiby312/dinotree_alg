@@ -301,22 +301,7 @@ mod ba {
             }
         }
 
-        ///A dinotree paritions an infinite plane. On creation, you dont specify a bounding area in which all then nodes live.
-        ///The result of this is that the nodes on the outer edges of the tree in 2d space own an infinite amount of space in which
-        ///bots might live.
-        ///The calculation to determine if a ray intersects a finite rectangle is simplier than an infinite rectangle.
-        ///Simply using a rectangle that is the max size of the primitive number type being used leads to the user having
-        ///to be very careful of overflow.
-        ///So I thought the best option would be to have the user supply a finite rectangle in the area
-        ///in which they are interested in finding bots that intersect the ray.
-        ///I did not think it would be neccesary to stricly enforce that only bots inside of this rectangle be considered.
-        ///This would have added extra checking that every bounding box considered was within this max rectangle.
-        ///Or the user would have had to supply an additional function to calculate the maximum possible tvalue that the ray could have
-        ///and still be within the box.
-        ///The result is that all bots within the rectangle are considred, but those outside of it may or may not be considered.
-        ///So the user just has to make this rectangle "big enough" to encomposs all intersections they is interested in.
-        ///The fast fuction is used to prune node bounding boxes from being considerd.
-        ///The slow function is used to do expensive checking to determine if this particular bot intersects the ray.
+        
         pub fn raycast<'b,R:RayTrait<T=T,N=T::Num>> //called to test if this object touches the ray. if it does, return distance to start of ray
             (
                 &'b mut self,

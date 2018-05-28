@@ -14,7 +14,7 @@ use support::*;
 
 use axgeom::AxisTrait;
 
-fn intersects_box(point:[isize;2],dir:[isize;2],rect:&AABBox<isize>)->Option<isize>{
+fn intersects_box(point:[isize;2],dir:[isize;2],matt:isize,rect:&AABBox<isize>)->Option<isize>{
     let ((x1,x2),(y1,y2))=rect.get();
 
 
@@ -44,7 +44,7 @@ fn intersects_box(point:[isize;2],dir:[isize;2],rect:&AABBox<isize>)->Option<isi
             return None; // parallel AND outside box : no intersection possible
         }
     }
-    if tlen>=tmin && tlen>=0{
+    if tlen>=tmin && tlen>=0 && tmin<=matt{
         return Some(tmin.max(0));
     }else{
         return None;
@@ -74,7 +74,7 @@ fn main() {
             let ray={
                 let point=[cursor[0] as isize,cursor[1] as isize];
                 let dir=[-1,-2];           
-                Ray{point,dir,tlen:100}
+                Ray{point,dir,tlen:500,/*true_len:500*/}
             };
 
             for bot in bots.iter(){
@@ -102,6 +102,7 @@ fn main() {
 
 
                     struct RayT<'a,'c:'a>{
+                        ray:Ray<isize>,
                         c:&'a Context,
                         g:&'a mut G2d<'c>,
                     }
@@ -129,10 +130,11 @@ fn main() {
                         type N=isize;
 
 
-                        
+                        /*
                         fn add_ray(&mut self,ray:&Ray<Self::N>,t_to_add:Self::N)->Ray<Self::N>{
                             Ray{point:ray.point,dir:ray.dir,tlen:ray.tlen+t_to_add}
                         }
+                        */
 
                         fn split_ray<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
                             let t=if A::new().is_xaxis(){
@@ -150,25 +152,25 @@ fn main() {
                             let new_point=[ray.point[0]+ray.dir[0]*t,ray.point[1]+ray.dir[1]*t];
                             
 
-                            let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t};
-                            let ray_new=Ray{point:new_point,dir:ray.dir,tlen:ray.tlen-t};
+                            let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t,/*true_len:ray.true_len-ray.tlen+t*/};
+                            let ray_new=Ray{point:new_point,dir:ray.dir,tlen:ray.tlen-t,/*true_len:ray.true_len*/};
                             Some((ray_closer,ray_new))
                             
                         }
 
-                        fn compute_intersection_range<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,fat_line:[Self::N;2])->(Option<Self::N>,Option<Self::N>)
+                        fn compute_intersection_range<A:AxisTrait>(&mut self,fat_line:[Self::N;2])->(Option<Self::N>,Option<Self::N>)
                         {
-                            let o1:Option<(Self::N,Self::N)>=compute_intersection_point::<A>(ray,fat_line[0]);
-                            let o2:Option<(Self::N,Self::N)>=compute_intersection_point::<A>(ray,fat_line[1]);
+                            let o1:Option<(Self::N,Self::N)>=compute_intersection_point::<A>(&self.ray,fat_line[0]);
+                            let o2:Option<(Self::N,Self::N)>=compute_intersection_point::<A>(&self.ray,fat_line[1]);
 
                             let o1=o1.map(|a|a.1);
                             let o2=o2.map(|a|a.1);
 
                             let (o1,o2)={
                                 let point=if A::new().is_xaxis(){
-                                    ray.point[1]
+                                    self.ray.point[1]
                                 }else{
-                                    ray.point[0]
+                                    self.ray.point[0]
                                 };
 
                                 match (o1,o2){
@@ -186,16 +188,16 @@ fn main() {
 
                             (o1,o2)
                         }
-
+                        /*
                         fn zero(&mut self)->Self::N{
                             0   
-                        }
-                        fn compute_distance_to_line<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,line:Self::N)->Option<Self::N>{
-                            compute_intersection_point::<A>(ray,line).map(|a|a.0)
+                        }*/
+                        fn compute_distance_to_line<A:AxisTrait>(&mut self,line:Self::N)->Option<Self::N>{
+                            compute_intersection_point::<A>(&self.ray,line).map(|a|a.0)
                         }
 
 
-                        fn compute_distance_bot(&mut self,ray:&Ray<Self::N>,a:ColSingle<Self::T>)->Option<Self::N>{
+                        fn compute_distance_bot(&mut self,a:ColSingle<Self::T>)->Option<Self::N>{
                             let ((x1,x2),(y1,y2))=a.rect.get();
                             
                             {
@@ -203,13 +205,13 @@ fn main() {
                                 let square = [x1,y1,x2-x1,y2-y1];
                                 rectangle([0.0,0.0,1.0,0.8], square, self.c.transform, self.g);
                             }
-
-                            intersects_box(ray.point,ray.dir,a.rect)
+                            //ray.point
+                            intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.rect)
                         }
                         
                     }
                     
-                    tree.raycast(ray,RayT{c:&c,g})
+                    tree.raycast(ray,RayT{ray,c:&c,g})
                 };
 
                 let (ppx,ppy)=if let Some(k)=k{

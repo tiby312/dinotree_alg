@@ -46,7 +46,7 @@ impl<T:SweepTrait> Closest<T>{
             let (a,bb)=b.get_mut();
             let cc=ColSingle{inner:bb,rect:a};
             //func(cc)
-            raytrait.compute_distance_bot(ray,cc)
+            raytrait.compute_distance_bot(cc)
         };
 
         if let Some(x)=val{
@@ -98,7 +98,7 @@ pub mod ray{
     pub struct Ray<N:NumTrait>{
         pub point:[N;2],
         pub dir:[N;2],
-        pub tlen:N
+        pub tlen:N,
     }
 
 
@@ -109,22 +109,20 @@ pub trait RayTrait{
     type T:SweepTrait<Num=Self::N>;
     type N:NumTrait;
 
-    //fn compute_intersection_point<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,line:Self::N)->Option<(Self::N,[Self::N;2])>;
-    
-    fn compute_intersection_range<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,fat_line:[Self::N;2])->(Option<Self::N>,Option<Self::N>);
+    fn compute_intersection_range<A:AxisTrait>(&mut self,fat_line:[Self::N;2])->(Option<Self::N>,Option<Self::N>);
 
-    fn compute_distance_to_line<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,fat_line:Self::N)->Option<Self::N>;
+    fn compute_distance_to_line<A:AxisTrait>(&mut self,fat_line:Self::N)->Option<Self::N>;
 
-    fn compute_distance_bot(&mut self,ray:&Ray<Self::N>,ColSingle<Self::T>)->Option<Self::N>;
+    fn compute_distance_bot(&mut self,ColSingle<Self::T>)->Option<Self::N>;
 
 
     fn split_ray<A:AxisTrait>(&mut self,ray1:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>;
 
     //ray1 and ray2 are passed with the guarentee that they have the same direction.
-    fn add_ray(&mut self,ray1:&Ray<Self::N>,t_to_add:Self::N)->Ray<Self::N>;
+    //fn add_ray(&mut self,ray1:&Ray<Self::N>,t_to_add:Self::N)->Ray<Self::N>;
 
 
-    fn zero(&mut self)->Self::N;
+    //fn zero(&mut self)->Self::N;
 }
 
 
@@ -262,7 +260,7 @@ fn recc<'x,'a,
             match &nn.cont{
                 &Some(cont)=>{
                     let ff=[cont.left(),cont.right()];
-                    match rtrait.compute_intersection_range::<A>(&ray,ff){
+                    match rtrait.compute_intersection_range::<A>(ff){
                         (Some(a),Some(b))=>{
 
                             for (i,bot) in nn.range.iter_mut().enumerate(){
