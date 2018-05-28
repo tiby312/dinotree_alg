@@ -110,14 +110,14 @@ fn main() {
                     fn compute_intersection_point<A:AxisTrait>(ray:&Ray<isize>,line:isize)->Option<(isize,isize)>{
                         if A::new().is_xaxis(){
                             let t=(line-ray.point[0])/ray.dir[0];
-                            if t>0{
+                            if t>0 && t<=ray.tlen{
                                 Some((t,ray.point[1]+ray.dir[1]*t))
                             }else{
                                 None
                             }
                         }else{
                             let t=(line-ray.point[1])/ray.dir[1];
-                            if t>0{
+                            if t>0 && t<=ray.tlen{
                                 Some((t,ray.point[0]+ray.dir[0]*t))
                             }else{
                                 None
