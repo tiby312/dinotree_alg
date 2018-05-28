@@ -164,7 +164,8 @@ fn recc<'x,'a,
                     match rtrait.split_ray::<A>(&ray,div){
                         Some((ray_closer,ray_further))=>{
                             recc(axis_next,left,rtrait,ray_closer,closest);
-                            recc(axis_next,right,rtrait,ray_further,closest);
+                            //recc(axis_next,right,rtrait,ray_further,closest);
+                            dop(axis_next,right,rtrait,ray_further,closest,div);
                         },
                         None=>{
                             //The ray isnt long enough to touch the divider.
@@ -177,7 +178,8 @@ fn recc<'x,'a,
                     match rtrait.split_ray::<A>(&ray,div){
                         Some((ray_closer,ray_further))=>{
                             recc(axis_next,right,rtrait,ray_closer,closest);
-                            recc(axis_next,left,rtrait,ray_further,closest);
+                            //recc(axis_next,left,rtrait,ray_further,closest);
+                            dop(axis_next,left,rtrait,ray_further,closest,div);
                         },
                         None=>{
                             recc(axis_next,right,rtrait,ray,closest);
@@ -186,7 +188,36 @@ fn recc<'x,'a,
                 
                 }  
             };
+            
+            fn dop<
+                N:NumTrait,
+                A: AxisTrait,
+                T: SweepTrait<Num=N>,
+                R: RayTrait<T=T,N=N>
+                >(axis:A,nd:LevelIter<NdIterMut<(),T>>,rtrait:&mut R,ray:Ray<N>,closest:&mut Closest<T>,div:N){
+                match closest.get_dis(){
+                    Some(dis)=>{
+                        match rtrait.compute_distance_to_line::<A>(div){
+                            Some(dis2)=>{
+                                if dis2<dis{
+                                    recc(axis,nd,rtrait,ray,closest);
+                                }else{
+                                    //We get to skip here
 
+                                    //recc(axis.next(),second,rtrait,ray,closest);
+                                }
+                            },
+                            None=>{
+                                //Ray doesnt intersect other side
+                                //recc(axis.next(),second,rtrait,ray,closest);
+                            }
+                        }
+                    },
+                    None=>{
+                        recc(axis,nd,rtrait,ray,closest);
+                    }
+                }
+            }
             {
                 
                 //recc(axis.next(),second,rtrait,ray,closest);
