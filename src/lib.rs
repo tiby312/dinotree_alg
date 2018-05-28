@@ -90,7 +90,8 @@ pub use nbody::NodeMassTrait;
 mod nbody;
 
 mod raycast;
-//pub use raycast::ray::Ray;
+pub use raycast::RayTrait;
+pub use raycast::ray::Ray;
 //pub use raycast::Vec2;
 //pub use raycast::RectInf;
 
@@ -316,38 +317,30 @@ mod ba {
         ///So the user just has to make this rectangle "big enough" to encomposs all intersections they is interested in.
         ///The fast fuction is used to prune node bounding boxes from being considerd.
         ///The slow function is used to do expensive checking to determine if this particular bot intersects the ray.
-        pub fn raycast<'b> //called to test if this object touches the ray. if it does, return distance to start of ray
+        pub fn raycast<'b,R:RayTrait<T=T,N=T::Num>> //called to test if this object touches the ray. if it does, return distance to start of ray
             (
                 &'b mut self,
-                point:[T::Num;2],
-                dir:[T::Num;2],
-                rect:AABBox<T::Num>,
-                func_fast:impl FnMut(&AABBox<T::Num>)->Option<T::Num>,
-                func:impl FnMut(ColSingle<T>)->Option<T::Num>
+                ray:Ray<T::Num>,
+                rtrait:R
                 )->Option<(ColSingle<'b,T>,T::Num)>{
-
+            
             match &mut self.0 {
                 DynTreeEnum::Xa(a) => {
                     raycast::raycast(
                         a,
-                        point,
-                        dir,
-                        func,
-                        func_fast,
-                        rect
+                        ray,
+                        rtrait
                     )
                 }
                 DynTreeEnum::Ya(a) => {
                     raycast::raycast(
                         a,
-                        point,
-                        dir,
-                        func,
-                        func_fast,
-                        rect
+                        ray,
+                        rtrait
                     )
                 }
             }
+            
         }
 
         ///The dinotree's NumTrait does not inherit any kind of arithmetic traits.

@@ -170,6 +170,10 @@ fn recc<
             {  
                 let mut bb=nn.range.iter_mut().peekable();
                 
+
+                unimplemented!();
+                //The below is wrong because you can have variable sized ranges.
+                /* 
                 {//Skip over all the bots that dont arnt inside the range.
                     match res.full_and_max_distance(){
                         Some(dis)=>{    
@@ -205,6 +209,7 @@ fn recc<
                         }
                     }
                 }
+                */
                 
                 /*
                 for bot in bb{
@@ -214,34 +219,34 @@ fn recc<
                 */
                 
                 
-                {
-                    for bot in bb{
-                        match res.full_and_max_distance(){
-                            Some(dis)=>{
+            
+                for bot in bb{
+                    match res.full_and_max_distance(){
+                        Some(dis)=>{
 
-                                let [leftr,rightr]=knear.create_range(ppother,dis);
+                            let [leftr,rightr]=knear.create_range(ppother,dis);
 
-                                let [leftbot,rightbot]={
-                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
-                                };
-                                
-                                if leftbot>rightr{
-                                    //All the bots after this will also be too far away.
-                                    //because the bots are sorted in ascending order.
-                                    break;
-                                }else{
-                                    let dis_sqr=knear.twod_check(point,bot.get().0);
-                                    res.consider((bot,dis_sqr));
-                                }
-                            },
-                            None=>{
+                            let [leftbot,rightbot]={
+                                [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
+                            };
+                            
+                            if leftbot>rightr{
+                                //All the bots after this will also be too far away.
+                                //because the bots are sorted in ascending order.
+                                break;
+                            }else{
                                 let dis_sqr=knear.twod_check(point,bot.get().0);
                                 res.consider((bot,dis_sqr));
-                            
                             }
-                        }                          
-                    }
+                        },
+                        None=>{
+                            let dis_sqr=knear.twod_check(point,bot.get().0);
+                            res.consider((bot,dis_sqr));
+                        
+                        }
+                    }                          
                 }
+            
                 
                 
                 
@@ -251,10 +256,40 @@ fn recc<
         }
         _ => {
             //If we are a child, just handle everything.
+            /*
             for i in nn.range.iter_mut(){            
                 let dis_sqr=knear.twod_check(point,i.get().0);
                 res.consider((i,dis_sqr));
-            }        
+            } */
+            let mut bb=nn.range.iter_mut();
+            
+            for bot in bb{
+                match res.full_and_max_distance(){
+                    Some(dis)=>{
+
+                        let [leftr,rightr]=knear.create_range(ppother,dis);
+
+                        let [leftbot,rightbot]={
+                            [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
+                        };
+                        
+                        if leftbot>rightr{
+                            //All the bots after this will also be too far away.
+                            //because the bots are sorted in ascending order.
+                            break;
+                        }else{
+                            let dis_sqr=knear.twod_check(point,bot.get().0);
+                            res.consider((bot,dis_sqr));
+                        }
+                    },
+                    None=>{
+                        let dis_sqr=knear.twod_check(point,bot.get().0);
+                        res.consider((bot,dis_sqr));
+                    
+                    }
+                }                          
+            }
+                   
         }
     }
 }
