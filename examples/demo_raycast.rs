@@ -78,7 +78,7 @@ fn main() {
 
             let ray={
                 let point=[cursor[0] as isize,cursor[1] as isize];
-                counter+=0.01;
+                counter+=0.1;
                 let dir=[(counter.cos()*5.0) as isize,(counter.sin()*5.0) as isize];  
                 //println!("dir={:?}",dir);         
                 //let dir=[0,1];
