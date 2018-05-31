@@ -40,13 +40,13 @@ struct Closest<T:SweepTrait>{
     closest:Option<(*mut T,T::Num)>
 }
 impl<T:SweepTrait> Closest<T>{
-    fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,b:&mut T,raytrait:&mut R,ray:&Ray<T::Num>){
+    fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,depth:Depth,b:&mut T,raytrait:&mut R,ray:&Ray<T::Num>){
 
         let val={
             let (a,bb)=b.get_mut();
             let cc=ColSingle{inner:bb,rect:a};
             //func(cc)
-            raytrait.compute_distance_bot(cc)
+            raytrait.compute_distance_bot(depth,cc)
         };
 
         if let Some(x)=val{
@@ -104,26 +104,28 @@ pub mod ray{
 
 }
 
+
+
+
 //TODO use this
 pub trait RayTrait{
     type T:SweepTrait<Num=Self::N>;
     type N:NumTrait;
 
-    fn compute_intersection_range<A:AxisTrait>(&mut self,fat_line:[Self::N;2])->(Option<Self::N>,Option<Self::N>);
+    fn compute_intersection_range<A:AxisTrait>(&mut self,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
 
     fn compute_distance_to_line<A:AxisTrait>(&mut self,fat_line:Self::N)->Option<Self::N>;
 
-    fn compute_distance_bot(&mut self,ColSingle<Self::T>)->Option<Self::N>;
+    fn compute_distance_bot(&mut self,depth:Depth,ColSingle<Self::T>)->Option<Self::N>;
 
 
     fn split_ray<A:AxisTrait>(&mut self,ray1:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>;
 
     //ray1 and ray2 are passed with the guarentee that they have the same direction.
     //fn add_ray(&mut self,ray1:&Ray<Self::N>,t_to_add:Self::N)->Ray<Self::N>;
-
-
-    //fn zero(&mut self)->Self::N;
+    fn zero(&mut self)->Self::N;
 }
+
 
 
 //Returns the first object that touches the ray.
@@ -149,102 +151,7 @@ fn recc<'x,'a,
             };
 
 
-            /*
-            for b in nn.range.iter_mut(){
-                closest.consider(b,rtrait,&ray);
-            }*/
-            
-            
-            //Check this node only after recursing children.
-            match &nn.cont{
-                &Some(cont)=>{
-                    let ff=[cont.left(),cont.right()];
 
-
-                    let line_to_check=if axis.is_xaxis(){
-                        if ray.point[0]<div{
-                            ff[0]
-                        }else{
-                            ff[1]
-                        }
-                    }else{
-                        if ray.point[1]<div{
-                            ff[0]
-                        }else{
-                            ff[1]
-                        }
-                    };
-
-                    let handle_middile=match closest.get_dis(){
-                        Some(dis)=>{
-                            match rtrait.compute_distance_to_line::<A>(line_to_check){
-                                Some(dis2)=>{
-                                    if dis2<dis{
-                                        true
-                                    }else{
-                                        false
-                                    }
-                                },
-                                None=>{
-                                    false
-                                }
-                            }
-                        },
-                        None=>{
-                            true
-                        }
-                    };
-
-                    if true{
-                        match rtrait.compute_intersection_range::<A>(ff){
-                            (Some(a),Some(b))=>{
-
-                                for (i,bot) in nn.range.iter_mut().enumerate(){
-                                    
-                                    let rang=*((bot.get().0).0).get_range2::<A::Next>();
-                                    if rang.left()>b{
-                                        break;
-                                    }
-                                    
-                                    if rang.right()>=a{
-                                        closest.consider(bot,rtrait,&ray);
-                                    }
-                                    
-                                }
-                            },
-                            
-                            (Some(a),None)=>{
-                                for (i,bot) in nn.range.iter_mut().enumerate(){
-                                    
-                                    let rang=*((bot.get().0).0).get_range2::<A::Next>();
-                                    
-                                    if rang.right()>=a{
-                                        closest.consider(bot,rtrait,&ray);
-                                    }
-                                    
-                                }
-                            },
-                            (None,Some(b))=>{
-                                for (i,bot) in nn.range.iter_mut().enumerate(){
-                                    
-                                    let rang=*((bot.get().0).0).get_range2::<A::Next>();
-                                    if rang.left()>b{
-                                        break;
-                                    }
-                                    
-                                    closest.consider(bot,rtrait,&ray);
-                                }
-                            },
-                            (None,None)=>{
-                                //Do nothing. The ray does not touch the fat line at all
-                            }   
-                        }
-                    } 
-                },
-                &None=>{
-                    //This node doesnt have any bots
-                }
-            }
 
 
             {
@@ -255,16 +162,16 @@ fn recc<'x,'a,
                 };
 
 
-
-
                 let axis_next=axis.next();
+
+                //We want to recurse the side that is closer to the origin.
                 if ray_point<div{
                     
                     match rtrait.split_ray::<A>(&ray,div){
                         Some((ray_closer,ray_further))=>{
                             recc(axis_next,left,rtrait,ray_closer,closest);
-                            recc(axis_next,right,rtrait,ray_further,closest);
-                            //dop(axis_next,right,rtrait,ray_further,closest,div);
+                            //recc(axis_next,right,rtrait,ray_further,closest);
+                            dop(axis,right,rtrait,ray_further,closest,div);
                         },
                         None=>{
                             //The ray isnt long enough to touch the divider.
@@ -277,8 +184,8 @@ fn recc<'x,'a,
                     match rtrait.split_ray::<A>(&ray,div){
                         Some((ray_closer,ray_further))=>{
                             recc(axis_next,right,rtrait,ray_closer,closest);
-                            recc(axis_next,left,rtrait,ray_further,closest);
-                            //dop(axis_next,left,rtrait,ray_further,closest,div);
+                            //recc(axis_next,left,rtrait,ray_further,closest);
+                            dop(axis,left,rtrait,ray_further,closest,div);
                         },
                         None=>{
                             recc(axis_next,right,rtrait,ray,closest);
@@ -299,7 +206,7 @@ fn recc<'x,'a,
                         match rtrait.compute_distance_to_line::<A>(div){
                             Some(dis2)=>{
                                 if dis2<dis{
-                                    recc(axis,nd,rtrait,ray,closest);
+                                    recc(axis.next(),nd,rtrait,ray,closest);
                                 }else{
                                     //We get to skip here
 
@@ -307,21 +214,119 @@ fn recc<'x,'a,
                                 }
                             },
                             None=>{
+                                //panic!("IMPOSSIBLE!!!!");
                                 //Ray doesnt intersect other side
-                                //recc(axis.next(),second,rtrait,ray,closest);
                             }
                         }
                     },
                     None=>{
-                        recc(axis,nd,rtrait,ray,closest);
+                        recc(axis.next(),nd,rtrait,ray,closest);
                     }
+                }
+            }
+
+
+                        
+            //Check this node only after recursing children.
+            //We recurse first since this way we might find out we dont need to recurse the children in this node.
+            //Its more likely that we will find the closest bot in a child node
+            match &nn.cont{
+                &Some(cont)=>{
+                    let ff=[cont.left(),cont.right()];
+
+
+                    let ray_point=if axis.is_xaxis(){
+                        ray.point[0]
+                    }else{
+                        ray.point[1]
+                    };
+
+                    let handle_middle=if ray_point>=ff[0] && ray_point<=ff[1]{
+                        (true,42)
+                    }else{
+
+                        let (closer_line,further_line)=if axis.is_xaxis(){
+                            if ray.point[0]<div{
+                                (ff[0],ff[1])
+                            }else{
+                                (ff[1],ff[0])
+                            }
+                        }else{
+                            if ray.point[1]<div{
+                                (ff[0],ff[1])
+                            }else{
+                                (ff[1],ff[0])
+                            }
+                        };
+
+                        match closest.get_dis(){
+                            Some(dis)=>{
+
+                                let closest_possible=match rtrait.compute_distance_to_line::<A>(closer_line){
+                                    Some(dis2)=>{
+                                        dis2
+                                    },
+                                    None=>{
+                                        rtrait.zero()
+                                    }
+                                };
+
+                                if closest_possible<dis{
+                                    (true,0)
+                                }else{
+                                    if depth.0==0{
+                                        println!("{:?}",(closest_possible,dis));
+                                    }
+                                    (false,1)
+                                }
+                            },
+                            None=>{
+                                (true,2)
+                            }
+                        }
+                    };
+
+                    if depth.0==0{
+                        println!("{:?}",handle_middle);
+                    }
+
+                    if handle_middle.0{
+                        
+                        match rtrait.compute_intersection_range::<A>(ff){
+                        //match compute_intersection_range_converted::<A,_>(rtrait,ff,&ray){
+                            //(InSome(a),Some(b))=>{
+                            Some((a,b))=>{
+                                if depth.0==0{
+                                    println!("ab={:?}",(a,b));
+                                }
+                                for (i,bot) in nn.range.iter_mut().enumerate(){
+                                    
+                                    let rang=*((bot.get().0).0).get_range2::<A::Next>();
+                                    if rang.left()>b{
+                                        break;
+                                    }
+                                    
+                                    if rang.right()>=a{
+                                        closest.consider(depth,bot,rtrait,&ray);
+                                    }
+                                    
+                                }
+                            },
+                            None=>{
+                                //Do nothing
+                            }
+                        }
+                    } 
+                },
+                &None=>{
+                    //This node doesnt have any bots
                 }
             }
         }
         _ => {
             //TODO do better here
             for b in nn.range.iter_mut(){
-                closest.consider(b,rtrait,&ray);
+                closest.consider(depth,b,rtrait,&ray);
             }
         }
     }
