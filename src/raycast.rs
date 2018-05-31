@@ -112,18 +112,18 @@ pub trait RayTrait{
     type T:SweepTrait<Num=Self::N>;
     type N:NumTrait;
 
+    //Returns the y range of the fat line that needs to be checked
     fn compute_intersection_range<A:AxisTrait>(&mut self,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
 
-    fn compute_distance_to_line<A:AxisTrait>(&mut self,fat_line:Self::N)->Option<Self::N>;
+    //Returns distance from ray origin to the line.
+    fn compute_distance_to_line<A:AxisTrait>(&mut self,line:Self::N)->Option<Self::N>;
 
+    //The expensive collision detection
     fn compute_distance_bot(&mut self,depth:Depth,ColSingle<Self::T>)->Option<Self::N>;
 
 
     fn split_ray<A:AxisTrait>(&mut self,ray1:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>;
 
-    //ray1 and ray2 are passed with the guarentee that they have the same direction.
-    //fn add_ray(&mut self,ray1:&Ray<Self::N>,t_to_add:Self::N)->Ray<Self::N>;
-    fn zero(&mut self)->Self::N;
 }
 
 
@@ -262,23 +262,21 @@ fn recc<'x,'a,
                         match closest.get_dis(){
                             Some(dis)=>{
 
-                                let closest_possible=match rtrait.compute_distance_to_line::<A>(closer_line){
+                                match rtrait.compute_distance_to_line::<A>(closer_line){
                                     Some(dis2)=>{
-                                        dis2
+                                        if dis2<dis{
+                                            (true,64)
+                                        }else{
+                                            (false,22)
+                                        }
                                     },
                                     None=>{
-                                        rtrait.zero()
+                                        (true,64)
+                                        //rtrait.zero()
                                     }
-                                };
-
-                                if closest_possible<dis{
-                                    (true,0)
-                                }else{
-                                    if depth.0==0{
-                                        println!("{:?}",(closest_possible,dis));
-                                    }
-                                    (false,1)
                                 }
+
+                                
                             },
                             None=>{
                                 (true,2)
@@ -286,9 +284,6 @@ fn recc<'x,'a,
                         }
                     };
 
-                    if depth.0==0{
-                        println!("{:?}",handle_middle);
-                    }
 
                     if handle_middle.0{
                         
@@ -296,9 +291,7 @@ fn recc<'x,'a,
                         //match compute_intersection_range_converted::<A,_>(rtrait,ff,&ray){
                             //(InSome(a),Some(b))=>{
                             Some((a,b))=>{
-                                if depth.0==0{
-                                    println!("ab={:?}",(a,b));
-                                }
+                                
                                 for (i,bot) in nn.range.iter_mut().enumerate(){
                                     
                                     let rang=*((bot.get().0).0).get_range2::<A::Next>();

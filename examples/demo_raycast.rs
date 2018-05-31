@@ -81,7 +81,7 @@ fn main() {
                 counter+=0.01;
                 let dir=[(counter.cos()*5.0) as isize,(counter.sin()*5.0) as isize];  
                 //println!("dir={:?}",dir);         
-                let dir=[1,-2];
+                //let dir=[0,1];
                 Ray{point,dir,tlen:500,/*true_len:500*/}
             };
 
@@ -162,28 +162,35 @@ fn main() {
                         fn split_ray<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
                             let t=if A::new().is_xaxis(){
                                 if ray.dir[0]==0{
-                                    let t1=ray.tlen/2;
-                                    let t2=ray.tlen-t1;
-                                    //Lets just split it into half.
-                                    let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t1};
-                                    let new_point=[ray.point[0],ray.point[1]+t1];
-                                    let ray_new=Ray{point:new_point,dir:ray.dir,tlen:t2};
+                                    if ray.point[0]==fo{
+                                        let t1=ray.tlen/2;
+                                        let t2=ray.tlen-t1;
+                                        //Lets just split it into half.
+                                        let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t1};
+                                        let new_point=[ray.point[0],ray.point[1]+t1];
+                                        let ray_new=Ray{point:new_point,dir:ray.dir,tlen:t2};
 
-                                    return Some((ray_closer,ray_new))
+                                        return Some((ray_closer,ray_new))
+                                    }else{
+                                        return None
+                                    }
                                 }else{
                                     (fo-ray.point[0])/ray.dir[0]
                                 }
                             }else{
                                 if ray.dir[1]==0{
+                                    if ray.point[1]==fo{
+                                        let t1=ray.tlen/2;
+                                        let t2=ray.tlen-t1;
+                                        //Lets just split it into half.
+                                        let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t1};
+                                        let new_point=[ray.point[0]+t1,ray.point[1]];
+                                        let ray_new=Ray{point:new_point,dir:ray.dir,tlen:t2};
 
-                                    let t1=ray.tlen/2;
-                                    let t2=ray.tlen-t1;
-                                    //Lets just split it into half.
-                                    let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t1};
-                                    let new_point=[ray.point[0]+t1,ray.point[1]];
-                                    let ray_new=Ray{point:new_point,dir:ray.dir,tlen:t2};
-
-                                    return Some((ray_closer,ray_new))
+                                        return Some((ray_closer,ray_new))
+                                    }else{
+                                        return None
+                                    }
                                 }else{
                                     (fo-ray.point[1])/ray.dir[1]   
                                 }
@@ -254,10 +261,11 @@ fn main() {
 
 
                         }
-                        
+                        /*
                         fn zero(&mut self)->Self::N{
                             0   
                         }
+                        */
                         fn compute_distance_to_line<A:AxisTrait>(&mut self,line:Self::N)->Option<Self::N>{
                             compute_intersection_point::<A>(&self.ray,line).map(|a|a.0)
                         }
