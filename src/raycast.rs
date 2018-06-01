@@ -1,10 +1,6 @@
 use inner_prelude::*;
 use super::*;
 
-
-//TODO use the property that the trees are sorted somehow.
-
-
 pub fn raycast<
     'a,A:AxisTrait,
     T:SweepTrait,
@@ -12,7 +8,6 @@ pub fn raycast<
     >(tree:&'a mut DynTree<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(ColSingle<'a,T>,T::Num)>{
     
     let axis=A::new();
-    //let ray=&Ray{point,dir};
     let dt = tree.get_iter_mut().with_depth(Depth(0));
 
     let mut closest=Closest{closest:None};
@@ -24,14 +19,11 @@ pub fn raycast<
             let rr=bb.get_mut();
             let cc=ColSingle{inner:rr.1,rect:rr.0};
             Some((cc,x.1))
-            //mf2(cc,x.1);
         },
         None=>{
             None
         }
-    }
-    
-    //unimplemented!()
+    }    
 }
 
 
@@ -45,7 +37,6 @@ impl<T:SweepTrait> Closest<T>{
         let val={
             let (a,bb)=b.get_mut();
             let cc=ColSingle{inner:bb,rect:a};
-            //func(cc)
             raytrait.compute_distance_bot(depth,cc)
         };
 
@@ -76,38 +67,15 @@ impl<T:SweepTrait> Closest<T>{
     }
 }
 
-/*
-fn subdivide<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,_axis:A,div:N)->(AABBox<N>,AABBox<N>){
-    let (a,b)=r.0.subdivide(div,A::get());
-    (AABBox(a),AABBox(b))
+
+#[derive(Debug,Copy,Clone)]
+pub struct Ray<N:NumTrait>{
+    pub point:[N;2],
+    pub dir:[N;2],
+    pub tlen:N,
 }
 
 
-fn create_middile_box<A:AxisTrait,N:NumTrait>(r:&AABBox<N>,_axis:A,cont:Range<N>)->AABBox<N>{
-    let mut r=r.clone();
-    *r.0.get_range_mut(A::get())=cont;
-    r
-}
-*/
-
-use self::ray::Ray;
-pub mod ray{
-    use super::*;
-
-    #[derive(Debug,Copy,Clone)]
-    pub struct Ray<N:NumTrait>{
-        pub point:[N;2],
-        pub dir:[N;2],
-        pub tlen:N,
-    }
-
-
-}
-
-
-
-
-//TODO use this
 pub trait RayTrait{
     type T:SweepTrait<Num=Self::N>;
     type N:NumTrait;
@@ -150,49 +118,41 @@ fn recc<'x,'a,
                 }
             };
 
-
-
-
-
             {
-                let ray_point=if axis.is_xaxis(){
-                    ray.point[0]
-                }else{
-                    ray.point[1]
-                };
-
+                let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
 
                 let axis_next=axis.next();
 
-                //We want to recurse the side that is closer to the origin.
-                if ray_point<div{
-                    
-                    match rtrait.split_ray::<A>(&ray,div){
-                        Some((ray_closer,ray_further))=>{
-                            recc(axis_next,left,rtrait,ray_closer,closest);
-                            //recc(axis_next,right,rtrait,ray_further,closest);
-                            dop(axis,right,rtrait,ray_further,closest,div);
-                        },
-                        None=>{
-                            //The ray isnt long enough to touch the divider.
-                            //So just recurse the one side.
-                            recc(axis_next,left,rtrait,ray,closest);
+                let po=match ray_point.cmp(&div){
+                    std::cmp::Ordering::Less=>{
+                        match rtrait.split_ray::<A>(&ray,div){
+                            Some((ray_closer,ray_further))=>{
+                                recc(axis_next,left,rtrait,ray_closer,closest);
+                                dop(axis,right,rtrait,ray_further,closest,div);
+                            },
+                            None=>{
+                                //The ray isnt long enough to touch the divider.
+                                //So just recurse the one side.
+                                recc(axis_next,left,rtrait,ray,closest);
+                            }
                         }
-                    }
-                
-                }else{
-                    match rtrait.split_ray::<A>(&ray,div){
-                        Some((ray_closer,ray_further))=>{
-                            recc(axis_next,right,rtrait,ray_closer,closest);
-                            //recc(axis_next,left,rtrait,ray_further,closest);
-                            dop(axis,left,rtrait,ray_further,closest,div);
-                        },
-                        None=>{
-                            recc(axis_next,right,rtrait,ray,closest);
+                    },
+                    std::cmp::Ordering::Greater=>{
+                        match rtrait.split_ray::<A>(&ray,div){
+                            Some((ray_closer,ray_further))=>{
+                                recc(axis_next,right,rtrait,ray_closer,closest);
+                                dop(axis,left,rtrait,ray_further,closest,div);
+                            },
+                            None=>{
+                                recc(axis_next,right,rtrait,ray,closest);
+                            }
                         }
+                    },
+                    std::cmp::Ordering::Equal=>{ //We might potentially recurse the wrong way unless we recurse both, so recurse both
+                        recc(axis_next,left,rtrait,ray,closest);
+                        recc(axis_next,right,rtrait,ray,closest);   
                     }
-                
-                }  
+                };             
             };
             
             //Possibly recurse this side if the closest possible ray distance for a bot in this side
@@ -231,30 +191,18 @@ fn recc<'x,'a,
                 &Some(cont)=>{
                     let ff=[cont.left(),cont.right()];
 
-
-                    let ray_point=if axis.is_xaxis(){
-                        ray.point[0]
-                    }else{
-                        ray.point[1]
-                    };
+                    let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
 
                     //TODO figure out correct inequalities
                     let handle_middle=if ray_point>=ff[0] && ray_point<=ff[1]{
                         true
                     }else{
 
-                        let closer_line=if axis.is_xaxis(){
-                            if ray.point[0]<div{
-                                ff[0]
-                            }else{
-                                ff[1]
-                            }
+                        let ray_point_wrap=axgeom::AxisWrapRef(&ray.point);
+                        let closer_line=if *ray_point_wrap.get(axis)<div{
+                            ff[0]
                         }else{
-                            if ray.point[1]<div{
-                                ff[0]
-                            }else{
-                                ff[1]
-                            }
+                            ff[1]
                         };
 
                         match closest.get_dis(){
@@ -282,9 +230,7 @@ fn recc<'x,'a,
                     if handle_middle{
                         match rtrait.compute_intersection_range::<A>(ff){
                             Some((a,b))=>{
-                                
                                 for (i,bot) in nn.range.iter_mut().enumerate(){
-                                    
                                     let rang=*((bot.get().0).0).get_range2::<A::Next>();
                                     if rang.left()>b{
                                         break;
@@ -307,10 +253,11 @@ fn recc<'x,'a,
             }
         }
         _ => {
-            //TODO do better here?
+            //Can't do better here since for leafs, cont is none.
             for b in nn.range.iter_mut(){
                 closest.consider(depth,b,rtrait,&ray);
             }
+            
         }
     }
 

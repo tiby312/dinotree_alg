@@ -49,7 +49,7 @@ fn main() {
                 }
                 impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
                     type N=isize;
-                    fn draw_divider<A:axgeom::AxisTrait>(&mut self,div:isize,length:[isize;2],depth:usize){
+                    fn draw_divider<A:axgeom::AxisTrait>(&mut self,div:isize,cont:Option<[isize;2]>,length:[isize;2],depth:usize){
                         let div=div as f64;
                         
 
@@ -67,6 +67,24 @@ fn main() {
                              arr, // [x0, y0, x1,y1] coordinates of line
                              self.c.transform,
                              self.g);
+
+                        match cont{
+                            Some(cont)=>{
+                                let [x1,y1,w1,w2]=if A::new().is_xaxis(){
+                                    [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
+                                }else{
+                                    [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
+                                };
+                                //let ((x1,x2),(w1,w2))=((x1 as f64,x2 as f64),(w1 as f64,w2 as f64));
+                
+                                let square = [x1 as f64,y1 as f64,w1 as f64,w2 as f64];
+                                rectangle([0.0,0.0,1.0,0.3], square, self.c.transform, self.g);
+                            
+                            },
+                            None=>{
+
+                            }
+                        }
                         
                     }
                 }

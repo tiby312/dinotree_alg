@@ -1,4 +1,9 @@
+
 //!Provides capability to draw the dividers of each node.
+
+//TODO move this to dinotree inner!!!!
+
+
 use inner_prelude::*;
 pub use dinotree_inner::compute_tree_height;
 pub use compt::compute_num_nodes;
@@ -10,7 +15,7 @@ pub use axgeom::YAXISS;
 
 pub trait DividerDrawer{
     type N:NumTrait;
-    fn draw_divider<A:AxisTrait>(&mut self,div:Self::N,length:[Self::N;2],depth:usize);
+    fn draw_divider<A:AxisTrait>(&mut self,div:Self::N,cont:Option<[Self::N;2]>,length:[Self::N;2],depth:usize);
 }
 
 
@@ -29,8 +34,17 @@ pub fn draw<T: SweepTrait+Send,D:DividerDrawer<N=T::Num>>(
 
         let div=match nn.div{
             Some(div)=>{
+                let cont=match nn.cont{
+                    Some(cont)=>{
+                        Some([cont.left(),cont.right()])
+                    },
+                    None=>{
+                        None
+                    }
+                };
+
                 let rr=rect.get_range2::<A::Next>();
-                dr.draw_divider::<A>(div,[rr.start,rr.end],depth.0);
+                dr.draw_divider::<A>(div,cont,[rr.start,rr.end],depth.0);
                 div
             },
             None=>{

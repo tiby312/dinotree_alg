@@ -143,13 +143,12 @@ mod ray{
             if t>ray.tlen || t<0{
                 return None
             }
+
             let new_point=[ray.point[0]+ray.dir[0]*t,ray.point[1]+ray.dir[1]*t];
             
-
-            let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t,};
-            let ray_new=Ray{point:new_point,dir:ray.dir,tlen:ray.tlen-t,};
+            let ray_closer=Ray{point:ray.point,dir:ray.dir,tlen:t};
+            let ray_new=Ray{point:new_point,dir:ray.dir,tlen:ray.tlen-t};
             Some((ray_closer,ray_new))
-            
         }
 
         //First option is min, second is max
@@ -248,11 +247,11 @@ fn main() {
 
             let ray={
                 let point=[cursor[0] as isize,cursor[1] as isize];
-                counter+=0.1;
-                let dir=[(counter.cos()*5.0) as isize,(counter.sin()*5.0) as isize];  
-                //println!("dir={:?}",dir);         
-                //let dir=[0,1];
-                Ray{point,dir,tlen:500,/*true_len:500*/}
+                //let point=[214,388];
+                //println!("cursor={:?}",point);
+                counter+=0.1;         
+                let dir=[1,1];
+                Ray{point,dir,tlen:500}
             };
 
             for bot in bots.iter(){
@@ -269,15 +268,7 @@ fn main() {
 
 
                 let k={
-                    let bb=AABBox::new((0+100,800-100),(0+100,800-100));
-                    {
-                        let ((x1,x2),(y1,y2))=bb.get();//(bb.xdiv,bb.ydiv);
-                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                        let square = [x1,y1,x2-x1,y2-y1];
-                        rectangle([0.0,1.0,0.0,0.2], square, c.transform, g);
-                    }
-
-
+                    
 
                     let height=tree.get_height();
                     tree.raycast(ray,ray::RayT{ray,c:&c,g,height})

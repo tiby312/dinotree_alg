@@ -1,10 +1,6 @@
 use inner_prelude::*;
 use super::*;
 
-
-//TODO use the property that the trees are sorted somehow.
-
-
 use self::cand::ClosestCand;
 mod cand{
     use super::*;
@@ -82,9 +78,6 @@ fn traverse_other<K:Knearest>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::N,div:K
         }
     }
 }
-//(x*x)  (y*y)
-//
-
 
 pub trait Knearest{
     type T:SweepTrait<Num=Self::N>;
@@ -95,7 +88,6 @@ pub trait Knearest{
 
     //create a range around n.
     fn create_range(&mut self,Self::N,Self::D)->[Self::N;2];
-    //fn handle(&mut self,ColSingle<'b,Self::T>,Self::D);
 }
 
 
@@ -112,13 +104,8 @@ pub fn k_nearest<'b,
  
     for i in c.into_sorted(){
         let j:&mut K::T=unsafe{&mut *i.0};
-
         let j=j.get_mut();
-        //let j=unsafe{&mut *i.0}.get_mut();
-        //let j:(&AABBox<<K::T as SweepTrait>::Num>,&mut <K::T as SweepTrait>::Inner)=unsafe{&mut *i.0}.get_mut();
-        //let j:(&AABBox<<K::T as SweepTrait>::Num>,&'b mut <K::T as SweepTrait>::Inner)=unsafe{std::mem::transmute(j)};
         func(ColSingle{inner:j.1,rect:j.0},i.1);
-        //knear.handle(ColSingle{inner:j.1,rect:j.0},i.1);
     }
 
 
@@ -130,18 +117,8 @@ fn recc<
 
     let ((depth,nn),rest)=stuff.next();
 
-    //known at compile time.
-    let pp=if axis.is_xaxis(){
-        point[0]
-    }else{
-        point[1]
-    };
-
-    let ppother=if axis.is_xaxis(){
-        point[1]
-    }else{
-        point[0]
-    };
+    let pp=*axgeom::AxisWrapRef(&point).get(axis);
+    let ppother=*axgeom::AxisWrapRef(&point).get(axis.next());
 
     match rest {
         Some((left, right)) => {
@@ -151,17 +128,34 @@ fn recc<
             };
     
 
-            let (first,other)=if pp<div {
-                (left,right)
-            }else{
-                (right,left)
-            };
+            match pp.cmp(&div){
+                std::cmp::Ordering::Less=>{
 
-            recc(axis.next(), first,knear,point,res);
-           
-            if traverse_other(res,knear,pp,div){
-                recc(axis.next(),other,knear,point,res);
+                    recc(axis.next(), left,knear,point,res);
+                   
+                    if traverse_other(res,knear,pp,div){
+                        recc(axis.next(),right,knear,point,res);
+                    }
+                },
+                std::cmp::Ordering::Greater=>{
+
+                    recc(axis.next(), right,knear,point,res);
+                   
+                    if traverse_other(res,knear,pp,div){
+                        recc(axis.next(),left,knear,point,res);
+                    }
+                },
+                std::cmp::Ordering::Equal=>{
+                    //This case it doesnt really matter whether we traverse left or right first.
+                    
+                    recc(axis.next(), left,knear,point,res);
+                   
+                    if traverse_other(res,knear,pp,div){
+                        recc(axis.next(),right,knear,point,res);
+                    }
+                }
             }
+
 
             //Check again incase the other recursion took care of everything
             //We are hoping that it is more likely that the closest points are found

@@ -84,16 +84,12 @@ mod colfind;
 
 mod k_nearest;
 pub use k_nearest::Knearest;
-
-//pub use nbody::CenterOfMass;
 pub use nbody::NodeMassTrait;
 mod nbody;
 
 mod raycast;
 pub use raycast::RayTrait;
-pub use raycast::ray::Ray;
-//pub use raycast::Vec2;
-//pub use raycast::RectInf;
+pub use raycast::Ray;
 
 mod rect;
 
