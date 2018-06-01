@@ -195,6 +195,8 @@ fn recc<'x,'a,
                 }  
             };
             
+            //Possibly recurse this side if the closest possible ray distance for a bot in this side
+            //of the divider is less than the current closest ray distance found.
             fn dop<
                 N:NumTrait,
                 A: AxisTrait,
@@ -209,12 +211,9 @@ fn recc<'x,'a,
                                     recc(axis.next(),nd,rtrait,ray,closest);
                                 }else{
                                     //We get to skip here
-
-                                    //recc(axis.next(),second,rtrait,ray,closest);
                                 }
                             },
                             None=>{
-                                //panic!("IMPOSSIBLE!!!!");
                                 //Ray doesnt intersect other side
                             }
                         }
@@ -225,11 +224,9 @@ fn recc<'x,'a,
                 }
             }
 
-
-                        
-            //Check this node only after recursing children.
-            //We recurse first since this way we might find out we dont need to recurse the children in this node.
-            //Its more likely that we will find the closest bot in a child node
+            //Check the bots in this node only after recursing children.
+            //We recurse first since this way we might find out we dont need to recurse the bots in this node
+            //since its more likely that we will find the closest bot in a child node
             match &nn.cont{
                 &Some(cont)=>{
                     let ff=[cont.left(),cont.right()];
@@ -241,55 +238,49 @@ fn recc<'x,'a,
                         ray.point[1]
                     };
 
+                    //TODO figure out correct inequalities
                     let handle_middle=if ray_point>=ff[0] && ray_point<=ff[1]{
-                        (true,42)
+                        true
                     }else{
 
-                        let (closer_line,further_line)=if axis.is_xaxis(){
+                        let closer_line=if axis.is_xaxis(){
                             if ray.point[0]<div{
-                                (ff[0],ff[1])
+                                ff[0]
                             }else{
-                                (ff[1],ff[0])
+                                ff[1]
                             }
                         }else{
                             if ray.point[1]<div{
-                                (ff[0],ff[1])
+                                ff[0]
                             }else{
-                                (ff[1],ff[0])
+                                ff[1]
                             }
                         };
 
                         match closest.get_dis(){
                             Some(dis)=>{
-
                                 match rtrait.compute_distance_to_line::<A>(closer_line){
                                     Some(dis2)=>{
                                         if dis2<dis{
-                                            (true,64)
+                                            true
                                         }else{
-                                            (false,22)
+                                            false
                                         }
                                     },
                                     None=>{
-                                        (true,64)
-                                        //rtrait.zero()
+                                        true
                                     }
                                 }
-
-                                
                             },
                             None=>{
-                                (true,2)
+                                true
                             }
                         }
                     };
 
 
-                    if handle_middle.0{
-                        
+                    if handle_middle{
                         match rtrait.compute_intersection_range::<A>(ff){
-                        //match compute_intersection_range_converted::<A,_>(rtrait,ff,&ray){
-                            //(InSome(a),Some(b))=>{
                             Some((a,b))=>{
                                 
                                 for (i,bot) in nn.range.iter_mut().enumerate(){
@@ -302,7 +293,6 @@ fn recc<'x,'a,
                                     if rang.right()>=a{
                                         closest.consider(depth,bot,rtrait,&ray);
                                     }
-                                    
                                 }
                             },
                             None=>{
@@ -317,7 +307,7 @@ fn recc<'x,'a,
             }
         }
         _ => {
-            //TODO do better here
+            //TODO do better here?
             for b in nn.range.iter_mut(){
                 closest.consider(depth,b,rtrait,&ray);
             }
