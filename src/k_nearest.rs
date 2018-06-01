@@ -167,100 +167,62 @@ fn recc<
             //We are hoping that it is more likely that the closest points are found
             //in decendant nodes instead of ancestor nodes.
             //if traverse_other(res,knear,pp,div){
-            {  
-                let mut bb=nn.range.iter_mut().peekable();
-                
+        
+            match nn.cont{
+                None=>{
+                    //No bots in this node
+                },
+                Some(cont)=>{
+                    for bot in nn.range.iter_mut(){
+                        match res.full_and_max_distance(){
+                            Some(dis)=>{
 
-                unimplemented!();
-                //The below is wrong because you can have variable sized ranges.
-                /* 
-                {//Skip over all the bots that dont arnt inside the range.
-                    match res.full_and_max_distance(){
-                        Some(dis)=>{    
-                            let [leftr,rightr]=knear.create_range(ppother,dis);
-                            /*
-                            if depth.0==0{
-                                println!("leftr,right,dis={:?}",(leftr,rightr,dis));
-                            }
-                            */
-                            //println!("left,rightr={:?}",(leftr,rightr));
-                            
-                            loop{
-                                let skip={
-                                    let bot=match bb.peek(){
-                                        Some(bot)=>{bot},
-                                        None=>{break}
-                                    };
+                                //Used for both x and y.
+                                //Think of this is a bounding box around the point that grows
+                                let [leftr,rightr]=knear.create_range(ppother,dis);
 
-                                    let [leftbot,rightbot]={
-                                        [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
-                                    };
-
-                                    if rightbot>=leftr{
-                                        break;
-                                    }
+                                let conty=if pp<div{
+                                    cont.left()
+                                }else{
+                                    cont.right()
                                 };
+                                
+                                if dis<knear.oned_check(conty,pp){
+                                    break;
+                                }
 
-                                bb.next();
-                            }
-                        },
-                        None=>{
-
-                        }
-                    }
-                }
-                */
-                
-                /*
-                for bot in bb{
-                    let dis_sqr=knear.twod_check(point,bot.get().0);
-                    res.consider((bot,dis_sqr));
-                }
-                */
-                
-                
-            
-                for bot in bb{
-                    match res.full_and_max_distance(){
-                        Some(dis)=>{
-
-                            let [leftr,rightr]=knear.create_range(ppother,dis);
-
-                            let [leftbot,rightbot]={
-                                [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
-                            };
-                            
-                            if leftbot>rightr{
-                                //All the bots after this will also be too far away.
-                                //because the bots are sorted in ascending order.
-                                break;
-                            }else{
+                                let [leftbot,rightbot]={
+                                    [(bot.get().0).0.get_range2::<A::Next>().left(),(bot.get().0).0.get_range2::<A::Next>().right()]
+                                };
+                                
+                                if leftbot>rightr{
+                                    //All the bots after this will also be too far away.
+                                    //because the bots are sorted in ascending order.
+                                    break;
+                                }else if rightbot>=leftr{
+                                    let dis_sqr=knear.twod_check(point,bot.get().0);
+                                    res.consider((bot,dis_sqr));
+                                
+                                }
+                            },
+                            None=>{
                                 let dis_sqr=knear.twod_check(point,bot.get().0);
                                 res.consider((bot,dis_sqr));
+                            
                             }
-                        },
-                        None=>{
-                            let dis_sqr=knear.twod_check(point,bot.get().0);
-                            res.consider((bot,dis_sqr));
-                        
-                        }
-                    }                          
+                        }                          
+                    }
                 }
-            
-                
-                
-                
-            
             }
+            
+            
+                
+                
+                
 
         }
         _ => {
-            //If we are a child, just handle everything.
-            /*
-            for i in nn.range.iter_mut(){            
-                let dis_sqr=knear.twod_check(point,i.get().0);
-                res.consider((i,dis_sqr));
-            } */
+
             let mut bb=nn.range.iter_mut();
             
             for bot in bb{
