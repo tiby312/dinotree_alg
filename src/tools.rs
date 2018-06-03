@@ -12,16 +12,18 @@ impl<T> Clone for PhantomSendSync<T> {
     }
 }
 
-unsafe impl<T: Send> std::marker::Send for PreVec<T> {}
 use smallvec;
+
+unsafe impl<T: Send> std::marker::Send for PreVecMut<T> {}
+
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
-pub struct PreVec<T> {
+pub struct PreVecMut<T> {
     vec: smallvec::SmallVec<[*mut T; 64]>,
 }
-impl<T> PreVec<T> {
+impl<T> PreVecMut<T> {
     #[inline(always)]
-    pub fn new() -> PreVec<T> {
-        PreVec {
+    pub fn new() -> PreVecMut<T> {
+        PreVecMut {
             vec: smallvec::SmallVec::new(),
         }
     }
@@ -34,6 +36,32 @@ impl<T> PreVec<T> {
         unsafe { std::mem::transmute(v) }
     }
 }
+
+
+///An vec api to avoid excessive dynamic allocation by reusing a Vec
+pub struct PreVec<T> {
+    vec: smallvec::SmallVec<[*const T; 64]>,
+}
+impl<T> PreVec<T> {
+    #[inline(always)]
+    pub fn new() -> PreVec<T> {
+        PreVec {
+            vec: smallvec::SmallVec::new(),
+        }
+    }
+
+    ///Clears the vec and returns a mutable reference to a vec.
+    #[inline(always)]
+    pub fn get_empty_vec<'a>(&'a mut self) -> &mut smallvec::SmallVec<[&'a T; 64]> {
+        self.vec.clear();
+        let v: &mut smallvec::SmallVec<[*const T; 64]> = &mut self.vec;
+        unsafe { std::mem::transmute(v) }
+    }
+}
+
+
+
+
 
 /*
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec

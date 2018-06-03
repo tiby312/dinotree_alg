@@ -1,5 +1,5 @@
 use inner_prelude::*;
-
+use dinotree_inner::*;
 //TODO somehow take advantage of sorted property?????
 
 mod tools{
@@ -21,7 +21,7 @@ mod tools{
 
 
 pub trait NodeMassTrait:Clone{
-    type T:SweepTrait;
+    type T:HasAabb;
     type No:Copy;
 
     fn create_empty(&self)->Self::No;
@@ -35,9 +35,9 @@ pub trait NodeMassTrait:Clone{
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,&mut Self::No,b:&mut Self::T);
 
-    fn is_far_enough(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
 
-    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I);
@@ -52,13 +52,13 @@ pub trait NodeMassTrait:Clone{
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
 fn buildtree<'a,
-    T:SweepTrait+Send+'a,
+    T:HasAabb+Send+'a,
     N:NodeMassTrait<T=T>
     >
     (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:N){
 
 
-    fn recc<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
+    fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
         (axis:impl AxisTrait,stuff:NdIterMut<N::No,T>,ncontext:N){
 
         let (nn,rest)=stuff.next();
@@ -113,21 +113,16 @@ fn buildtree<'a,
         }
 
     }
-
-    //TODO with capcaity
-    //let mut vec=Vec::new();
-    //let height=tree.get_height();
-    //let stuff=tree.get_iter();
     recc(axis,node,ncontext);
 }
 
 fn apply_tree<'a,   
-    T:SweepTrait+'a,
+    T:HasAabb+'a,
     N:NodeMassTrait<T=T>
     >
     (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:N){
 
-    fn recc<'a,T:SweepTrait+'a,N:NodeMassTrait<T=T>>
+    fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
         (stuff:NdIterMut<N::No,T>,ncontext:N){
 
         let (nn1,rest)=stuff.next();
@@ -143,7 +138,7 @@ fn apply_tree<'a,
 
                 
                 {
-                     let left=left.create_wrap_mut();
+                    let left=left.create_wrap_mut();
                     let righ=righ.create_wrap_mut();
 
                                             
@@ -151,21 +146,6 @@ fn apply_tree<'a,
                     let i2=righ.dfs_preorder_iter().flat_map(|node|{node.range.iter_mut()});
                     let i3=nn1.range.iter_mut().chain(i1.chain(i2));
                     
-                            
-                            /*
-                    let mut bots_to_undo:Vec<&mut T>=Vec::with_capacity(nn1.range.len());
-                    for b in nn1.range.iter_mut(){
-                        bots_to_undo.push(b);
-                    }
-                    let left=left.create_wrap_mut();
-                    let righ=righ.create_wrap_mut();
-
-
-                    recc2(&mut bots_to_undo,left);
-                    recc2(&mut bots_to_undo,righ);
-
-                    let l=bots_to_undo.len();
-                    */
                     ncontext.apply_to_bots(nodeb,i3);
                 }
                 let n2=ncontext.clone();
@@ -175,68 +155,16 @@ fn apply_tree<'a,
             None=>{
                 let l=nn1.range.len();
                 ncontext.apply_to_bots(nodeb,nn1.range.iter_mut());
-                //nodeb.undo()
             }
         }
-        /*
-        fn recc2<'a,N:Send+Copy,T:SweepTrait+'a>(bots:&mut Vec<&'a mut T>,stuff:NdIterMut<'a,N,T>){
-            let (nn,rest)=stuff.next();
-
-            match rest{
-                Some((left,right))=>{
-                    match nn.div{
-                        Some(_div)=>{
-                            for i in nn.range.iter_mut(){
-                                bots.push(i);
-                            }
-                            recc2(bots,left);
-                            recc2(bots,right);
-                        },
-                        None=>{
-                            return;
-                        }
-                    }
-                    
-                },
-                None=>{
-                    for i in nn.range.iter_mut(){
-                        bots.push(i);
-                    }
-                }
-            }
-        }
-        */
     }
 
     recc(node,ncontext);
 }
 
-/*
-use self::ll::*;
-mod ll{
-
-    #[derive(Copy,Clone)]
-    pub struct Left;
-    impl LeftOrRight for Left{
-        fn is_left(&self)->bool{true}
-    }
-
-    #[derive(Copy,Clone)]
-    pub struct Right;
-    impl LeftOrRight for Right{
-        fn is_left(&self)->bool{false}
-    }
-
-    pub trait LeftOrRight:Copy+Clone{
-        fn is_left(&self)->bool;
-    }
-}
-*/
-
-
 
 //Construct anchor from cont!!!
-struct Anchor<'a,A:AxisTrait,T:SweepTrait+'a>{
+struct Anchor<'a,A:AxisTrait,T:HasAabb+'a>{
 	_axis:A,
     range:&'a mut [T],
     div:T::Num
@@ -269,7 +197,7 @@ fn handle_anchor_with_children<'a,
                 self.ncontext.handle_node_with_bot(a,i);
             }
         }
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
             self.ncontext.is_far_enough(depth.0,b)
         }
     }
@@ -277,71 +205,6 @@ fn handle_anchor_with_children<'a,
     generic_rec(thisa,anchor,left,&mut bo);  
     generic_rec(thisa,anchor,right,&mut bo);  
 }
-
-/*
-struct DIter<'a,N:NodeMassTrait+'a>{
-    a:BothIter<'a,N>,
-    depth:usize
-}
-impl<'a,N:NodeMassTrait+'a> DIter<'a,N>{
-    fn create_wrap_mut<'b>(&'b mut self)->DIter<'b,N>{
-        
-        let a=self.a.create_wrap_mut();
-        DIter{a,depth:self.depth}
-    }
-}
-
-impl<'a,N:NodeMassTrait+'a> CTreeIterator for DIter<'a,N>{
-    type Item=(Depth,(&'a mut NodeDyn<(),N::T>,&'a mut N::No));
-    fn next(self)->(Self::Item,Option<(Self,Self)>){
-        let (n1,rest1)=self.a.next();
-        
-        let n1=(Depth(self.depth),n1);
-        match rest1{
-            Some((left,right))=>{
-                let depth=self.depth+1;
-                (n1,Some((DIter{a:left,depth},DIter{a:right,depth})))
-            },
-            None=>{
-                (n1,None)  
-            }
-        }
-    }
-}
-
-struct BothIter<'a,N:NodeMassTrait+'a>{
-    it1:NdIterMut<'a,(),N::T>,
-    it2:compt::dfs::DownTMut<'a,N::No>
-}
-impl<'a,N:NodeMassTrait+'a> BothIter<'a,N>{
-    fn create_wrap_mut<'b>(&'b mut self)->BothIter<'b,N>{
-        let it1=self.it1.create_wrap_mut();
-        let it2=self.it2.create_wrap_mut();
-        BothIter{it1,it2}
-    }
-}
-
-impl<'a,N:NodeMassTrait+'a> CTreeIterator for BothIter<'a,N>{
-    type Item=(&'a mut NodeDyn<(),N::T>,&'a mut N::No);
-    fn next(self)->(Self::Item,Option<(Self,Self)>){
-        let (n1,rest1)=self.it1.next();
-        let (n2,rest2)=self.it2.next();
-        
-        match rest1{
-            Some((left,right))=>{
-                let (ll,rr)=rest2.unwrap();
-
-                ((n1,n2),Some((BothIter{it1:left,it2:ll},BothIter{it1:right,it2:rr})))
-            },
-            None=>{
-                ((n1,n2),None)  
-            }
-        }
-    }
-}
-
-*/
-
 
 fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     (_axis:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<'a,N::No,N::T>>,mut right:LevelIter<NdIterMut<'a,N::No,N::T>>,ncontext:&N){
@@ -362,7 +225,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_bot(a,self.bot);
     	}
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
             self.ncontext.is_far_enough_half(depth.0,b)
         }
     }
@@ -382,7 +245,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_node(self.node,a);
     	}
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
             self.ncontext.is_far_enough_half(depth.0,b)
         }
     }
@@ -407,7 +270,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
             let r=self.right.inner.create_wrap_mut().with_depth(d);
     		generic_rec(A::new(),anchor,r,&mut Bo2{_anchor_axis:B::new(),node:a,ncontext:self.ncontext})
     	}
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool{
+        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
             self.ncontext.is_far_enough_half(depth.0,b)
         }
     }
@@ -488,9 +351,9 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
 
 trait Bok{
     type N:NodeMassTrait<T=Self::T>;
-    type T:SweepTrait;
+    type T:HasAabb;
     type B:AxisTrait;
-    fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as SweepTrait>::Num;2])->bool;
+    fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool;
     fn handle_every_node<A:AxisTrait>(&mut self,n:&mut Self::T,anchor:&mut Anchor<Self::B,Self::T>);
     fn handle_far_enough<A:AxisTrait>(&mut self,a:&mut <Self::N as NodeMassTrait>::No,anchor:&mut Anchor<Self::B,Self::T>);
 }
@@ -501,7 +364,7 @@ fn generic_rec<
     AnchorAxis:AxisTrait,
     B:Bok<N=N,T=T,B=AnchorAxis>,
     N:NodeMassTrait<T=T>,
-    T:SweepTrait,
+    T:HasAabb,
     >(this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:LevelIter<NdIterMut<N::No,T>>,bok:&mut B){
 
         
@@ -510,7 +373,7 @@ fn generic_rec<
         AnchorAxis:AxisTrait,
         B:Bok<N=N,T=T,B=AnchorAxis>,
         N:NodeMassTrait<T=T>,
-        T:SweepTrait,
+        T:HasAabb,
         >(axis:A,bok:&mut B,stuff:LevelIter<NdIterMut<N::No,T>>,anchor:&mut Anchor<AnchorAxis,T>){
         let ((depth,nn1),rest)=stuff.next();
         
@@ -563,7 +426,7 @@ fn generic_rec<
         }
     }       
 }
-pub fn nbody_par<A:AxisTrait,T:SweepTrait+Send,N:NodeMassTrait<T=T>>(tree:&mut DynTree<A,(),T>,ncontext:N) where N:Send,N::No:Send{
+pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>>(tree:&mut DynTreeMut<A,(),T>,ncontext:N) where N:Send,N::No:Send{
     let axis=A::new();
     let height=tree.get_height();
     
@@ -590,7 +453,7 @@ pub fn nbody_par<A:AxisTrait,T:SweepTrait+Send,N:NodeMassTrait<T=T>>(tree:&mut D
 }
 
 
-pub fn nbody_seq<A:AxisTrait,T:SweepTrait+Send,N:NodeMassTrait<T=T>+Send>(tree:&mut DynTree<A,(),T>,ncontext:N) where N::No:Send{
+pub fn nbody_seq<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(tree:&mut DynTreeMut<A,(),T>,ncontext:N) where N::No:Send{
     let axis=A::new();
 
     let height=tree.get_height();

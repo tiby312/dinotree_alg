@@ -4,13 +4,6 @@ use unsafe_unwrap::UnsafeUnwrap;
 //TODO bench these without bounds checking and unwrap()ing.
 
 
-pub trait Bleek {
-    type T: SweepTrait;
-    fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>);
-}
-
-
-
 pub struct Accessor<X: AxisTrait> {
     _p: PhantomData<X>,
 }
@@ -20,174 +13,230 @@ impl<X: AxisTrait> Accessor<X> {
     }
 }
 
-///Provides 1d collision detection.
-pub struct Sweeper<T: SweepTrait> {
-    helper: tools::PreVec<T>,
-}
+pub mod mod_mut{
+    
+    struct Bl<A: AxisTrait, F: Bleek> {
+        a: F,
+        _p: PhantomData<A>,
+    }
 
-impl<I: SweepTrait> Sweeper<I> {
-    pub fn new() -> Sweeper<I> {
-        Sweeper {
-            helper: tools::PreVec::new(),
+    impl<A: AxisTrait, F: Bleek> Bleek for Bl<A, F> {
+        type T = F::T;
+
+        fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
+            //only check if the opoosite axis intersects.
+            //already know they intersect
+            let a2 = A::Next::get();
+            if a.get()
+                .get_range(a2)
+                .intersects(b.get().get_range(a2))
+            {
+                self.a.collide(a, b);
+            }
         }
     }
 
-    ///Find colliding pairs using the mark and sweep algorithm.
-    pub fn find<'a, A: AxisTrait, F: Bleek<T = I>>(
-        &mut self,
-        collision_botids: &'a mut [I],
-        mut func: F,
-    ) {
-        //    Create a new temporary list called “activeList”.
-        //    You begin on the left of your axisList, adding the first item to the activeList.
-        //
-        //    Now you have a look at the next item in the axisList and compare it with all items
-        //     currently in the activeList (at the moment just one):
-        //     - If the new item’s left is greater then the current activeList-item right,
-        //       then remove
-        //    the activeList-item from the activeList
-        //     - otherwise report a possible collision between the new axisList-item and the current
-        //     activeList-item.
-        //
-        //    Add the new item itself to the activeList and continue with the next item
-        //     in the axisList.
+    
 
-        let active = self.helper.get_empty_vec_mut();
+    use super::*;
+    pub trait Bleek {
+        type T: HasAabb;
+        fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
+    }
 
-        for curr_bot_id in collision_botids.iter_mut() {
-            {
-                let (curr_rect, curr_bot_id_val) = curr_bot_id.get_mut();
-                let crr = Accessor::<A>::get(&(curr_rect.0));
 
-                //change this to do retain and then iter
-                active.retain(|that_bot_ind| {
-                    let (that_rect, _) = that_bot_ind.get();
-                    let brr = Accessor::<A>::get(&(that_rect.0));
 
-                    if brr.right() < crr.left() {
+    ///Provides 1d collision detection.
+    pub struct Sweeper<T: HasAabb> {
+        helper: tools::PreVecMut<T>,
+    }
+
+    impl<I: HasAabb> Sweeper<I> {
+        pub fn new() -> Sweeper<I> {
+            Sweeper {
+                helper: tools::PreVecMut::new(),
+            }
+        }
+
+
+        //Bots a sorted along the axis.
+        pub fn find_2d<A: AxisTrait, F: Bleek<T=I>>(
+            &mut self,
+            bots: &mut [F::T],
+            clos2: F,
+        ) {
+            let b: Bl<A, _> = Bl {
+                a: clos2,
+                _p: PhantomData,
+            };
+            self.find::<A, _>(bots, b);
+        }
+
+
+        pub fn find_parallel_2d<A: AxisTrait, F: Bleek<T=I>>(
+            &mut self,
+            bots1: &mut [F::T],
+            bots2: &mut [F::T],
+            clos2: F,
+        ) {
+            let b: Bl<A, _> = Bl {
+                a: clos2,
+                _p: PhantomData,
+            };
+
+            self.find_bijective_parallel::<A, _>((bots1, bots2), b);
+        }
+
+        pub fn find_perp_2d<F: Bleek<T=I>>(&mut self,
+            r1: &mut [F::T],
+            r2: &mut [F::T],
+            mut clos2: F){
+
+           
+            for inda in r1.iter_mut() {
+                for indb in r2.iter_mut() {
+                    if inda.get().intersects_rect(indb.get()) {
+                        clos2.collide(inda, indb);
+                    }
+                }
+            }
+        }
+
+        ///Find colliding pairs using the mark and sweep algorithm.
+        fn find<'a, A: AxisTrait, F: Bleek<T = I>>(
+            &mut self,
+            collision_botids: &'a mut [I],
+            mut func: F,
+        ) {
+            //    Create a new temporary list called “activeList”.
+            //    You begin on the left of your axisList, adding the first item to the activeList.
+            //
+            //    Now you have a look at the next item in the axisList and compare it with all items
+            //     currently in the activeList (at the moment just one):
+            //     - If the new item’s left is greater then the current activeList-item right,
+            //       then remove
+            //    the activeList-item from the activeList
+            //     - otherwise report a possible collision between the new axisList-item and the current
+            //     activeList-item.
+            //
+            //    Add the new item itself to the activeList and continue with the next item
+            //     in the axisList.
+
+            let active = self.helper.get_empty_vec_mut();
+
+            for curr_bot in collision_botids.iter_mut() {
+                {
+                    {
+                        let crr = Accessor::<A>::get(curr_bot.get());
+                        //change this to do retain and then iter
+                        active.retain(|that_bot| {
+                            let brr = Accessor::<A>::get(that_bot.get());
+
+                            if brr.right() < crr.left() {
+                                false
+                            } else {
+                                true
+                            }
+                        });
+                    }
+
+                    for that_bot in active.iter_mut() {
+                        
+                        debug_assert!(curr_bot.get().get_range2::<A>().intersects(that_bot.get().get_range2::<A>()));
+                    
+                        func.collide(curr_bot, that_bot);
+                    }
+                }
+                active.push(curr_bot);
+            }
+        }
+
+        fn find_bijective_parallel<A: AxisTrait, F: Bleek<T = I>>(
+            &mut self,
+            cols: (&mut [I], &mut [I]),
+            mut func: F,
+        ) {
+            let mut xs = cols.0.iter_mut().peekable();
+            let ys = cols.1.iter_mut();
+
+            let active_x = self.helper.get_empty_vec_mut();
+
+            for y in ys {
+
+                //Add all the x's that are touching the y to the active x.
+                while xs.peek().is_some() {
+                    unsafe{
+                        let v = {
+                            let x = xs.peek().unsafe_unwrap();
+                            Accessor::<A>::get(x.get()).left()
+                                > Accessor::<A>::get(y.get()).right()
+                        };
+                        if v {
+                            break;
+                        } else {
+                            active_x.push(xs.next().unsafe_unwrap());
+                        }
+                    }
+                }
+
+                
+
+                //Prune all the x's that are no longer touching the y.
+                active_x.retain(|x: &mut &mut I| {
+                    if Accessor::<A>::get(x.get()).right()
+                        < Accessor::<A>::get(y.get()).left()
+                    {
                         false
                     } else {
                         true
                     }
                 });
-                for that_bot_ind in active.iter_mut() {
-                    let (that_rect, that_val) = that_bot_ind.get_mut();
-                    
-                    let a = ColSingle {
-                        rect: curr_rect,
-                        inner: curr_bot_id_val,
-                    };
-                    let b = ColSingle {
-                        rect: that_rect,
-                        inner: that_val,
-                    };
 
-                    debug_assert!(curr_rect.0.get_range2::<A>().intersects(that_rect.0.get_range2::<A>()));
-                
-                    func.collide(a, b);
+                //So at this point some of the x's could actualy not intersect y.
+                //These are the x's that are to the complete right of y.
+                //So to handle collisions, we want to make sure to not hit these.
+                //That is why we have that condition to break out of the below loop
+
+                for x in active_x.iter_mut() {
+                    if Accessor::<A>::get(x.get()).left()>Accessor::<A>::get(y.get()).right(){
+                        break;
+                    }
+
+                    debug_assert!(x.get().get_range2::<A>().intersects(y.get().get_range2::<A>()));
+                    func.collide(x, y);
                 }
             }
-            active.push(curr_bot_id);
         }
-    }
 
-    pub fn find_bijective_parallel<A: AxisTrait, F: Bleek<T = I>>(
-        &mut self,
-        cols: (&mut [I], &mut [I]),
-        mut func: F,
-    ) {
-        let mut xs = cols.0.iter_mut().peekable();
-        let ys = cols.1.iter_mut();
+        //this can have some false positives.
+        //but it will still prune a lot of bots.
+        fn get_section_general<'a, A: AxisTrait>(arr: &'a mut [I], range: &Range<I::Num>) -> (&'a mut [I],usize,usize) {
+            let mut start = 0;
+            for (e, i) in arr.iter().enumerate() {
+                let rr = Accessor::<A>::get(i.get());
+                if rr.right() >= range.left() {
+                    start = e;
+                    break;
+                }
+            }
 
-        let active_x = self.helper.get_empty_vec_mut();
-
-        for y in ys {
-
-            //Add all the x's that are touching the y to the active x.
-            while xs.peek().is_some() {
-                unsafe{
-                    let v = {
-                        let x = xs.peek().unsafe_unwrap();
-                        Accessor::<A>::get(&(x.get().0).0).left()
-                            > Accessor::<A>::get(&(y.get().0).0).right()
-                    };
-                    if v {
-                        break;
-                    } else {
-                        active_x.push(xs.next().unsafe_unwrap());
-                    }
+            let mut end = arr.len();
+            for (e, i) in arr[start..].iter().enumerate() {
+                let rr = Accessor::<A>::get(i.get());
+                if rr.left() > range.right() {
+                    end = start + e;
+                    break;
                 }
             }
 
             
-
-            //Prune all the x's that are no longer touching the y.
-            active_x.retain(|x: &mut &mut I| {
-                if Accessor::<A>::get(&(x.get().0).0).right()
-                    < Accessor::<A>::get(&(y.get().0).0).left()
-                {
-                    false
-                } else {
-                    true
-                }
-            });
-
-            //So at this point some of the x's could actualy not intersect y.
-            //These are the x's that are to the complete right of y.
-            //So to handle collisions, we want to make sure to not hit these.
-            //That is why we have that condition to break out of the below loop
-
-            let (y_rect, y_val) = y.get_mut();
-            for x in active_x.iter_mut() {
-                let (x_rect, x_val) = x.get_mut();
-
-                if Accessor::<A>::get(&x_rect.0).left()>Accessor::<A>::get(&y_rect.0).right(){
-                    break;
-                }
-
-                let a = ColSingle {
-                    rect: x_rect,
-                    inner: x_val,
-                };
-                let b = ColSingle {
-                    rect: y_rect,
-                    inner: y_val,
-                };
-
-                debug_assert!(x_rect.0.get_range2::<A>().intersects(y_rect.0.get_range2::<A>()),"{:?}",(x_rect.0.get_range2::<A>(),y_rect.0.get_range2::<A>()));
-                func.collide(a, b);
-            }
+            return (&mut arr[start..end],start,end);
         }
-    }
-
-    //this can have some false positives.
-    //but it will still prune a lot of bots.
-    pub fn get_section_general<'a, A: AxisTrait>(arr: &'a mut [I], range: &Range<I::Num>) -> (&'a mut [I],usize,usize) {
-        let mut start = 0;
-        for (e, i) in arr.iter().enumerate() {
-            let rr = Accessor::<A>::get(&(i.get().0).0);
-            if rr.right() >= range.left() {
-                start = e;
-                break;
-            }
+        //this can have some false positives.
+        //but it will still prune a lot of bots.
+        pub fn get_section<'a, A: AxisTrait>(&self,arr: &'a mut [I], range: &Range<I::Num>) -> &'a mut [I] {
+            Self::get_section_general::<A>(arr,range).0
         }
-
-        let mut end = arr.len();
-        for (e, i) in arr[start..].iter().enumerate() {
-            let rr = Accessor::<A>::get(&(i.get().0).0);
-            if rr.left() > range.right() {
-                end = start + e;
-                break;
-            }
-        }
-
-        
-        return (&mut arr[start..end],start,end);
-    }
-    //this can have some false positives.
-    //but it will still prune a lot of bots.
-    pub fn get_section<'a, A: AxisTrait>(arr: &'a mut [I], range: &Range<I::Num>) -> &'a mut [I] {
-        Self::get_section_general::<A>(arr,range).0
     }
 }
 /*

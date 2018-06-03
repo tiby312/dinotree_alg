@@ -10,7 +10,7 @@ pub use compt::compute_num_nodes;
 pub use axgeom::AxisTrait;
 pub use axgeom::XAXISS;
 pub use axgeom::YAXISS;
-
+pub use dinotree_inner::*;
 
 
 pub trait DividerDrawer{
@@ -22,15 +22,14 @@ pub trait DividerDrawer{
 //TODO fix this to hide rect.
 ///Meant to then be drawn using triangles.
 ///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
-pub fn draw<T: SweepTrait+Send,D:DividerDrawer<N=T::Num>>(
-    gentree: &DinoTree<T>,
+pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
+    gentree: &DynTree<A,(),T>,
     dr:&mut D,
-    rect:AABBox<T::Num>
+    rect:&Rect<T::Num>
 ) {
-    fn recc<'a,A:AxisTrait,T:SweepTrait+Send+'a,D:DividerDrawer<N=T::Num>,C:CTreeIterator<Item=(Depth,&'a NodeDyn<(),T>)>>
-        (stuff:C,dr:&mut D,rect:Rect<T::Num>){
+    fn recc<A:AxisTrait,T:HasAabb,D:DividerDrawer<N=T::Num>>
+        (stuff:LevelIter<NdIter<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
         let ((depth,nn),rest)=stuff.next();
-
 
         let div=match nn.div{
             Some(div)=>{
@@ -56,8 +55,8 @@ pub fn draw<T: SweepTrait+Send,D:DividerDrawer<N=T::Num>>(
 
                 let (a,b)=rect.subdivide(div,A::get());
 
-                recc::<A::Next,T,D,C>(left,dr,a);
-                recc::<A::Next,T,D,C>(right,dr,b);
+                recc::<A::Next,T,D>(left,dr,&a);
+                recc::<A::Next,T,D>(right,dr,&b);
             },
             None=>{
 
@@ -65,14 +64,17 @@ pub fn draw<T: SweepTrait+Send,D:DividerDrawer<N=T::Num>>(
         }
     }
 
+    recc::<A,T,D>(gentree.get_iter().with_depth(Depth(0)),dr,rect);
+    /*
     match &gentree.0 {
         &DynTreeEnum::Xa(ref a) => {
-            recc::<XAXISS,T,D,_>(a.get_iter().with_depth(Depth(0)),dr,rect.0);
+            
         }
         &DynTreeEnum::Ya(ref a) => {
             recc::<YAXISS, T,D,_>(a.get_iter().with_depth(Depth(0)),dr,rect.0);
         }
     }
+    */
 }
 
 /*
@@ -80,7 +82,7 @@ pub fn draw<T: SweepTrait+Send,D:DividerDrawer<N=T::Num>>(
 //TODO fix this to hide rect.
 ///Meant to then be drawn using triangles.
 ///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
-pub fn update<V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
+pub fn update<V: Vertex, T: HasAabb<Num = NotNaN<f32>>>(
     rect: axgeom::Rect<NotNaN<f32>>,
     gentree: &DinoTree<T>,
     verticies: &mut [V],
@@ -98,7 +100,7 @@ pub fn update<V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
 
 /*
 ///Panics if the slice given has a length not equal to what is returned by get_num_verticies().
-fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
+fn update_inner<A: AxisTrait, V: Vertex, T: HasAabb<Num = NotNaN<f32>>>(
     rect: axgeom::Rect<NotNaN<f32>>,
     gentree: &DynTree<A, T>,
     verticies: &mut [V],
@@ -140,7 +142,7 @@ fn update_inner<A: AxisTrait, V: Vertex, T: SweepTrait<Num = NotNaN<f32>>>(
     fn recc<
         'a,
         A: AxisTrait,
-        T: SweepTrait<Num = NotNaN<f32>> + 'a,
+        T: HasAabb<Num = NotNaN<f32>> + 'a,
         V: Vertex + 'a,
         D: CTreeIterator<Item = (&'a NodeDyn<T>, &'a mut Node<'a, V>)>,
     >(
