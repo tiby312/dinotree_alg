@@ -111,7 +111,7 @@ use dinotree_inner::par;
 use axgeom::Rect;
 use axgeom::XAXISS;
 use axgeom::YAXISS;
-use colfind::ColMulti;
+//use colfind::ColMulti;
 use smallvec::SmallVec;
 use dinotree_inner::treetimer::TreeTimer2;
 use dinotree_inner::treetimer::TreeTimerEmpty;

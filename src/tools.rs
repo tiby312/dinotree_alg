@@ -14,7 +14,9 @@ impl<T> Clone for PhantomSendSync<T> {
 
 use smallvec;
 
+
 unsafe impl<T: Send> std::marker::Send for PreVecMut<T> {}
+unsafe impl<T: Sync> std::marker::Sync for PreVecMut<T> {}
 
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
 pub struct PreVecMut<T> {
@@ -37,6 +39,10 @@ impl<T> PreVecMut<T> {
     }
 }
 
+
+
+unsafe impl<T: Send> std::marker::Send for PreVec<T> {}
+unsafe impl<T: Sync> std::marker::Sync for PreVec<T> {}
 
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
 pub struct PreVec<T> {
