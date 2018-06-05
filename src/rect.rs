@@ -70,7 +70,7 @@ mod mutable{
     use super::*;
     rect!(NdIterMut<(),T>,&mut T,oned::mod_mut::Sweeper<T>,get_mut_slice);
     pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
-        tree: &mut DynTreeMut<A,(),T>,
+        tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
@@ -88,7 +88,7 @@ mod mutable{
     }
 
     pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb, F: FnMut(&mut T)>(
-        tree: &mut DynTreeMut<A,(),T>,
+        tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: F,
     ) {
@@ -128,7 +128,7 @@ mod constant{
     }
 
     pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
-        tree: &mut DynTreeMut<A,(),T>,
+        tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {

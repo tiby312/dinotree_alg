@@ -426,11 +426,14 @@ fn generic_rec<
         }
     }       
 }
-pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>>(tree:&mut DynTreeMut<A,(),T>,ncontext:N) where N:Send,N::No:Send{
+
+
+pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>>(tree:DynTree<A,(),T>,ncontext:N)->DynTree<A,(),T> where N:Send,N::No:Send{
     let axis=A::new();
     let height=tree.get_height();
     
-    let mut t1=tree.create_copy(ncontext.create_empty());
+    //let mut t1=tree.create_copy(ncontext.create_empty());
+    let mut t1=tree.with_extra(ncontext.create_empty());
     
     
     //let mut tree2=buildtree(tree,ncontext.clone());
@@ -449,11 +452,11 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>>(tree:&mut DynT
     }
 
     apply_tree(axis,t1.tree.get_iter_mut(),ncontext);
-    
+    t1.with_extra(())
 }
 
 
-pub fn nbody_seq<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(tree:&mut DynTreeMut<A,(),T>,ncontext:N) where N::No:Send{
+pub fn nbody_seq<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(tree:DynTree<A,(),T>,ncontext:N)->DynTree<A,(),T> where N::No:Send{
     let axis=A::new();
 
     let height=tree.get_height();
@@ -462,7 +465,8 @@ pub fn nbody_seq<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(tree:&mut
 
     let timer=Instant::now();
 
-    let mut t1=tree.create_copy(ncontext.create_empty());
+    //let mut t1=tree.create_copy(ncontext.create_empty());
+    let mut t1=tree.with_extra(ncontext.create_empty());
     println!("a={:?}",timer.elapsed());
 
 
@@ -491,6 +495,8 @@ pub fn nbody_seq<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(tree:&mut
 
     apply_tree(axis,t1.tree.get_iter_mut(),ncontext);
     println!("d={:?}",timer.elapsed());
+
+    t1.with_extra(())
 
 }
 

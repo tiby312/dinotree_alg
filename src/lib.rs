@@ -119,12 +119,33 @@ use dinotree_inner::compute_tree_height;
 use axgeom::AxisTrait;
 
 
+//Marker trait. 
 /*
 trait UnchangingAabb : HasAabb{
     type Inner;
     fn get_mut(&mut self)->&mut Self::Inner;
 }
 */
+
+
+///A generic container that implements the kdtree trait.
+#[derive(Debug,Clone,Copy)]
+pub struct BBox<Nu:NumTrait,T>{
+    pub rect:Rect<Nu>,
+    pub inner:T
+}
+
+impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
+    type Num=Nu;
+    
+    ///Destructue into the bounding box and inner part.
+    fn get<'a>(&'a self)->&Rect<Nu>{
+        &self.rect
+    }
+}
+
+
+
 
 /*
 fn create_callback<T:UnchangingAabb>(user_supplied:impl FnMut((&Rect<T::Num>,&mut T::Inner),(&Rect<T::Num>,&mut T::Inner))){

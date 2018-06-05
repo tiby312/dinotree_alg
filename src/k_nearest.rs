@@ -267,8 +267,7 @@ macro_rules! knearest_recc{
 pub fn k_nearest<'b,
     A:AxisTrait,
     K:Knearest,
-    >(tree:& DynTree<'b,A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b K::T,K::D))
-        where K::N:'b{
+    >(tree:&'b DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b K::T,K::D)){
     let axis=A::new();
     let dt = tree.get_iter().with_depth(Depth(0));
 
@@ -285,11 +284,10 @@ pub fn k_nearest<'b,
     }
 }
 
-pub fn k_nearest_mut<'b,
+pub fn k_nearest_mut_unchecked<'b,
     A:AxisTrait,
     K:Knearest,
-    >(tree:&'b mut DynTreeMut<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b mut K::T,K::D))
-        where K::N:'b{
+    >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b mut K::T,K::D)){
     let axis=A::new();
     let dt = tree.get_iter_mut().with_depth(Depth(0));
 
@@ -304,4 +302,18 @@ pub fn k_nearest_mut<'b,
         //let j=j.get_mut();
         func(j,i.1);
     }
+}
+
+
+pub fn k_nearest_mut<'b,
+    A:AxisTrait,
+    N:NumTrait,
+    T,
+    K:Knearest<N=N,T=BBox<N,T>>,
+    >(tree:&'b mut DynTree<A,(),BBox<N,T>>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b Rect<N>,&'b mut T,K::D)){
+
+
+    k_nearest_mut_unchecked(tree,point,num,knear,|a,b|{
+        func(&a.rect,&mut a.inner,b)
+    });
 }

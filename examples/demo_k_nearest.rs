@@ -4,10 +4,11 @@ extern crate num;
 extern crate rand;
 extern crate dinotree;
 extern crate ordered_float;
-
+extern crate dinotree_inner;
 use piston_window::*;
 
 mod support;
+use dinotree_inner::*;
 use dinotree::*;
 use dinotree::support::*;
 use support::*;
@@ -23,6 +24,10 @@ fn main() {
         .unwrap();
 
     let mut cursor=[NotNaN::new(0.0).unwrap(),NotNaN::new(0.0).unwrap()];
+
+
+    let mut tree = DynTree::<axgeom::XAXISS,(),_>::new::<par::Parallel,treetimer::TreeTimerEmpty,_>(bots.clone().into_iter()).0;
+    
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
             cursor = [NotNaN::new(x).unwrap(), NotNaN::new(y).unwrap()];
@@ -40,9 +45,6 @@ fn main() {
             }
             
             {
-                let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
-
-
                 let k={
                     
                     let v={
@@ -55,13 +57,13 @@ fn main() {
                             //v:&'a mut Vec<(ColSingle<'c,BBox<NotNaN<f64>,Bot>>,DisSqr)>
                         };
 
-                        impl<'a,'c:'a> Knearest for Kn<'a,'c>{
+                        impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
                             type T=BBox<NotNaN<f64>,Bot>;
                             type N=NotNaN<f64>;
                             type D=DisSqr;
-                            fn twod_check(&mut self, point:[Self::N;2],aabb:&AABBox<Self::N>)->Self::D{
+                            fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
                                 {
-                                    let ((x1,x2),(y1,y2))=aabb.get();
+                                    let ((x1,x2),(y1,y2))=bot.rect.get();
                                     
                                     {
                                         let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
@@ -73,7 +75,7 @@ fn main() {
                                 }
                                 let (px,py)=(point[0],point[1]);
 
-                                let ((a,b),(c,d))=aabb.get();
+                                let ((a,b),(c,d))=bot.rect.get();
 
                                 let xx=num::clamp(px,a,b);
                                 let yy=num::clamp(py,c,d);
@@ -98,10 +100,10 @@ fn main() {
                             */
                         }
 
-                        let mut vv=Vec::new();
+                        let mut vv:Vec<(&BBox<NotNaN<f64>,Bot>,DisSqr)>=Vec::new();
                         {
                             let mut kn=Kn{c:&c,g};
-                            tree.k_nearest([cursor[0] ,cursor[1] ],3,kn,|a,b|{vv.push((a,b))});
+                            k_nearest::k_nearest(&tree,[cursor[0] ,cursor[1] ],3,kn,|a,b|{vv.push((a,b))});
                         }
                         vv
                     };
@@ -113,8 +115,8 @@ fn main() {
                     
                     ];
                     
-                    for (i,a) in v.iter().enumerate(){
-                        let ((x1,x2),(y1,y2))=a.0.rect.get();
+                    for (i,(a,dis)) in v.iter().enumerate(){
+                        let ((x1,x2),(y1,y2))=a.rect.get();
                         
                         {
                             let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));

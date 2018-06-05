@@ -22,6 +22,7 @@ use support as test_support;
 
 
 
+//TODO do a test where inside of a callback of a dinotree , you create ANOTHER dinotree
 
 #[test]
 fn test_send_sync_dinotree(){

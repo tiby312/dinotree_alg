@@ -444,7 +444,7 @@ pub mod mutable{
     >(
         this_axis: A,
         par: JJ,
-        kdtree: &mut DynTreeMut<A,(), T>,
+        kdtree: &mut DynTree<A,(), T>,
         clos: F,
     ) -> (F,K::Bag) {
         let height = kdtree.get_height();

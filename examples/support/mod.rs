@@ -27,10 +27,10 @@ pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[
         let rx=NotNaN::new(radiusgen.get(rng) as f64).unwrap();
         let ry=NotNaN::new(radiusgen.get(rng) as f64).unwrap();
 
-        bots.push(BBox::new(
-            func(id,[px.into_inner(),py.into_inner()]),
-            AABBox::new((px-rx,px+rx),(py-ry,py+ry))
-        ));
+        bots.push(BBox{
+            inner:func(id,[px.into_inner(),py.into_inner()]),
+            rect:Rect::new(px-rx,px+rx,py-ry,py+ry)
+        });
     }
     bots
 
@@ -55,10 +55,10 @@ pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut f
         let rx=radiusgen.get(rng);
         let ry=radiusgen.get(rng);
 
-        bots.push(BBox::new(
-            func(id),
-            AABBox::new((px-rx,px+rx),(py-ry,py+ry))
-        ));
+        bots.push(BBox{
+            inner:func(id),
+            rect:Rect::new(px-rx,px+rx,py-ry,py+ry)
+        });
     }
     bots
 }

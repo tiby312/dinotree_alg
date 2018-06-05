@@ -252,7 +252,7 @@ pub fn raycast_mut<
     'a,A:AxisTrait,
     T:HasAabb,
     R:RayTrait<T=T,N=T::Num>
-    >(tree:&'a mut DynTreeMut<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a mut T,T::Num)>{
+    >(tree:&'a mut DynTree<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a mut T,T::Num)>{
     
     let axis=A::new();
     let dt = tree.get_iter_mut().with_depth(Depth(0));
@@ -281,7 +281,7 @@ pub fn raycast<
     'a,A:AxisTrait,
     T:HasAabb,
     R:RayTrait<T=T,N=T::Num>
-    >(tree:&DynTree<'a,A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a T,T::Num)>{
+    >(tree:&'a DynTree<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a T,T::Num)>{
     
     let axis=A::new();
     let dt = tree.get_iter().with_depth(Depth(0));
