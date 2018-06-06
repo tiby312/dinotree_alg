@@ -248,7 +248,7 @@ macro_rules! get_mut_range_iter{
 }
 
 
-pub fn raycast_mut<
+fn raycast_mut_unchecked<
     'a,A:AxisTrait,
     T:HasAabb,
     R:RayTrait<T=T,N=T::Num>
@@ -274,6 +274,19 @@ pub fn raycast_mut<
             None
         }
     }    
+}
+
+
+pub fn raycast_mut<
+    'a,A:AxisTrait,
+    T,
+    N:NumTrait,
+    R:RayTrait<T=BBox<N,T>,N=N>
+    >(tree:&'a mut DynTree<A,(),BBox<N,T>>,mut ray:Ray<N>,mut rtrait:R)->Option<(&'a Rect<N>,&'a mut T,N)>{
+    let res=raycast_mut_unchecked(tree,ray,rtrait);
+    res.map(|(a,b)|{
+        (&a.rect,&mut  a.inner,b)
+    })
 }
 
 

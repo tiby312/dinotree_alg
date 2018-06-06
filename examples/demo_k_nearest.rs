@@ -26,7 +26,7 @@ fn main() {
     let mut cursor=[NotNaN::new(0.0).unwrap(),NotNaN::new(0.0).unwrap()];
 
 
-    let mut tree = DynTree::<axgeom::XAXISS,(),_>::new::<par::Parallel,treetimer::TreeTimerEmpty,_>(bots.clone().into_iter()).0;
+    let mut tree = DynTree::new(axgeom::XAXISS,(),bots.clone().into_iter());
     
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
@@ -92,12 +92,6 @@ fn main() {
                                 let dis=d.0.sqrt();
                                 [b-dis,b+dis]
                             }
-
-                            /*
-                            fn handle(&mut self,a:ColSingle<'c,Self::T>,dis_sqr:Self::D){
-                                self.v.push((a,dis_sqr))
-                            }
-                            */
                         }
 
                         let mut vv:Vec<(&BBox<NotNaN<f64>,Bot>,DisSqr)>=Vec::new();

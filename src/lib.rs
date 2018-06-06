@@ -115,7 +115,7 @@ use axgeom::YAXISS;
 use smallvec::SmallVec;
 use dinotree_inner::treetimer::TreeTimer2;
 use dinotree_inner::treetimer::TreeTimerEmpty;
-use dinotree_inner::compute_tree_height;
+//use dinotree_inner::compute_tree_height;
 use axgeom::AxisTrait;
 
 
