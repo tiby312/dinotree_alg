@@ -59,8 +59,28 @@ macro_rules! rect{
 }
 
 
-pub use self::mutable::for_all_intersect_rect_mut;
-pub use self::mutable::for_all_in_rect_mut;
+
+pub fn for_all_intersect_rect_mut<A: AxisTrait,N:NumTrait,T>(
+    tree: &mut DynTree<A,(),BBox<N,T>>,
+    rect: &Rect<N>,
+    mut closure: impl FnMut(BBoxDet<N,T>),
+) {
+    let func=|a:&mut BBox<N,T>|{
+        closure(a.destruct());
+    };
+    mutable::for_all_intersect_rect_mut_unchecked(tree,rect,func);
+}
+
+pub fn for_all_in_rect_mut<A: AxisTrait, N:NumTrait,T>(
+        tree: &mut DynTree<A,(),BBox<N,T>>,
+        rect: &Rect<N>,
+        mut closure: impl FnMut(BBoxDet<N,T>),
+    ) {
+    let func=|a:&mut BBox<N,T>|{
+        closure(a.destruct());
+    };
+    mutable::for_all_in_rect_mut_unchecked(tree,rect,func);   
+}
 
 pub use self::constant::for_all_intersect_rect;
 pub use self::constant::for_all_in_rect;
@@ -69,7 +89,7 @@ pub use self::constant::for_all_in_rect;
 mod mutable{
     use super::*;
     rect!(NdIterMut<(),T>,&mut T,oned::mod_mut::Sweeper<T>,get_mut_slice);
-    pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
+    pub fn for_all_intersect_rect_mut_unchecked<A: AxisTrait, T: HasAabb>(
         tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
@@ -87,7 +107,7 @@ mod mutable{
         self::rect_recurse(A::new(), ta, rect, &mut f,&mut sweeper);
     }
 
-    pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb, F: FnMut(&mut T)>(
+    pub fn for_all_in_rect_mut_unchecked<A: AxisTrait, T: HasAabb, F: FnMut(&mut T)>(
         tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: F,

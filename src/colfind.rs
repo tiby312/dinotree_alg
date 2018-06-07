@@ -446,7 +446,13 @@ pub fn query<A:AxisTrait,T:HasAabb>(tree:&DynTree<A,(),T>,mut func:impl FnMut(&T
     );
 }
 
-pub fn query_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
+pub fn query_mut<A:AxisTrait,N:NumTrait,T>(tree:&mut DynTree<A,(),BBox<N,T>>,mut func:impl FnMut(BBoxDet<N,T>,BBoxDet<N,T>)){
+    query_mut_unchecked(tree,|a,b|{
+        func(a.destruct(),b.destruct())
+    });
+}
+
+fn query_mut_unchecked<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
 
     //TODO condense this using macros
     mod wrap{
@@ -548,7 +554,14 @@ pub fn query_par<A:AxisTrait,T:HasAabb+Send+Sync>(tree:&mut DynTree<A,(),T>,func
 }
 
 
-pub fn query_mut_par<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+
+pub fn query_mut_par<A:AxisTrait,N:NumTrait,T:Send>(tree:&mut DynTree<A,(),BBox<N,T>>,mut func:impl Fn(BBoxDet<N,T>,BBoxDet<N,T>)+Copy+Send){
+    query_mut_par_unchecked(tree,move |a,b|{
+        func(a.destruct(),b.destruct())
+    });
+}
+
+fn query_mut_par_unchecked<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
 
     let c1=move |_:&mut (),a:&mut T,b:&mut T|{
         func(a,b);

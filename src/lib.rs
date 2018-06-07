@@ -121,13 +121,11 @@ use dinotree_inner::treetimer::TreeTimerEmpty;
 use axgeom::AxisTrait;
 
 
-//Marker trait. 
-/*
-trait UnchangingAabb : HasAabb{
-    type Inner;
-    fn get_mut(&mut self)->&mut Self::Inner;
+
+pub struct BBoxDet<'a,Nu:NumTrait+'a,T:'a>{
+    pub rect:&'a Rect<Nu>,
+    pub inner:&'a mut T
 }
-*/
 
 
 ///A generic container that implements the kdtree trait.
@@ -135,6 +133,12 @@ trait UnchangingAabb : HasAabb{
 pub struct BBox<Nu:NumTrait,T>{
     pub rect:Rect<Nu>,
     pub inner:T
+}
+
+impl<Nu:NumTrait,T> BBox<Nu,T>{
+    pub fn destruct<'a>(&'a mut self)->BBoxDet<'a,Nu,T>{
+        BBoxDet{rect:&self.rect,inner:&mut self.inner}
+    }
 }
 
 impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{

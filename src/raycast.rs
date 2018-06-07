@@ -282,10 +282,10 @@ pub fn raycast_mut<
     T,
     N:NumTrait,
     R:RayTrait<T=BBox<N,T>,N=N>
-    >(tree:&'a mut DynTree<A,(),BBox<N,T>>,mut ray:Ray<N>,mut rtrait:R)->Option<(&'a Rect<N>,&'a mut T,N)>{
+    >(tree:&'a mut DynTree<A,(),BBox<N,T>>,mut ray:Ray<N>,mut rtrait:R)->Option<(BBoxDet<'a,N,T>,N)>{
     let res=raycast_mut_unchecked(tree,ray,rtrait);
     res.map(|(a,b)|{
-        (&a.rect,&mut  a.inner,b)
+        (a.destruct(),b)
     })
 }
 

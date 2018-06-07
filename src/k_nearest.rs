@@ -310,10 +310,10 @@ pub fn k_nearest_mut<'b,
     N:NumTrait,
     T,
     K:Knearest<N=N,T=BBox<N,T>>,
-    >(tree:&'b mut DynTree<A,(),BBox<N,T>>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b Rect<N>,&'b mut T,K::D)){
+    >(tree:&'b mut DynTree<A,(),BBox<N,T>>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(BBoxDet<'b,N,T>,K::D)){
 
 
     k_nearest_mut_unchecked(tree,point,num,knear,|a,b|{
-        func(&a.rect,&mut a.inner,b)
+        func(a.destruct(),b)
     });
 }
