@@ -92,6 +92,8 @@ pub mod find_element;
 
 pub mod rect;
 
+pub mod multirect;
+
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
 

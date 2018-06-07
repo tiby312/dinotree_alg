@@ -27,129 +27,6 @@ impl LeafTracker for IsLeaf{
 
 
 
-/*
-pub fn for_every_col_pair_seq_mut<
-    A: AxisTrait,
-    T: HasAabb+Send,
-    F: FnMut(ColSingle<T>, ColSingle<T>),
-    K: TreeTimerTrait,
->(
-    kdtree: &mut DynTreeMut<A,(), T>,
-    mut clos: F,
-) -> (F,K::Bag) {
-
-    mod wrap{
-        use super::*;
-        pub struct Wrapper<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a>(
-            pub &'a mut F,
-            pub PhantomData<T>,
-        );
-
-        impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Clone for Wrapper<'a, T, F> {
-            fn clone(&self) -> Wrapper<'a, T, F> {
-                unreachable!()
-            }
-        }
-
-        impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> ColMulti for Wrapper<'a, T, F> {
-            type T = T;
-
-            fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>) {
-                self.0(a,b);
-            }
-            fn div(self)->(Self,Self){
-                unreachable!();
-            }
-            fn add(self,_b:Self)->Self{
-                unreachable!();
-            }
-        }
-
-        //Unsafely implement send and Sync
-        //Safe to do since our algorithms first clone this struct before
-        //passing it to another thread. This sadly has to be indiviually
-        //verified.
-        unsafe impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Send
-            for Wrapper<'a, T, F>
-        {
-        }
-        unsafe impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Sync
-            for Wrapper<'a, T, F>
-        {
-        }
-    }
-
-    let (_,bag)={
-        let wrapper =wrap::Wrapper(&mut clos, PhantomData);
-
-
-        //All of the above is okay because we start with SEQUENTIAL
-        self::for_every_col_pair_inner::<_, _, _, _, K>(
-            A::new(),
-            par::Sequential::new(Depth(0)),
-            kdtree,
-            wrapper,
-        )
-    };
-    (clos,bag)
-}
-*/
-
-
-
-/*
-pub fn for_every_col_pair<
-    'a,
-    JJ: par::Joiner,
-    A: AxisTrait,
-    T: HasAabb+Send,
-    F: ColMulti<T = T>+Send,
-    K: TreeTimerTrait,
->(
-    joiner:JJ,
-    kdtree: &DynTree<'a,A,(), T>,
-    clos: F,
-    )->(F,K::Bag){
-    unimplemented!();
-}
-
-
-
-pub fn for_every_col_pair_mut<
-    JJ: par::Joiner,
-    A: AxisTrait,
-    T: HasAabb+Send,
-    F: ColMulti<T = T>+Send,
-    K: TreeTimerTrait,
->(
-    joiner:JJ,
-    kdtree: &mut DynTreeMut<A,(), T>,
-    clos: F,
-) -> (F,K::Bag) {
-
-    let height=kdtree.get_height();
-    
-    /*
-    const DEPTH_SEQ:usize=4;
-
-    let gg=if height<=DEPTH_SEQ{
-        0
-    }else{
-        height-DEPTH_SEQ
-    };
-    */
-    
-
-    self::for_every_col_pair_inner::<_, _, _, _, K>(
-        A::new(),
-        //par::Parallel::new(Depth(gg)),
-        joiner,
-        kdtree,
-        clos,
-    )
-}
-*/
-
 
 
 macro_rules! anchor{
@@ -247,13 +124,13 @@ macro_rules! go_down{
 
 
 macro_rules! recurse{
-    ($sweeper:ty,$anchor:ty,$iterator:ty,$get_ref:ident,$create_wrap:ident,$create_sweep:ident)=>{
+    ($sync:ident,$sweeper:ty,$anchor:ty,$iterator:ty,$get_ref:ident,$create_wrap:ident,$create_sweep:ident)=>{
 
 
         fn recurse<
             A: AxisTrait,
             JJ: par::Joiner,
-            X: HasAabb + Send + Sync,
+            X: HasAabb + Send+$sync ,
             F: ColMulti<T = X>+Send,
             K: TreeTimerTrait
         >(
@@ -431,14 +308,336 @@ macro_rules! colfind{
 
 
 
-pub mod mutable{
-    use super::*;
 
+/*
+pub fn for_every_col_pair_seq_mut<
+    A: AxisTrait,
+    T: HasAabb+Send,
+    F: FnMut(ColSingle<T>, ColSingle<T>),
+    K: TreeTimerTrait,
+>(
+    kdtree: &mut DynTreeMut<A,(), T>,
+    mut clos: F,
+) -> (F,K::Bag) {
+
+    mod wrap{
+        use super::*;
+        pub struct Wrapper<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a>(
+            pub &'a mut F,
+            pub PhantomData<T>,
+        );
+
+        impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Clone for Wrapper<'a, T, F> {
+            fn clone(&self) -> Wrapper<'a, T, F> {
+                unreachable!()
+            }
+        }
+
+        impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> ColMulti for Wrapper<'a, T, F> {
+            type T = T;
+
+            fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>) {
+                self.0(a,b);
+            }
+            fn div(self)->(Self,Self){
+                unreachable!();
+            }
+            fn add(self,_b:Self)->Self{
+                unreachable!();
+            }
+        }
+
+        //Unsafely implement send and Sync
+        //Safe to do since our algorithms first clone this struct before
+        //passing it to another thread. This sadly has to be indiviually
+        //verified.
+        unsafe impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Send
+            for Wrapper<'a, T, F>
+        {
+        }
+        unsafe impl<'a, T: HasAabb, F: FnMut(ColSingle<T>, ColSingle<T>) + 'a> Sync
+            for Wrapper<'a, T, F>
+        {
+        }
+    }
+
+    let (_,bag)={
+        let wrapper =wrap::Wrapper(&mut clos, PhantomData);
+
+
+        //All of the above is okay because we start with SEQUENTIAL
+        self::for_every_col_pair_inner::<_, _, _, _, K>(
+            A::new(),
+            par::Sequential::new(Depth(0)),
+            kdtree,
+            wrapper,
+        )
+    };
+    (clos,bag)
+}
+*/
+
+
+
+
+pub fn query<A:AxisTrait,T:HasAabb>(tree:&DynTree<A,(),T>,mut func:impl FnMut(&T,&T)){
+
+    mod wrap{
+         //Use this to get rid of Send trait constraint.
+        pub struct Wrap<T:HasAabb>(T);
+        unsafe impl<T:HasAabb> Send for Wrap<T>{}
+        unsafe impl<T:HasAabb> Sync for Wrap<T>{}
+        impl<T:HasAabb> HasAabb for Wrap<T>{
+            type Num=T::Num;
+            fn get(&self)->&Rect<Self::Num>{
+                self.0.get()
+            }
+        }
+
+
+        use super::*;
+        pub struct Wrapper<'a, T: HasAabb, F: FnMut(&T, &T) + 'a>(
+            pub &'a mut F,
+            pub PhantomData<T>,
+        );
+
+        impl<'a, T: HasAabb, F: FnMut(&T, &T) + 'a> Clone for Wrapper<'a, T, F> {
+            fn clone(&self) -> Wrapper<'a, T, F> {
+                unreachable!()
+            }
+        }
+
+        impl<'a, T: HasAabb, F: FnMut(&T, &T) + 'a> self::constant::ColMulti for Wrapper<'a, T, F> {
+            type T = Wrap<T>;
+
+            fn collide(&mut self, a: &Wrap<T>, b: &Wrap<T>) {
+                self.0(&a.0,&b.0);
+            }
+            fn div(self)->(Self,Self){
+                unreachable!();
+            }
+            fn add(self,_b:Self)->Self{
+                unreachable!();
+            }
+        }
+
+        //Unsafely implement send and Sync
+        //Safe to do since our algorithms first clone this struct before
+        //passing it to another thread. This sadly has to be indiviually
+        //verified.
+        unsafe impl<'a, T: HasAabb, F: FnMut(& T, & T) + 'a> Send
+            for Wrapper<'a, T, F>
+        {
+        }
+        unsafe impl<'a, T: HasAabb, F: FnMut(& T, & T) + 'a> Sync
+            for Wrapper<'a, T, F>
+        {
+        }
+    }
+
+    let wrap=wrap::Wrapper(&mut func,PhantomData);
+
+    let tree:&DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(tree)};
+    self::constant::for_every_col_pair::<_,_, _, _, TreeTimerEmpty>(
+        A::new(),
+        par::Sequential,
+        tree,
+        wrap,
+    );
+}
+
+pub fn query_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
+
+    //TODO condense this using macros
+    mod wrap{
+         //Use this to get rid of Send trait constraint.
+        pub struct Wrap<T:HasAabb>(T);
+        unsafe impl<T:HasAabb> Send for Wrap<T>{}
+        unsafe impl<T:HasAabb> Sync for Wrap<T>{}
+        impl<T:HasAabb> HasAabb for Wrap<T>{
+            type Num=T::Num;
+            fn get(&self)->&Rect<Self::Num>{
+                self.0.get()
+            }
+        }
+
+
+        use super::*;
+        pub struct Wrapper<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a>(
+            pub &'a mut F,
+            pub PhantomData<T>,
+        );
+
+        impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> Clone for Wrapper<'a, T, F> {
+            fn clone(&self) -> Wrapper<'a, T, F> {
+                unreachable!()
+            }
+        }
+
+        impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> self::mutable::ColMulti for Wrapper<'a, T, F> {
+            type T = Wrap<T>;
+
+            fn collide(&mut self, a: &mut Wrap<T>, b: &mut Wrap<T>) {
+                self.0(&mut a.0,&mut b.0);
+            }
+            fn div(self)->(Self,Self){
+                unreachable!();
+            }
+            fn add(self,_b:Self)->Self{
+                unreachable!();
+            }
+        }
+
+        //Unsafely implement send and Sync
+        //Safe to do since our algorithms first clone this struct before
+        //passing it to another thread. This sadly has to be indiviually
+        //verified.
+        unsafe impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> Send
+            for Wrapper<'a, T, F>
+        {
+        }
+        unsafe impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> Sync
+            for Wrapper<'a, T, F>
+        {
+        }
+    }
+
+    let wrap=wrap::Wrapper(&mut func,PhantomData);
+
+    let tree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(tree)};
+    self::mutable::for_every_col_pair_mut::<_,_, _, _, TreeTimerEmpty>(
+        A::new(),
+        par::Sequential,
+        tree,
+        wrap,
+    );
+    
+}
+
+
+
+pub fn query_par<A:AxisTrait,T:HasAabb+Send+Sync>(tree:&mut DynTree<A,(),T>,func:impl Fn(&T,&T)+Copy+Send){
+
+    let c1=move |_:&mut (),a:&T,b:&T|{
+        func(a,b);
+    };
+
+    let c2=|_:()|((),());
+    let c3=|_:(),_:()|();
+
+    let clos = self::constant::closure_struct::ColMultiStruct{aa
+        :(),a:c1,f2:c2,f3:c3,_p:PhantomData};
+
+
+
+    const DEPTH_SEQ:usize=4;
+
+    let height=tree.get_height();
+    let gg=if height<=DEPTH_SEQ{
+        Depth(0)
+    }else{
+        Depth(height-DEPTH_SEQ)
+    };
+
+    self::constant::for_every_col_pair::<_,_, _, _, TreeTimerEmpty>(
+        A::new(),
+        par::Parallel::new(gg),
+        tree,
+        clos,
+    );    
+}
+
+
+pub fn query_mut_par<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+
+    let c1=move |_:&mut (),a:&mut T,b:&mut T|{
+        func(a,b);
+    };
+
+    let c2=|_:()|((),());
+    let c3=|_:(),_:()|();
+
+    let clos = self::mutable::closure_struct::ColMultiStruct{aa
+        :(),a:c1,f2:c2,f3:c3,_p:PhantomData};
+
+
+
+    const DEPTH_SEQ:usize=4;
+
+    let height=tree.get_height();
+    let gg=if height<=DEPTH_SEQ{
+        Depth(0)
+    }else{
+        Depth(height-DEPTH_SEQ)
+    };
+
+    self::mutable::for_every_col_pair_mut::<_,_, _, _, TreeTimerEmpty>(
+        A::new(),
+        par::Parallel::new(gg),
+        tree,
+        clos,
+    );        
+}
+
+/*
+pub fn for_every_col_pair<
+    'a,
+    A: AxisTrait,
+    T: HasAabb,
+>(
+    kdtree: &DynTree<'a,A,(), T>,
+    func:impl Fn(&T,&T),
+    )->(F,K::Bag){
+
+    unimplemented!();
+}
+*/
+/*
+
+
+pub fn for_every_col_pair_mut<
+    JJ: par::Joiner,
+    A: AxisTrait,
+    T: HasAabb+Send,
+    F: ColMulti<T = T>+Send,
+    K: TreeTimerTrait,
+>(
+    joiner:JJ,
+    kdtree: &mut DynTreeMut<A,(), T>,
+    clos: F,
+) -> (F,K::Bag) {
+
+    let height=kdtree.get_height();
+    
+    /*
+    const DEPTH_SEQ:usize=4;
+
+    let gg=if height<=DEPTH_SEQ{
+        0
+    }else{
+        height-DEPTH_SEQ
+    };
+    */
+    
+
+    self::for_every_col_pair_inner::<_, _, _, _, K>(
+        A::new(),
+        //par::Parallel::new(Depth(gg)),
+        joiner,
+        kdtree,
+        clos,
+    )
+}
+*/
+
+
+mod mutable{
+    use super::*;
 
     pub fn for_every_col_pair_mut<
         A: AxisTrait,
         JJ: par::Joiner,
-        T: HasAabb+Send+Sync,
+        T: HasAabb+Send,
         F: ColMulti<T = T>+Send,
         K: TreeTimerTrait,
     >(
@@ -455,6 +654,56 @@ pub mod mutable{
         let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h,Depth(0));
         bag
     }
+
+    //TODO condense this using macros
+    pub mod closure_struct {
+        use super::*;
+
+        pub struct ColMultiStruct<
+            A:Send,
+            T: HasAabb,
+            F: Fn(&mut A,&mut T, &mut T) + Send + Copy ,
+            F2:Fn(A)->(A,A)+Copy,
+            F3:Fn(A,A)->A+Copy
+        > {
+            pub a: F,
+            pub f2: F2,
+            pub f3: F3,
+            pub aa:A,
+            pub _p: PhantomData<(T)>,
+        }
+
+
+        impl<
+            A:Send+Sync,
+            T: HasAabb,
+            F: Fn(&mut A,&mut T, &mut T) + Send + Copy,
+            F2:Fn(A)->(A,A)+Copy,
+            F3:Fn(A,A)->A+Copy
+        > ColMulti for ColMultiStruct<A,T,  F,F2,F3>
+        {
+            type T = T;
+        
+            fn collide(&mut self,a: &mut T, b: &mut T) {
+                (self.a)(&mut self.aa,a,b);
+            }
+            fn div(self)->(Self,Self){
+                let (aa1,aa2)=(self.f2)(self.aa);
+                
+                let c1=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa1,_p:PhantomData};
+                let c2=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa2,_p:PhantomData};
+                (c1,c2)
+            }
+            fn add(self,b:Self)->Self{
+
+                let aa_n=(self.f3)(self.aa,b.aa);
+                
+                ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa_n,_p:PhantomData}
+            }
+        }
+    }
+    
+
 
     impl<'a, C: ColMulti + 'a> oned::mod_mut::Bleek for ColMultiWrapper<'a, C> {
         type T = C::T;
@@ -488,17 +737,63 @@ pub mod mutable{
 
     go_down!(&mut oned::mod_mut::Sweeper<F::T>,&mut anchor::DestructuredAnchor<X,B>,NdIterMut<(),X>);
 
-    recurse!(&mut oned::mod_mut::Sweeper<F::T>,&mut anchor::DestructuredAnchor<X,B>,NdIterMut<(),X>,get_mut_slice,create_wrap_mut,create_sweep);
+    recurse!(Send,&mut oned::mod_mut::Sweeper<F::T>,&mut anchor::DestructuredAnchor<X,B>,NdIterMut<(),X>,get_mut_slice,create_wrap_mut,create_sweep);
 
     use oned::mod_mut::Bleek;
     colfind!( Bleek,&mut anchor::DestructuredAnchor<F::T,B>,&mut oned::mod_mut::Sweeper<F::T>,&mut NodeDyn<(),F::T>,&mut Self::T,get_mut_slice);
 
 }
 
-pub mod constant{
+mod constant{
     use super::*;
 
 
+    pub mod closure_struct {
+        use super::*;
+
+        pub struct ColMultiStruct<
+            A:Send,
+            T: HasAabb,
+            F: Fn(&mut A,&T, &T) + Send + Copy,
+            F2:Fn(A)->(A,A)+Copy,
+            F3:Fn(A,A)->A+Copy
+        > {
+            pub a: F,
+            pub f2: F2,
+            pub f3: F3,
+            pub aa:A,
+            pub _p: PhantomData<(T)>,
+        }
+
+
+        impl<
+            A:Send+Sync,
+            T: HasAabb,
+            F: Fn(&mut A,&T, &T) + Send + Copy,
+            F2:Fn(A)->(A,A)+Copy,
+            F3:Fn(A,A)->A+Copy
+        > ColMulti for ColMultiStruct<A,T,  F,F2,F3>
+        {
+            type T = T;
+        
+            fn collide(&mut self,a: &T, b: &T) {
+                (self.a)(&mut self.aa,a,b);
+            }
+            fn div(self)->(Self,Self){
+                let (aa1,aa2)=(self.f2)(self.aa);
+                
+                let c1=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa1,_p:PhantomData};
+                let c2=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa2,_p:PhantomData};
+                (c1,c2)
+            }
+            fn add(self,b:Self)->Self{
+
+                let aa_n=(self.f3)(self.aa,b.aa);
+                
+                ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa_n,_p:PhantomData}
+            }
+        }
+    }
     macro_rules! get_slice{
         ($range:expr)=>{{
             & $range
@@ -549,7 +844,7 @@ pub mod constant{
     }
 
 
-    recurse!(&mut oned::mod_const::Sweeper<F::T>,&anchor::DestructuredAnchor<X,B>,NdIter<(),X>,get_slice,create_wrap,create_sweep);
+    recurse!(Sync,&mut oned::mod_const::Sweeper<F::T>,&anchor::DestructuredAnchor<X,B>,NdIter<(),X>,get_slice,create_wrap,create_sweep);
     
     go_down!(&mut oned::mod_const::Sweeper<F::T>,&anchor::DestructuredAnchor<X,B>,NdIter<(),X>);
 
