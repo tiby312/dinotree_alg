@@ -2,6 +2,91 @@ use inner_prelude::*;
 use dinotree_inner::*;
 //TODO somehow take advantage of sorted property?????
 
+
+
+
+pub trait NBodyTrait:Clone{
+    type N:NumTrait;
+    type T;
+    type No:Copy;
+
+    fn create_empty(&self)->Self::No;
+
+    //gravitate this node mass with another node mass
+    fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);
+
+    //gravitate a bot with a bot
+    fn handle_bot_with_bot(&self,BBoxDet<Self::N,Self::T>,BBoxDet<Self::N,Self::T>);
+
+    //gravitate a nodemass with a bot
+    fn handle_node_with_bot(&self,&mut Self::No,b:BBoxDet<Self::N,Self::T>);
+
+    fn is_far_enough(&self,depth:usize,b:[Self::N;2])->bool;
+
+    fn is_far_enough_half(&self,depth:usize,b:[Self::N;2])->bool;
+
+    //This unloads the force accumulated by this node to the bots.
+    fn apply_to_bots<'a,I:Iterator<Item=BBoxDet<'a,Self::N,Self::T>>> (&'a self,&'a Self::No,it:I);
+
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No;
+}
+
+
+struct Wrapper<N:NumTrait,T,K:NBodyTrait>{
+    a:K,
+    _p:PhantomData<(N,*const T)>
+}
+
+impl<N:NumTrait,T,K:NBodyTrait> Clone for Wrapper<N,T,K>{
+    fn clone(&self)->Self{
+        Wrapper{a:self.a.clone(),_p:PhantomData}
+    }
+}
+
+impl<N:NumTrait,T,K:NBodyTrait<N=N,T=T>> NodeMassTrait for Wrapper<N,T,K>{
+    type T=BBox<N,T>;
+    type No=K::No;
+
+    fn create_empty(&self)->Self::No{
+        self.a.create_empty()
+    }
+
+    //gravitate this node mass with another node mass
+    fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
+        self.a.handle_node_with_node(a,b);
+    }
+
+    //gravitate a bot with a bot
+    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
+        self.a.handle_bot_with_bot(a.destruct(),b.destruct())
+    }
+
+    //gravitate a nodemass with a bot
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
+        self.a.handle_node_with_bot(a,b.destruct())
+    }
+
+    fn is_far_enough(&self,depth:usize,b:[N;2])->bool{
+        self.a.is_far_enough(depth,b)
+    }
+
+    fn is_far_enough_half(&self,depth:usize,b:[N;2])->bool{
+        self.a.is_far_enough_half(depth,b)
+    }
+
+    //This unloads the force accumulated by this node to the bots.
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I){
+        self.a.apply_to_bots(a,it.map(|a|a.destruct()))
+    }
+
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No{
+        self.new(it)
+    }
+}
+
+
+
+
 mod tools{
     pub fn for_every_pair<T>(arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
         unsafe{

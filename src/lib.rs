@@ -150,6 +150,53 @@ impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
     }
 }
 
+/*
+mod test{
+    fn test(){
+
+        let bot:BBox<isize,Bot>=Vec::new();
+        
+        let mut tree=DynTree::new(bot);
+
+        tree.for_every_mut(|tree,bot|{
+            tree.k_nearest([50,50],3,|bb|{
+                bot.repel_each_other(bb);
+            });
+
+            tree.ray_cast([50,50],ray,|bb|{
+
+            });
+        });
+    }
+}
+
+pub struct DynTreeExp<'a,A:AxisTrait+'a,N:NumTrait+'a,T+'a>{
+    a:&'a mut DynTree<A,(),BBox<N,T>>,
+    bot_to_ignore:&'a mut T
+}
+impl DynTreeExp{
+    pub fn k_nearest(&mut self,point:[N;2],num_find:usize,func:impl FnMut(BBoxDet<'a,N,T>)){
+
+    }
+    pub fn raycast(&mut self,){
+
+    }
+}
+
+pub fn for_every_mut <A:AxisTrait,N:NumTrait,T>(tree:&mut DynTree<A,(),BBox<N,T>>,mut func:impl FnMut(&mut DynTreeExp<A,(),BBot<N,T>>,BBoxDet<N,T>)){
+    use compt::CTreeIterator;
+    for b in tree.get_iter_mut().dfs_preorder_iter().flat_map(|a|a.range.iter_mut()){
+        func(b.destruct());
+    }
+}
+*/
+
+pub fn for_every<A:AxisTrait,T:HasAabb>(tree:&DynTree<A,(),T>,mut func:impl FnMut(&T)){
+    use compt::CTreeIterator;
+    for b in tree.get_iter().dfs_preorder_iter().flat_map(|a|a.range.iter()){
+        func(b);
+    }
+}
 
 
 
