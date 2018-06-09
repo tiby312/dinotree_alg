@@ -7,6 +7,28 @@ use dinotree::*;
 use ordered_float::*;
 use dinotree::support::*;
 
+///A generic container that implements the kdtree trait.
+#[derive(Debug,Clone,Copy)]
+pub struct BBox<Nu:NumTrait,T>{
+    pub rect:Rect<Nu>,
+    pub inner:T
+}
+/*
+impl<Nu:NumTrait,T> BBox<Nu,T>{
+    fn update<A:AxisTrait,N>(_tree:mut DynTree<A,N,BBox<Nu,T>>,func:Fn(&BBox<Nu,T>)->)
+}
+*/
+
+impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
+    type Num=Nu;
+    
+    ///Destructue into the bounding box and inner part.
+    fn get<'a>(&'a self)->&Rect<Nu>{
+        &self.rect
+    }
+}
+
+
 #[allow(dead_code)]
 pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<NotNaN<f64>,X>>{
     

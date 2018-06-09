@@ -284,7 +284,7 @@ pub fn k_nearest<'b,
     }
 }
 
-fn k_nearest_mut_unchecked<'b,
+pub fn k_nearest_mut_unchecked<'b,
     A:AxisTrait,
     K:Knearest,
     >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b mut K::T,K::D)){
@@ -304,7 +304,7 @@ fn k_nearest_mut_unchecked<'b,
     }
 }
 
-
+/*
 pub fn k_nearest_mut<'b,
     A:AxisTrait,
     N:NumTrait,
@@ -317,3 +317,4 @@ pub fn k_nearest_mut<'b,
         func(a.destruct(),b)
     });
 }
+*/

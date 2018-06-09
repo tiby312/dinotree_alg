@@ -28,6 +28,7 @@ fn main() {
 
     let mut tree = DynTree::new(axgeom::XAXISS,(),bots.clone().into_iter());
     
+    
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
             cursor = [NotNaN::new(x).unwrap(), NotNaN::new(y).unwrap()];

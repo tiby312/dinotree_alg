@@ -7,6 +7,7 @@ use rect;
 
 pub struct RectIntersectErr;
 
+/*
 pub struct MultiRect<'a,A: AxisTrait+'a, N:NumTrait+'a,T:'a> {
     tree: &'a mut DynTree<A,(),BBox<N,T>>,
     rects: SmallVec<[Rect<N>; 16]>,
@@ -35,3 +36,4 @@ impl<'a,A: AxisTrait, N:NumTrait,T> MultiRect<'a,A,N,T>{
 pub fn multi_rect<'a,A:AxisTrait,N:NumTrait,T>(tree:&'a mut DynTree<A,(),BBox<N,T>>)->MultiRect<'a,A,N,T>{
 	MultiRect{tree,rects:SmallVec::new()}
 }
+*/

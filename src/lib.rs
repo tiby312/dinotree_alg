@@ -34,7 +34,7 @@
 
 #![feature(iterator_step_by)]
 #![feature(test)]
-
+#![feature(repr_transparent)]
 
 extern crate axgeom;
 extern crate compt;
@@ -121,34 +121,30 @@ use dinotree_inner::treetimer::TreeTimerEmpty;
 use axgeom::AxisTrait;
 
 
+/*
+mod bbox{
+    ///A generic container that implements the kdtree trait.
+    #[derive(Debug,Clone,Copy)]
+    pub struct BBox<Nu:NumTrait,T>{
+        rect:Rect<Nu>,
+        pub inner:T
+    }
+    /*
+    impl<Nu:NumTrait,T> BBox<Nu,T>{
+        fn update<A:AxisTrait,N>(_tree:mut DynTree<A,N,BBox<Nu,T>>,func:Fn(&BBox<Nu,T>)->)
+    }
+    */
 
-pub struct BBoxDet<'a,Nu:NumTrait+'a,T:'a>{
-    pub rect:&'a Rect<Nu>,
-    pub inner:&'a mut T
-}
-
-
-///A generic container that implements the kdtree trait.
-#[derive(Debug,Clone,Copy)]
-pub struct BBox<Nu:NumTrait,T>{
-    pub rect:Rect<Nu>,
-    pub inner:T
-}
-
-impl<Nu:NumTrait,T> BBox<Nu,T>{
-    pub fn destruct<'a>(&'a mut self)->BBoxDet<'a,Nu,T>{
-        BBoxDet{rect:&self.rect,inner:&mut self.inner}
+    impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
+        type Num=Nu;
+        
+        ///Destructue into the bounding box and inner part.
+        fn get<'a>(&'a self)->&Rect<Nu>{
+            &self.rect
+        }
     }
 }
-
-impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
-    type Num=Nu;
-    
-    ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->&Rect<Nu>{
-        &self.rect
-    }
-}
+*/
 
 /*
 mod test{
@@ -170,6 +166,8 @@ mod test{
     }
 }
 */
+
+/*
 pub struct DynTreeExp<'a,A:AxisTrait+'a,N:NumTrait+'a,T:'a>{
     tree:&'a mut DynTree<A,(),BBox<N,T>>,
     bot_to_ignore:&'a mut BBox<N,T>
@@ -194,7 +192,7 @@ impl<'a,A:AxisTrait+'a,N:NumTrait+'a,T:'a> DynTreeExp<'a,A,N,T>{
     }
     */
 }
-
+*/
 
 
 

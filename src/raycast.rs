@@ -248,7 +248,7 @@ macro_rules! get_mut_range_iter{
 }
 
 
-fn raycast_mut_unchecked<
+pub fn raycast_mut_unchecked<
     'a,A:AxisTrait,
     T:HasAabb,
     R:RayTrait<T=T,N=T::Num>
@@ -276,7 +276,7 @@ fn raycast_mut_unchecked<
     }    
 }
 
-
+/*
 pub fn raycast_mut<
     'a,A:AxisTrait,
     T,
@@ -288,6 +288,7 @@ pub fn raycast_mut<
         (a.destruct(),b)
     })
 }
+*/
 
 
 pub fn raycast<

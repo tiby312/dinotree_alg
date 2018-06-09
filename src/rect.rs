@@ -59,7 +59,7 @@ macro_rules! rect{
 }
 
 
-
+/*
 pub fn for_all_intersect_rect_mut<A: AxisTrait,N:NumTrait,T>(
     tree: &mut DynTree<A,(),BBox<N,T>>,
     rect: &Rect<N>,
@@ -81,6 +81,9 @@ pub fn for_all_in_rect_mut<A: AxisTrait, N:NumTrait,T>(
     };
     mutable::for_all_in_rect_mut_unchecked(tree,rect,func);   
 }
+*/
+pub use self::mutable::for_all_intersect_rect_mut_unchecked;
+pub use self::mutable::for_all_in_rect_mut_unchecked;
 
 pub use self::constant::for_all_intersect_rect;
 pub use self::constant::for_all_in_rect;

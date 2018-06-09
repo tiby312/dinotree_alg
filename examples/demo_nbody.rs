@@ -41,9 +41,9 @@ impl GravityTrait for NodeMass{
 
 #[derive(Clone,Copy)]
 struct Bla;
-impl nbody::NBodyTrait for Bla{
-    type T=Bot;
-    type N=NotNaN<f64>;
+impl nbody::NodeMassTrait for Bla{
+    type T=BBox<NotNaN<f64>,Bot>;
+    //type N=NotNaN<f64>;
     type No=NodeMass;
 
     //fn create_empty(&self)->Self::No{
@@ -55,17 +55,17 @@ impl nbody::NBodyTrait for Bla{
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,a:BBoxDet<NotNaN<f64>,Bot>,b:BBoxDet<NotNaN<f64>,Bot>){
-        gravity::gravitate(a.inner,b.inner);
+    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
+        gravity::gravitate(&mut a.inner,&mut b.inner);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,b:BBoxDet<NotNaN<f64>,Bot>){
-        gravity::gravitate(a,b.inner);
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
+        gravity::gravitate(a,&mut b.inner);
     }
 
 
-    fn new<'a,I:Iterator<Item=&'a BBox<Self::N,Self::T>>> (&'a self,it:I)->Self::No{
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No{
         let mut total_x=0.0;
         let mut total_y=0.0;
         let mut total_mass=0.0;
@@ -89,7 +89,7 @@ impl nbody::NBodyTrait for Bla{
     }
 
 
-    fn apply_to_bots<'a,I:Iterator<Item=BBoxDet<'a,NotNaN<f64>,Bot>>> (&'a self,a:&'a Self::No,it:I){
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I){
 
         let len_sqr=(a.force[0]*a.force[0])+(a.force[1]*a.force[1]);
 
@@ -247,7 +247,7 @@ fn main() {
     let mut bots=create_bots_f64(|id,pos|{
         let velx=((id as isize%3)-1) as f64;
         let vely=(((id+1) as isize % 3)-1) as f64;
-        Bot{id,pos,vel:[velx,vely],force:[0.0;2],force_naive:[0.0;2],mass:20.0}
+        Bot{id,pos,vel:[velx,vely],force:[0.0;2],force_naive:[0.0;2],mass:100.0} //used to be 20
     },&[0,800,0,800],5000,[1,2]);
 
     //Make one of the bots have a lot of mass.
@@ -318,17 +318,20 @@ fn main() {
                     }
                 }
 
+
                 //TODO store bots with no mass inteh front instead?
                 let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2]};
     
                 let mut tree = DynTree::new(axgeom::XAXISS,n,bots.drain(..));
                 
                 
-        
-                nbody::nbody_seq(&mut tree,Bla);
                 
-                let mut tree=tree.with_extra(());
-                colfind::query_mut(&mut tree,|a, b| {
+                nbody::nbody_seq_unchecked(&mut tree,Bla);
+                
+
+                let mut tree=tree.with_extra(());                
+                
+                colfind::query_mut_unchecked(&mut tree,|a, b| {
                     let (a,b)=if a.inner.mass>b.inner.mass{
                         (a,b)
                     }else{
@@ -367,11 +370,14 @@ fn main() {
                         b.inner.vel[1]=0.0;
                     }
                 });
-                
 
+                
+                
                 for b in tree.into_iter_orig_order(){
                     bots.push(b);
                 }
+                
+
             }
             
             {
@@ -391,6 +397,7 @@ fn main() {
             for bot in bots.iter_mut(){
                 Bot::handle(bot);    
             }
+
             for bot in bots.iter(){
                 let mut max_mag=0.0f64;
                 let mag={
@@ -406,9 +413,10 @@ fn main() {
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
                 let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
+                //println!("pos={:?}",bot.inner.pos);
                 rectangle([mag as f32,0.0,0.0,1.0], square, c.transform, g);
             
-                println!("error over mass={:?}",max_mag);
+                //println!("error over mass={:?}",max_mag);
             }
 
             {

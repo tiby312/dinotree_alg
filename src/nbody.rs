@@ -4,7 +4,7 @@ use dinotree_inner::*;
 
 
 
-
+/*
 pub trait NBodyTrait:Clone{
     type N:NumTrait;
     type T;
@@ -30,6 +30,7 @@ pub trait NBodyTrait:Clone{
 
     fn new<'a,I:Iterator<Item=&'a BBox<Self::N,Self::T>>> (&'a self,it:I)->Self::No;
 }
+*/
 
 
 
@@ -52,7 +53,7 @@ mod tools{
 
 
 
-trait NodeMassTrait:Clone{
+pub trait NodeMassTrait:Clone{
     type T:HasAabb;
     type No:Copy;
 
@@ -92,7 +93,7 @@ fn buildtree<'a,
 
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
         (axis:impl AxisTrait,stuff:NdIterMut<N::No,T>,ncontext:N){
-
+        
         let (nn,rest)=stuff.next();
 
 
@@ -109,14 +110,12 @@ fn buildtree<'a,
                             let left=left.create_wrap_mut();
                             let righ=righ.create_wrap_mut();
 
-                                                    
+                            
                             let i1=left.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
                             let i2=righ.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
                             let i3=nn.range.iter().chain(i1.chain(i2));
-                            
                             let mut nodeb=ncontext.new(i3);
                             
-
                             nodeb
                         };
 
@@ -486,11 +485,13 @@ fn nbody_par_unchecked<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:
     //t1.with_extra(())
 }
 
+/*
 pub fn nbody_seq<A:AxisTrait,N:NumTrait,T,N2:NBodyTrait<N=N,T=T>>(t1:&mut DynTree<A,N2::No,BBox<N,T>>,ncontext:N2){
 
 
      //Use this to get rid of Send trait constraint.
     #[derive(Copy,Clone)]
+    #[repr(transparent)]
     struct Wrap<T>(T);
     unsafe impl<T> Send for Wrap<T>{}
     //unsafe impl<T> Sync for Wrap<T>{}
@@ -514,10 +515,6 @@ pub fn nbody_seq<A:AxisTrait,N:NumTrait,T,N2:NBodyTrait<N=N,T=T>>(t1:&mut DynTre
     impl<N:NumTrait,T,K:NBodyTrait<N=N,T=T>> NodeMassTrait for Wrapper<N,T,K>{
         type T=BBox<N,Wrap<T>>;
         type No=Wrap<K::No>;
-        /*
-        fn create_empty(&self)->Self::No{
-            Wrap(self.a.create_empty())
-        }*/
 
         //gravitate this node mass with another node mass
         fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
@@ -559,9 +556,9 @@ pub fn nbody_seq<A:AxisTrait,N:NumTrait,T,N2:NBodyTrait<N=N,T=T>>(t1:&mut DynTre
     let ncontext2=Wrapper{a:ncontext,_p:PhantomData};
     nbody_seq_unchecked(t1,ncontext2);
 }
-
+*/
 //TODO remove send bound
-fn nbody_seq_unchecked<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut DynTree<A,N::No,T>,ncontext:N)where N::No:Send{
+pub fn nbody_seq_unchecked<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut DynTree<A,N::No,T>,ncontext:N)where N::No:Send{
     let axis=A::new();
 
     let height=t1.get_height();
