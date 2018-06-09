@@ -4,6 +4,7 @@ extern crate num;
 extern crate rand;
 extern crate dinotree;
 //extern crate axgeom;
+extern crate dinotree_inner;
 extern crate compt;
 extern crate ordered_float;
 use piston_window::*;
@@ -13,12 +14,26 @@ use compt::*;
 use axgeom::AxisTrait;
 use dinotree::*;
 use dinotree::support::*;
+use dinotree_inner::*;
 use support::*;
 use ordered_float::*;
 
+use dinotree::raycast::*;
+
+type FN64=NotNaN<f64>;
+
+macro_rules! fn64 {
+    ( $x:expr  ) => {
+        {
+            NotNaN::new($x).unwrap()
+        }
+    };
+}
+
+
 mod ray{
     use super::*;
-    fn intersects_box(point:[NotNaN<f64>;2],dir:[NotNaN<f64>;2],matt:NotNaN<f64>,rect:&AABBox<NotNaN<f64>>)->Option<NotNaN<f64>>{
+    fn intersects_box(point:[FN64;2],dir:[FN64;2],matt:FN64,rect:&axgeom::Rect<FN64>)->Option<FN64>{
         let ((x1,x2),(y1,y2))=rect.get();
 
         let x1=x1.into_inner();
@@ -64,12 +79,12 @@ mod ray{
     }
 
     pub struct RayT<'a,'c:'a>{
-        pub ray:Ray<NotNaN<f64>>,
+        pub ray:Ray<FN64>,
         pub c:&'a Context,
         pub g:&'a mut G2d<'c>
     }
 
-    fn compute_intersection_point<A:AxisTrait>(ray:&Ray<NotNaN<f64>>,line:NotNaN<f64>)->Option<(NotNaN<f64>,NotNaN<f64>)>{
+    fn compute_intersection_point<A:AxisTrait>(ray:&Ray<FN64>,line:FN64)->Option<(FN64,FN64)>{
         if A::new().is_xaxis(){
             //line=ray.point[0]+t*ray.dir[0];
             if ray.dir[0].into_inner()==0.0{
@@ -107,8 +122,8 @@ mod ray{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBox<NotNaN<f64>,Bot>;
-        type N=NotNaN<f64>;
+        type T=BBox<FN64,Bot>;
+        type N=FN64;
 
         fn split_ray<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
             let t=if A::new().is_xaxis(){
@@ -217,9 +232,9 @@ mod ray{
             compute_intersection_point::<A>(&self.ray,line).map(|a|a.0)
         }
 
-        fn compute_distance_bot(&mut self,depth:Depth,a:ColSingle<Self::T>)->Option<Self::N>{
+        fn compute_distance_bot(&mut self,depth:Depth,a:&Self::T)->Option<Self::N>{
             let ((x1,x2),(y1,y2))=a.rect.get();
-            intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.rect)
+            intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,&a.rect)
         }
         
     }
@@ -227,9 +242,12 @@ mod ray{
 
 
 
+
 fn main() {
 
     let mut bots=create_bots_f64(|id,_pos|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
+
+    let mut tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter());
 
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -247,7 +265,9 @@ fn main() {
         window.draw_2d(&e, |c, g| {
             clear([0.0; 4], g);
 
-            for bot in bots.iter(){
+            
+            //Draw bots
+            for bot in tree.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
                     
@@ -256,9 +276,8 @@ fn main() {
             }
         
             {
-                let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
 
-                let bb=AABBox::new((NotNaN::new(0.0).unwrap(),NotNaN::new(800.0).unwrap()),(NotNaN::new(0.0).unwrap(),NotNaN::new(800.0).unwrap()));
+                let bb=axgeom::Rect::new(fn64!(0.0),fn64!(800.0),fn64!(0.0),fn64!(800.0));
                 
                 for i in 0..360{
                     let i=i as f64*(std::f64::consts::PI/180.0);
@@ -273,7 +292,7 @@ fn main() {
                     };
 
                     
-                    let k=tree.raycast(ray,ray::RayT{ray,c:&c,g});
+                    let k=raycast(&tree,ray,ray::RayT{ray,c:&c,g});
 
                     let (ppx,ppy)=if let Some(k)=k{
                         let ppx=ray.point[0]+ray.dir[0]*k.1;

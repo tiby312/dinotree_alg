@@ -169,34 +169,33 @@ mod test{
         });
     }
 }
-
-pub struct DynTreeExp<'a,A:AxisTrait+'a,N:NumTrait+'a,T+'a>{
-    a:&'a mut DynTree<A,(),BBox<N,T>>,
-    bot_to_ignore:&'a mut T
-}
-impl DynTreeExp{
-    pub fn k_nearest(&mut self,point:[N;2],num_find:usize,func:impl FnMut(BBoxDet<'a,N,T>)){
-
-    }
-    pub fn raycast(&mut self,){
-
-    }
-}
-
-pub fn for_every_mut <A:AxisTrait,N:NumTrait,T>(tree:&mut DynTree<A,(),BBox<N,T>>,mut func:impl FnMut(&mut DynTreeExp<A,(),BBot<N,T>>,BBoxDet<N,T>)){
-    use compt::CTreeIterator;
-    for b in tree.get_iter_mut().dfs_preorder_iter().flat_map(|a|a.range.iter_mut()){
-        func(b.destruct());
-    }
-}
 */
-
-pub fn for_every<A:AxisTrait,T:HasAabb>(tree:&DynTree<A,(),T>,mut func:impl FnMut(&T)){
-    use compt::CTreeIterator;
-    for b in tree.get_iter().dfs_preorder_iter().flat_map(|a|a.range.iter()){
-        func(b);
-    }
+pub struct DynTreeExp<'a,A:AxisTrait+'a,N:NumTrait+'a,T:'a>{
+    tree:&'a mut DynTree<A,(),BBox<N,T>>,
+    bot_to_ignore:&'a mut BBox<N,T>
 }
+impl<'a,A:AxisTrait+'a,N:NumTrait+'a,T:'a> DynTreeExp<'a,A,N,T>{
+    pub fn k_nearest<K:k_nearest::Knearest<N=N,T=BBox<N,T>>>(&mut self,point:[N;2],num_find:usize,knear:K,mut func:impl FnMut(BBoxDet<N,T>,K::D)){
+
+        let mut counter=0;
+        let rect=self.bot_to_ignore.destruct().rect as *const Rect<N>;
+        k_nearest::k_nearest_mut(self.tree,point,num_find+1,knear,|a,dis|{
+            if a.rect as *const Rect<N> == rect{
+                counter+=1;
+            }else{
+                func(a,dis);
+            }
+        });
+        assert_eq!(counter,1);
+    }
+    /*
+    pub fn raycast<R:raycast::RayTrait<T=BBox<N,T>,N=N>>(&mut self,mut ray:raycast::Ray<N>,mut rtrait:R){
+        unimplemented!();
+    }
+    */
+}
+
+
 
 
 

@@ -3,6 +3,7 @@ extern crate axgeom;
 extern crate num;
 extern crate rand;
 extern crate dinotree;
+extern crate dinotree_inner;
 extern crate compt;
 extern crate ordered_float;
 
@@ -13,12 +14,13 @@ mod support;
 use dinotree::*;
 use dinotree::support::*;
 use support::*;
-
+use dinotree_inner::*;
+use raycast::*;
 use axgeom::AxisTrait;
 
 mod ray{
     use super::*;
-    fn intersects_box(point:[isize;2],dir:[isize;2],matt:isize,rect:&AABBox<isize>)->Option<isize>{
+    fn intersects_box(point:[isize;2],dir:[isize;2],matt:isize,rect:&axgeom::Rect<isize>)->Option<isize>{
         let ((x1,x2),(y1,y2))=rect.get();
 
 
@@ -207,7 +209,7 @@ mod ray{
             compute_intersection_point::<A>(&self.ray,line).map(|a|a.0)
         }
 
-        fn compute_distance_bot(&mut self,depth:Depth,a:ColSingle<Self::T>)->Option<Self::N>{
+        fn compute_distance_bot(&mut self,depth:Depth,a:&Self::T)->Option<Self::N>{
             let ((x1,x2),(y1,y2))=a.rect.get();
             
             {
@@ -218,7 +220,7 @@ mod ray{
                 rectangle([rr,0.0,0.0,0.8], square, self.c.transform, self.g);
             }
             //ray.point
-            intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.rect)
+            intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,&a.rect)
         }
         
     }
@@ -226,6 +228,8 @@ mod ray{
 fn main() {
 
     let mut bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
+    
+    let mut tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter());
 
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -249,12 +253,14 @@ fn main() {
                 let point=[cursor[0] as isize,cursor[1] as isize];
                 //let point=[214,388];
                 //println!("cursor={:?}",point);
-                counter+=0.1;         
-                let dir=[1,1];
+                counter+=0.01;         
+                let dir=[counter.cos()*10.0,counter.sin()*10.0];
+                //let dir=[1,1];
+                let dir=[dir[0] as isize,dir[1] as isize];
                 Ray{point,dir,tlen:500}
             };
 
-            for bot in bots.iter(){
+            for bot in tree.iter(){
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
                     
@@ -264,14 +270,11 @@ fn main() {
         
         
             {
-                let mut tree = DinoTree::new(&mut bots, StartAxis::Xaxis);
-
+                
 
                 let k={
-                    
-
                     let height=tree.get_height();
-                    tree.raycast(ray,ray::RayT{ray,c:&c,g,height})
+                    raycast(&tree,ray,ray::RayT{ray,c:&c,g,height})
                 };
 
                 let (ppx,ppy)=if let Some(k)=k{
