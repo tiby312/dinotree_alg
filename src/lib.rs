@@ -98,7 +98,7 @@ pub mod multirect;
 mod oned;
 
 ///Contains misc tools
-mod tools;
+pub mod tools;
 
 //pub use rects::Rects;
 //pub use rects::RectIntersectError;
@@ -109,108 +109,74 @@ mod tools;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::HasAabb;
 use dinotree_inner::treetimer::TreeTimerTrait;
+use compt::CTreeIterator;
 use dinotree_inner::par;
 use axgeom::Rect;
 use axgeom::XAXISS;
 use axgeom::YAXISS;
-//use colfind::ColMulti;
 use smallvec::SmallVec;
 use dinotree_inner::treetimer::TreeTimer2;
 use dinotree_inner::treetimer::TreeTimerEmpty;
-//use dinotree_inner::compute_tree_height;
 use axgeom::AxisTrait;
 
+pub struct DynTreeExt<A:AxisTrait,T:HasAabb>{
+    tree:*mut DynTree<A,(),T>,
+    used_bots:Vec<*mut T> 
+}
+impl<A:AxisTrait,T:HasAabb> DynTreeExt<A,T>{
+    pub fn k_nearest<
 
-/*
-mod bbox{
-    ///A generic container that implements the kdtree trait.
-    #[derive(Debug,Clone,Copy)]
-    pub struct BBox<Nu:NumTrait,T>{
-        rect:Rect<Nu>,
-        pub inner:T
-    }
-    /*
-    impl<Nu:NumTrait,T> BBox<Nu,T>{
-        fn update<A:AxisTrait,N>(_tree:mut DynTree<A,N,BBox<Nu,T>>,func:Fn(&BBox<Nu,T>)->)
-    }
-    */
+        K:k_nearest::Knearest<N=T::Num,T=T>>(
+                &mut self,
+                point:[T::Num;2],
+                num_find:usize,
+                knear:K,mut func:impl FnMut(Option<(&mut T,K::D)>)){
 
-    impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
-        type Num=Nu;
+        let tree=unsafe{&mut*self.tree};
         
-        ///Destructue into the bounding box and inner part.
-        fn get<'a>(&'a self)->&Rect<Nu>{
-            &self.rect
-        }
-    }
-}
-*/
-
-/*
-mod test{
-    fn test(){
-
-        let bot:BBox<isize,Bot>=Vec::new();
-        
-        let mut tree=DynTree::new(bot);
-
-        tree.for_every_mut(|tree,bot|{
-            tree.k_nearest([50,50],3,|bb|{
-                bot.repel_each_other(bb);
-            });
-
-            tree.ray_cast([50,50],ray,|bb|{
-
-            });
-        });
-    }
-}
-*/
-
-/*
-pub struct DynTreeExp<'a,A:AxisTrait+'a,N:NumTrait+'a,T:'a>{
-    tree:&'a mut DynTree<A,(),BBox<N,T>>,
-    bot_to_ignore:&'a mut BBox<N,T>
-}
-impl<'a,A:AxisTrait+'a,N:NumTrait+'a,T:'a> DynTreeExp<'a,A,N,T>{
-    pub fn k_nearest<K:k_nearest::Knearest<N=N,T=BBox<N,T>>>(&mut self,point:[N;2],num_find:usize,knear:K,mut func:impl FnMut(BBoxDet<N,T>,K::D)){
-
-        let mut counter=0;
-        let rect=self.bot_to_ignore.destruct().rect as *const Rect<N>;
-        k_nearest::k_nearest_mut(self.tree,point,num_find+1,knear,|a,dis|{
-            if a.rect as *const Rect<N> == rect{
-                counter+=1;
+        let used_bots=&mut self.used_bots;
+        k_nearest::k_nearest_mut(tree,point,num_find+1,knear,|a,dis|{
+            if used_bots.contains(&(a as *mut T)){
+                func(None)
             }else{
-                func(a,dis);
+                func(Some((a,dis)))
             }
         });
-        assert_eq!(counter,1);
     }
-    /*
-    pub fn raycast<R:raycast::RayTrait<T=BBox<N,T>,N=N>>(&mut self,mut ray:raycast::Ray<N>,mut rtrait:R){
+
+    pub fn for_all_intersect_rect_mut(
+        &mut self,
+        rect: &Rect<T::Num>,
+        mut func: impl FnMut(Option<&mut T>),
+    ) {
+
+        let tree=unsafe{&mut*self.tree};
+        
+        let used_bots=&mut self.used_bots;
+        rect::for_all_intersect_rect_mut(tree,rect,|a|{
+            if used_bots.contains(&(a as *mut T)){
+                func(None)
+            }else{
+                func(Some(a))
+            }
+        });
+    }
+    
+    pub fn raycast<R:raycast::RayTrait<T=T,N=T::Num>>(&mut self,mut ray:raycast::Ray<T::Num>,mut rtrait:R){
         unimplemented!();
     }
-    */
 }
-*/
 
-
-
-
-/*
-fn create_callback<T:UnchangingAabb>(user_supplied:impl FnMut((&Rect<T::Num>,&mut T::Inner),(&Rect<T::Num>,&mut T::Inner))){
-
+pub fn iter_mut_special<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut DynTreeExt<A,T>)){
+   let tree2=tree as *mut DynTree<A,(),T>;
+   for bot in tree.get_iter_mut().dfs_preorder_iter().flat_map(|a|a.range.iter_mut()){
+        let mut used_bots=Vec::new();
+        used_bots.push(bot as *mut T);
+        let mut d=DynTreeExt{tree:tree2,used_bots};
+        func(bot,&mut d);
+   }
 }
-*/
 
-/*
-///Represents a destructured SweepTrait into the immutable bounding box reference,
-///and the mutable reference to the rest of the object.
-pub struct ColSingle<'a, T: SweepTrait + 'a> {
-    pub rect: &'a AABBox<T::Num>,
-    pub inner: &'a mut T::Inner,
-}
-*/
 
 use dinotree_inner::DynTree;
 

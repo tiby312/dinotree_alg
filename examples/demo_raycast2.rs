@@ -232,9 +232,9 @@ mod ray{
             compute_intersection_point::<A>(&self.ray,line).map(|a|a.0)
         }
 
-        fn compute_distance_bot(&mut self,depth:Depth,a:&Self::T)->Option<Self::N>{
-            let ((x1,x2),(y1,y2))=a.rect.get();
-            intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,&a.rect)
+        fn compute_distance_bot(&mut self,depth:Depth,a:&BBox<FN64,Bot>)->Option<Self::N>{
+            //let ((x1,x2),(y1,y2))=a.get().get();
+            intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
         }
         
     }
@@ -247,7 +247,7 @@ fn main() {
 
     let mut bots=create_bots_f64(|id,_pos|Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
 
-    let mut tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter());
+    let mut tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter().map(|a|a.into_bbox()));
 
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
@@ -268,7 +268,7 @@ fn main() {
             
             //Draw bots
             for bot in tree.iter(){
-                let ((x1,x2),(y1,y2))=bot.rect.get();
+                let ((x1,x2),(y1,y2))=bot.get().get();
                 let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
                     
                 let square = [x1,y1,x2-x1,y2-y1];

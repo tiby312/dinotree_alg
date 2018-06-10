@@ -35,23 +35,6 @@ pub trait NBodyTrait:Clone{
 
 
 
-mod tools{
-    pub fn for_every_pair<T>(arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
-        unsafe{
-            for x in 0..arr.len(){
-                let xx=arr.get_unchecked_mut(x) as *mut T;
-                for j in (x+1)..arr.len(){
-                    
-                    let j=arr.get_unchecked_mut(j);
-                    let xx=&mut*xx;
-                    func(xx,j);
-                }
-            }
-        }
-    }
-}
-
-
 
 pub trait NodeMassTrait:Clone{
     type T:HasAabb;
@@ -459,17 +442,11 @@ fn generic_rec<
 }
 
 
-fn nbody_par_unchecked<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut DynTree<A,N::No,T>,ncontext:N) where N::No:Send{
+pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut DynTree<A,N::No,T>,ncontext:N) where N::No:Send{
     let axis=A::new();
     let height=t1.get_height();
-    
-    //let mut t1=tree.with_extra(ncontext.create_empty());
-    
-    
-    //let mut tree2=buildtree(tree,ncontext.clone());
+ 
     buildtree(axis,t1.tree.get_iter_mut(),ncontext.clone());
-
-
 
     {
         let kk=if height<3{
@@ -482,122 +459,79 @@ fn nbody_par_unchecked<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:
     }
 
     apply_tree(axis,t1.tree.get_iter_mut(),ncontext);
-    //t1.with_extra(())
 }
 
-/*
-pub fn nbody_seq<A:AxisTrait,N:NumTrait,T,N2:NBodyTrait<N=N,T=T>>(t1:&mut DynTree<A,N2::No,BBox<N,T>>,ncontext:N2){
 
-
-     //Use this to get rid of Send trait constraint.
+pub fn nbody<A:AxisTrait,N:NodeMassTrait>(t1:&mut DynTree<A,N::No,N::T>,ncontext:N){
     #[derive(Copy,Clone)]
     #[repr(transparent)]
     struct Wrap<T>(T);
     unsafe impl<T> Send for Wrap<T>{}
-    //unsafe impl<T> Sync for Wrap<T>{}
-
-    struct Wrapper<N:NumTrait,T,K:NBodyTrait>{
-        a:K,
-        _p:PhantomData<(N,*const T)>
-    }
-
-    impl<N:NumTrait,T,K:NBodyTrait> Clone for Wrapper<N,T,K>{
-        fn clone(&self)->Self{
-            Wrapper{a:self.a.clone(),_p:PhantomData}
+    impl<T:HasAabb> HasAabb for Wrap<T>{
+        type Num=T::Num;
+        fn get(&self)->&Rect<Self::Num>{
+            self.get()
         }
     }
 
-    fn unwrap<N:NumTrait,T>(a:BBoxDet<N,Wrap<T>>)->BBoxDet<N,T>{
-        BBoxDet{rect:a.rect,inner:&mut a.inner.0}
-    }
-    unsafe impl<N:NumTrait,T,K:NBodyTrait> Send for Wrapper<N,T,K>{}
+    #[derive(Copy,Clone)]
+    #[repr(transparent)]
+    struct Wrapper<N:NodeMassTrait>(N);
+    
+    unsafe impl<N:NodeMassTrait> Send for Wrapper<N>{}
 
-    impl<N:NumTrait,T,K:NBodyTrait<N=N,T=T>> NodeMassTrait for Wrapper<N,T,K>{
-        type T=BBox<N,Wrap<T>>;
-        type No=Wrap<K::No>;
+    impl<N:NodeMassTrait> NodeMassTrait for Wrapper<N>{
+        type T=Wrap<N::T>;
+        type No=Wrap<N::No>;
 
         //gravitate this node mass with another node mass
         fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
-            self.a.handle_node_with_node(&mut a.0,&mut b.0);
+            self.0.handle_node_with_node(&mut a.0,&mut b.0);
         }
 
         //gravitate a bot with a bot
         fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
-            self.a.handle_bot_with_bot(unwrap(a.destruct()),unwrap(b.destruct()))
+            self.0.handle_bot_with_bot(&mut a.0,&mut b.0);
         }
 
         //gravitate a nodemass with a bot
         fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
-            self.a.handle_node_with_bot(&mut a.0,unwrap(b.destruct()))
+            self.0.handle_node_with_bot(&mut a.0,&mut b.0);
         }
 
-        fn is_far_enough(&self,depth:usize,b:[N;2])->bool{
-            self.a.is_far_enough(depth,b)
+        fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough(depth,b)
         }
 
-        fn is_far_enough_half(&self,depth:usize,b:[N;2])->bool{
-            self.a.is_far_enough_half(depth,b)
+        fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough_half(depth,b)
         }
 
         //This unloads the force accumulated by this node to the bots.
         fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I){
-            self.a.apply_to_bots(&a.0,it.map(|a|unwrap(a.destruct())))
+            self.0.apply_to_bots(&a.0,it.map(|a|&mut a.0))
         }
 
         fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No{
-            self.new(it)
+            Wrap(self.0.new(it.map(|b|&b.0)))
         }
+        
     }
 
 
-    let t1:&mut DynTree<A,Wrap<N2::No>,BBox<N,Wrap<T>>>=unsafe{std::mem::transmute(t1)};
-
-
-    let ncontext2=Wrapper{a:ncontext,_p:PhantomData};
-    nbody_seq_unchecked(t1,ncontext2);
-}
-*/
-//TODO remove send bound
-pub fn nbody_seq_unchecked<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut DynTree<A,N::No,T>,ncontext:N)where N::No:Send{
     let axis=A::new();
-
-    let height=t1.get_height();
-    
-    use std::time::Instant;
-
-    let timer=Instant::now();
-
-    //let mut t1=tree.with_extra(ncontext.create_empty());
-    println!("a={:?}",timer.elapsed());
+    let ncontext=Wrapper(ncontext);
+    let t1:&mut DynTree<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
 
 
-
-    let timer=Instant::now();
-    
-    //let mut tree2=buildtree(tree,ncontext.clone());
     buildtree(axis,t1.tree.get_iter_mut(),ncontext.clone());
 
-    println!("b={:?}",timer.elapsed());
-
-
-    let timer=Instant::now();
-
     {
-        let kk=if height<3{
-            0
-        }else{
-            height-3
-        };
         let d=t1.tree.get_iter_mut().with_depth(Depth(0));
         recc(par::Sequential,axis,d,ncontext.clone());    
     }
-    println!("c={:?}",timer.elapsed());
-    let timer=Instant::now();
 
     apply_tree(axis,t1.tree.get_iter_mut(),ncontext);
-    println!("d={:?}",timer.elapsed());
-
-   // t1.with_extra(())
 
 }
 

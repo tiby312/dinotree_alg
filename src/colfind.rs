@@ -124,13 +124,13 @@ macro_rules! go_down{
 
 
 macro_rules! recurse{
-    ($sync:ident,$sweeper:ty,$anchor:ty,$iterator:ty,$get_ref:ident,$create_wrap:ident,$create_sweep:ident)=>{
+    ($sweeper:ty,$anchor:ty,$iterator:ty,$get_ref:ident,$create_wrap:ident,$create_sweep:ident)=>{
 
 
         fn recurse<
             A: AxisTrait,
             JJ: par::Joiner,
-            X: HasAabb + Send+$sync ,
+            X: HasAabb + Send ,//+$sync
             F: ColMulti<T = X>+Send,
             K: TreeTimerTrait
         >(
@@ -447,14 +447,7 @@ pub fn query<A:AxisTrait,T:HasAabb>(tree:&DynTree<A,(),T>,mut func:impl FnMut(&T
     );
 }
 
-/*
-pub fn query_mut<A:AxisTrait,N:NumTrait,T>(tree:&mut DynTree<A,(),BBox<N,T>>,mut func:impl FnMut(BBoxDet<N,T>,BBoxDet<N,T>)){
-    query_mut_unchecked(tree,|a,b|{
-        func(a.destruct(),b.destruct())
-    });
-}
-*/
-pub fn query_mut_unchecked<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
+pub fn query_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
 
     //TODO condense this using macros
     mod wrap{
@@ -525,7 +518,7 @@ pub fn query_mut_unchecked<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut 
 
 
 
-pub fn query_par<A:AxisTrait,T:HasAabb+Send+Sync>(tree:&mut DynTree<A,(),T>,func:impl Fn(&T,&T)+Copy+Send){
+pub fn query_par<A:AxisTrait,T:HasAabb+Send>(tree:&DynTree<A,(),T>,func:impl Fn(&T,&T)+Copy+Send){
 
     let c1=move |_:&mut (),a:&T,b:&T|{
         func(a,b);
@@ -565,7 +558,7 @@ pub fn query_mut_par<A:AxisTrait,N:NumTrait,T:Send>(tree:&mut DynTree<A,(),BBox<
 }
 */
 
-pub fn query_mut_par_unchecked<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+pub fn query_par_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
 
     let c1=move |_:&mut (),a:&mut T,b:&mut T|{
         func(a,b);
@@ -754,7 +747,7 @@ mod mutable{
 
     go_down!(&mut oned::mod_mut::Sweeper<F::T>,&mut anchor::DestructuredAnchor<X,B>,NdIterMut<(),X>);
 
-    recurse!(Send,&mut oned::mod_mut::Sweeper<F::T>,&mut anchor::DestructuredAnchor<X,B>,NdIterMut<(),X>,get_mut_slice,create_wrap_mut,create_sweep);
+    recurse!(&mut oned::mod_mut::Sweeper<F::T>,&mut anchor::DestructuredAnchor<X,B>,NdIterMut<(),X>,get_mut_slice,create_wrap_mut,create_sweep);
 
     use oned::mod_mut::Bleek;
     colfind!( Bleek,&mut anchor::DestructuredAnchor<F::T,B>,&mut oned::mod_mut::Sweeper<F::T>,&mut NodeDyn<(),F::T>,&mut Self::T,get_mut_slice);
@@ -842,7 +835,7 @@ mod constant{
     pub fn for_every_col_pair<
         A: AxisTrait,
         JJ: par::Joiner,
-        T: HasAabb+Send+Sync,
+        T: HasAabb+Send,
         F: ColMulti<T = T>+Send,
         K: TreeTimerTrait,
     >(
@@ -861,7 +854,7 @@ mod constant{
     }
 
 
-    recurse!(Sync,&mut oned::mod_const::Sweeper<F::T>,&anchor::DestructuredAnchor<X,B>,NdIter<(),X>,get_slice,create_wrap,create_sweep);
+    recurse!(&mut oned::mod_const::Sweeper<F::T>,&anchor::DestructuredAnchor<X,B>,NdIter<(),X>,get_slice,create_wrap,create_sweep);
     
     go_down!(&mut oned::mod_const::Sweeper<F::T>,&anchor::DestructuredAnchor<X,B>,NdIter<(),X>);
 

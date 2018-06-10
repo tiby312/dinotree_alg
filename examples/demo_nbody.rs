@@ -154,7 +154,7 @@ impl Bot{
             a[1]=800.0;
         }
     }
-    fn handle(bot:&mut BBox<NotNaN<f64>,Bot>){
+    fn handle(bot:&mut BBoxVisible<NotNaN<f64>,Bot>){
         
         let b=&mut bot.inner;
 
@@ -255,7 +255,7 @@ fn main() {
 
 
     //let mut last_bot_with_mass=bots.len();
-    let mut no_mass_bots:Vec<BBox<NotNaN<f64>,Bot>>=Vec::new();
+    let mut no_mass_bots:Vec<BBoxVisible<NotNaN<f64>,Bot>>=Vec::new();
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
         .exit_on_esc(true)
@@ -295,12 +295,8 @@ fn main() {
 
                 
                 //Do naive solution so we can compare error 
-                for i in 0..bots.len(){
-                    let b1=&mut bots[i] as *mut BBox<NotNaN<f64>,Bot>;
-                    for j in i+1..bots.len(){
-                        let b1=unsafe{&mut *b1};
-                        let b2=&mut bots[j];
-
+                {
+                    dinotree::tools::for_every_pair(bots,|b1,b2|{
                         struct Bo<'a>(&'a mut Bot);
                         impl<'a> GravityTrait for Bo<'a>{
                             fn pos(&self)->[f64;2]{
@@ -314,24 +310,36 @@ fn main() {
                                 self.0.force_naive[1]+=a[1];
                             }
                         }
-                        gravity::gravitate(&mut Bo(&mut b1.inner),&mut Bo(&mut b2.inner));
-                    }
+                        gravity::gravitate(&mut Bo(&mut b1.inner),&mut Bo(&mut b2.inner)); 
+                    });
                 }
 
 
                 //TODO store bots with no mass inteh front instead?
                 let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2]};
     
-                let mut tree = DynTree::new(axgeom::XAXISS,n,bots.drain(..));
+                let mut tree = DynTree::new(axgeom::XAXISS,n,bots.drain(..).map(|a|a.into_bbox()));
                 
                 
                 
-                nbody::nbody_seq_unchecked(&mut tree,Bla);
+                nbody::nbody_par(&mut tree,Bla);
                 
 
                 let mut tree=tree.with_extra(());                
                 
-                colfind::query_mut_unchecked(&mut tree,|a, b| {
+                /*
+                iter_mut_special(&mut tree,|bot1,tree|{
+                    let mut counter=0;
+                    tree.k_nearest(bot.point,2,Knear,|bot2|{
+                        if(counter==1){
+                            //draw_line(bot,bot);
+                        }
+                        counter+=1;
+                    })
+                });
+                */
+
+                colfind::query_par_mut(&mut tree,|a, b| {
                     let (a,b)=if a.inner.mass>b.inner.mass{
                         (a,b)
                     }else{
@@ -374,7 +382,7 @@ fn main() {
                 
                 
                 for b in tree.into_iter_orig_order(){
-                    bots.push(b);
+                    bots.push(b.into_visible());
                 }
                 
 

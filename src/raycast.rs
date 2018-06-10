@@ -248,7 +248,7 @@ macro_rules! get_mut_range_iter{
 }
 
 
-pub fn raycast_mut_unchecked<
+pub fn raycast_mut<
     'a,A:AxisTrait,
     T:HasAabb,
     R:RayTrait<T=T,N=T::Num>

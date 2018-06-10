@@ -6,7 +6,7 @@ use dinotree::*;
 
 use ordered_float::*;
 use dinotree::support::*;
-
+/*
 ///A generic container that implements the kdtree trait.
 #[derive(Debug,Clone,Copy)]
 pub struct BBox<Nu:NumTrait,T>{
@@ -27,10 +27,11 @@ impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
         &self.rect
     }
 }
+*/
 
 
 #[allow(dead_code)]
-pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<NotNaN<f64>,X>>{
+pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBoxVisible<NotNaN<f64>,X>>{
     
     let arr:&[usize]=&[100,42,6];
     let mut rng =  SeedableRng::from_seed(arr);
@@ -49,7 +50,7 @@ pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[
         let rx=NotNaN::new(radiusgen.get(rng) as f64).unwrap();
         let ry=NotNaN::new(radiusgen.get(rng) as f64).unwrap();
 
-        bots.push(BBox{
+        bots.push(BBoxVisible{
             inner:func(id,[px.into_inner(),py.into_inner()]),
             rect:Rect::new(px-rx,px+rx,py-ry,py+ry)
         });
@@ -60,7 +61,7 @@ pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[
 
 
 #[allow(dead_code)]
-pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
+pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBoxVisible<isize,X>>{
     let mut rng =  SeedableRng::from_seed(seed);
     let rng=&mut rng;
 
@@ -77,7 +78,7 @@ pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut f
         let rx=radiusgen.get(rng);
         let ry=radiusgen.get(rng);
 
-        bots.push(BBox{
+        bots.push(BBoxVisible{
             inner:func(id),
             rect:Rect::new(px-rx,px+rx,py-ry,py+ry)
         });
@@ -85,7 +86,7 @@ pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut f
     bots
 }
 #[allow(dead_code)]
-pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBox<isize,X>>{
+pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBoxVisible<isize,X>>{
     
     let arr:&[usize]=&[100,42,6];
     create_bots_isize_seed(arr,func,area,num_bots,radius)
