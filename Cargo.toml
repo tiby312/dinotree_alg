@@ -15,7 +15,7 @@ piston_window = "*"
 [dependencies]
 unsafe_unwrap = "0.1.0"
 ordered-float = "0.5.0"
-rayon = "0.9.*"
+rayon = "1.0.1"
 pdqselect = "0.1.0"
 odds = "0.2.25"  #used for Vec::retain_mut
 compt = {path="../compt"}

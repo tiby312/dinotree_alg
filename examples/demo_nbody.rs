@@ -5,7 +5,7 @@ extern crate rand;
 extern crate dinotree;
 extern crate ordered_float;
 extern crate dinotree_inner;
-
+extern crate rayon;
 use piston_window::*;
 
 mod support;
@@ -23,28 +23,14 @@ mod knearf64{
     use super::*;
     #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
     pub struct DisSqr(NotNaN<f64>);
-    pub struct Kn<'a,'c:'a>{
-        pub c:&'a Context,
-        pub g:&'a mut G2d<'c>,
-        //v:&'a mut Vec<(ColSingle<'c,BBox<NotNaN<f64>,Bot>>,DisSqr)>
-    }
+    pub struct Kn;
 
-    impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
+    impl k_nearest::Knearest for Kn{
         type T=BBox<NotNaN<f64>,Bot>;
         type N=NotNaN<f64>;
         type D=DisSqr;
         fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-            {
-                let ((x1,x2),(y1,y2))=bot.get().get();
-                
-                {
-                    let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-                    let square = [x1,y1,x2-x1,y2-y1];
-                    rectangle([0.0,0.0,0.0,0.5], square, self.c.transform, self.g);
-                }
-                
-                
-            }
+            
             let (px,py)=(point[0],point[1]);
 
             let ((a,b),(c,d))=bot.get().get();
@@ -371,11 +357,40 @@ fn main() {
                 
                 nbody::nbody_par(&mut tree,Bla);
                 
-
                 let mut tree=tree.with_extra(());                
+
                 
                 {//Bla
-                    for b in tree.iter(){
+                    use rayon::prelude::*;
+                    let bots:Vec<&BBox<NotNaN<f64>,Bot>>=tree.iter().collect();
+                    
+
+
+                    let lines=bots.par_iter().map(|b|{
+                        let mut vv:Vec<(&BBox<NotNaN<f64>,Bot>,knearf64::DisSqr)>=Vec::new();
+                        {
+                            let mut kn=knearf64::Kn;
+                            //let cursor=[NotNaN::new(cursor[0]).unwrap(),NotNaN::new(cursor[1]).unwrap()];
+                            let pp=[NotNaN::new(b.inner.pos[0]).unwrap(),NotNaN::new(b.inner.pos[1]).unwrap()];
+                            k_nearest::k_nearest(&tree,pp,2,kn,|a,b|{vv.push((a,b))});
+                        }
+
+                        let b1=&b.inner;
+                        let b2=&vv[1].0.inner;
+                        (b1,b2)
+                    }).fold(||Vec::new(),|mut vec1,item|{vec1.push(item);vec1}).reduce(||Vec::new(),|mut a,mut b|{a.append(&mut b);a});
+
+                    for (b,b2) in lines.iter(){
+                        let arr=[b.pos[0] ,b.pos[1],b2.pos[0],b2.pos[1]];
+                        line([1.0, 0.0, 1.0, 0.2], // black
+                             1.0, // radius of line
+                             arr, // [x0, y0, x1,y1] coordinates of line
+                             c.transform,
+                             g);
+                    }
+
+                    /*
+                    for b in bots.par_iter(){
                         let mut vv:Vec<(&BBox<NotNaN<f64>,Bot>,knearf64::DisSqr)>=Vec::new();
                         {
                             let mut kn=knearf64::Kn{c:&c,g};
@@ -394,7 +409,10 @@ fn main() {
                              c.transform,
                              g);
                     }
+                    */
+                
                 }
+
                 /*
                 iter_mut_special(&mut tree,|bot1,tree|{
                     let mut counter=0;
@@ -407,6 +425,7 @@ fn main() {
                 });
                 */
 
+              
                 colfind::query_par_mut(&mut tree,|a, b| {
                     let (a,b)=if a.inner.mass>b.inner.mass{
                         (a,b)
@@ -444,8 +463,11 @@ fn main() {
                         b.inner.force_naive[1]=0.0;
                         b.inner.vel[0]=0.0;
                         b.inner.vel[1]=0.0;
+                        b.inner.pos[0]=0.0;
+                        b.inner.pos[1]=0.0;
                     }
                 });
+
 
                 
                 
@@ -469,11 +491,13 @@ fn main() {
             };
 
 
-            //TODO do this before its put in the tree?
+            
+            //Update bot locations.
             for bot in bots.iter_mut(){
                 Bot::handle(bot);    
             }
 
+            //Draw bots.
             for bot in bots.iter(){
                 let mut max_mag=0.0f64;
                 let mag={
@@ -489,12 +513,10 @@ fn main() {
                 let ((x1,x2),(y1,y2))=bot.rect.get();
                 let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
                 let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
-                //println!("pos={:?}",bot.inner.pos);
                 rectangle([mag as f32,0.0,0.0,1.0], square, c.transform, g);
-            
-                //println!("error over mass={:?}",max_mag);
             }
 
+            //Add some bots
             {
                 let seed:&[usize]=&[40,20];
                 let mut rng:rand::StdRng =  rand::SeedableRng::from_seed(seed);
@@ -513,7 +535,17 @@ fn main() {
                             b.inner.pos[0]=x1 as f64;
                             b.inner.pos[1]=y1 as f64;
                             b.inner.force=[0.0;2];
+                            {
+                                let r=10.0f64.min(b.inner.mass.sqrt()/10.0);
+                                let x1=b.inner.pos[0]-r;
+                                let x2=b.inner.pos[0]+r;
+                                let y1=b.inner.pos[1]-r;
+                                let y2=b.inner.pos[1]+r;
+                                let mut rect=Rect::new(x1,x2,y1,y2);
+                                b.rect=support::rectf64_to_notnan(rect);                
+                            }
                             let v1=vdist.ind_sample(&mut rng);
+
                             let v2=vdist.ind_sample(&mut rng);
                             b.inner.vel=[v1 as f64,v2 as f64];
                             bots.push(b);
