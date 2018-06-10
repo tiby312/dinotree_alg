@@ -19,6 +19,53 @@ use support::*;
 use dinotree::nbody;
 
 
+mod knearf64{
+    use super::*;
+    #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
+    pub struct DisSqr(NotNaN<f64>);
+    pub struct Kn<'a,'c:'a>{
+        pub c:&'a Context,
+        pub g:&'a mut G2d<'c>,
+        //v:&'a mut Vec<(ColSingle<'c,BBox<NotNaN<f64>,Bot>>,DisSqr)>
+    }
+
+    impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
+        type T=BBox<NotNaN<f64>,Bot>;
+        type N=NotNaN<f64>;
+        type D=DisSqr;
+        fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
+            {
+                let ((x1,x2),(y1,y2))=bot.get().get();
+                
+                {
+                    let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+                    let square = [x1,y1,x2-x1,y2-y1];
+                    rectangle([0.0,0.0,0.0,0.5], square, self.c.transform, self.g);
+                }
+                
+                
+            }
+            let (px,py)=(point[0],point[1]);
+
+            let ((a,b),(c,d))=bot.get().get();
+
+            let xx=num::clamp(px,a,b);
+            let yy=num::clamp(py,c,d);
+
+            DisSqr((xx-px)*(xx-px) + (yy-py)*(yy-py))
+        }
+
+        fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{
+            DisSqr((p2-p1)*(p2-p1))
+        }
+
+        //create a range around n.
+        fn create_range(&mut self,b:Self::N,d:Self::D)->[Self::N;2]{
+            let dis=d.0.sqrt();
+            [b-dis,b+dis]
+        }
+    }
+}
 #[derive(Copy,Clone)]
 struct NodeMass{
     center:[f64;2],
@@ -130,7 +177,7 @@ impl nbody::NodeMassTrait for Bla{
 
 
 
-struct Bot{
+pub struct Bot{
     id:usize,
     pos:[f64;2],
     vel:[f64;2],
@@ -327,6 +374,27 @@ fn main() {
 
                 let mut tree=tree.with_extra(());                
                 
+                {//Bla
+                    for b in tree.iter(){
+                        let mut vv:Vec<(&BBox<NotNaN<f64>,Bot>,knearf64::DisSqr)>=Vec::new();
+                        {
+                            let mut kn=knearf64::Kn{c:&c,g};
+                            //let cursor=[NotNaN::new(cursor[0]).unwrap(),NotNaN::new(cursor[1]).unwrap()];
+                            let pp=[NotNaN::new(b.inner.pos[0]).unwrap(),NotNaN::new(b.inner.pos[1]).unwrap()];
+                            k_nearest::k_nearest(&tree,pp,2,kn,|a,b|{vv.push((a,b))});
+                        }
+
+                        let b=&b.inner;
+                        let b2=&vv[1].0.inner;
+
+                        let arr=[b.pos[0] ,b.pos[1],b2.pos[0],b2.pos[1]];
+                        line([1.0, 0.0, 1.0, 0.2], // black
+                             1.0, // radius of line
+                             arr, // [x0, y0, x1,y1] coordinates of line
+                             c.transform,
+                             g);
+                    }
+                }
                 /*
                 iter_mut_special(&mut tree,|bot1,tree|{
                     let mut counter=0;
