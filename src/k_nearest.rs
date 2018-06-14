@@ -3,7 +3,6 @@
 #[macro_use]
 
 use inner_prelude::*;
-use super::*;
 use dinotree_inner::*;
 
 pub trait Knearest{
@@ -179,9 +178,9 @@ macro_rules! knearest_recc{
                                         let [leftr,rightr]=knear.create_range(ppother,dis);
 
                                         let conty=if pp<div{
-                                            cont.left()
+                                            cont.left
                                         }else{
-                                            cont.right()
+                                            cont.right
                                         };
                                         
                                         if dis<knear.oned_check(conty,pp){
@@ -189,7 +188,7 @@ macro_rules! knearest_recc{
                                         }
 
                                         let [leftbot,rightbot]={
-                                            [bot.get().get_range2::<A::Next>().left(),bot.get().get_range2::<A::Next>().right()]
+                                            [bot.get().as_axis().get(axis.next()).left,bot.get().as_axis().get(axis.next()).right]
                                         };
                                         
                                         if leftbot>rightr{
@@ -221,7 +220,7 @@ macro_rules! knearest_recc{
                                 let [leftr,rightr]=knear.create_range(ppother,dis);
 
                                 let [leftbot,rightbot]={
-                                    [bot.get().get_range2::<A::Next>().left(),bot.get().get_range2::<A::Next>().right()]
+                                    [bot.get().as_axis().get(axis.next()).left,bot.get().as_axis().get(axis.next()).right]
                                 };
                                 
                                 if leftbot>rightr{
@@ -262,13 +261,11 @@ macro_rules! knearest_recc{
 ///The callback function will be called on the closest object, then the second closest, and so on up 
 ///until k.
 ///User can also this way choose whether to use manhatan distance or not.
-//TODO pass trait instead? So that the user can mutably borrow something between the closures.
-
 pub fn k_nearest<'b,
     A:AxisTrait,
     K:Knearest,
     >(tree:&'b DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b K::T,K::D)){
-    let axis=A::new();
+    let axis=tree.get_axis();
     let dt = tree.get_iter().with_depth(Depth(0));
 
     let mut c=ClosestCand::new(num);
@@ -288,7 +285,7 @@ pub fn k_nearest_mut<'b,
     A:AxisTrait,
     K:Knearest,
     >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b mut K::T,K::D)){
-    let axis=A::new();
+    let axis=tree.get_axis();
     let dt = tree.get_iter_mut().with_depth(Depth(0));
 
     let mut c=ClosestCand::new(num);

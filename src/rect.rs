@@ -1,17 +1,11 @@
 use inner_prelude::*;
 
 
-use dinotree_inner::*;
 
 
 macro_rules! get_mut_slice{
     ($range:expr)=>{{
         &mut $range
-    }}
-}
-macro_rules! get_slice{
-    ($range:expr)=>{{
-        & $range
     }}
 }
 
@@ -30,7 +24,7 @@ macro_rules! rect{
         ) {
             let (nn, rest) = m.next();
             {
-                let sl = sweeper.get_section::<A::Next>($get_range!(nn.range), rect.get_range2::<A::Next>());
+                let sl = sweeper.get_section(this_axis.next(),$get_range!(nn.range), rect.as_axis().get(this_axis.next()));
 
                 for i in sl {
                     func(i);
@@ -43,12 +37,12 @@ macro_rules! rect{
                         None=>return
                     };
 
-                    let rr = rect.get_range2::<A>();
+                    let rr = rect.as_axis().get(this_axis);
 
-                    if !(div < rr.start) {
+                    if !(div < rr.left) {
                         self::rect_recurse(this_axis.next(), left, rect, func,sweeper);
                     }
-                    if !(div > rr.end) {
+                    if !(div > rr.right) {
                         self::rect_recurse(this_axis.next(), right, rect, func,sweeper);
                     }
                 }
@@ -97,17 +91,18 @@ mod mutable{
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
-
+        let axis=tree.get_axis();
         let mut f = |a: &mut T| {
-            if rect.intersects_rect(a.get()) {
+            if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
         };
 
+        let axis=tree.get_axis();
         let ta = tree.get_iter_mut();
 
         let mut sweeper=oned::mod_mut::Sweeper::new();
-        self::rect_recurse(A::new(), ta, rect, &mut f,&mut sweeper);
+        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
     }
 
     pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb, F: FnMut(&mut T)>(
@@ -120,10 +115,10 @@ mod mutable{
                 closure(a);
             }
         };
-
+        let axis=tree.get_axis();
         let ta = tree.get_iter_mut();
         let mut sweeper=oned::mod_mut::Sweeper::new();
-        self::rect_recurse(A::new(), ta, rect, &mut f,&mut sweeper);
+        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
     }
 
 }
@@ -138,7 +133,7 @@ mod constant{
     ) {
 
         let mut f = |a: &T| {
-            if rect.intersects_rect(a.get()) {
+            if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
         };

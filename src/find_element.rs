@@ -1,8 +1,3 @@
-use inner_prelude::*;
-use oned;
-use std::cell::UnsafeCell;
-use dinotree_inner::par::Joiner;
-use dinotree_inner::*;
 
 /*
 pub fn find_element<A:AxisTrait,T:SweepTrait,F:FnMut(&T)->bool>(tree:&DynTreeMut<A,(),T>,mut func:F)->Option<(usize,Vec<bool>)>{

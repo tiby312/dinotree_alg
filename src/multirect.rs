@@ -1,11 +1,9 @@
 
-use inner_prelude::*;
 
 
-use dinotree_inner::*;
-use rect;
+//use dinotree_inner::*;
 
-pub struct RectIntersectErr;
+//pub struct RectIntersectErr;
 
 /*
 pub struct MultiRect<'a,A: AxisTrait+'a, N:NumTrait+'a,T:'a> {

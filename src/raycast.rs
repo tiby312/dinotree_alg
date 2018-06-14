@@ -1,5 +1,4 @@
 use inner_prelude::*;
-use super::*;
 use dinotree_inner::*;
 
 
@@ -159,7 +158,7 @@ macro_rules! raycast{
                     //since its more likely that we will find the closest bot in a child node
                     match &nn.cont{
                         &Some(cont)=>{
-                            let ff=[cont.left(),cont.right()];
+                            let ff=[cont.left,cont.right];
 
                             let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
 
@@ -201,12 +200,12 @@ macro_rules! raycast{
                                 match rtrait.compute_intersection_range::<A>(ff){
                                     Some((a,b))=>{
                                         for (i,bot) in $get_iter!(nn.range).enumerate(){
-                                            let rang=*bot.get().get_range2::<A::Next>();
-                                            if rang.left()>b{
+                                            let rang=*bot.get().as_axis().get(axis.next());
+                                            if rang.left>b{
                                                 break;
                                             }
                                             
-                                            if rang.right()>=a{
+                                            if rang.right>=a{
                                                 closest.consider(depth,bot,rtrait,&ray);
                                             }
                                         }
@@ -254,7 +253,7 @@ pub fn raycast_mut<
     R:RayTrait<T=T,N=T::Num>
     >(tree:&'a mut DynTree<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a mut T,T::Num)>{
     
-    let axis=A::new();
+    let axis=tree.get_axis();
     let dt = tree.get_iter_mut().with_depth(Depth(0));
 
     raycast!(NdIterMut<(),T>,*mut T,&mut T,get_mut_range_iter);
@@ -297,7 +296,7 @@ pub fn raycast<
     R:RayTrait<T=T,N=T::Num>
     >(tree:&'a DynTree<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a T,T::Num)>{
     
-    let axis=A::new();
+    let axis=tree.get_axis();
     let dt = tree.get_iter().with_depth(Depth(0));
 
     raycast!(NdIter<(),T>,*const T,&T,get_range_iter);

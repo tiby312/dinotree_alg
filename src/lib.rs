@@ -60,7 +60,6 @@ extern crate test;
 
 mod inner_prelude {
     pub use dinotree_inner::*;
-    pub use axgeom::Axis;
     pub use compt::LevelIter;
     pub use compt::Depth;
     pub use axgeom::Range;
@@ -110,12 +109,11 @@ pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::HasAabb;
 use dinotree_inner::treetimer::TreeTimerTrait;
 use compt::CTreeIterator;
-use dinotree_inner::par;
 use axgeom::Rect;
-use axgeom::XAXISS;
-use axgeom::YAXISS;
+//use axgeom::XAXISS;
+//use axgeom::YAXISS;
 use smallvec::SmallVec;
-use dinotree_inner::treetimer::TreeTimer2;
+//use dinotree_inner::treetimer::TreeTimer2;
 use dinotree_inner::treetimer::TreeTimerEmpty;
 use axgeom::AxisTrait;
 
@@ -179,8 +177,3 @@ pub fn iter_mut_special<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut fun
 
 
 use dinotree_inner::DynTree;
-
-//pub use ba::DinoTree;
-//pub(crate) use ba::DynTreeEnum;
-
-use std::marker::PhantomData;

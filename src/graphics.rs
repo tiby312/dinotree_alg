@@ -28,22 +28,22 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
     rect:&Rect<T::Num>
 ) {
     fn recc<A:AxisTrait,T:HasAabb,D:DividerDrawer<N=T::Num>>
-        (stuff:LevelIter<NdIter<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
+        (axis:A,stuff:LevelIter<NdIter<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
         let ((depth,nn),rest)=stuff.next();
 
         let div=match nn.div{
             Some(div)=>{
                 let cont=match nn.cont{
                     Some(cont)=>{
-                        Some([cont.left(),cont.right()])
+                        Some([cont.left,cont.right])
                     },
                     None=>{
                         None
                     }
                 };
 
-                let rr=rect.get_range2::<A::Next>();
-                dr.draw_divider::<A>(div,cont,[rr.start,rr.end],depth.0);
+                let rr=rect.as_axis().get(axis.next());
+                dr.draw_divider::<A>(div,cont,[rr.left,rr.right],depth.0);
                 div
             },
             None=>{
@@ -53,10 +53,10 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
         match rest{
             Some((left,right))=>{
 
-                let (a,b)=rect.subdivide(div,A::get());
+                let (a,b)=rect.subdivide(axis,div);
 
-                recc::<A::Next,T,D>(left,dr,&a);
-                recc::<A::Next,T,D>(right,dr,&b);
+                recc(axis.next(),left,dr,&a);
+                recc(axis.next(),right,dr,&b);
             },
             None=>{
 
@@ -64,7 +64,7 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
         }
     }
 
-    recc::<A,T,D>(gentree.get_iter().with_depth(Depth(0)),dr,rect);
+    recc(gentree.get_axis(),gentree.get_iter().with_depth(Depth(0)),dr,rect);
     /*
     match &gentree.0 {
         &DynTreeEnum::Xa(ref a) => {

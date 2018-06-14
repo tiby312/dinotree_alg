@@ -1,8 +1,6 @@
 use inner_prelude::*;
 use oned;
-use std::cell::UnsafeCell;
 use dinotree_inner::par::Joiner;
-use dinotree_inner::*;
 
 trait LeafTracker{
     fn is_leaf(&self)->bool;
@@ -95,15 +93,15 @@ macro_rules! go_down{
                             None=>return
                         };
 
-                        self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
+                        self::for_every_bijective_pair(this_axis,parent_axis,nn, anchor, sweeper, ColMultiWrapper(func),IsNotLeaf);
                 
                         
                         //This can be evaluated at compile time!
-                        if B::get() == A::get() {
-                            if !(div < anchor.cont.start) {
+                        if this_axis.is_equal_to(parent_axis) {
+                            if !(div < anchor.cont.left) {
                                 self::go_down(this_axis.next(), parent_axis, sweeper, anchor, left, func,depth.next_down());
                             };
-                            if !(div > anchor.cont.end) {
+                            if !(div > anchor.cont.right) {
                                 self::go_down(this_axis.next(), parent_axis, sweeper, anchor, right, func,depth.next_down());
                             };
                         } else {
@@ -113,7 +111,7 @@ macro_rules! go_down{
                        
                     }
                     _ => {
-                        self::for_every_bijective_pair::<A, B, _,_>(nn, anchor, sweeper, ColMultiWrapper(func),IsLeaf);
+                        self::for_every_bijective_pair(this_axis,parent_axis,nn, anchor, sweeper, ColMultiWrapper(func),IsLeaf);
                     }
                 };
             }
@@ -148,7 +146,7 @@ macro_rules! recurse{
 
             let k = match rest {
                 None => {
-                    sweeper.find_2d::<A::Next, _>($get_ref!(nn.range), ColMultiWrapper(&mut clos));
+                    sweeper.find_2d(this_axis.next(),$get_ref!(nn.range), ColMultiWrapper(&mut clos));
 
                     (clos,timer_log.leaf_finish())
                 },
@@ -156,7 +154,7 @@ macro_rules! recurse{
 
                     match anchor::DestructuredAnchor::<X,A>::new(nn){
                         Ok(mut nn)=>{
-                            sweeper.find_2d::<A::Next, _>(nn.range, ColMultiWrapper(&mut clos));
+                            sweeper.find_2d(this_axis.next(),nn.range, ColMultiWrapper(&mut clos));
 
                             //let left = compt::WrapGen::new(&mut left);
                             //let right = compt::WrapGen::new(&mut right);
@@ -271,6 +269,8 @@ macro_rules! colfind{
 
 
         fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F:$bleek,L:LeafTracker>(
+            this_axis:A,
+            parent_axis:B,
             this: $node,
             parent: $anchor,
             sweeper: $sweeper, 
@@ -278,16 +278,16 @@ macro_rules! colfind{
             leaf_tracker:L
         ) {
             //Can be evaluated at compile time
-            if A::get() != B::get() {
+            if !this_axis.is_equal_to(parent_axis) {
 
                 let (parent_box,parent_bots)=(parent.cont,$get_slice!(parent.range));
 
-                let r1 = sweeper.get_section::<B>($get_slice!(this.range), parent_box);
+                let r1 = sweeper.get_section(parent_axis,$get_slice!(this.range), parent_box);
 
                 let r2=if !leaf_tracker.is_leaf(){
                     let this_box=this.cont.unwrap();
             
-                    sweeper.get_section::<A>(parent_bots, &this_box)
+                    sweeper.get_section(this_axis,parent_bots, &this_box)
                 }else{
                     parent_bots
                 };
@@ -295,7 +295,8 @@ macro_rules! colfind{
                 sweeper.find_perp_2d(r1,r2,func);
 
             } else {
-                sweeper.find_parallel_2d::<A::Next, _>(
+                sweeper.find_parallel_2d(
+                    this_axis.next(),
                     $get_slice!(this.range),
                     parent.range,
                     func,
@@ -440,7 +441,6 @@ pub fn query<A:AxisTrait,T:HasAabb>(tree:&DynTree<A,(),T>,mut func:impl FnMut(&T
 
     let tree:&DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(tree)};
     self::constant::for_every_col_pair::<_,_, _, _, TreeTimerEmpty>(
-        A::new(),
         par::Sequential,
         tree,
         wrap,
@@ -508,7 +508,6 @@ pub fn query_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl 
 
     let tree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(tree)};
     self::mutable::for_every_col_pair_mut::<_,_, _, _, TreeTimerEmpty>(
-        A::new(),
         par::Sequential,
         tree,
         wrap,
@@ -542,7 +541,6 @@ pub fn query_par<A:AxisTrait,T:HasAabb+Send>(tree:&DynTree<A,(),T>,func:impl Fn(
     };
 
     self::constant::for_every_col_pair::<_,_, _, _, TreeTimerEmpty>(
-        A::new(),
         par::Parallel::new(gg),
         tree,
         clos,
@@ -582,7 +580,6 @@ pub fn query_par_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:
     };
 
     self::mutable::for_every_col_pair_mut::<_,_, _, _, TreeTimerEmpty>(
-        A::new(),
         par::Parallel::new(gg),
         tree,
         clos,
@@ -651,11 +648,11 @@ mod mutable{
         F: ColMulti<T = T>+Send,
         K: TreeTimerTrait,
     >(
-        this_axis: A,
         par: JJ,
         kdtree: &mut DynTree<A,(), T>,
         clos: F,
     ) -> (F,K::Bag) {
+        let this_axis=kdtree.get_axis();
         let height = kdtree.get_height();
         let dt = kdtree.get_iter_mut();
         let mut sweeper = oned::mod_mut::Sweeper::new();
@@ -839,11 +836,11 @@ mod constant{
         F: ColMulti<T = T>+Send,
         K: TreeTimerTrait,
     >(
-        this_axis: A,
         par: JJ,
         kdtree: &DynTree<A,(), T>,
         clos: F,
     ) -> (F,K::Bag) {
+        let this_axis=kdtree.get_axis();
         let height = kdtree.get_height();
         let dt = kdtree.get_iter();
         let mut sweeper = oned::mod_const::Sweeper::new();
