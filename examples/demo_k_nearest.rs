@@ -26,7 +26,7 @@ fn main() {
     let mut cursor=[NotNaN::new(0.0).unwrap(),NotNaN::new(0.0).unwrap()];
 
 
-    let mut tree = DynTree::new(axgeom::XAXISS,(),bots.clone().into_iter());
+    let mut tree = DynTree::new(axgeom::XAXISS,(),bots.clone().into_iter().map(|b|b.into_bbox()));
     
     
     while let Some(e) = window.next() {
@@ -64,7 +64,7 @@ fn main() {
                             type D=DisSqr;
                             fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
                                 {
-                                    let ((x1,x2),(y1,y2))=bot.rect.get();
+                                    let ((x1,x2),(y1,y2))=bot.get().get();
                                     
                                     {
                                         let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
@@ -76,7 +76,7 @@ fn main() {
                                 }
                                 let (px,py)=(point[0],point[1]);
 
-                                let ((a,b),(c,d))=bot.rect.get();
+                                let ((a,b),(c,d))=bot.get().get();
 
                                 let xx=num::clamp(px,a,b);
                                 let yy=num::clamp(py,c,d);
@@ -111,7 +111,7 @@ fn main() {
                     ];
                     
                     for (i,(a,dis)) in v.iter().enumerate(){
-                        let ((x1,x2),(y1,y2))=a.rect.get();
+                        let ((x1,x2),(y1,y2))=a.get().get();
                         
                         {
                             let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
