@@ -84,8 +84,8 @@ mod ray{
         pub g:&'a mut G2d<'c>
     }
 
-    fn compute_intersection_point<A:AxisTrait>(ray:&Ray<FN64>,line:FN64)->Option<(FN64,FN64)>{
-        if A::new().is_xaxis(){
+    fn compute_intersection_point<A:AxisTrait>(axis:A,ray:&Ray<FN64>,line:FN64)->Option<(FN64,FN64)>{
+        if axis.is_xaxis(){
             //line=ray.point[0]+t*ray.dir[0];
             if ray.dir[0].into_inner()==0.0{
                 if ray.point[0]==line{
@@ -125,8 +125,8 @@ mod ray{
         type T=BBox<FN64,Bot>;
         type N=FN64;
 
-        fn split_ray<A:AxisTrait>(&mut self,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
-            let t=if A::new().is_xaxis(){
+        fn split_ray<A:AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
+            let t=if axis.is_xaxis(){
                 if ray.dir[0].into_inner()==0.0{
                     if ray.point[0]==fo{
                         let t1=ray.tlen/2.0;
@@ -177,10 +177,10 @@ mod ray{
         }
 
         //First option is min, second is max
-        fn compute_intersection_range<A:AxisTrait>(&mut self,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>
+        fn compute_intersection_range<A:AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>
         {
-            let o1:Option<(Self::N,Self::N)>=compute_intersection_point::<A>(&self.ray,fat_line[0]);
-            let o2:Option<(Self::N,Self::N)>=compute_intersection_point::<A>(&self.ray,fat_line[1]);
+            let o1:Option<(Self::N,Self::N)>=compute_intersection_point(axis,&self.ray,fat_line[0]);
+            let o2:Option<(Self::N,Self::N)>=compute_intersection_point(axis,&self.ray,fat_line[1]);
 
             let o1=o1.map(|a|a.1);
             let o2=o2.map(|a|a.1);
@@ -188,7 +188,7 @@ mod ray{
 
             
 
-            let [ray_origin_x,ray_origin_y,ray_end_y]=if A::new().is_xaxis(){
+            let [ray_origin_x,ray_origin_y,ray_end_y]=if axis.is_xaxis(){
                 [self.ray.point[0],self.ray.point[1],self.ray.point[1]+self.ray.tlen*self.ray.dir[1]]
             }else{
                 [self.ray.point[1],self.ray.point[0],self.ray.point[0]+self.ray.tlen*self.ray.dir[0]]
@@ -228,8 +228,8 @@ mod ray{
 
         }
   
-        fn compute_distance_to_line<A:AxisTrait>(&mut self,line:Self::N)->Option<Self::N>{
-            compute_intersection_point::<A>(&self.ray,line).map(|a|a.0)
+        fn compute_distance_to_line<A:AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
+            compute_intersection_point(axis,&self.ray,line).map(|a|a.0)
         }
 
         fn compute_distance_bot(&mut self,depth:Depth,a:&BBox<FN64,Bot>)->Option<Self::N>{
