@@ -15,16 +15,16 @@ pub trait RayTrait{
     type N:NumTrait;
 
     //Returns the y range of the fat line that needs to be checked
-    fn compute_intersection_range<A:AxisTrait>(&mut self,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
+    fn compute_intersection_range<A:AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
 
     //Returns distance from ray origin to the line.
-    fn compute_distance_to_line<A:AxisTrait>(&mut self,line:Self::N)->Option<Self::N>;
+    fn compute_distance_to_line<A:AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>;
 
     //The expensive collision detection
     fn compute_distance_bot(&mut self,depth:Depth,&Self::T)->Option<Self::N>;
 
 
-    fn split_ray<A:AxisTrait>(&mut self,ray1:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>;
+    fn split_ray<A:AxisTrait>(&mut self,axis:A,ray1:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>;
 
 }
 
@@ -94,7 +94,7 @@ macro_rules! raycast{
 
                         let po=match ray_point.cmp(&div){
                             std::cmp::Ordering::Less=>{
-                                match rtrait.split_ray::<A>(&ray,div){
+                                match rtrait.split_ray(axis,&ray,div){
                                     Some((ray_closer,ray_further))=>{
                                         recc(axis_next,left,rtrait,ray_closer,closest);
                                         dop(axis,right,rtrait,ray_further,closest,div);
@@ -107,7 +107,7 @@ macro_rules! raycast{
                                 }
                             },
                             std::cmp::Ordering::Greater=>{
-                                match rtrait.split_ray::<A>(&ray,div){
+                                match rtrait.split_ray(axis,&ray,div){
                                     Some((ray_closer,ray_further))=>{
                                         recc(axis_next,right,rtrait,ray_closer,closest);
                                         dop(axis,left,rtrait,ray_further,closest,div);
@@ -134,7 +134,7 @@ macro_rules! raycast{
                         >(axis:A,nd:LevelIter<$iterator>,rtrait:&mut R,ray:Ray<N>,closest:&mut Closest<T>,div:N){
                         match closest.get_dis(){
                             Some(dis)=>{
-                                match rtrait.compute_distance_to_line::<A>(div){
+                                match rtrait.compute_distance_to_line(axis,div){
                                     Some(dis2)=>{
                                         if dis2<dis{
                                             recc(axis.next(),nd,rtrait,ray,closest);
@@ -176,7 +176,7 @@ macro_rules! raycast{
 
                                 match closest.get_dis(){
                                     Some(dis)=>{
-                                        match rtrait.compute_distance_to_line::<A>(closer_line){
+                                        match rtrait.compute_distance_to_line(axis,closer_line){
                                             Some(dis2)=>{
                                                 if dis2<dis{
                                                     true
@@ -197,7 +197,7 @@ macro_rules! raycast{
 
 
                             if handle_middle{
-                                match rtrait.compute_intersection_range::<A>(ff){
+                                match rtrait.compute_intersection_range(axis,ff){
                                     Some((a,b))=>{
                                         for (i,bot) in $get_iter!(nn.range).enumerate(){
                                             let rang=*bot.get().as_axis().get(axis.next());
