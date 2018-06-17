@@ -35,7 +35,7 @@ mod demo_iter{
             self.0+=1;
 
 
-            if self.0==6{
+            if self.0==7{
                 self.0=0
             }
             match curr{
@@ -44,7 +44,8 @@ mod demo_iter{
                 2=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
                 3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
                 4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
-                5=>{Box::new(demo_nbody::DemoNbody::new(area))}
+                5=>{Box::new(demo_nbody::DemoNbody::new(area))},
+                6=>{Box::new(demo_intersect_pair::IntersectEveryDemo::new(area))}
                 _=>{panic!("Not possible")}
             }
         }
