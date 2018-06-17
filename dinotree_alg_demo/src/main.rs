@@ -7,13 +7,14 @@ extern crate rand;
 extern crate dinotree;
 extern crate ordered_float;
 extern crate dinotree_inner;
+extern crate rayon;
 use piston_window::*;
 use ordered_float::NotNaN;
 use support::f64N;
 
 #[macro_use]
-mod support;
-mod demos;
+pub(crate) mod support;
+pub(crate) mod demos;
 
 pub trait DemoSys{
     fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d);
@@ -34,13 +35,16 @@ mod demo_iter{
             self.0+=1;
 
 
-            if self.0==3{
+            if self.0==6{
                 self.0=0
             }
             match curr{
                 0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                1=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
-                2=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))}
+                1=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
+                2=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
+                3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
+                4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
+                5=>{Box::new(demo_nbody::DemoNbody::new(area))}
                 _=>{panic!("Not possible")}
             }
         }

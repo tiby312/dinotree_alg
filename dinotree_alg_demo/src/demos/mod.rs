@@ -1,4 +1,6 @@
-
+pub mod demo_multirect;
+pub mod demo_nbody;
 pub mod demo_knearest;
+pub mod demo_for_every_nearest;
 pub mod demo_raycast_isize;
 pub mod demo_raycast_f64;

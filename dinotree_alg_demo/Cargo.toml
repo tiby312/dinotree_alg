@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 
 [dependencies]
+rayon="*"
 compt={path="../../compt"}
 dinotree = {path=".."}
 dinotree_inner = {path="../../dinotree_inner"}

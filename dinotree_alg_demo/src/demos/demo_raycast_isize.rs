@@ -88,7 +88,7 @@ mod ray_isize{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBox<isize,Bot>;
+        type T=BBox<isize,()>;
         type N=isize;
 
         fn split_ray<A:axgeom::AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
@@ -214,21 +214,30 @@ mod ray_isize{
 
 
 pub struct RaycastDemo{
-    bots:Vec<BBoxVisible<isize,Bot>>,
-    tree:DynTree<axgeom::XAXISS,(),BBox<isize,Bot>>,
+    tree:DynTree<axgeom::XAXISS,(),BBox<isize,()>>,
     counter:f64
 }
 impl RaycastDemo{
     pub fn new(dim:[f64;2])->RaycastDemo{
-        let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
-        let tree = DynTree::new(axgeom::XAXISS,(),bots.clone().into_iter().map(|b|b.into_bbox()));
-        RaycastDemo{bots,tree,counter:0.0}
+        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
+        let dim=&[0,dim[0] as isize,0,dim[1] as isize];
+        let radius=[5,20];
+        let velocity=[1,3];
+        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+            let ret=ret.into_isize();
+            let p=ret.pos;
+            let r=ret.radius;
+            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),())
+        });
+
+        //let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
+        let tree = DynTree::new(axgeom::XAXISS,(),bots);
+        RaycastDemo{tree,counter:0.0}
     }
 }
 
 impl DemoSys for RaycastDemo{
     fn step(&mut self,cursor:[NotNaN<f64>;2],c:&piston_window::Context,g:&mut piston_window::G2d){
-        let bots=&self.bots;
         let tree=&self.tree;
         let counter=&mut self.counter;
 

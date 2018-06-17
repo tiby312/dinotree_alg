@@ -83,6 +83,8 @@ pub mod colfind;
 
 pub mod k_nearest;
 
+pub mod for_every_nearest;
+
 pub mod nbody;
 
 pub mod raycast;

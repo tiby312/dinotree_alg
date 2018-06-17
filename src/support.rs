@@ -5,6 +5,7 @@ use dinotree_inner::HasAabb;
 use axgeom::*;
 
 
+
 ///This object provides some more protection against a user
 ///incorrectly changing an objects aabb after it has been inserted into the
 ///tree.
@@ -38,7 +39,17 @@ impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
     }
 }
 
+use for_every_nearest::HasCenter;
+impl<Nu:NumTrait,T:HasCenter<Num=Nu>> HasCenter for BBox<Nu,T>{
+    type Num=Nu;
+    fn get_center(&self)->&[Self::Num;2]{
+        self.inner.get_center()
+    }
+}
 impl<Nu:NumTrait,T> BBox<Nu,T>{
+    pub fn new(rect:Rect<Nu>,inner:T)->BBox<Nu,T>{
+        BBox{rect,inner}
+    }
     pub fn into_visible(self)->BBoxVisible<Nu,T>{
         BBoxVisible{rect:self.rect,inner:self.inner}
     }

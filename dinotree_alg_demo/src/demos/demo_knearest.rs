@@ -2,24 +2,32 @@ use support::prelude::*;
 use dinotree::k_nearest;
 
 pub struct KnearestDemo{
-    bots:Vec<BBoxVisible<f64N,Bot>>,
-    tree:DynTree<axgeom::XAXISS,(),BBox<f64N,Bot>>
+    tree:DynTree<axgeom::XAXISS,(),BBox<f64N,()>>
 }
 impl KnearestDemo{
     pub fn new(dim:[f64;2])->KnearestDemo{
-        let bots=create_bots_f64(|id,pos|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
-        let tree = DynTree::new(axgeom::XAXISS,(),bots.clone().into_iter().map(|b|b.into_bbox()));
-        KnearestDemo{bots,tree}
+        
+        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
+        let dim=&[0,dim[0] as isize,0,dim[1] as isize];
+        let radius=[5,20];
+        let velocity=[1,3];
+        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+            let p=ret.pos;
+            let r=ret.radius;
+            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),())
+        });
+
+        let tree = DynTree::new(axgeom::XAXISS,(),bots);
+        KnearestDemo{tree}
     }
 }
 
 impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d){
-        let bots=&self.bots;
         let tree=&self.tree;
 
-        for bot in bots.iter(){
-            let ((x1,x2),(y1,y2))=bot.rect.get();
+        for bot in tree.iter(){
+            let ((x1,x2),(y1,y2))=bot.get().get();
             let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
             let square = [x1,y1,x2-x1,y2-y1];
                                     
@@ -34,7 +42,7 @@ impl DemoSys for KnearestDemo{
         };
 
         impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
-            type T=BBox<f64N,Bot>;
+            type T=BBox<f64N,()>;
             type N=f64N;
             type D=DisSqr;
             fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
@@ -70,7 +78,7 @@ impl DemoSys for KnearestDemo{
             }
         }
 
-        let mut vv:Vec<(&BBox<f64N,Bot>,DisSqr)>=Vec::new();
+        let mut vv:Vec<(&BBox<f64N,()>,DisSqr)>=Vec::new();
         {
             let mut kn=Kn{c:&c,g};
             k_nearest::k_nearest(&tree,cursor,3,kn,|a,b|{vv.push((a,b))});

@@ -96,7 +96,7 @@ mod ray_f64{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBox<f64N,Bot>;
+        type T=BBox<f64N,()>;
         type N=f64N;
 
         fn split_ray<A:axgeom::AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
@@ -200,7 +200,7 @@ mod ray_f64{
             compute_intersection_point(axis,&self.ray,line).map(|a|a.0)
         }
 
-        fn compute_distance_bot(&mut self,depth:Depth,a:&BBox<f64N,Bot>)->Option<Self::N>{
+        fn compute_distance_bot(&mut self,depth:Depth,a:&BBox<f64N,()>)->Option<Self::N>{
             //let ((x1,x2),(y1,y2))=a.get().get();
             intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
         }
@@ -210,12 +210,22 @@ mod ray_f64{
 
 
 pub struct RaycastF64Demo{
-    tree:DynTree<axgeom::XAXISS,(),BBox<f64N,Bot>>,
+    tree:DynTree<axgeom::XAXISS,(),BBox<f64N,()>>,
 }
 impl RaycastF64Demo{
+
     pub fn new(dim:[f64;2])->RaycastF64Demo{
-        let bots=create_bots_f64(|id,pos|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
-        let tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter().map(|b|b.into_bbox()));
+        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
+        let dim=&[0,dim[0] as isize,0,dim[1] as isize];
+        let radius=[5,20];
+        let velocity=[1,3];
+        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+            let p=ret.pos;
+            let r=ret.radius;
+            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),())
+        });
+
+        let tree = DynTree::new(axgeom::XAXISS,(),bots);
         RaycastF64Demo{tree}
     }
 }

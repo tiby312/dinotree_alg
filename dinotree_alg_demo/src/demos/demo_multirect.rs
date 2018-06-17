@@ -1,25 +1,38 @@
 use support::prelude::*;
+use dinotree::multirect;
 
-pub struct RectDemo{
-    bots:Vec<BBoxVisible<isize,Bot>>,
-    tree:DynTree<axgeom::XAXISS,(),BBox<isize,Bot>>
+pub struct MultiRectDemo{
+    tree:DynTree<axgeom::XAXISS,(),BBox<isize,()>>
 }
-impl RectDemo{
-    pub fn new(dim:[f64;2])->RectDemo{
-        let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
-        let tree = DynTree::new(axgeom::XAXISS,(),bots.clone().into_iter().map(|b|b.into_bbox()));
-        RectDemo{bots,tree}
+impl MultiRectDemo{
+    pub fn new(dim:[f64;2])->MultiRectDemo{
+
+        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
+        let dim=&[0,dim[0] as isize,0,dim[1] as isize];
+        let radius=[5,20];
+        let velocity=[1,3];
+        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+            let ret=ret.into_isize();
+            let p=ret.pos;
+            let r=ret.radius;
+            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),())
+        });
+
+        let tree = DynTree::new(axgeom::XAXISS,(),bots);
+
+        //let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
+        //let tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter().map(|b|b.into_bbox()));
+        MultiRectDemo{tree}
     }
 }
 
-impl DemoSys for RectDemo{
+impl DemoSys for MultiRectDemo{
     fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         
-        let bots=&self.bots;
-        let tree=&self.tree;
+        let tree=&mut self.tree;
 
-        for bot in bots.iter(){
-            let ((x1,x2),(y1,y2))=bot.rect.get();
+        for bot in tree.iter(){
+            let ((x1,x2),(y1,y2))=bot.get().get();
             let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
 
             let square = [x1,y1,x2-x1,y2-y1];
@@ -41,17 +54,17 @@ impl DemoSys for RectDemo{
         }  
         
 
-        let mut rects=dinotree::multirect(tree);
+        let mut rects=multirect::multi_rect_mut(tree);
 
 
         let mut to_draw=Vec::new();
-        let _=rects.for_all_in_rect(&r1, |a| {
+        let _=rects.for_all_in_rect_mut(r1, |a| {
             to_draw.push(a)
         });
 
 
-        let r2=axgeom::Rect::new(20,200,20,200);
-        let res= rects.for_all_in_rect(&r2, |a| {
+        let r2=axgeom::Rect::new(100,400,100,400);
+        let res= rects.for_all_in_rect_mut(r2, |a| {
             to_draw.push(a);
         });
 
@@ -59,7 +72,7 @@ impl DemoSys for RectDemo{
         match res{
             Ok(())=>{
                 for r in to_draw.iter(){
-                    let ((x1,x2),(y1,y2))=r.rect.get();
+                    let ((x1,x2),(y1,y2))=r.get().get();
                     
                     {
                         let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));

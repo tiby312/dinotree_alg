@@ -46,9 +46,40 @@ and those to the right of the median.
 
 So the querying sort of does "two pases" of the tree. For each node, it will collide with all the bots in that node, then it will look for all children nodes that intsect with itself and collide with those bots. Then that node is completely done. So it can be removed, and now you have two completely independant trees that you can repeat the algorithm on.
 
+
+#colfind
+I am not convinced that storing points+use supplied left,top,right,bottom border retrieval functions is faster than just
+storing the aabb. This strategy would use less memory. (No need to sore the aabb, just the center point), But the aabb ends up being calculated from the point. I'm doubtful that this is faster because many floating point operations would be necessary. And what is more
+is that many of these floating point operations and computing the same thing over and over again. During the colfinding,
+the aabb for a bot might need to be checks a bunch of times. Thats a lot of extra floating point operations. So I thin having the computed aabb in memory is better. 
+The other downside is that you lose generality. All the aabb's must be the same size.
+
+
+#user responsibilty
+Its always the goal to make the objects that are put into the tree be as small in size as possible.
+To do this, every member in each object should actually be used during the querying.
+If there is a member that isnt used, you will improve memory locality, by making a new type
+with less memory, construct and query the tree with that, and then re-inject changes into the original object.
+For example, if your colliding pair function pushes pairs of bots apart purely using pos+radius, and the velocity field is
+never used in the colliding function, then construct the tree with a new type without velocity. Another common example
+of a field that might not be needed is an id field. 
+
+For this same reason, I dont think a special algorithm for findind col pairs with an extended raidus around each aabb is worth it.
+It would end up requiring more bounds calculations. For these cases, I think simply making aabb's big enough to capture that extra radius is faster.
+
+
 # Finding bots in a rectangle
 
 todo
+
+#extendions
+k_furthest.
+
+# knearest 
+easy to very by checking against naive algorithm???
+
+$ raycast
+hard to verify since there is no easy naive algorithm???
 
 # More detailed explanation of the query algorithm
 
