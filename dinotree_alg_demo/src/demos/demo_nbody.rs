@@ -235,10 +235,7 @@ impl DemoNbody{
         let radius=[5,20];
         let velocity=[1,3];
         let mut bots:Vec<Bot>=create_world_generator(500,dim,radius,velocity).map(|ret|{
-            let id=ret.id;
-            let pos=[ret.pos[0].into_inner(),ret.pos[1].into_inner()];
-            let vel=[ret.vel[0].into_inner(),ret.vel[1].into_inner()];
-            Bot{pos,vel,force:[0.0;2],mass:100.0} //used to be 20
+            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],mass:100.0} //used to be 20
         }).collect();
 
         //Make one of the bots have a lot of mass.
@@ -251,7 +248,7 @@ impl DemoNbody{
 }
 
 impl DemoSys for DemoNbody{
-    fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         let no_mass_bots=&mut self.no_mass_bots;
         let bots=&mut self.bots;
         
@@ -357,8 +354,8 @@ impl DemoSys for DemoNbody{
         match no_mass_bots.pop(){
             Some(mut b)=>{
                 b.mass=20.0;                
-                b.pos[0]=cursor[0].into_inner() as f64;
-                b.pos[1]=cursor[1].into_inner() as f64;
+                b.pos[0]=cursor[0];
+                b.pos[1]=cursor[1];
                 b.force=[0.0;2];
                 b.vel=[1.0,0.0];
                 bots.push(b);

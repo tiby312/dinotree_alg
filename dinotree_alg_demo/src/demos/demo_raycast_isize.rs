@@ -237,12 +237,12 @@ impl RaycastDemo{
 }
 
 impl DemoSys for RaycastDemo{
-    fn step(&mut self,cursor:[NotNaN<f64>;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         let tree=&self.tree;
         let counter=&mut self.counter;
 
         let ray={
-            let point=[cursor[0].into_inner() as isize,cursor[1].into_inner() as isize];
+            let point=[cursor[0] as isize,cursor[1] as isize];
             //let point=[214,388];
             //println!("cursor={:?}",point);
             *counter+=0.01;         

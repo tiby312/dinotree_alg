@@ -222,7 +222,7 @@ impl RaycastF64Demo{
         let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),())
+            BBox::new(rectf64_to_notnan(aabb_from_pointf64(p,r)),())
         });
 
         let tree = DynTree::new(axgeom::XAXISS,(),bots);
@@ -231,7 +231,7 @@ impl RaycastF64Demo{
 }
 
 impl DemoSys for RaycastF64Demo{
-    fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         let tree=&self.tree;
         //Draw bots
         for bot in tree.iter(){
@@ -252,9 +252,8 @@ impl DemoSys for RaycastF64Demo{
                 let y=(i.sin()*20.0) as f64;
 
                 let ray={
-                    let point=cursor;
-
-                    let dir=[NotNaN::new(x).unwrap(),NotNaN::new(y).unwrap()];
+                    let dir=[f64n!(x),f64n!(y)];
+                    let point=[f64n!(cursor[0]),f64n!(cursor[1])];
                     raycast::Ray{point,dir,tlen:NotNaN::new(300.0).unwrap(),}
                 };
 

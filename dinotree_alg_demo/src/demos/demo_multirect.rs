@@ -27,7 +27,7 @@ impl MultiRectDemo{
 }
 
 impl DemoSys for MultiRectDemo{
-    fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         
         let tree=&mut self.tree;
 
@@ -40,8 +40,8 @@ impl DemoSys for MultiRectDemo{
             rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
         }
 
-        let cx=cursor[0].into_inner() as isize;
-        let cy=cursor[1].into_inner() as isize;
+        let cx=cursor[0] as isize;
+        let cy=cursor[1] as isize;
         let r1=axgeom::Rect::new(cx-50,cx+50,cy-50,cy+50);
         {
             let ((x1,x2),(y1,y2))=r1.get();

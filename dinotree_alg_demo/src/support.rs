@@ -13,7 +13,6 @@ pub mod prelude{
     pub(crate) use piston_window;
     pub use ordered_float::NotNaN;
     pub use piston_window::*;
-    pub use support::Bot;
     pub use dinotree_inner::DynTree;
     pub use dinotree_inner::HasAabb;
     pub(crate) use axgeom;
@@ -34,50 +33,6 @@ macro_rules! f64n {
             NotNaN::new($x).unwrap()
         }
     };
-}
-
-
-
-
-
-pub struct Bot{
-    pub id:usize,
-    pub pos:[f64N;2],
-    pub vel:[f64N;2],
-    pub acc:[f64N;2],
-    pub radius:[f64N;2],
-}
-
-impl Bot{
-
-    pub fn wrap_position(&mut self,dim:[f64N;2]){
-        let mut a=[self.pos[0],self.pos[1]];
-        
-        let start=[f64n!(0.0);2];
-
-        if a[0]>dim[0]{
-            a[0]=start[0]
-        }
-        if a[0]<start[0]{
-            a[0]=dim[0];
-        }
-        if a[1]>dim[1]{
-            a[1]=start[1];
-        }
-        if a[1]<start[1]{
-            a[1]=dim[1];
-        }
-        self.pos=[a[0],a[1]]
-    }
-
-    pub fn update(&mut self){
-        self.vel[0]+=self.acc[0];
-        self.vel[1]+=self.acc[1];
-        self.pos[0]+=self.vel[0];
-        self.pos[1]+=self.vel[1];
-        self.acc[0]=f64n!(0.0);
-        self.acc[1]=f64n!(0.0);
-    }
 }
 
 
@@ -118,9 +73,9 @@ pub struct RangeGenIterf64{
 
 pub struct Retf64{
     pub id:usize,
-    pub pos:[f64N;2],
-    pub vel:[f64N;2],
-    pub radius:[f64N;2],
+    pub pos:[f64;2],
+    pub vel:[f64;2],
+    pub radius:[f64;2],
 }
 
 pub struct RetInteger{
@@ -132,9 +87,9 @@ pub struct RetInteger{
 impl Retf64{
     pub fn into_isize(self)->RetInteger{
         let id=self.id;
-        let pos=[self.pos[0].into_inner() as isize,self.pos[1].into_inner() as isize];
-        let vel=[self.vel[0].into_inner() as isize,self.vel[1].into_inner() as isize];
-        let radius=[self.radius[0].into_inner() as isize,self.radius[1].into_inner() as isize];
+        let pos=[self.pos[0] as isize,self.pos[1] as isize];
+        let vel=[self.vel[0] as isize,self.vel[1] as isize];
+        let radius=[self.radius[0] as isize,self.radius[1] as isize];
         RetInteger{id,pos,vel,radius}
     }
 }
@@ -151,10 +106,10 @@ impl Iterator for RangeGenIterf64{
         }
 
         let rng=&mut self.rng;  
-        let px=f64n!(self.xvaluegen.get(rng) as f64);
-        let py=f64n!(self.yvaluegen.get(rng) as f64);
-        let rx=f64n!(self.radiusgen.get(rng) as f64);
-        let ry=f64n!(self.radiusgen.get(rng) as f64);
+        let px=self.xvaluegen.get(rng) as f64;
+        let py=self.yvaluegen.get(rng) as f64;
+        let rx=self.radiusgen.get(rng) as f64;
+        let ry=self.radiusgen.get(rng) as f64;
 
         let (velx,vely)={
             let vel_dir=self.velocity_dir.get(rng) as f64;
@@ -163,12 +118,11 @@ impl Iterator for RangeGenIterf64{
             let vel_mag=self.velocity_mag.get(rng) as f64;
             xval*=vel_mag;
             yval*=vel_mag;
-            (f64n!(xval),f64n!(yval))
+            (xval,yval)
         };
 
         let curr=self.counter;
         self.counter+=1;
-
         let r=Retf64{id:curr,pos:[px,py],vel:[velx,vely],radius:[rx,ry]};
         Some(r)
     }
@@ -188,80 +142,17 @@ pub fn create_world_generator(num:usize,area:&[isize;4],radius:[isize;2],velocit
 
     RangeGenIterf64{max:num,counter:0,rng,xvaluegen,yvaluegen,radiusgen,velocity_dir,velocity_mag}
 }
-/*
-pub fn create_bots_f64<X:Send+Sync,F:FnMut(usize,[f64;2])->X>(mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBoxVisible<NotNaN<f64>,X>>{
-    
-    let arr:&[usize]=&[100,42,6];
-    let mut rng =  SeedableRng::from_seed(arr);
-    let rng=&mut rng;
 
-    let xvaluegen=UniformRangeGenerator::new(area[0],area[1]);
-    let yvaluegen=UniformRangeGenerator::new(area[2],area[3]);
-    let radiusgen= UniformRangeGenerator::new(radius[0],radius[1]);
-
-
-    let mut bots = Vec::with_capacity(num_bots);
-    for id in 0..num_bots {;
-
-        let px=NotNaN::new(xvaluegen.get(rng) as f64).unwrap();
-        let py=NotNaN::new(yvaluegen.get(rng) as f64).unwrap();
-        let rx=NotNaN::new(radiusgen.get(rng) as f64).unwrap();
-        let ry=NotNaN::new(radiusgen.get(rng) as f64).unwrap();
-
-        bots.push(BBoxVisible{
-            inner:func(id,[px.into_inner(),py.into_inner()]),
-            rect:Rect::new(px-rx,px+rx,py-ry,py+ry)
-        });
-        
-            
-    }
-    bots
-
+pub fn aabb_from_pointf64(p:[f64;2],r:[f64;2])->Rect<f64>{
+    Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
 }
-
-
-#[allow(dead_code)]
-pub fn create_bots_isize_seed<X:Send+Sync,F:FnMut(usize)->X>(seed:&[usize],mut func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBoxVisible<isize,X>>{
-    let mut rng =  SeedableRng::from_seed(seed);
-    let rng=&mut rng;
-
-    let xvaluegen=UniformRangeGenerator::new(area[0],area[1]);
-    let yvaluegen=UniformRangeGenerator::new(area[2],area[3]);
-    let radiusgen= UniformRangeGenerator::new(radius[0],radius[1]);
-
-
-    let mut bots = Vec::with_capacity(num_bots);
-    for id in 0..num_bots {;
-
-        let px=xvaluegen.get(rng);
-        let py=yvaluegen.get(rng);
-        let rx=radiusgen.get(rng);
-        let ry=radiusgen.get(rng);
-
-        bots.push(BBoxVisible{
-            inner:func(id),
-            rect:Rect::new(px-rx,px+rx,py-ry,py+ry)
-        });
-    }
-    bots
-}
-#[allow(dead_code)]
-pub fn create_bots_isize<X:Send+Sync,F:FnMut(usize)->X>(func:F,area:&[isize;4],num_bots:usize,radius:[isize;2])->Vec<BBoxVisible<isize,X>>{
-    
-    let arr:&[usize]=&[100,42,6];
-    create_bots_isize_seed(arr,func,area,num_bots,radius)
-
-}*/
-
-
-pub fn create_aabb_f64(center:[f64N;2],radius:[f64N;2])->Rect<f64N>{
-    Rect::new(center[0]-radius[0],center[0]+radius[1],center[1]-radius[1],center[1]+radius[1])    
-}
-#[allow(dead_code)]
 pub fn rectf64_to_notnan(rect:Rect<f64>)->Rect<NotNaN<f64>>{
     let ((a,b),(c,d))=rect.get();
-
     Rect::new(NotNaN::new(a).unwrap(),NotNaN::new(b).unwrap(),NotNaN::new(c).unwrap(),NotNaN::new(d).unwrap())
+}
+pub fn rectNaN_to_f64(rect:Rect<f64N>)->Rect<f64>{
+    let ((a,b),(c,d))=rect.get();
+    Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
 }
 
 /*

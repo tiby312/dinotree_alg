@@ -17,7 +17,7 @@ pub(crate) mod support;
 pub(crate) mod demos;
 
 pub trait DemoSys{
-    fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d);
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d);
 }
 
 mod demo_iter{
@@ -62,12 +62,12 @@ fn main(){
 
     let mut demo_iter=demo_iter::DemoIter::new();
     
-    let mut cursor=[f64n!(0.0),f64n!(0.0)];
+    let mut cursor=[0.0,0.0];
 
     let mut curr=demo_iter.next(area);
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
-            cursor = [f64n!(x), f64n!(y)];
+            cursor = [x, y];
         });
         if let Some(Button::Keyboard(key)) = e.press_args() {
             if key == Key::C {

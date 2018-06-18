@@ -14,7 +14,7 @@ impl KnearestDemo{
         let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),())
+            BBox::new(rectf64_to_notnan(aabb_from_pointf64(p,r)),())
         });
 
         let tree = DynTree::new(axgeom::XAXISS,(),bots);
@@ -23,7 +23,7 @@ impl KnearestDemo{
 }
 
 impl DemoSys for KnearestDemo{
-    fn step(&mut self,cursor:[f64N;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         let tree=&self.tree;
 
         for bot in tree.iter(){
@@ -81,7 +81,8 @@ impl DemoSys for KnearestDemo{
         let mut vv:Vec<(&BBox<f64N,()>,DisSqr)>=Vec::new();
         {
             let mut kn=Kn{c:&c,g};
-            k_nearest::k_nearest(&tree,cursor,3,kn,|a,b|{vv.push((a,b))});
+            let point=[f64n!(cursor[0]),f64n!(cursor[1])];
+            k_nearest::k_nearest(&tree,point,3,kn,|a,b|{vv.push((a,b))});
         }
 
         let cols=[
