@@ -81,6 +81,8 @@ pub mod support;
 ///Contains query code
 pub mod colfind;
 
+pub mod intersect_with;
+
 pub mod k_nearest;
 
 pub mod for_every_nearest;
@@ -90,6 +92,7 @@ pub mod nbody;
 pub mod raycast;
 
 pub mod find_element;
+
 
 pub mod rect;
 

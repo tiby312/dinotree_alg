@@ -1,82 +1,138 @@
+use support::prelude::*;
+use dinotree::colfind;
+use dinotree::rect;
 
-/*
+pub struct Bot{
+    pos:[f64;2],
+    vel:[f64;2],
+    force:[f64;2],
+}
+impl Bot{
+    fn update(&mut self){
+        self.vel[0]+=self.force[0];
+        self.vel[1]+=self.force[1];
 
-extern crate piston_window;
-extern crate axgeom;
-extern crate num;
-extern crate rand;
-extern crate dinotree;
-extern crate ordered_float;
-use piston_window::*;
+        //non linear drag
+        self.vel[0]*=0.9;
+        self.vel[1]*=0.9;
 
-mod support;
-use dinotree::*;
-
-
-fn main() {
-    let mut bots1=support::create_bots_isize(|id|support::Bot{id,col:Vec::new()},&[0,800,0,800],500,[2,20]);
-    let mut bots2=support::create_bots_isize_seed(&[50,9,20],|id|support::Bot{id,col:Vec::new()},&[0,800,0,800],50,[2,20]);
-
-    let mut window: PistonWindow = WindowSettings::new("dinotree test", [800, 800])
-        .exit_on_esc(true)
-        .build()
-        .unwrap();
-
-    let mut cursor=[0.0,0.0];
-    while let Some(e) = window.next() {
-        e.mouse_cursor(|x, y| {
-            cursor = [x, y];
-        });
-
-        window.draw_2d(&e, |c, g| {
-            clear([1.0; 4], g);
-            
-            for bot in bots1.iter(){
-                let ((x1,x2),(y1,y2))=bot.rect.get();
-                let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                    
-                let square = [x1,y1,x2-x1,y2-y1];
-                rectangle([1.0,0.0,0.0,0.5], square, c.transform, g);
+        self.pos[0]+=self.vel[0];
+        self.pos[1]+=self.vel[1];
+        self.force[0]=0.0;
+        self.force[1]=0.0;
+        {
+            let a=&mut self.pos;
+            if a[0]>800.0{
+                a[0]=0.0
             }
-
-            for bot in bots2.iter(){
-                let ((x1,x2),(y1,y2))=bot.rect.get();
-                let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                    
-                let square = [x1,y1,x2-x1,y2-y1];
-                rectangle([0.0,1.0,0.0,0.5], square, c.transform, g);
+            if a[0]<0.0{
+                a[0]=800.0;
             }
-
-            {
-                let mut tree = DinoTree::new(&mut bots1, StartAxis::Xaxis);
-                    
-                tree.intersect_with_seq(&mut bots2,|a, b| {
-                   
-                    let mid1={
-                        let ((x1,x2),(y1,y2))=a.rect.get();
-                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                        
-                        [x1+(x2-x1)/2.0,y1+(y2-y1)/2.0]
-                    };
-
-                    let mid2={
-                        let ((x1,x2),(y1,y2))=b.rect.get();
-                        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-                        
-                        [x1+(x2-x1)/2.0,y1+(y2-y1)/2.0]
-                    };
-                    
-                    let arr=[mid1[0],mid1[1],mid2[0],mid2[1]];
-                    line([0.0, 0.0, 0.0, 1.0], // black
-                         1.0, // radius of line
-                         arr, // [x0, y0, x1,y1] coordinates of line
-                         c.transform,
-                         g);
-                });
-            
+            if a[1]>800.0{
+                a[1]=0.0
             }
-        });
+            if a[1]<0.0{
+                a[1]=800.0;
+            }
+        }
+    }
+
+    fn repel_mouse(&mut self,mouse:[f64;2]){
+        let a=self;
+        let bpos=mouse;
+        let diff=[bpos[0]-a.pos[0],bpos[1]-a.pos[1]];
+        a.force[0]-=diff[0]*0.1;
+        a.force[1]-=diff[1]*0.1;
+    }
+    fn repel(&mut self,other:&mut Bot){
+        let a=self;
+        let b=other;
+        let diff=[b.pos[0]-a.pos[0],b.pos[1]-a.pos[1]];
+
+        a.force[0]-=diff[0]*0.01;
+        a.force[1]-=diff[1]*0.01;
+        b.force[0]+=diff[0]*0.01;
+        b.force[1]+=diff[1]*0.01;
+    }
+}
+pub struct IntersectEveryDemo{
+    radius:f64,
+    bots:Vec<Bot>,
+    walls:Vec<BBox<f64,()>>,
+    dim:[f64;2]
+}
+impl IntersectEveryDemo{
+    pub fn new(dim:[f64;2])->IntersectEveryDemo{
+        let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
+        let radius=[5,10];
+        let velocity=[1,3];
+        let bots=create_world_generator(1000,dim2,radius,velocity).map(|ret|{
+            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
+        }).collect();
+
+        IntersectEveryDemo{radius:10.0,bots,dim}
     }
 }
 
-*/
+impl DemoSys for IntersectEveryDemo{
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+        let radius=10.0;
+        let bots=&mut self.bots;
+        let walls=&mut self.walls;
+        
+        for b in bots.iter_mut(){
+            b.update();
+
+        }
+
+
+        let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
+            let p=b.pos;
+            let rect=aabb_from_pointf64(p,[radius;2]);
+            BBox::new(rectf64_to_notnan(rect),b)
+        }));
+
+        intersect_with(walls){
+
+        }
+        rect::for_all_in_rect_mut(&mut tree,&rectf64_to_notnan(aabb_from_pointf64(cursor,[100.0;2])),|b|{
+            b.inner.repel_mouse(cursor);
+        });
+        
+        for bot in tree.iter(){
+            let ((x1,x2),(y1,y2))=bot.get().get();
+            //let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+            let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+              
+            let square = [x1,y1,x2-x1,y2-y1];
+            rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
+        }
+
+        {
+         
+            colfind::query_mut(&mut tree,|a, b| {
+                a.inner.repel(&mut b.inner);
+                let ((x1,x2),(y1,y2))=a.get().get();
+                
+                {
+                    let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+                    let square = [x1,y1,x2-x1,y2-y1];
+                    rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
+                }
+
+                let ((x1,x2),(y1,y2))=b.get().get();
+                
+                {
+                    let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+                    let square = [x1,y1,x2-x1,y2-y1];
+                    rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
+                }
+            });
+        
+        }
+        for b in tree.into_iter_orig_order(){
+            bots.push(b.inner);
+        }
+     }
+}
+
