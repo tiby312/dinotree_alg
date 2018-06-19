@@ -35,7 +35,7 @@ mod demo_iter{
             self.0+=1;
 
 
-            if self.0==7{
+            if self.0==8{
                 self.0=0
             }
             match curr{
@@ -46,6 +46,7 @@ mod demo_iter{
                 4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
                 5=>{Box::new(demo_nbody::DemoNbody::new(area))},
                 6=>{Box::new(demo_intersect_pair::IntersectEveryDemo::new(area))}
+                7=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
                 _=>{panic!("Not possible")}
             }
         }

@@ -46,6 +46,8 @@ and those to the right of the median.
 
 So the querying sort of does "two pases" of the tree. For each node, it will collide with all the bots in that node, then it will look for all children nodes that intsect with itself and collide with those bots. Then that node is completely done. So it can be removed, and now you have two completely independant trees that you can repeat the algorithm on.
 
+#mutability and aabb
+none of these algorithms allow the user to modify the aabb inside of the callback functions. sure the type system allows it, (you have a mutable reference to the bots inside of the callbacks), but part of the contract of implementing the HasAabb trait is that you will not modify the aabb in these callbacks. Once a dinotree is contructed the aabbs dont move. Creating algorithms that allow you do change the aabb would require a lot of shifting. removing/inserting bots would invalidate the tree pointers since everything is tightly packed in memory. This is just not the data structure for that kind of behavior.
 
 #colfind
 I am not convinced that storing points+use supplied left,top,right,bottom border retrieval functions is faster than just

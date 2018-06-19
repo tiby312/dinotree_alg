@@ -58,7 +58,7 @@ pub struct KnearestEveryDemo{
 impl KnearestEveryDemo{
     pub fn new(dim:[f64;2])->KnearestEveryDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[5,10];
+        let radius=[5,6];
         let velocity=[1,3];
         let bots=create_world_generator(100,dim2,radius,velocity).map(|ret|{
             Bot{id:ret.id,pos:ret.pos,vel:ret.vel,radius:ret.radius,acc:[0.0;2]}

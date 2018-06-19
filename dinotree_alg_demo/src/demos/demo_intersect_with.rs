@@ -1,6 +1,7 @@
 use support::prelude::*;
 use dinotree::colfind;
 use dinotree::rect;
+use dinotree::intersect_with;
 
 pub struct Bot{
     pos:[f64;2],
@@ -41,8 +42,8 @@ impl Bot{
         let a=self;
         let bpos=mouse;
         let diff=[bpos[0]-a.pos[0],bpos[1]-a.pos[1]];
-        a.force[0]-=diff[0]*0.1;
-        a.force[1]-=diff[1]*0.1;
+        a.force[0]-=diff[0]*0.01;
+        a.force[1]-=diff[1]*0.01;
     }
     fn repel(&mut self,other:&mut Bot){
         let a=self;
@@ -55,14 +56,14 @@ impl Bot{
         b.force[1]+=diff[1]*0.01;
     }
 }
-pub struct IntersectEveryDemo{
+pub struct IntersectWithDemo{
     radius:f64,
     bots:Vec<Bot>,
-    walls:Vec<BBox<f64,()>>,
+    walls:Vec<BBox<f64N,()>>,
     dim:[f64;2]
 }
-impl IntersectEveryDemo{
-    pub fn new(dim:[f64;2])->IntersectEveryDemo{
+impl IntersectWithDemo{
+    pub fn new(dim:[f64;2])->IntersectWithDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,10];
         let velocity=[1,3];
@@ -70,20 +71,27 @@ impl IntersectEveryDemo{
             Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
         }).collect();
 
-        IntersectEveryDemo{radius:10.0,bots,dim}
+        let radius=[10,60];
+        let walls=create_world_generator(40,dim2,radius,velocity).map(|ret|{
+            let rect=aabb_from_pointf64(ret.pos,ret.radius);
+            BBox::new(rectf64_to_notnan(rect),())//{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
+        }).collect();
+
+        IntersectWithDemo{radius:10.0,bots,walls,dim}
     }
 }
 
-impl DemoSys for IntersectEveryDemo{
+impl DemoSys for IntersectWithDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         let radius=10.0;
         let bots=&mut self.bots;
         let walls=&mut self.walls;
-        
+
         for b in bots.iter_mut(){
             b.update();
 
         }
+        bots[0].pos=cursor;
 
 
         let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
@@ -92,13 +100,160 @@ impl DemoSys for IntersectEveryDemo{
             BBox::new(rectf64_to_notnan(rect),b)
         }));
 
-        intersect_with(walls){
+        /*
+        fn doop(b:&Range<f64>,wall:&Range<f64>,pos:&mut f64,vel:&mut f64){
+            let mid=(b.right-b.left)/2.0+0.1;
+            if b.left<wall.left && b.right>wall.left{
+                *pos=wall.left-mid;
+                *vel=-*vel*0.9;
+            }
+            if b.left<wall.right && b.right>wall.right{
+                *pos=wall.right+mid;
+                *vel=-*vel*0.9;   
+            } 
 
+            //if inside just put it to the left
+            if b.left>wall.left && b.right<wall.right{
+                //now find the side it is closer to.
+                let d1=b.left-wall.left;
+                let d2=wall.right-b.right;
+                
+                if d1<d2{
+                    //we are closer to the left side
+                    *pos=wall.left-mid;
+                    *vel*=0.9; 
+                }else{
+                    //we are closer to the right side.
+                    *pos=wall.right+mid;
+                    *vel*=0.9; 
+                }
+            }
         }
+        */
+        use axgeom::*;
+        
+        intersect_with::intersect_with_mut(&mut tree,walls,|bot,wall|{
+            //let radius=radius/2.0;
+            fn sub(a:[f64;2],b:[f64;2])->[f64;2]{
+                [b[0]-a[0],b[1]-a[1]]
+            }
+            fn derive_center(a:Rect<f64>)->[f64;2]{
+                let ((a,b),(c,d))=a.get();
+                [a+(b-a)/2.0,c+(d-c)/2.0]
+            }
+            fn dot(a:[f64;2],b:[f64;2])->f64{
+               a[0]*b[0]+a[1]*b[1] 
+            }
+
+            let botr=rectNaN_to_f64(*bot.get());
+            let wallr=rectNaN_to_f64(*wall.get());
+            let wallx=wallr.as_axis().get(XAXISS);
+            let wally=wallr.as_axis().get(YAXISS);
+
+            
+            let center_bot=derive_center(botr);
+            let center_wall=derive_center(wallr);
+
+            //bottom_left_to_top_right
+            //let p1=[1.0,-1.0];
+            //top_left_to_bottom_right
+            //let p2=[1.0,1.0];
+            let p2=[-1.0,1.0];
+            let p1=[1.0,1.0];
+
+            let diff=sub(center_wall,center_bot);
+
+            /*
+            left->bot
+            top->left
+            right->top
+            bot->right
+            */
+            let d1=f64n!(dot(p1,diff));
+            let d2=f64n!(dot(p2,diff));
+            let zero=f64n!(0.0);
+
+            use std::cmp::Ordering::*;
+
+            let pos=center_bot;
+            let vel=bot.inner.vel;
+            let fric=0.6;
+            let ret=match (d1.cmp(&zero),d2.cmp(&zero)){
+                (Less,Less)=>{
+                    //println!("top");
+                    //top
+                    ([pos[0],wally.left-radius],[vel[0],-vel[1]*fric])
+                }
+                (Less,Equal)=>{
+                    //top left
+                    ([wallx.left-radius,wally.left-radius],[-vel[0]*fric,-vel[1]*fric])
+                }
+                (Less,Greater)=>{
+
+                    //println!("left");
+                    //left
+                    ([wallx.left-radius,pos[1]],[-vel[0]*fric,vel[1]])
+                }
+                (Greater,Less)=>{
+                    //println!("right");
+                    //right
+                    ([wallx.right+radius,pos[1]],[-vel[0]*fric,vel[1]])
+                }
+                (Greater,Equal)=>{
+                    //bottom right
+                    ([wallx.right+radius,wally.right+radius],[-vel[0]*fric,-vel[1]*fric])
+                }
+                (Greater,Greater)=>{
+                    //println!("bot!");
+                    //bottom
+                    ([pos[0],wally.right+radius],[vel[0],-vel[1]*fric])
+                }
+                (Equal,Less)=>{
+                    //top right
+                    ([wallx.right+radius,wally.left-radius],[-vel[0]*fric,-vel[1]*fric])
+                }
+                (Equal,Equal)=>{
+                    //center
+                    panic!("Sooo unlikely. TODO fix");
+                }
+                (Equal,Greater)=>{
+                    //bottom left
+                    ([wallx.left-radius,wally.right+radius],[-vel[0]*fric,-vel[1]*fric])
+                }
+            };
+            bot.inner.pos=ret.0;
+            bot.inner.vel=ret.1;
+              
+        });
+
+        
+        for b in tree.into_iter_orig_order(){
+            bots.push(b.inner);
+        }
+
+        //Update the aabbs to match the new positions.
+        let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
+            let p=b.pos;
+            let rect=aabb_from_pointf64(p,[radius;2]);
+            BBox::new(rectf64_to_notnan(rect),b)
+        }));
+    
+
+
+        
         rect::for_all_in_rect_mut(&mut tree,&rectf64_to_notnan(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             b.inner.repel_mouse(cursor);
         });
         
+
+        for wall in walls.iter(){
+            let ((x1,x2),(y1,y2))=wall.get().get();
+            //let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+            let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+              
+            let square = [x1,y1,x2-x1,y2-y1];
+            rectangle([0.0,0.0,1.0,0.3], square, c.transform, g);
+        }
         for bot in tree.iter(){
             let ((x1,x2),(y1,y2))=bot.get().get();
             //let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
