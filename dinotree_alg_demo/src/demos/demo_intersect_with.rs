@@ -100,36 +100,6 @@ impl DemoSys for IntersectWithDemo{
             BBox::new(rectf64_to_notnan(rect),b)
         }));
 
-        /*
-        fn doop(b:&Range<f64>,wall:&Range<f64>,pos:&mut f64,vel:&mut f64){
-            let mid=(b.right-b.left)/2.0+0.1;
-            if b.left<wall.left && b.right>wall.left{
-                *pos=wall.left-mid;
-                *vel=-*vel*0.9;
-            }
-            if b.left<wall.right && b.right>wall.right{
-                *pos=wall.right+mid;
-                *vel=-*vel*0.9;   
-            } 
-
-            //if inside just put it to the left
-            if b.left>wall.left && b.right<wall.right{
-                //now find the side it is closer to.
-                let d1=b.left-wall.left;
-                let d2=wall.right-b.right;
-                
-                if d1<d2{
-                    //we are closer to the left side
-                    *pos=wall.left-mid;
-                    *vel*=0.9; 
-                }else{
-                    //we are closer to the right side.
-                    *pos=wall.right+mid;
-                    *vel*=0.9; 
-                }
-            }
-        }
-        */
         use axgeom::*;
         
         intersect_with::intersect_with_mut(&mut tree,walls,|bot,wall|{
@@ -163,12 +133,6 @@ impl DemoSys for IntersectWithDemo{
 
             let diff=sub(center_wall,center_bot);
 
-            /*
-            left->bot
-            top->left
-            right->top
-            bot->right
-            */
             let d1=f64n!(dot(p1,diff));
             let d2=f64n!(dot(p2,diff));
             let zero=f64n!(0.0);
@@ -180,37 +144,39 @@ impl DemoSys for IntersectWithDemo{
             let fric=0.6;
             let ret=match (d1.cmp(&zero),d2.cmp(&zero)){
                 (Less,Less)=>{
-                    //println!("top");
                     //top
-                    ([pos[0],wally.left-radius],[vel[0],-vel[1]*fric])
+                    ([None,Some(wally.left-radius)],
+                     [None,Some(-vel[1]*fric)])
                 }
                 (Less,Equal)=>{
                     //top left
-                    ([wallx.left-radius,wally.left-radius],[-vel[0]*fric,-vel[1]*fric])
+                    ([Some(wallx.left-radius),Some(wally.left-radius)],
+                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
                 }
                 (Less,Greater)=>{
-
-                    //println!("left");
                     //left
-                    ([wallx.left-radius,pos[1]],[-vel[0]*fric,vel[1]])
+                    ([Some(wallx.left-radius),None],
+                     [Some(-vel[0]*fric),None])
                 }
                 (Greater,Less)=>{
-                    //println!("right");
                     //right
-                    ([wallx.right+radius,pos[1]],[-vel[0]*fric,vel[1]])
+                    ([Some(wallx.right+radius),None],
+                     [Some(-vel[0]*fric),None])
                 }
                 (Greater,Equal)=>{
                     //bottom right
-                    ([wallx.right+radius,wally.right+radius],[-vel[0]*fric,-vel[1]*fric])
+                    ([Some(wallx.right+radius),Some(wally.right+radius)],
+                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
                 }
                 (Greater,Greater)=>{
-                    //println!("bot!");
                     //bottom
-                    ([pos[0],wally.right+radius],[vel[0],-vel[1]*fric])
+                    ([None,Some(wally.right+radius)],
+                     [None,Some(-vel[1]*fric)])
                 }
                 (Equal,Less)=>{
                     //top right
-                    ([wallx.right+radius,wally.left-radius],[-vel[0]*fric,-vel[1]*fric])
+                    ([Some(wallx.right+radius),Some(wally.left-radius)],
+                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
                 }
                 (Equal,Equal)=>{
                     //center
@@ -218,11 +184,44 @@ impl DemoSys for IntersectWithDemo{
                 }
                 (Equal,Greater)=>{
                     //bottom left
-                    ([wallx.left-radius,wally.right+radius],[-vel[0]*fric,-vel[1]*fric])
+                    ([Some(wallx.left-radius),Some(wally.right+radius)],
+                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
                 }
             };
-            bot.inner.pos=ret.0;
-            bot.inner.vel=ret.1;
+
+            match ret.0{
+                [Some(a),Some(b)]=>{
+                    bot.inner.pos[0]=a;
+                    bot.inner.pos[1]=b;
+                },
+                [Some(a),None]=>{
+                    bot.inner.pos[0]=a;
+                },
+                [None,Some(a)]=>{
+                    bot.inner.pos[1]=a;
+                },
+                [None,None]=>{
+
+                }
+            }
+
+            match ret.1{
+                [Some(a),Some(b)]=>{
+                    bot.inner.vel[0]=a;
+                    bot.inner.vel[1]=b;
+                },
+                [Some(a),None]=>{
+                    bot.inner.vel[0]=a;
+                },
+                [None,Some(a)]=>{
+                    bot.inner.vel[1]=a;
+                },
+                [None,None]=>{
+
+                }
+            }
+            //bot.inner.pos=ret.0;
+            //bot.inner.vel=ret.1;
               
         });
 
