@@ -20,7 +20,6 @@ pub mod prelude{
     pub(crate) use support;
     pub(crate) use support::*;
     
-    pub(crate) use num;
     pub use dinotree::support::*;
 
 }

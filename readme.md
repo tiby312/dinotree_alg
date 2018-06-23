@@ -12,6 +12,8 @@ Create a fast and simple to use broad-phase collision system whose running time 
 in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
 
 
+#
+The main point is that no arithmatic is done. Use must supply this.
 
 # The Data Structure itself
 First lets talk about the internal data structure that is used to actually accomplish the collision detection.

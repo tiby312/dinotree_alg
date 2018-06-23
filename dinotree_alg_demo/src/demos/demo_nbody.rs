@@ -4,6 +4,7 @@ use dinotree::k_nearest;
 use dinotree;
 use dinotree::colfind;
 use rand;
+use dinotree_geom;
 
 #[derive(Copy,Clone)]
 struct NodeMass{
@@ -120,20 +121,7 @@ pub struct Bot{
 }
 impl Bot{
 
-    fn wrap_position(a:&mut [f64;2]){
-        if a[0]>800.0{
-            a[0]=0.0
-        }
-        if a[0]<0.0{
-            a[0]=800.0;
-        }
-        if a[1]>800.0{
-            a[1]=0.0
-        }
-        if a[1]<0.0{
-            a[1]=800.0;
-        }
-    }
+    
     fn handle(&mut self){
         
         let b=self;
@@ -141,8 +129,7 @@ impl Bot{
         b.pos[0]+=b.vel[0];
         b.pos[1]+=b.vel[1];
     
-        Self::wrap_position(&mut b.pos);
-
+        
         //F=MA
         //A=F/M
         let accx=b.force[0]/b.mass;
@@ -224,12 +211,13 @@ mod gravity{
 
 
 pub struct DemoNbody{
+    dim:[f64;2],
     bots:Vec<Bot>,
     no_mass_bots:Vec<Bot>
 }
 impl DemoNbody{
     pub fn new(dim:[f64;2])->DemoNbody{
-
+        let dim1=dim;
         let dim2=[f64n!(dim[0]),f64n!(dim[1])];
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
@@ -243,7 +231,7 @@ impl DemoNbody{
 
         let no_mass_bots:Vec<Bot>=Vec::new();
 
-        DemoNbody{bots,no_mass_bots}
+        DemoNbody{dim:dim1,bots,no_mass_bots}
     }
 }
 
@@ -347,7 +335,8 @@ impl DemoSys for DemoNbody{
         
         //Update bot locations.
         for bot in bots.iter_mut(){
-            Bot::handle(bot);    
+            Bot::handle(bot);  
+            dinotree_geom::wrap_position(&mut bot.pos,self.dim);  
         }
 
 

@@ -38,7 +38,6 @@
 
 extern crate axgeom;
 extern crate compt;
-extern crate ordered_float;
 extern crate pdqselect;
 extern crate rayon;
 extern crate unsafe_unwrap;
@@ -122,6 +121,7 @@ use smallvec::SmallVec;
 use dinotree_inner::treetimer::TreeTimerEmpty;
 use axgeom::AxisTrait;
 
+/*
 pub struct DynTreeExt<A:AxisTrait,T:HasAabb>{
     tree:*mut DynTree<A,(),T>,
     used_bots:Vec<*mut T> 
@@ -170,6 +170,7 @@ impl<A:AxisTrait,T:HasAabb> DynTreeExt<A,T>{
     }
 }
 
+
 pub fn iter_mut_special<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut DynTreeExt<A,T>)){
    let tree2=tree as *mut DynTree<A,(),T>;
    for bot in tree.get_iter_mut().dfs_preorder_iter().flat_map(|a|a.range.iter_mut()){
@@ -179,6 +180,6 @@ pub fn iter_mut_special<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut fun
         func(bot,&mut d);
    }
 }
-
+*/
 
 use dinotree_inner::DynTree;

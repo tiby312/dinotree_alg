@@ -2,12 +2,13 @@
 extern crate compt;
 extern crate piston_window;
 extern crate axgeom;
-extern crate num;
 extern crate rand;
 extern crate dinotree;
 extern crate ordered_float;
 extern crate dinotree_inner;
 extern crate rayon;
+extern crate dinotree_geom;
+
 use piston_window::*;
 use ordered_float::NotNaN;
 use support::f64N;

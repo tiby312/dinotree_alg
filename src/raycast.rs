@@ -3,7 +3,7 @@ use dinotree_inner::*;
 
 
 #[derive(Debug,Copy,Clone)]
-pub struct Ray<N:NumTrait>{
+pub struct Ray<N>{
     pub point:[N;2],
     pub dir:[N;2],
     pub tlen:N,

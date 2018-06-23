@@ -2,6 +2,7 @@ use support::prelude::*;
 use dinotree::colfind;
 use dinotree::rect;
 use dinotree::intersect_with;
+use dinotree_geom;
 
 pub struct Bot{
     pos:[f64;2],
@@ -21,21 +22,6 @@ impl Bot{
         self.pos[1]+=self.vel[1];
         self.force[0]=0.0;
         self.force[1]=0.0;
-        {
-            let a=&mut self.pos;
-            if a[0]>800.0{
-                a[0]=0.0
-            }
-            if a[0]<0.0{
-                a[0]=800.0;
-            }
-            if a[1]>800.0{
-                a[1]=0.0
-            }
-            if a[1]<0.0{
-                a[1]=800.0;
-            }
-        }
     }
 
     fn repel_mouse(&mut self,mouse:[f64;2]){
@@ -48,12 +34,23 @@ impl Bot{
     fn repel(&mut self,other:&mut Bot){
         let a=self;
         let b=other;
-        let diff=[b.pos[0]-a.pos[0],b.pos[1]-a.pos[1]];
+        let mut diff=[b.pos[0]-a.pos[0],b.pos[1]-a.pos[1]];
 
-        a.force[0]-=diff[0]*0.01;
-        a.force[1]-=diff[1]*0.01;
-        b.force[0]+=diff[0]*0.01;
-        b.force[1]+=diff[1]*0.01;
+        let mut len_sqr=diff[0]*diff[0]+diff[1]*diff[1];
+
+        if len_sqr<0.0001{
+            diff=[1.0,1.0];
+            len_sqr=2.0;
+        }
+        let len=len_sqr.sqrt();
+        let mag=2.0/len;
+
+        let norm=[diff[0]/len,diff[1]/len];
+
+        a.force[0]-=norm[0]*mag;
+        a.force[1]-=norm[1]*mag;
+        b.force[0]+=norm[0]*mag;
+        b.force[1]+=norm[1]*mag;
     }
 }
 pub struct IntersectWithDemo{
@@ -65,9 +62,9 @@ pub struct IntersectWithDemo{
 impl IntersectWithDemo{
     pub fn new(dim:[f64;2])->IntersectWithDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[5,10];
+        let radius=[3,5];
         let velocity=[1,3];
-        let bots=create_world_generator(1000,dim2,radius,velocity).map(|ret|{
+        let bots=create_world_generator(2000,dim2,radius,velocity).map(|ret|{
             Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
         }).collect();
 
@@ -83,13 +80,13 @@ impl IntersectWithDemo{
 
 impl DemoSys for IntersectWithDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
-        let radius=10.0;
+        let radius=5.0;
         let bots=&mut self.bots;
         let walls=&mut self.walls;
 
         for b in bots.iter_mut(){
             b.update();
-
+            dinotree_geom::wrap_position(&mut b.pos,self.dim);
         }
         bots[0].pos=cursor;
 
@@ -102,127 +99,44 @@ impl DemoSys for IntersectWithDemo{
 
         use axgeom::*;
         
+
         intersect_with::intersect_with_mut(&mut tree,walls,|bot,wall|{
-            //let radius=radius/2.0;
-            fn sub(a:[f64;2],b:[f64;2])->[f64;2]{
-                [b[0]-a[0],b[1]-a[1]]
-            }
-            fn derive_center(a:Rect<f64>)->[f64;2]{
-                let ((a,b),(c,d))=a.get();
-                [a+(b-a)/2.0,c+(d-c)/2.0]
-            }
-            fn dot(a:[f64;2],b:[f64;2])->f64{
-               a[0]*b[0]+a[1]*b[1] 
-            }
+            let fric=0.8;
 
-            let botr=rectNaN_to_f64(*bot.get());
-            let wallr=rectNaN_to_f64(*wall.get());
-            let wallx=wallr.as_axis().get(XAXISS);
-            let wally=wallr.as_axis().get(YAXISS);
 
-            
-            let center_bot=derive_center(botr);
-            let center_wall=derive_center(wallr);
-
-            //bottom_left_to_top_right
-            //let p1=[1.0,-1.0];
-            //top_left_to_bottom_right
-            //let p2=[1.0,1.0];
-            let p2=[-1.0,1.0];
-            let p1=[1.0,1.0];
-
-            let diff=sub(center_wall,center_bot);
-
-            let d1=f64n!(dot(p1,diff));
-            let d2=f64n!(dot(p2,diff));
-            let zero=f64n!(0.0);
-
-            use std::cmp::Ordering::*;
-
-            let pos=center_bot;
+            let wallx=wall.get().as_axis().get(axgeom::XAXISS);
+            let wally=wall.get().as_axis().get(axgeom::YAXISS);
             let vel=bot.inner.vel;
-            let fric=0.6;
-            let ret=match (d1.cmp(&zero),d2.cmp(&zero)){
-                (Less,Less)=>{
-                    //top
-                    ([None,Some(wally.left-radius)],
-                     [None,Some(-vel[1]*fric)])
-                }
-                (Less,Equal)=>{
-                    //top left
-                    ([Some(wallx.left-radius),Some(wally.left-radius)],
-                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
-                }
-                (Less,Greater)=>{
-                    //left
-                    ([Some(wallx.left-radius),None],
-                     [Some(-vel[0]*fric),None])
-                }
-                (Greater,Less)=>{
-                    //right
-                    ([Some(wallx.right+radius),None],
-                     [Some(-vel[0]*fric),None])
-                }
-                (Greater,Equal)=>{
-                    //bottom right
-                    ([Some(wallx.right+radius),Some(wally.right+radius)],
-                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
-                }
-                (Greater,Greater)=>{
-                    //bottom
-                    ([None,Some(wally.right+radius)],
-                     [None,Some(-vel[1]*fric)])
-                }
-                (Equal,Less)=>{
-                    //top right
-                    ([Some(wallx.right+radius),Some(wally.left-radius)],
-                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
-                }
-                (Equal,Equal)=>{
-                    //center
-                    panic!("Sooo unlikely. TODO fix");
-                }
-                (Equal,Greater)=>{
-                    //bottom left
-                    ([Some(wallx.left-radius),Some(wally.right+radius)],
-                     [Some(-vel[0]*fric),Some(-vel[1]*fric)])
+
+            let ret=match dinotree_geom::collide_with_rect(bot.get(),wall.get()){
+                dinotree_geom::WallSide::Above=>{
+                    [None,Some((wally.left-radius,-vel[1]*fric))]
+                },
+                dinotree_geom::WallSide::Below=>{
+                    [None,Some((wally.right+radius,-vel[1]*fric))]
+                },
+                dinotree_geom::WallSide::LeftOf=>{
+                    [Some((wallx.left-radius,-vel[0]*fric)),None]
+                },
+                dinotree_geom::WallSide::RightOf=>{
+                    [Some((wallx.right+radius,-vel[0]*fric)),None]
                 }
             };
 
-            match ret.0{
-                [Some(a),Some(b)]=>{
-                    bot.inner.pos[0]=a;
-                    bot.inner.pos[1]=b;
+            match ret[0]{
+                Some((pos,vel))=>{
+                    bot.inner.pos[0]=pos.into_inner();
+                    bot.inner.vel[0]=vel;
                 },
-                [Some(a),None]=>{
-                    bot.inner.pos[0]=a;
-                },
-                [None,Some(a)]=>{
-                    bot.inner.pos[1]=a;
-                },
-                [None,None]=>{
-
-                }
+                None=>{}
             }
-
-            match ret.1{
-                [Some(a),Some(b)]=>{
-                    bot.inner.vel[0]=a;
-                    bot.inner.vel[1]=b;
+            match ret[1]{
+                Some((pos,vel))=>{
+                    bot.inner.pos[1]=pos.into_inner();
+                    bot.inner.vel[1]=vel;
                 },
-                [Some(a),None]=>{
-                    bot.inner.vel[0]=a;
-                },
-                [None,Some(a)]=>{
-                    bot.inner.vel[1]=a;
-                },
-                [None,None]=>{
-
-                }
+                None=>{}
             }
-            //bot.inner.pos=ret.0;
-            //bot.inner.vel=ret.1;
-              
         });
 
         

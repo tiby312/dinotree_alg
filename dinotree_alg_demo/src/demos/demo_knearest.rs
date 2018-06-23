@@ -1,6 +1,6 @@
 use support::prelude::*;
 use dinotree::k_nearest;
-
+use dinotree_geom;
 pub struct KnearestDemo{
     tree:DynTree<axgeom::XAXISS,(),BBox<f64N,()>>
 }
@@ -57,6 +57,9 @@ impl DemoSys for KnearestDemo{
                     
                     
                 }
+
+                DisSqr(dinotree_geom::distance_squared_point_to_rect(point,bot.get()))
+                /*
                 let (px,py)=(point[0],point[1]);
 
                 let ((a,b),(c,d))=bot.get().get();
@@ -65,6 +68,7 @@ impl DemoSys for KnearestDemo{
                 let yy=num::clamp(py,c,d);
 
                 DisSqr((xx-px)*(xx-px) + (yy-py)*(yy-py))
+                */
             }
 
             fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{

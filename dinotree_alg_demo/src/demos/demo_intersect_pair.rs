@@ -1,6 +1,7 @@
 use support::prelude::*;
 use dinotree::colfind;
 use dinotree::rect;
+use dinotree_geom;
 
 pub struct Bot{
     pos:[f64;2],
@@ -20,21 +21,7 @@ impl Bot{
         self.pos[1]+=self.vel[1];
         self.force[0]=0.0;
         self.force[1]=0.0;
-        {
-            let a=&mut self.pos;
-            if a[0]>800.0{
-                a[0]=0.0
-            }
-            if a[0]<0.0{
-                a[0]=800.0;
-            }
-            if a[1]>800.0{
-                a[1]=0.0
-            }
-            if a[1]<0.0{
-                a[1]=800.0;
-            }
-        }
+
     }
 
     fn repel_mouse(&mut self,mouse:[f64;2]){
@@ -80,7 +67,7 @@ impl DemoSys for IntersectEveryDemo{
 
         for b in bots.iter_mut(){
             b.update();
-
+            dinotree_geom::wrap_position(&mut b.pos,self.dim);
         }
 
 

@@ -4,7 +4,7 @@ use dinotree::for_every_nearest;
 
 use dinotree::for_every_nearest::HasCenter;
 
-
+use dinotree_geom;
 
 
 
@@ -20,25 +20,6 @@ pub struct Bot{
 
 impl Bot{
 
-    pub fn wrap_position(&mut self,dim:[f64;2]){
-        let mut a=[self.pos[0],self.pos[1]];
-        
-        let start=[0.0;2];
-
-        if a[0]>dim[0]{
-            a[0]=start[0]
-        }
-        if a[0]<start[0]{
-            a[0]=dim[0];
-        }
-        if a[1]>dim[1]{
-            a[1]=start[1];
-        }
-        if a[1]<start[1]{
-            a[1]=dim[1];
-        }
-        self.pos=[a[0],a[1]]
-    }
 
     pub fn update(&mut self){
         self.vel[0]+=self.acc[0];
@@ -73,8 +54,8 @@ impl DemoSys for KnearestEveryDemo{
         let bots=&mut self.bots;
         for b in bots.iter_mut(){
             b.update();
-            b.wrap_position(self.dim);
-
+            dinotree_geom::wrap_position(&mut b.pos,self.dim);
+            
         }
 
         {
@@ -110,15 +91,7 @@ impl DemoSys for KnearestEveryDemo{
                 type N=f64N;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-
-                    let (px,py)=(point[0],point[1]);
-
-                    let ((a,b),(c,d))=bot.get().get();
-
-                    let xx=num::clamp(px,a,b);
-                    let yy=num::clamp(py,c,d);
-
-                    DisSqr((xx-px)*(xx-px) + (yy-py)*(yy-py))
+                    DisSqr(dinotree_geom::distance_squared_point_to_rect(point,bot.get()))
                 }
 
                 fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{
