@@ -15,7 +15,7 @@ pub use dinotree_inner::*;
 
 pub trait DividerDrawer{
     type N:NumTrait;
-    fn draw_divider<A:AxisTrait>(&mut self,div:Self::N,cont:Option<[Self::N;2]>,length:[Self::N;2],depth:usize);
+    fn draw_divider<A:AxisTrait>(&mut self,axis:A,div:Self::N,cont:Option<[Self::N;2]>,length:[Self::N;2],depth:usize);
 }
 
 
@@ -43,7 +43,7 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
                 };
 
                 let rr=rect.as_axis().get(axis.next());
-                dr.draw_divider::<A>(div,cont,[rr.left,rr.right],depth.0);
+                dr.draw_divider::<A>(axis,div,cont,[rr.left,rr.right],depth.0);
                 div
             },
             None=>{

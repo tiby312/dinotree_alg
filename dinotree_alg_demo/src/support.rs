@@ -35,30 +35,6 @@ macro_rules! f64n {
 }
 
 
-/*
-///A generic container that implements the kdtree trait.
-#[derive(Debug,Clone,Copy)]
-pub struct BBox<Nu:NumTrait,T>{
-    pub rect:Rect<Nu>,
-    pub inner:T
-}
-/*
-impl<Nu:NumTrait,T> BBox<Nu,T>{
-    fn update<A:AxisTrait,N>(_tree:mut DynTree<A,N,BBox<Nu,T>>,func:Fn(&BBox<Nu,T>)->)
-}
-*/
-
-impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
-    type Num=Nu;
-    
-    ///Destructue into the bounding box and inner part.
-    fn get<'a>(&'a self)->&Rect<Nu>{
-        &self.rect
-    }
-}
-*/
-
-
 pub struct RangeGenIterf64{
     max:usize,
     counter:usize,
@@ -153,59 +129,6 @@ pub fn rectNaN_to_f64(rect:Rect<f64N>)->Rect<f64>{
     let ((a,b),(c,d))=rect.get();
     Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
 }
-
-/*
-#[derive(Clone, Debug)]
-pub struct Bot {
-    pub id: usize,
-    pub col: Vec<usize>,
-}
-*/
-
-/*
-pub fn make_rect(a: (isize, isize), b: (isize, isize)) -> axgeom::Rect<isize> {
-    axgeom::Rect::new(a.0, a.1, b.0, b.1)
-}
-*/
-
-/*
-pub fn create_rect_from_point_f64(a: (f64, f64)) -> AABBox<NotNaN<f64>> {
-    let r = 8.0;
-    let x = a.0;
-    let y = a.1;
-
-    let x1=NotNaN::new(x).unwrap();
-    let x2=NotNaN::new(x+r).unwrap();
-    let y1=NotNaN::new(y).unwrap();
-    let y2=NotNaN::new(y+r).unwrap();
-    AABBox(axgeom::Rect::new(x1,x2,y1,y2))
-    //AABBox(make_rect((x , x + r), (y , y + r)))
-}
-*/
-/*
-pub fn create_unordered(a: &Bot, b: &Bot) -> (usize, usize) {
-    if a.id < b.id {
-        (a.id, b.id)
-    } else {
-        (b.id, a.id)
-    }
-}
-pub fn compair_bot_pair(a: &(usize, usize), b: &(usize, usize)) -> std::cmp::Ordering {
-    if a.0 < b.0 {
-        std::cmp::Ordering::Less
-    } else if a.0 > b.0 {
-        std::cmp::Ordering::Greater
-    } else {
-        if a.1 < b.1 {
-            std::cmp::Ordering::Less
-        } else if a.1 > b.1 {
-            std::cmp::Ordering::Greater
-        } else {
-            std::cmp::Ordering::Equal
-        }
-    }
-}
-*/
 
 
 struct UniformRangeGenerator{

@@ -88,9 +88,9 @@ impl DemoSys for RaycastDemo{
             let point=[cursor[0] as isize,cursor[1] as isize];
             //let point=[214,388];
             //println!("cursor={:?}",point);
-            *counter+=0.01;         
+            *counter+=0.005;         
             let dir=[counter.cos()*10.0,counter.sin()*10.0];
-            //let dir=[1,1];
+            //let dir=[0,-1];
             let dir=[dir[0] as isize,dir[1] as isize];
             raycast::Ray{point,dir,tlen:500}
         };

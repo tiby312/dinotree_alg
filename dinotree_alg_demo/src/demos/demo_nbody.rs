@@ -253,6 +253,7 @@ impl DemoSys for DemoNbody{
 
         let mut tree=tree.with_extra(());                
 
+
       
         colfind::query_par_mut(&mut tree,|a, b| {
             let (a,b)=if a.inner.mass>b.inner.mass{
@@ -311,6 +312,7 @@ impl DemoSys for DemoNbody{
             let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
             rectangle([0.0,0.5,0.0,1.0], square, c.transform, g);
         }
+
 
         for b in tree.into_iter_orig_order(){
             bots.push(b.inner);
