@@ -709,7 +709,7 @@ pub(crate)mod mutable{
         fn div(self)->(Self,Self){
             unreachable!();
         }
-        fn add(self,b:Self)->Self{
+        fn add(self,_:Self)->Self{
             unreachable!();
         }
     }
@@ -831,7 +831,7 @@ pub(crate) mod constant{
         fn div(self)->(Self,Self){
             unreachable!();
         }
-        fn add(self,b:Self)->Self{
+        fn add(self,_:Self)->Self{
             unreachable!();
         }
     }

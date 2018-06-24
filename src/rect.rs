@@ -91,7 +91,6 @@ mod mutable{
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
-        let axis=tree.get_axis();
         let mut f = |a: &mut T| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
@@ -131,7 +130,7 @@ mod constant{
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
-
+        /*
         let mut f = |a: &T| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
@@ -139,7 +138,7 @@ mod constant{
         };
 
         let ta = tree.get_iter();
-
+        */
         unimplemented!();
         //let mut sweeper=oned::mod_const::Sweeper::new();
         //self::rect_recurse(A::new(), ta, rect, &mut f,&mut sweeper);
@@ -150,6 +149,7 @@ mod constant{
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
+        /*
         let mut f = |a: &T| {
             if rect.contains_rect(a.get()) {
                 closure(a);
@@ -157,7 +157,7 @@ mod constant{
         };
 
         let ta = tree.get_iter();
-
+        */
         unimplemented!();
         //let mut sweeper=oned::mod_const::Sweeper::new();
         //self::rect_recurse(A::new(), ta, rect, &mut f,&mut sweeper);

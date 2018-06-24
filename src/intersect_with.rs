@@ -1,6 +1,5 @@
 
 use inner_prelude::*;
-use dinotree_inner::*;
 use rect::*;
 
 ///Find all intersecting pairs between the elements in this dinotree, and the specified elements.

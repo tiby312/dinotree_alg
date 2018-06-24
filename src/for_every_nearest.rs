@@ -31,7 +31,6 @@ pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:HasAabb<Num=N>+HasCenter<N
 	let tree2=tree as *mut DynTree<A,(),T>;
 	for b in tree.iter_mut(){
         if !already_hit.contains(&(b as *const T)){	        
-	        let mut vv:Vec<(&T,K::D)>=Vec::new();
 	        
 	        let mut nearest_bot=None;
 

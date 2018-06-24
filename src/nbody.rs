@@ -162,12 +162,12 @@ fn handle_anchor_with_children<'a,
         type T=N::T;
         type B=B;
 
-        fn handle_every_node<A:AxisTrait>(&mut self,axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        fn handle_every_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
                 self.ncontext.handle_bot_with_bot(i,b);
             }
         }
-        fn handle_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
+        fn handle_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
                 self.ncontext.handle_node_with_bot(a,i);
             }
@@ -194,10 +194,10 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	type N=N;
         type T=N::T;
         type B=B;
-    	fn handle_every_node<A:AxisTrait>(&mut self,axis:A,b:&mut Self::T,_anchor:&mut Anchor<B,Self::T>){
+    	fn handle_every_node<A:AxisTrait>(&mut self,_axis:A,b:&mut Self::T,_anchor:&mut Anchor<B,Self::T>){
             self.ncontext.handle_bot_with_bot(self.bot,b);
     	}
-    	fn handle_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
+    	fn handle_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_bot(a,self.bot);
     	}
         fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
@@ -214,10 +214,10 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	type N=N;
         type T=N::T;
         type B=B;
-        fn handle_every_node<A:AxisTrait>(&mut self,axis:A,b:&mut N::T,_anchor:&mut Anchor<B,Self::T>){
+        fn handle_every_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,_anchor:&mut Anchor<B,Self::T>){
             self.ncontext.handle_node_with_bot(self.node,b);
     	}
-    	fn handle_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
+    	fn handle_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_node(self.node,a);
     	}
         fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
@@ -433,7 +433,7 @@ pub fn nbody<A:AxisTrait,N:NodeMassTrait>(t1:&mut DynTree<A,N::No,N::T>,ncontext
     impl<T:HasAabb> HasAabb for Wrap<T>{
         type Num=T::Num;
         fn get(&self)->&Rect<Self::Num>{
-            self.get()
+            self.0.get()
         }
     }
 

@@ -112,14 +112,12 @@ pub mod tools;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::HasAabb;
 use dinotree_inner::treetimer::TreeTimerTrait;
-use compt::CTreeIterator;
 use axgeom::Rect;
 //use axgeom::XAXISS;
 //use axgeom::YAXISS;
 use smallvec::SmallVec;
 //use dinotree_inner::treetimer::TreeTimer2;
 use dinotree_inner::treetimer::TreeTimerEmpty;
-use axgeom::AxisTrait;
 
 /*
 pub struct DynTreeExt<A:AxisTrait,T:HasAabb>{
@@ -181,5 +179,3 @@ pub fn iter_mut_special<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut fun
    }
 }
 */
-
-use dinotree_inner::DynTree;

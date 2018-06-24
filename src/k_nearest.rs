@@ -1,7 +1,3 @@
-
-//Macros are used to reused code between mut and inmutable dino tree
-#[macro_use]
-
 use inner_prelude::*;
 use dinotree_inner::*;
 
@@ -117,7 +113,7 @@ macro_rules! knearest_recc{
             K:Knearest,
             >(axis:A,stuff:LevelIter<$iterator>,knear:&mut K,point:[K::N;2],res:&mut ClosestCand<K::T,K::D>){
 
-            let ((depth,nn),rest)=stuff.next();
+            let ((_depth,nn),rest)=stuff.next();
 
             let pp=*axgeom::AxisWrapRef(&point).get(axis);
             let ppother=*axgeom::AxisWrapRef(&point).get(axis.next());
@@ -217,9 +213,10 @@ macro_rules! knearest_recc{
                         match res.full_and_max_distance(){
                             Some(dis)=>{
 
-                                let [leftr,rightr]=knear.create_range(ppother,dis);
+                                //TODO use leftr??
+                                let [_leftr,rightr]=knear.create_range(ppother,dis);
 
-                                let [leftbot,rightbot]={
+                                let [leftbot,_rightbot]={
                                     [bot.get().as_axis().get(axis.next()).left,bot.get().as_axis().get(axis.next()).right]
                                 };
                                 

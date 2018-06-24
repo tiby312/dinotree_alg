@@ -92,7 +92,7 @@ macro_rules! raycast{
 
                         let axis_next=axis.next();
 
-                        let po=match ray_point.cmp(&div){
+                        match ray_point.cmp(&div){
                             std::cmp::Ordering::Less=>{
                                 match rtrait.split_ray(axis,&ray,div){
                                     Some((ray_closer,ray_further))=>{
@@ -199,7 +199,7 @@ macro_rules! raycast{
                             if handle_middle{
                                 match rtrait.compute_intersection_range(axis,ff){
                                     Some((a,b))=>{
-                                        for (i,bot) in $get_iter!(nn.range).enumerate(){
+                                        for bot in $get_iter!(nn.range){
                                             let rang=*bot.get().as_axis().get(axis.next());
                                             if rang.left>b{
                                                 break;
