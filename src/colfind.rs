@@ -264,7 +264,7 @@ macro_rules! colfind{
             this: $node,
             parent: $anchor,
             sweeper: $sweeper, 
-            mut func: F,
+            func: F,
             leaf_tracker:L
         ) {
             //Can be evaluated at compile time

@@ -35,7 +35,7 @@ macro_rules! raycast{
             closest:Option<($ptr,T::Num)>
         }
         impl<T:HasAabb> Closest<T>{
-            fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,depth:Depth,b:$ref,raytrait:&mut R,ray:&Ray<T::Num>){
+            fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,depth:Depth,b:$ref,raytrait:&mut R,_ray:&Ray<T::Num>){
 
                 if let Some(x)=raytrait.compute_distance_bot(depth,b){
                     match self.closest{
@@ -251,7 +251,7 @@ pub fn raycast_mut<
     'a,A:AxisTrait,
     T:HasAabb,
     R:RayTrait<T=T,N=T::Num>
-    >(tree:&'a mut DynTree<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a mut T,T::Num)>{
+    >(tree:&'a mut DynTree<A,(),T>,ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a mut T,T::Num)>{
     
     let axis=tree.get_axis();
     let dt = tree.get_iter_mut().with_depth(Depth(0));
@@ -294,7 +294,7 @@ pub fn raycast<
     'a,A:AxisTrait,
     T:HasAabb,
     R:RayTrait<T=T,N=T::Num>
-    >(tree:&'a DynTree<A,(),T>,mut ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a T,T::Num)>{
+    >(tree:&'a DynTree<A,(),T>,ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a T,T::Num)>{
     
     let axis=tree.get_axis();
     let dt = tree.get_iter().with_depth(Depth(0));

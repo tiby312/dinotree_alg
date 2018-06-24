@@ -205,7 +205,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         }
     }
     struct Bo2<'a,B:AxisTrait,N:NodeMassTrait+'a>{
-        anchor_axis:B,
+        _anchor_axis:B,
         node:&'a mut N::No,
         ncontext:&'a N
     }
@@ -226,7 +226,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     }
 
     struct Bo<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a>{
-        anchor_axis:B,
+        _anchor_axis:B,
         right:&'b mut LevelIter<NdIterMut<'a,N::No,N::T>>,
         ncontext:&'b N
     }
@@ -245,13 +245,13 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     		let d=self.right.depth;
             let r=self.right.inner.create_wrap_mut().with_depth(d);
             let anchor_axis=anchor.axis;
-    		generic_rec(axis,anchor,r,&mut Bo2{anchor_axis:anchor_axis,node:a,ncontext:self.ncontext})
+    		generic_rec(axis,anchor,r,&mut Bo2{_anchor_axis:anchor_axis,node:a,ncontext:self.ncontext})
     	}
         fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
             self.ncontext.is_far_enough_half(depth.0,b)
         }
     }
-    let mut bo= Bo{anchor_axis:anchor.axis,right:&mut right,ncontext};
+    let mut bo= Bo{_anchor_axis:anchor.axis,right:&mut right,ncontext};
     generic_rec(axis,anchor,left,&mut bo);  
 }
 
@@ -344,40 +344,11 @@ fn generic_rec<
     T:HasAabb,
     >(this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:LevelIter<NdIterMut<N::No,T>>,bok:&mut B){
 
-        
-    fn recc4<
-        A:AxisTrait,
-        AnchorAxis:AxisTrait,
-        B:Bok<N=N,T=T,B=AnchorAxis>,
-        N:NodeMassTrait<T=T>,
-        T:HasAabb,
-        >(axis:A,bok:&mut B,stuff:LevelIter<NdIterMut<N::No,T>>,anchor:&mut Anchor<AnchorAxis,T>){
-        let ((_depth,nn1),rest)=stuff.next();
-        
-        for i in nn1.range.iter_mut(){
-            bok.handle_every_node(axis,i,anchor);
-        }
-        match rest{
-            Some((left,right))=>{
-                recc4(axis.next(),bok,left,anchor);
-                recc4(axis.next(),bok,right,anchor);
-            },
-            None=>{
-
-            }
-        }
-    }
-
     let ((_depth,nn1),rest)=stuff.next();
     
-    
-
     for i in nn1.range.iter_mut(){
         bok.handle_every_node(this_axis,i,anchor);    
     }
-
-    
-
 
     match rest{
         Some((left,right))=>{

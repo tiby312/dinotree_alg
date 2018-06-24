@@ -9,6 +9,12 @@ macro_rules! get_mut_slice{
     }}
 }
 
+macro_rules! get_slice{
+    ($range:expr)=>{{
+        & $range
+    }}
+}
+
 macro_rules! rect{
     ($iterator:ty,$colsingle:ty,$sweeper:ty,$get_range:ident)=>{     
         fn rect_recurse<
@@ -53,29 +59,8 @@ macro_rules! rect{
 }
 
 
-/*
-pub fn for_all_intersect_rect_mut<A: AxisTrait,N:NumTrait,T>(
-    tree: &mut DynTree<A,(),BBox<N,T>>,
-    rect: &Rect<N>,
-    mut closure: impl FnMut(BBoxDet<N,T>),
-) {
-    let func=|a:&mut BBox<N,T>|{
-        closure(a.destruct());
-    };
-    mutable::for_all_intersect_rect_mut_unchecked(tree,rect,func);
-}
 
-pub fn for_all_in_rect_mut<A: AxisTrait, N:NumTrait,T>(
-        tree: &mut DynTree<A,(),BBox<N,T>>,
-        rect: &Rect<N>,
-        mut closure: impl FnMut(BBoxDet<N,T>),
-    ) {
-    let func=|a:&mut BBox<N,T>|{
-        closure(a.destruct());
-    };
-    mutable::for_all_in_rect_mut_unchecked(tree,rect,func);   
-}
-*/
+//TODO test the intersect ones
 pub use self::mutable::for_all_intersect_rect_mut;
 pub use self::mutable::for_all_in_rect_mut;
 
@@ -123,6 +108,7 @@ mod mutable{
 }
 mod constant{
     use super::*;
+    rect!(NdIter<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice);
     //rect!(NdIter<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
     pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(
@@ -130,18 +116,16 @@ mod constant{
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
-        /*
+        
         let mut f = |a: &T| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
         };
-
+        let axis=tree.get_axis();
         let ta = tree.get_iter();
-        */
-        unimplemented!();
-        //let mut sweeper=oned::mod_const::Sweeper::new();
-        //self::rect_recurse(A::new(), ta, rect, &mut f,&mut sweeper);
+        let mut sweeper=oned::mod_const::Sweeper::new();
+        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
     }
 
     pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
@@ -149,18 +133,17 @@ mod constant{
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
-        /*
+        
         let mut f = |a: &T| {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }
         };
 
+        let axis=tree.get_axis();
         let ta = tree.get_iter();
-        */
-        unimplemented!();
-        //let mut sweeper=oned::mod_const::Sweeper::new();
-        //self::rect_recurse(A::new(), ta, rect, &mut f,&mut sweeper);
+        let mut sweeper=oned::mod_const::Sweeper::new();
+        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
     }
 
 }

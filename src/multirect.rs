@@ -80,91 +80,42 @@ pub fn collide_two_rect_parallel<
 	let mut b1=Vec::new();
 	multi.for_all_in_rect_mut(*rect1,|a|{
 		b1.push(Wr(a));
-	});
+	})?;
 
 	let mut b2=Vec::new();
 	multi.for_all_in_rect_mut(*rect2,|b|{
 		b2.push(Wr(b));
-	});
+	})?;
 
 	sweeper_update(axis,&mut b1);
     sweeper_update(axis,&mut b2);
     
 
-    //let mut sweeper = oned::mod_mut::Sweeper::new();
-    unimplemented!();
-    //sweeper.find_parallel_2d(axis,(&mut b1, &mut b2), func);
+    let mut sweeper = oned::mod_mut::Sweeper::new();
 
+    struct Bl<T:HasAabb,F:FnMut(&mut T,&mut T)> {
+        a: F,
+        _p:PhantomData<T>
+    }
 
-	/*
-    struct Ba<'z, J: SweepTrait + 'z>(ColSingle<'z, J>);
-    impl<'z, J: SweepTrait + Send + 'z> RebalTrait for Ba<'z, J> {
-        type Num = J::Num;
-        fn get(&self) -> &axgeom::Rect<J::Num> {
-            &((self.0).rect).0
+    impl<T:HasAabb,F:FnMut(&mut T,&mut T)> colfind::mutable::ColMulti for Bl<T,F> {
+        type T = T;
+
+        fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
+            (self.a)(a,b);
+        }
+        fn div(self)->(Self,Self){
+            unreachable!();
+        }
+        fn add(self,_:Self)->Self{
+            unreachable!();
         }
     }
 
-    impl<'z, J: SweepTrait + 'z> SweepTrait for Ba<'z, J> {
-        type Inner = J::Inner;
-        type Num = J::Num;
-
-        ///Destructure into the bounding box and mutable parts.
-        fn get_mut<'a>(&'a mut self) -> (&'a AABBox<J::Num>, &'a mut Self::Inner) {
-            let r = &mut self.0;
-            (r.rect, r.inner)
-        }
-
-        ///Destructue into the bounding box and inner part.
-        fn get<'a>(&'a self) -> (&'a AABBox<J::Num>, &'a Self::Inner) {
-            let r = &self.0;
-            (r.rect, r.inner)
-        }
-    }
-
-    let mut rects = tree.rects();
-
-    let mut buffer1 = Vec::new();
-    rects.for_all_in_rect(rect1, |a: ColSingle<T>| buffer1.push(Ba(a)))?;
-
-    let mut buffer2 = Vec::new();
-    rects.for_all_in_rect(rect2, |a: ColSingle<T>| buffer2.push(Ba(a)))?;
-
-    {
-        rayon::join(
-            || sweeper_update::<_, A>(&mut buffer1),
-            || sweeper_update::<_, A>(&mut buffer2),
-        );
-        use std::marker::PhantomData;
-        use oned::Bleek;
-        struct Bo<T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>)>(F, PhantomData<T>);
-
-        impl<T: SweepTrait, F: FnMut(ColSingle<T>, ColSingle<T>)> Bleek for Bo<T, F> {
-            type T = T;
-            fn collide(&mut self, a: ColSingle<Self::T>, b: ColSingle<Self::T>) {
-                self.0(a, b);
-            }
-        }
-
-        let func2 = |aa: ColSingle<Ba<T>>, bb: ColSingle<Ba<T>>| {
-            //let c=ColPair{a:(cc.a.0,cc.a.1),b:(cc.b.0,cc.b.1)};
-            let a = ColSingle {
-                rect: aa.rect,
-                inner: aa.inner,
-            };
-            let b = ColSingle {
-                rect: bb.rect,
-                inner: bb.inner,
-            };
-            func(a, b);
-        };
-
-        let mut sweeper = Sweeper::new();
-
-        let b = Bo(func2, PhantomData);
-        sweeper.find_bijective_parallel::<A, _>((&mut buffer1, &mut buffer2), b);
-    }
+    let ff=|a:&mut Wr<T>,b:&mut Wr<T>|{
+        func(a.0,b.0)
+    };
+    sweeper.find_parallel_2d_no_check(axis,&mut b1, &mut b2, Bl{a:ff,_p:PhantomData});
     Ok(())
-    */
 }
 

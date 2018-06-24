@@ -3,19 +3,10 @@ use unsafe_unwrap::UnsafeUnwrap;
 
 //TODO bench these without bounds checking and unwrap()ing.
 
-/*
-pub struct Accessor<X: AxisTrait> {
-    _p: PhantomData<X>,
-}
-impl<X: AxisTrait> Accessor<X> {
-    pub fn get<'b, Nu: NumTrait>(b: &'b Rect<Nu>) -> &'b Range<Nu> {
-        b.get_range(X::get())
-    }
-}
-*/
 
 pub mod mod_mut{
     use colfind::mutable::ColMulti;
+    use super::*;
 
     struct Bl<A: AxisTrait, F: ColMulti> {
         a: F,
@@ -37,19 +28,12 @@ pub mod mod_mut{
         fn div(self)->(Self,Self){
             unreachable!();
         }
-        fn add(self,b:Self)->Self{
+        fn add(self,_:Self)->Self{
             unreachable!();
         }
         
     }
 
-    use super::*;
-    /*
-    pub trait Bleek {
-        type T: HasAabb;
-        fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
-    }
-    */
 
 
 
@@ -94,6 +78,17 @@ pub mod mod_mut{
             };
 
             self.find_bijective_parallel(axis,(bots1, bots2), b);
+        }
+
+
+        pub fn find_parallel_2d_no_check<A: AxisTrait, F: ColMulti<T=I>>(
+            &mut self,
+            axis:A,
+            bots1: &mut [F::T],
+            bots2: &mut [F::T],
+            clos2: F,
+        ) {
+            self.find_bijective_parallel(axis,(bots1, bots2), clos2);
         }
   
         pub fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
@@ -252,6 +247,8 @@ pub mod mod_mut{
 }
 
 pub mod mod_const{   
+
+    use super::*;
     use colfind::constant::ColMulti;
 
     struct Bl<A: AxisTrait, F: ColMulti> {
@@ -274,20 +271,10 @@ pub mod mod_const{
          fn div(self)->(Self,Self){
             unreachable!();
         }
-        fn add(self,b:Self)->Self{
+        fn add(self,_:Self)->Self{
             unreachable!();
         }
     }
-
-    use super::*;
-    /*
-    pub trait Bleek {
-        type T: HasAabb;
-        fn collide(&mut self, a: &Self::T, b: &Self::T);
-    }
-    */
-
-
 
     ///Provides 1d collision detection.
     pub struct Sweeper<T: HasAabb> {
