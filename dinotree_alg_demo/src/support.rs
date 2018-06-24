@@ -2,57 +2,50 @@ use axgeom::*;
 use rand;
 use rand::{SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};
-use dinotree::*;
 
-use ordered_float::*;
-use dinotree::support::*;
 
 pub mod prelude{
     pub use compt::*;
     pub use DemoSys;
     pub(crate) use piston_window;
-    pub use ordered_float::NotNaN;
+    pub use ordered_float::NotNan;
     pub use piston_window::*;
     pub use dinotree_inner::DynTree;
     pub use dinotree_inner::HasAabb;
     pub(crate) use axgeom;
-    //pub use dinotree::*;
-    pub(crate) use support;
     pub(crate) use support::*;
     
     pub use dinotree::support::*;
 
 }
+use ordered_float::NotNan;
 
 
 macro_rules! f64n {
     ( $x:expr  ) => {
         {
-            NotNaN::new($x).unwrap()
+            NotNan::new($x).unwrap()
         }
     };
 }
 
-pub type f64N=NotNaN<f64>;
+pub type F64n=NotNan<f64>;
 
 pub struct Conv;
 impl Conv{
 
-    pub fn point_to_inner(a:[f64N;2])->[f64;2]{
+    pub fn point_to_inner(a:[F64n;2])->[f64;2]{
         //TODO safe to use transmute?
         [a[0].into_inner(),a[1].into_inner()]
     }
-    pub fn rect_to_inner(rect:Rect<f64N>)->Rect<f64>{
+    pub fn rect_to_inner(rect:Rect<F64n>)->Rect<f64>{
         let ((a,b),(c,d))=rect.get();
         Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
     }
 
-    pub fn from_rect(rect:Rect<f64>)->Rect<f64N>{
+    pub fn from_rect(rect:Rect<f64>)->Rect<F64n>{
         let ((a,b),(c,d))=rect.get();
         Rect::new(f64n!(a),f64n!(b),f64n!(c),f64n!(d))
-    }
-    pub fn from_point(a:[f64;2])->[f64N;2]{
-        [f64n!(a[0]),f64n!(a[1])]
     }
 }
 
@@ -61,6 +54,26 @@ pub fn aabb_from_pointf64(p:[f64;2],r:[f64;2])->Rect<f64>{
 }
 
 
+use piston_window::*;
+pub fn draw_rect_f64n(col:[f32;4],r1:&Rect<F64n>,c:&Context,g:&mut G2d){
+    let ((x1,x2),(y1,y2))=r1.get();        
+    {
+        //let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+        let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+           
+        let square = [x1,y1,x2-x1,y2-y1];
+        rectangle(col, square, c.transform, g);
+    }
+}
+pub fn draw_rect_isize(col:[f32;4],r1:&Rect<isize>,c:&Context,g:&mut G2d){
+    let ((x1,x2),(y1,y2))=r1.get();        
+    {
+        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
+           
+        let square = [x1,y1,x2-x1,y2-y1];
+        rectangle(col, square, c.transform, g);
+    }
+}
 
 
 
@@ -134,7 +147,7 @@ impl Iterator for RangeGenIterf64{
 }
 pub fn create_world_generator(num:usize,area:&[isize;4],radius:[isize;2],velocity:[isize;2])->RangeGenIterf64{
     let arr:&[usize]=&[100,42,6];
-    let mut rng =  SeedableRng::from_seed(arr);
+    let rng =  SeedableRng::from_seed(arr);
 
 
     let xvaluegen=UniformRangeGenerator::new(area[0],area[1]);

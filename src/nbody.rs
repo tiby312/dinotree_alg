@@ -1,45 +1,8 @@
 use inner_prelude::*;
-//TODO somehow take advantage of sorted property?????
-
-
-
-/*
-pub trait NBodyTrait:Clone{
-    type N:NumTrait;
-    type T;
-    type No:Copy;
-
-    //fn create_empty(&self)->Self::No;
-
-    //gravitate this node mass with another node mass
-    fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);
-
-    //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,BBoxDet<Self::N,Self::T>,BBoxDet<Self::N,Self::T>);
-
-    //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,&mut Self::No,b:BBoxDet<Self::N,Self::T>);
-
-    fn is_far_enough(&self,depth:usize,b:[Self::N;2])->bool;
-
-    fn is_far_enough_half(&self,depth:usize,b:[Self::N;2])->bool;
-
-    //This unloads the force accumulated by this node to the bots.
-    fn apply_to_bots<'a,I:Iterator<Item=BBoxDet<'a,Self::N,Self::T>>> (&'a self,&'a Self::No,it:I);
-
-    fn new<'a,I:Iterator<Item=&'a BBox<Self::N,Self::T>>> (&'a self,it:I)->Self::No;
-}
-*/
-
-
-
-
 
 pub trait NodeMassTrait:Clone{
     type T:HasAabb;
     type No:Copy;
-
-    //fn create_empty(&self)->Self::No;
 
     //gravitate this node mass with another node mass
     fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);

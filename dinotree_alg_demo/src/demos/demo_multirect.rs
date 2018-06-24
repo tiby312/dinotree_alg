@@ -6,8 +6,6 @@ pub struct MultiRectDemo{
 }
 impl MultiRectDemo{
     pub fn new(dim:[f64;2])->MultiRectDemo{
-
-        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];

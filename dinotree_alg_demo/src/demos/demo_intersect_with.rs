@@ -37,7 +37,7 @@ impl Bot{
 pub struct IntersectWithDemo{
     radius:f64,
     bots:Vec<Bot>,
-    walls:Vec<BBox<f64N,()>>,
+    walls:Vec<BBox<F64n,()>>,
     dim:[f64;2]
 }
 impl IntersectWithDemo{
@@ -55,13 +55,13 @@ impl IntersectWithDemo{
             BBox::new(Conv::from_rect(rect),())//{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
         }).collect();
 
-        IntersectWithDemo{radius:10.0,bots,walls,dim}
+        IntersectWithDemo{radius:5.0,bots,walls,dim}
     }
 }
 
 impl DemoSys for IntersectWithDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
-        let radius=5.0;
+        let radius=self.radius;
         let bots=&mut self.bots;
         let walls=&mut self.walls;
 
@@ -76,10 +76,7 @@ impl DemoSys for IntersectWithDemo{
             let p=b.pos;
             let rect=aabb_from_pointf64(p,[radius;2]);
             BBox::new(Conv::from_rect(rect),b)
-        }));
-
-        use axgeom::*;
-        
+        })); 
 
         intersect_with::intersect_with_mut(&mut tree,walls,|bot,wall|{
             let fric=0.8;
@@ -142,37 +139,23 @@ impl DemoSys for IntersectWithDemo{
         
 
         for wall in walls.iter(){
-            let ((x1,x2),(y1,y2))=wall.get().get();
-            //let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-            let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-              
-            let square = [x1,y1,x2-x1,y2-y1];
-            rectangle([0.0,0.0,1.0,0.3], square, c.transform, g);
+            draw_rect_f64n([0.0,0.0,1.0,0.3],wall.get(),c,g);
         }
         for bot in tree.iter(){
-            let ((x1,x2),(y1,y2))=bot.get().get();
-            //let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-            let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-              
-            let square = [x1,y1,x2-x1,y2-y1];
-            rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
+            draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
-
-        {
-         
-            colfind::query_mut(&mut tree,|a, b| {
-                let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
-            });
-        
-        }
-
+ 
+        colfind::query_mut(&mut tree,|a, b| {
+            let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+        });
+    
         struct Bla<'a,'b:'a>{
             c:&'a Context,
             g:&'a mut G2d<'b>
         }
         impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
-            type N=f64N;
-            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:f64N,cont:Option<[f64N;2]>,length:[f64N;2],depth:usize){
+            type N=F64n;
+            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F64n,cont:Option<[F64n;2]>,length:[F64n;2],depth:usize){
                 let div=div.into_inner();
                 
 
@@ -211,6 +194,7 @@ impl DemoSys for IntersectWithDemo{
                 
             }
         }
+
         let mut dd=Bla{c:&c,g};
         dinotree::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
 

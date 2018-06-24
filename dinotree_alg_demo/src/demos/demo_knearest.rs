@@ -2,12 +2,10 @@ use support::prelude::*;
 use dinotree::k_nearest;
 use dinotree_geom;
 pub struct KnearestDemo{
-    tree:DynTree<axgeom::XAXISS,(),BBox<f64N,()>>
+    tree:DynTree<axgeom::XAXISS,(),BBox<F64n,()>>
 }
 impl KnearestDemo{
     pub fn new(dim:[f64;2])->KnearestDemo{
-        
-        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
@@ -27,35 +25,24 @@ impl DemoSys for KnearestDemo{
         let tree=&self.tree;
 
         for bot in tree.iter(){
-            let ((x1,x2),(y1,y2))=bot.get().get();
-            let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-            let square = [x1,y1,x2-x1,y2-y1];
-                                    
-            rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
+            draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
         #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
-        struct DisSqr(f64N);
+        struct DisSqr(F64n);
         struct Kn<'a,'c:'a>{
             c:&'a Context,
             g:&'a mut G2d<'c>,
         };
 
         impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
-            type T=BBox<f64N,()>;
-            type N=f64N;
+            type T=BBox<F64n,()>;
+            type N=F64n;
             type D=DisSqr;
             fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                {
-                    let ((x1,x2),(y1,y2))=bot.get().get();
-                    
-                    {
-                        let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-                        let square = [x1,y1,x2-x1,y2-y1];
-                        rectangle([0.0,0.0,0.0,0.5], square, self.c.transform, self.g);
-                    }   
-                }
-
+                
+                draw_rect_f64n([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
+                
                 DisSqr(f64n!(dinotree_geom::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()))))
             }
 
@@ -73,9 +60,9 @@ impl DemoSys for KnearestDemo{
             }
         }
 
-        let mut vv:Vec<(&BBox<f64N,()>,DisSqr)>=Vec::new();
+        let mut vv:Vec<(&BBox<F64n,()>,DisSqr)>=Vec::new();
         {
-            let mut kn=Kn{c:&c,g};
+            let kn=Kn{c:&c,g};
             let point=[f64n!(cursor[0]),f64n!(cursor[1])];
             k_nearest::k_nearest(&tree,point,3,kn,|a,b|{vv.push((a,b))});
         }
@@ -86,15 +73,8 @@ impl DemoSys for KnearestDemo{
             [0.0,0.0,1.0,0.8]  //blue third closets
         ];
         
-        for ((a,dis),color) in vv.iter().zip(cols.iter()){
-            let ((x1,x2),(y1,y2))=a.get().get();
-            
-            {
-                let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-                let square = [x1,y1,x2-x1,y2-y1];
-                            
-                rectangle(*color, square, c.transform, g);
-            }
+        for ((a,_dis),color) in vv.iter().zip(cols.iter()){
+            draw_rect_f64n(*color,a.get(),c,g);
         } 
     }   
 }

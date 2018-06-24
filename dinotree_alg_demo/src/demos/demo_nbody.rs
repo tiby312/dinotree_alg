@@ -1,10 +1,9 @@
 use support::prelude::*;
 use dinotree::nbody;
-use dinotree::k_nearest;
-use dinotree;
 use dinotree::colfind;
-use rand;
 use dinotree_geom;
+use dinotree_geom::GravityTrait;
+
 
 #[derive(Copy,Clone)]
 struct NodeMass{
@@ -13,7 +12,8 @@ struct NodeMass{
     force:[f64;2]
 }
 
-impl GravityTrait for NodeMass{
+impl dinotree_geom::GravityTrait for NodeMass{
+    type N=f64;
     fn pos(&self)->[f64;2]{
         self.center
     }
@@ -30,23 +30,23 @@ impl GravityTrait for NodeMass{
 #[derive(Clone,Copy)]
 struct Bla;
 impl nbody::NodeMassTrait for Bla{
-    type T=BBox<f64N,Bot>;
+    type T=BBox<F64n,Bot>;
     //type N=NotNaN<f64>;
     type No=NodeMass;
 
     //gravitate this nodemass with another node mass
     fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
-        gravity::gravitate(a,b);
+        let _ = dinotree_geom::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
     }
 
     //gravitate a bot with a bot
     fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
-        gravity::gravitate(&mut a.inner,&mut b.inner);
+        let _ = dinotree_geom::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
     }
 
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
-        gravity::gravitate(a,&mut b.inner);
+        let _ = dinotree_geom::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
     }
 
 
@@ -55,13 +55,11 @@ impl nbody::NodeMassTrait for Bla{
         let mut total_y=0.0;
         let mut total_mass=0.0;
 
-        let mut total=0;
         for i in it{
             let m=i.inner.mass();
             total_mass+=m;
             total_x+=m*i.inner.pos[0];
             total_y+=m*i.inner.pos[1];
-            total+=1;
         }
         //println!("total={:?}");
         let center=if total_mass!=0.0{
@@ -94,7 +92,7 @@ impl nbody::NodeMassTrait for Bla{
         }
     }
 
-    fn is_far_enough(&self,depth:usize,b:[f64N;2])->bool{
+    fn is_far_enough(&self,depth:usize,b:[F64n;2])->bool{
                 
         let a=b[0];
 
@@ -103,7 +101,7 @@ impl nbody::NodeMassTrait for Bla{
         (a.into_inner()-b[1].into_inner()).abs()>800.0/x
     }
 
-    fn is_far_enough_half(&self,depth:usize,b:[f64N;2])->bool{
+    fn is_far_enough_half(&self,depth:usize,b:[F64n;2])->bool{
         
         let a=b[0];
         let x=(depth+1) as f64;
@@ -143,12 +141,13 @@ impl Bot{
 
         b.force=[0.0;2];
     }
-    fn create_aabb(&self)->axgeom::Rect<f64N>{
+    fn create_aabb(&self)->axgeom::Rect<F64n>{
         let r=5.0f64.min(self.mass.sqrt()/10.0);
         Conv::from_rect(aabb_from_pointf64(self.pos,[r;2]))             
     }
 }
-impl GravityTrait for Bot{
+impl dinotree_geom::GravityTrait for Bot{
+    type N=f64;
     fn pos(&self)->[f64;2]{
         self.pos
     }
@@ -162,50 +161,6 @@ impl GravityTrait for Bot{
 }
 
 
-
-use self::gravity::GravityTrait;
-mod gravity{
-    pub trait GravityTrait{
-        fn pos(&self)->[f64;2];
-        fn mass(&self)->f64;
-        fn apply_force(&mut self,[f64;2]);
-    }
-
-    //Returns the force to be exerted to the first object.
-    //The force to the second object can be retrieved simply by negating the first.
-    pub fn gravitate<T:GravityTrait,T2:GravityTrait>(a:&mut T,b:&mut T2){
-        let p1=a.pos();
-        let p2=b.pos();
-        let m1=a.mass();
-        let m2=b.mass();
-
-        let diffx=p2[0]-p1[0];
-        let diffy=p2[1]-p1[1];
-        let dis_sqr=diffx*diffx+diffy*diffy;
-
-
-        if dis_sqr>0.0001{
-            
-            const GRAVITY_CONSTANT:f64=0.004;
-
-            //newtons law of gravitation (modified for 2d??? divide by len instead of sqr)
-            let force=GRAVITY_CONSTANT*(m1*m2)/dis_sqr;
-
-            let dis=dis_sqr.sqrt();
-            let finalx=diffx*(force/dis);
-            let finaly=diffy*(force/dis);
-            
-            a.apply_force([finalx,finaly]);
-            b.apply_force([-finalx,-finaly]);
-        }else{
-            //a.apply_force([1.0,0.0]);
-            //b.apply_force([-1.0,0.0]);
-        }
-    }
-}
-
-
-
 pub struct DemoNbody{
     dim:[f64;2],
     bots:Vec<Bot>,
@@ -214,7 +169,6 @@ pub struct DemoNbody{
 impl DemoNbody{
     pub fn new(dim:[f64;2])->DemoNbody{
         let dim1=dim;
-        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
@@ -248,8 +202,6 @@ impl DemoSys for DemoNbody{
         
 
         let mut tree=tree.with_extra(());                
-
-
       
         colfind::query_par_mut(&mut tree,|a, b| {
             let (a,b)=if a.inner.mass>b.inner.mass{
@@ -290,33 +242,13 @@ impl DemoSys for DemoNbody{
 
         //Draw bots.
         for bot in tree.iter(){
-            /*
-            let mut max_mag=0.0f64;
-            let mag={
-                let b=&bot;
-                let x=b.force[0]-b.force_naive[0];
-                let y=b.force[1]-b.force_naive[1];
-                
-                let dis=x*x+y*y;
-                dis.sqrt()/b.mass //The more mass an object has, the less impact error has
-            };
-            max_mag=max_mag.max(mag);
-            let mag=mag*100.0;
-            */
-            let ((x1,x2),(y1,y2))=bot.get().get();
-            let arr=[x1.into_inner() as f64,y1.into_inner() as f64,x2.into_inner() as f64,y2.into_inner() as f64];
-            let square = [arr[0],arr[1],arr[2]-arr[0],arr[3]-arr[1]];                    
-            rectangle([0.0,0.5,0.0,1.0], square, c.transform, g);
+            draw_rect_f64n([0.0,0.5,0.0,1.0],bot.get(),c,g);
         }
-
 
         for b in tree.into_iter_orig_order(){
             bots.push(b.inner);
         }
         
-
-    
-    
         {
             let mut new_bots=Vec::new();
             for b in bots.drain(..){

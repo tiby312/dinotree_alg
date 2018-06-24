@@ -10,9 +10,6 @@ extern crate rayon;
 extern crate dinotree_geom;
 
 use piston_window::*;
-use ordered_float::NotNaN;
-use support::f64N;
-
 #[macro_use]
 pub(crate) mod support;
 pub(crate) mod demos;
@@ -78,7 +75,7 @@ fn main(){
             println!("Pressed keyboard key '{:?}'", key);
         };
 
-        window.draw_2d(&e, |mut c, mut g| {
+        window.draw_2d(&e, |c, mut g| {
             clear([1.0; 4], g);
 
             curr.step(cursor,&c,&mut g);

@@ -9,17 +9,17 @@ mod ray_f64{
     use dinotree_geom;
 
     pub struct RayT<'a,'c:'a>{
-        pub ray:Ray<f64N>,
+        pub ray:Ray<F64n>,
         pub c:&'a Context,
         pub g:&'a mut G2d<'c>
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBox<f64N,()>;
-        type N=f64N;
+        type T=BBox<F64n,()>;
+        type N=F64n;
 
         fn split_ray<A:axgeom::AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
-            let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};
+            let ray=dinotree_geom::Ray{point:ray.point,dir:ray.dir,tlen:ray.tlen};
             dinotree_geom::split_ray(axis,&ray,fo).map(|(a,b)|{
                 let r1=Ray{point:a.point,dir:a.dir,tlen:a.tlen};
                 let r2=Ray{point:b.point,dir:b.dir,tlen:b.tlen};
@@ -39,7 +39,7 @@ mod ray_f64{
             dinotree_geom::compute_intersection_tvalue(axis,&ray,line)
         }
 
-        fn compute_distance_bot(&mut self,depth:Depth,a:&BBox<f64N,()>)->Option<Self::N>{
+        fn compute_distance_bot(&mut self,_depth:Depth,a:&BBox<F64n,()>)->Option<Self::N>{
             dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
         }
         
@@ -48,12 +48,11 @@ mod ray_f64{
 
 
 pub struct RaycastF64Demo{
-    tree:DynTree<axgeom::XAXISS,(),BBox<f64N,()>>,
+    tree:DynTree<axgeom::XAXISS,(),BBox<F64n,()>>,
 }
 impl RaycastF64Demo{
 
     pub fn new(dim:[f64;2])->RaycastF64Demo{
-        let dim2=[f64n!(dim[0]),f64n!(dim[1])];
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
@@ -73,17 +72,10 @@ impl DemoSys for RaycastF64Demo{
         let tree=&self.tree;
         //Draw bots
         for bot in tree.iter(){
-            let ((x1,x2),(y1,y2))=bot.get().get();
-            let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-                
-            let square = [x1,y1,x2-x1,y2-y1];
-            rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
+            draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
     
-        {
-
-            let bb=axgeom::Rect::new(f64n!(0.0),f64n!(800.0),f64n!(0.0),f64n!(800.0));
-            
+        { 
             for i in 0..360{
                 let i=i as f64*(std::f64::consts::PI/180.0);
                 let x=(i.cos()*20.0) as f64 ;
@@ -92,7 +84,7 @@ impl DemoSys for RaycastF64Demo{
                 let ray={
                     let dir=[f64n!(x),f64n!(y)];
                     let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                    raycast::Ray{point,dir,tlen:NotNaN::new(300.0).unwrap(),}
+                    raycast::Ray{point,dir,tlen:f64n!(300.0)}
                 };
 
                 

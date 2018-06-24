@@ -62,7 +62,7 @@ impl IntersectEveryDemo{
 
 impl DemoSys for IntersectEveryDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
-        let radius=10.0;
+        let radius=self.radius;
         let bots=&mut self.bots;
 
         for b in bots.iter_mut(){
@@ -80,36 +80,16 @@ impl DemoSys for IntersectEveryDemo{
         });
         
         for bot in tree.iter(){
-            let ((x1,x2),(y1,y2))=bot.get().get();
-            //let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
-            let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-              
-            let square = [x1,y1,x2-x1,y2-y1];
-            rectangle([0.0,0.0,0.0,0.3], square, c.transform, g);
+            draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
-
-        {
-         
-            colfind::query_mut(&mut tree,|a, b| {
-                a.inner.repel(&mut b.inner);
-                let ((x1,x2),(y1,y2))=a.get().get();
-                
-                {
-                    let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-                    let square = [x1,y1,x2-x1,y2-y1];
-                    rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
-                }
-
-                let ((x1,x2),(y1,y2))=b.get().get();
-                
-                {
-                    let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-                    let square = [x1,y1,x2-x1,y2-y1];
-                    rectangle([1.0,0.0,0.0,0.2], square, c.transform, g);
-                }
-            });
-        
-        }
+    
+        colfind::query_mut(&mut tree,|a, b| {
+            a.inner.repel(&mut b.inner);
+            draw_rect_f64n([1.0,0.0,0.0,0.2],a.get(),c,g);
+            draw_rect_f64n([1.0,0.0,0.0,0.2],b.get(),c,g);
+        });
+    
+    
         for b in tree.into_iter_orig_order(){
             bots.push(b.inner);
         }

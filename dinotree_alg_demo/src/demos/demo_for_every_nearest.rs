@@ -50,7 +50,7 @@ impl KnearestEveryDemo{
 }
 
 impl DemoSys for KnearestEveryDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,_cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         let bots=&mut self.bots;
         for b in bots.iter_mut(){
             b.update();
@@ -61,20 +61,20 @@ impl DemoSys for KnearestEveryDemo{
         {
             
             pub struct BInner{
-                center:[f64N;2],
+                center:[F64n;2],
                 acc:[f64;2],
-                rect:axgeom::Rect<f64N>
+                rect:axgeom::Rect<F64n>
             }
 
             impl HasCenter for BInner{
-                type Num=f64N;
-                fn get_center(&self)->&[f64N;2]{
+                type Num=F64n;
+                fn get_center(&self)->&[F64n;2]{
                     &self.center
                 }
             }
             impl HasAabb for BInner{
-                type Num=f64N;
-                fn get(&self)->&axgeom::Rect<f64N>{
+                type Num=F64n;
+                fn get(&self)->&axgeom::Rect<F64n>{
                     &self.rect
                 }
             }
@@ -82,13 +82,13 @@ impl DemoSys for KnearestEveryDemo{
             
 
             #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
-            struct DisSqr(f64N);
+            struct DisSqr(F64n);
             #[derive(Copy,Clone)]
             struct Kn;
 
             impl k_nearest::Knearest for Kn{
                 type T=BInner;
-                type N=f64N;
+                type N=F64n;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
                     DisSqr(dinotree_geom::distance_squared_point_to_rect(point,bot.get()))
@@ -114,17 +114,10 @@ impl DemoSys for KnearestEveryDemo{
             }));
 
             for a in tree.iter(){
-                let ((x1,x2),(y1,y2))=a.get().get();
-                
-                {
-                    let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
-                    let square = [x1,y1,x2-x1,y2-y1];
-                                
-                    rectangle([0.0,1.0,0.0,0.5], square, c.transform, g);
-                }
+                draw_rect_f64n([0.0,1.0,0.0,0.5],a.get(),c,g);
             } 
 
-            for_every_nearest::for_every_nearest_mut(&mut tree,|a,b,dis|{
+            for_every_nearest::for_every_nearest_mut(&mut tree,|a,b,_dis|{
                 let p1=*a.get_center();
                 let p2=*b.get_center();
                 let p1=[p1[0].into_inner(),p1[1].into_inner()];
@@ -153,7 +146,6 @@ impl DemoSys for KnearestEveryDemo{
             for (b,bot) in tree.into_iter_orig_order().zip(bots.iter_mut()){
                 bot.acc[0]+=b.acc[0];
                 bot.acc[1]+=b.acc[1];
-                //bots.push(b);
             }
             
         }
