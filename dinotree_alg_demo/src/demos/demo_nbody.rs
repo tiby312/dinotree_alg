@@ -26,10 +26,11 @@ impl GravityTrait for NodeMass{
     }
 }
 
+
 #[derive(Clone,Copy)]
 struct Bla;
 impl nbody::NodeMassTrait for Bla{
-    type T=BBox<NotNaN<f64>,Bot>;
+    type T=BBox<f64N,Bot>;
     //type N=NotNaN<f64>;
     type No=NodeMass;
 
@@ -93,20 +94,20 @@ impl nbody::NodeMassTrait for Bla{
         }
     }
 
-    fn is_far_enough(&self,depth:usize,b:[NotNaN<f64>;2])->bool{
+    fn is_far_enough(&self,depth:usize,b:[f64N;2])->bool{
                 
         let a=b[0];
 
         let x=(depth+1) as f64;
         
-        (a-b[1].into_inner()).abs()>800.0/x
+        (a.into_inner()-b[1].into_inner()).abs()>800.0/x
     }
 
-    fn is_far_enough_half(&self,depth:usize,b:[NotNaN<f64>;2])->bool{
+    fn is_far_enough_half(&self,depth:usize,b:[f64N;2])->bool{
         
         let a=b[0];
         let x=(depth+1) as f64;
-        (a-b[1].into_inner()).abs()>400.0/x
+        (a.into_inner()-b[1].into_inner()).abs()>400.0/x
     }
 
 }
@@ -144,12 +145,7 @@ impl Bot{
     }
     fn create_aabb(&self)->axgeom::Rect<f64N>{
         let r=5.0f64.min(self.mass.sqrt()/10.0);
-        let x1=self.pos[0]-r;
-        let x2=self.pos[0]+r;
-        let y1=self.pos[1]-r;
-        let y2=self.pos[1]+r;
-        let mut rect=axgeom::Rect::new(x1,x2,y1,y2);
-        support::rectf64_to_notnan(rect)              
+        Conv::from_rect(aabb_from_pointf64(self.pos,[r;2]))             
     }
 }
 impl GravityTrait for Bot{

@@ -15,13 +15,14 @@ impl<X: AxisTrait> Accessor<X> {
 */
 
 pub mod mod_mut{
-    
-    struct Bl<A: AxisTrait, F: Bleek> {
+    use colfind::mutable::ColMulti;
+
+    struct Bl<A: AxisTrait, F: ColMulti> {
         a: F,
         axis:A,
     }
 
-    impl<A: AxisTrait, F: Bleek> Bleek for Bl<A, F> {
+    impl<A: AxisTrait, F: ColMulti> ColMulti for Bl<A, F> {
         type T = F::T;
 
         fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
@@ -33,13 +34,22 @@ pub mod mod_mut{
                 self.a.collide(a, b);
             }
         }
+        fn div(self)->(Self,Self){
+            unreachable!();
+        }
+        fn add(self,b:Self)->Self{
+            unreachable!();
+        }
+        
     }
 
     use super::*;
+    /*
     pub trait Bleek {
         type T: HasAabb;
         fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
     }
+    */
 
 
 
@@ -57,7 +67,7 @@ pub mod mod_mut{
 
 
         //Bots a sorted along the axis.
-        pub fn find_2d<A: AxisTrait, F: Bleek<T=I>>(
+        pub fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
             &mut self,
             axis:A,
             bots: &mut [F::T],
@@ -71,7 +81,7 @@ pub mod mod_mut{
         }
 
 
-        pub fn find_parallel_2d<A: AxisTrait, F: Bleek<T=I>>(
+        pub fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
             &mut self,
             axis:A,
             bots1: &mut [F::T],
@@ -85,8 +95,8 @@ pub mod mod_mut{
 
             self.find_bijective_parallel(axis,(bots1, bots2), b);
         }
-
-        pub fn find_perp_2d<F: Bleek<T=I>>(&mut self,
+  
+        pub fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
             r1: &mut [F::T],
             r2: &mut [F::T],
             mut clos2: F){
@@ -102,7 +112,7 @@ pub mod mod_mut{
         }
 
         ///Find colliding pairs using the mark and sweep algorithm.
-        fn find<'a, A: AxisTrait, F: Bleek<T = I>>(
+        fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
             &mut self,
             axis:A,
             collision_botids: &'a mut [I],
@@ -151,7 +161,7 @@ pub mod mod_mut{
             }
         }
 
-        fn find_bijective_parallel<A: AxisTrait, F: Bleek<T = I>>(
+        fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
             &mut self,
             axis:A,
             cols: (&mut [I], &mut [I]),
@@ -241,14 +251,15 @@ pub mod mod_mut{
     }
 }
 
-pub mod mod_const{
-    
-    struct Bl<A: AxisTrait, F: Bleek> {
+pub mod mod_const{   
+    use colfind::constant::ColMulti;
+
+    struct Bl<A: AxisTrait, F: ColMulti> {
         a: F,
         axis: A,
     }
 
-    impl<A: AxisTrait, F: Bleek> Bleek for Bl<A, F> {
+    impl<A: AxisTrait, F: ColMulti> ColMulti for Bl<A, F> {
         type T = F::T;
 
         fn collide(&mut self, a: &Self::T, b: &Self::T) {
@@ -260,13 +271,21 @@ pub mod mod_const{
                 self.a.collide(a, b);
             }
         }
+         fn div(self)->(Self,Self){
+            unreachable!();
+        }
+        fn add(self,b:Self)->Self{
+            unreachable!();
+        }
     }
 
     use super::*;
+    /*
     pub trait Bleek {
         type T: HasAabb;
         fn collide(&mut self, a: &Self::T, b: &Self::T);
     }
+    */
 
 
 
@@ -284,7 +303,7 @@ pub mod mod_const{
 
 
         //Bots a sorted along the axis.
-        pub fn find_2d<A: AxisTrait, F: Bleek<T=I>>(
+        pub fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
             &mut self,
             axis:A,
             bots: &[F::T],
@@ -298,7 +317,7 @@ pub mod mod_const{
         }
 
 
-        pub fn find_parallel_2d<A: AxisTrait, F: Bleek<T=I>>(
+        pub fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
             &mut self,
             axis:A,
             bots1: &[F::T],
@@ -313,7 +332,7 @@ pub mod mod_const{
             self.find_bijective_parallel(axis,(bots1, bots2), b);
         }
 
-        pub fn find_perp_2d<F: Bleek<T=I>>(&mut self,
+        pub fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
             r1: &[F::T],
             r2: &[F::T],
             mut clos2: F){
@@ -329,7 +348,7 @@ pub mod mod_const{
         }
 
         ///Find colliding pairs using the mark and sweep algorithm.
-        fn find<'a, A: AxisTrait, F: Bleek<T = I>>(
+        fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
             &mut self,
             axis:A,
             collision_botids: &'a [I],
@@ -378,7 +397,7 @@ pub mod mod_const{
             }
         }
 
-        fn find_bijective_parallel<A: AxisTrait, F: Bleek<T = I>>(
+        fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
             &mut self,
             axis:A,
             cols: (&[I], &[I]),

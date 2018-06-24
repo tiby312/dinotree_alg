@@ -10,7 +10,6 @@ dinotree_geom={path="../../dinotree_geom"}
 dinotree = {path=".."}
 dinotree_inner = {path="../../dinotree_inner"}
 axgeom={path="../../axgeom"}
-#ordered-float = "0.5.0"
 new-ordered-float = "1.0.1"
 rand = "0.3"
 rustc-test = "0.3.0"

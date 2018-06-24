@@ -20,13 +20,6 @@ impl LeafTracker for IsLeaf{
 
 
 
-//go_down!(,);
-
-
-
-
-
-
 macro_rules! anchor{
     ($slice:ty,$node:ty,$get_slice:ident)=>{
         mod anchor{
@@ -156,11 +149,8 @@ macro_rules! recurse{
                         Ok(mut nn)=>{
                             sweeper.find_2d(this_axis.next(),nn.range, ColMultiWrapper(&mut clos));
 
-                            //let left = compt::WrapGen::new(&mut left);
-                            //let right = compt::WrapGen::new(&mut right);
-                            //left.create_wrap();
-                            let left=$create_wrap!(left);//.create_wrap_mut();
-                            let right=$create_wrap!(right);//.create_wrap_mut();
+                            let left=$create_wrap!(left);
+                            let right=$create_wrap!(right);
 
                             self::go_down(this_axis.next(), this_axis, sweeper, $get_ref!(nn), left, &mut clos,level.next_down());
                             self::go_down(this_axis.next(), this_axis, sweeper, $get_ref!(nn), right, &mut clos,level.next_down());
@@ -252,7 +242,7 @@ macro_rules! recurse{
 
 
 macro_rules! colfind{
-    ($bleek:ident,$anchor:ty,$sweeper:ty,$node:ty,$ref:ty,$get_slice:ident)=>{
+    ($anchor:ty,$sweeper:ty,$node:ty,$ref:ty,$get_slice:ident)=>{
 
         pub trait ColMulti:Sized {
             type T: HasAabb;
@@ -268,7 +258,7 @@ macro_rules! colfind{
 
 
 
-        fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F:$bleek,L:LeafTracker>(
+        fn for_every_bijective_pair<A: AxisTrait, B: AxisTrait, F:ColMulti,L:LeafTracker>(
             this_axis:A,
             parent_axis:B,
             this: $node,
@@ -638,7 +628,7 @@ pub fn for_every_col_pair_mut<
 */
 
 
-mod mutable{
+pub(crate)mod mutable{
     use super::*;
 
     pub fn for_every_col_pair_mut<
@@ -711,14 +701,26 @@ mod mutable{
     }
     
 
-
+    impl<'a, C: ColMulti + 'a> ColMulti for ColMultiWrapper<'a, C> {
+        type T = C::T;
+        fn collide(&mut self, a:&mut Self::T, b: &mut Self::T) {
+            self.0.collide(a, b);
+        }
+        fn div(self)->(Self,Self){
+            unreachable!();
+        }
+        fn add(self,b:Self)->Self{
+            unreachable!();
+        }
+    }
+    /*
     impl<'a, C: ColMulti + 'a> oned::mod_mut::Bleek for ColMultiWrapper<'a, C> {
         type T = C::T;
         fn collide(&mut self, a:&mut Self::T, b: &mut Self::T) {
             self.0.collide(a, b);
         }
     }
-
+    */
 
     macro_rules! get_mut_slice{
         ($range:expr)=>{{
@@ -746,12 +748,12 @@ mod mutable{
 
     recurse!(&mut oned::mod_mut::Sweeper<F::T>,&mut anchor::DestructuredAnchor<X,B>,NdIterMut<(),X>,get_mut_slice,create_wrap_mut,create_sweep);
 
-    use oned::mod_mut::Bleek;
-    colfind!( Bleek,&mut anchor::DestructuredAnchor<F::T,B>,&mut oned::mod_mut::Sweeper<F::T>,&mut NodeDyn<(),F::T>,&mut Self::T,get_mut_slice);
+    //use oned::mod_mut::Bleek;
+    colfind!(&mut anchor::DestructuredAnchor<F::T,B>,&mut oned::mod_mut::Sweeper<F::T>,&mut NodeDyn<(),F::T>,&mut Self::T,get_mut_slice);
 
 }
 
-mod constant{
+pub(crate) mod constant{
     use super::*;
 
 
@@ -821,10 +823,16 @@ mod constant{
         }
     }
 
-    impl<'a, C: ColMulti + 'a> oned::mod_const::Bleek for ColMultiWrapper<'a, C> {
+    impl<'a, C: ColMulti + 'a> ColMulti for ColMultiWrapper<'a, C> {
         type T = C::T;
         fn collide(&mut self, a:&Self::T, b: &Self::T) {
             self.0.collide(a, b);
+        }
+        fn div(self)->(Self,Self){
+            unreachable!();
+        }
+        fn add(self,b:Self)->Self{
+            unreachable!();
         }
     }
 
@@ -857,7 +865,7 @@ mod constant{
 
     anchor!(&'a [T],&'a NodeDyn<(),T>,get_slice);
 
-    use oned::mod_const::Bleek;
-    colfind!( Bleek,&anchor::DestructuredAnchor<F::T,B>,&mut oned::mod_const::Sweeper<F::T>,&NodeDyn<(),F::T>,& Self::T,get_slice);
+    //use oned::mod_const::Bleek;
+    colfind!( &anchor::DestructuredAnchor<F::T,B>,&mut oned::mod_const::Sweeper<F::T>,&NodeDyn<(),F::T>,& Self::T,get_slice);
 
 }

@@ -14,7 +14,7 @@ impl KnearestDemo{
         let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(rectf64_to_notnan(aabb_from_pointf64(p,r)),())
+            BBox::new(Conv::from_rect(aabb_from_pointf64(p,r)),())
         });
 
         let tree = DynTree::new(axgeom::XAXISS,(),bots);
@@ -53,22 +53,23 @@ impl DemoSys for KnearestDemo{
                         let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
                         let square = [x1,y1,x2-x1,y2-y1];
                         rectangle([0.0,0.0,0.0,0.5], square, self.c.transform, self.g);
-                    }
-                    
-                    
+                    }   
                 }
 
-                DisSqr(dinotree_geom::distance_squared_point_to_rect(point,bot.get()))
+                DisSqr(f64n!(dinotree_geom::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()))))
             }
 
             fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{
-                DisSqr((p2-p1)*(p2-p1))
+                let p1=p1.into_inner();
+                let p2=p2.into_inner();
+                DisSqr(f64n!((p2-p1)*(p2-p1)))
             }
 
             //create a range around n.
             fn create_range(&mut self,b:Self::N,d:Self::D)->[Self::N;2]{
-                let dis=d.0.sqrt();
-                [b-dis,b+dis]
+                let b=b.into_inner();
+                let dis=d.0.into_inner().sqrt();
+                [f64n!(b-dis),f64n!(b+dis)]
             }
         }
 

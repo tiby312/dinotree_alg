@@ -60,7 +60,7 @@ impl RaycastF64Demo{
         let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(rectf64_to_notnan(aabb_from_pointf64(p,r)),())
+            BBox::new(Conv::from_rect(aabb_from_pointf64(p,r)),())
         });
 
         let tree = DynTree::new(axgeom::XAXISS,(),bots);

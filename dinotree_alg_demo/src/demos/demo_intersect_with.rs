@@ -52,7 +52,7 @@ impl IntersectWithDemo{
         let radius=[10,60];
         let walls=create_world_generator(40,dim2,radius,velocity).map(|ret|{
             let rect=aabb_from_pointf64(ret.pos,ret.radius);
-            BBox::new(rectf64_to_notnan(rect),())//{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
+            BBox::new(Conv::from_rect(rect),())//{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
         }).collect();
 
         IntersectWithDemo{radius:10.0,bots,walls,dim}
@@ -75,7 +75,7 @@ impl DemoSys for IntersectWithDemo{
         let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
             let p=b.pos;
             let rect=aabb_from_pointf64(p,[radius;2]);
-            BBox::new(rectf64_to_notnan(rect),b)
+            BBox::new(Conv::from_rect(rect),b)
         }));
 
         use axgeom::*;
@@ -129,13 +129,13 @@ impl DemoSys for IntersectWithDemo{
         let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
             let p=b.pos;
             let rect=aabb_from_pointf64(p,[radius;2]);
-            BBox::new(rectf64_to_notnan(rect),b)
+            BBox::new(Conv::from_rect(rect),b)
         }));
     
 
 
         
-        rect::for_all_in_rect_mut(&mut tree,&rectf64_to_notnan(aabb_from_pointf64(cursor,[100.0;2])),|b|{
+        rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             //b.inner.repel_mouse(cursor);
             let _ =dinotree_geom::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
@@ -171,8 +171,8 @@ impl DemoSys for IntersectWithDemo{
             g:&'a mut G2d<'b>
         }
         impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
-            type N=NotNaN<f64>;
-            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:NotNaN<f64>,cont:Option<[NotNaN<f64>;2]>,length:[NotNaN<f64>;2],depth:usize){
+            type N=f64N;
+            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:f64N,cont:Option<[f64N;2]>,length:[f64N;2],depth:usize){
                 let div=div.into_inner();
                 
 

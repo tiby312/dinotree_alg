@@ -110,7 +110,7 @@ impl DemoSys for KnearestEveryDemo{
                 let r=bot.radius;
                 let acc=bot.acc;
                 let center=[f64n!(p[0]),f64n!(p[1])];
-                BInner{acc,rect:rectf64_to_notnan(aabb_from_pointf64(p,r)),center}          
+                BInner{acc,rect:Conv::from_rect(aabb_from_pointf64(p,r)),center}          
             }));
 
             for a in tree.iter(){

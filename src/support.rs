@@ -1,7 +1,7 @@
 //pub mod raycast;
 
 use inner_prelude::*;
-pub use dinotree_inner::support::NumWrapper;
+//pub use dinotree_inner::support::NumWrapper;
 //pub use dinotree_inner::support::BBox;
 use dinotree_inner::HasAabb;
 use axgeom::*;

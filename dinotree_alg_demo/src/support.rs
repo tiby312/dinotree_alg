@@ -24,7 +24,6 @@ pub mod prelude{
 
 }
 
-pub type f64N=NotNaN<f64>;
 
 macro_rules! f64n {
     ( $x:expr  ) => {
@@ -33,6 +32,37 @@ macro_rules! f64n {
         }
     };
 }
+
+pub type f64N=NotNaN<f64>;
+
+pub struct Conv;
+impl Conv{
+
+    pub fn point_to_inner(a:[f64N;2])->[f64;2]{
+        //TODO safe to use transmute?
+        [a[0].into_inner(),a[1].into_inner()]
+    }
+    pub fn rect_to_inner(rect:Rect<f64N>)->Rect<f64>{
+        let ((a,b),(c,d))=rect.get();
+        Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
+    }
+
+    pub fn from_rect(rect:Rect<f64>)->Rect<f64N>{
+        let ((a,b),(c,d))=rect.get();
+        Rect::new(f64n!(a),f64n!(b),f64n!(c),f64n!(d))
+    }
+    pub fn from_point(a:[f64;2])->[f64N;2]{
+        [f64n!(a[0]),f64n!(a[1])]
+    }
+}
+
+pub fn aabb_from_pointf64(p:[f64;2],r:[f64;2])->Rect<f64>{
+    Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
+}
+
+
+
+
 
 
 pub struct RangeGenIterf64{
@@ -118,17 +148,6 @@ pub fn create_world_generator(num:usize,area:&[isize;4],radius:[isize;2],velocit
     RangeGenIterf64{max:num,counter:0,rng,xvaluegen,yvaluegen,radiusgen,velocity_dir,velocity_mag}
 }
 
-pub fn aabb_from_pointf64(p:[f64;2],r:[f64;2])->Rect<f64>{
-    Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
-}
-pub fn rectf64_to_notnan(rect:Rect<f64>)->Rect<NotNaN<f64>>{
-    let ((a,b),(c,d))=rect.get();
-    Rect::new(NotNaN::new(a).unwrap(),NotNaN::new(b).unwrap(),NotNaN::new(c).unwrap(),NotNaN::new(d).unwrap())
-}
-pub fn rectNaN_to_f64(rect:Rect<f64N>)->Rect<f64>{
-    let ((a,b),(c,d))=rect.get();
-    Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
-}
 
 
 struct UniformRangeGenerator{

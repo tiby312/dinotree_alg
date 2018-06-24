@@ -72,12 +72,10 @@ impl DemoSys for IntersectEveryDemo{
 
 
         let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
-            let p=b.pos;
-            let rect=aabb_from_pointf64(p,[radius;2]);
-            BBox::new(rectf64_to_notnan(rect),b)
+            BBox::new(Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2])),b)
         }));
 
-        rect::for_all_in_rect_mut(&mut tree,&rectf64_to_notnan(aabb_from_pointf64(cursor,[100.0;2])),|b|{
+        rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             b.inner.repel_mouse(cursor);
         });
         
