@@ -23,7 +23,7 @@ mod undo_iterator{
     use smallvec::SmallVec;
     pub struct UndoIterator<I:Iterator>{
         it:I,
-        item:SmallVec<[I::Item;2]>
+        item:SmallVec<[I::Item;1]>
     }
 
     impl<I:Iterator> UndoIterator<I>{
