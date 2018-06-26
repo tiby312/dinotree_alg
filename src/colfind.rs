@@ -2,6 +2,17 @@ use inner_prelude::*;
 use oned;
 use dinotree_inner::par::Joiner;
 
+
+
+pub fn naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&T,&T)){
+    tools::for_every_pair(bots,|a,b|{
+        if a.get().get_intersect_rect(b.get()).is_some(){
+            func(a,b);
+        }
+    });
+}
+
+
 trait LeafTracker{
     fn is_leaf(&self)->bool;
 }

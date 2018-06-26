@@ -1,5 +1,5 @@
 use inner_prelude::*;
-use unsafe_unwrap::UnsafeUnwrap;
+
 
 //TODO bench these without bounds checking and unwrap()ing.
 
@@ -156,13 +156,16 @@ pub mod mod_mut{
             }
         }
 
+
         fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
             &mut self,
             axis:A,
             cols: (&mut [I], &mut [I]),
             mut func: F,
         ) {
-            let mut xs = cols.0.iter_mut().peekable();
+        
+            //let mut xs = cols.0.iter_mut().peekable();
+            let mut xs= tools::UndoIterator::new(cols.0.iter_mut());
             let ys = cols.1.iter_mut();
 
             let active_x = self.helper.get_empty_vec_mut();
@@ -170,6 +173,22 @@ pub mod mod_mut{
             for y in ys {
 
                 //Add all the x's that are touching the y to the active x.
+                loop{
+                    match xs.next(){
+                        Some(x)=>{
+                            if x.get().as_axis().get(axis).left > y.get().as_axis().get(axis).right{
+                                xs.add_back(x);
+                                break;
+                            }else{
+                                active_x.push(x);
+                            }
+                        },
+                        None=>{
+                            break;
+                        }
+                    }
+                }
+                /*
                 while xs.peek().is_some() {
                     unsafe{
                         let v = {
@@ -184,6 +203,7 @@ pub mod mod_mut{
                         }
                     }
                 }
+                */
 
                 
 
@@ -390,13 +410,30 @@ pub mod mod_const{
             cols: (&[I], &[I]),
             mut func: F,
         ) {
-            let mut xs = cols.0.iter().peekable();
+            let mut xs = tools::UndoIterator::new(cols.0.iter());
+            //let mut xs = cols.0.iter().peekable();
             let ys = cols.1.iter();
 
             let active_x = self.helper.get_empty_vec();
 
             for y in ys {
 
+                loop{
+                    match xs.next(){
+                        Some(x)=>{
+                            if x.get().as_axis().get(axis).left > y.get().as_axis().get(axis).right{
+                                xs.add_back(x);
+                                break;
+                            }else{
+                                active_x.push(x);
+                            }
+                        },
+                        None=>{
+                            break;
+                        }
+                    }
+                }
+                /*
                 //Add all the x's that are touching the y to the active x.
                 while xs.peek().is_some() {
                     unsafe{
@@ -412,6 +449,7 @@ pub mod mod_const{
                         }
                     }
                 }
+                */
 
                 
 

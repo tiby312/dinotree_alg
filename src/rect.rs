@@ -63,6 +63,9 @@ macro_rules! rect{
 //TODO test the intersect ones
 pub use self::mutable::for_all_intersect_rect_mut;
 pub use self::mutable::for_all_in_rect_mut;
+pub use self::mutable::naive_for_all_intersect_rect_mut;
+pub use self::mutable::naive_for_all_in_rect_mut;
+
 
 pub use self::constant::for_all_intersect_rect;
 pub use self::constant::for_all_in_rect;
@@ -89,6 +92,31 @@ mod mutable{
         self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
     }
 
+    pub fn naive_for_all_in_rect_mut<T: HasAabb, F: FnMut(&mut T)>(
+        bots: &mut [T],
+        rect: &Rect<T::Num>,
+        mut closure: F,
+    ) {
+        for b in bots.iter_mut(){
+            if rect.contains_rect(b.get()){
+                closure(b);
+            }
+        }
+
+    }
+
+    pub fn naive_for_all_intersect_rect_mut<T: HasAabb, F: FnMut(&mut T)>(
+        bots: &mut [T],
+        rect: &Rect<T::Num>,
+        mut closure: F,
+    ) {
+        for b in bots.iter_mut(){
+            if rect.get_intersect_rect(b.get()).is_some(){
+                closure(b);
+            }
+        }
+
+    }
     pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb, F: FnMut(&mut T)>(
         tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,

@@ -39,9 +39,8 @@ mod ray_isize{
             dinotree_geom::compute_intersection_tvalue(axis,&ray,line)
         }
 
-        fn compute_distance_bot(&mut self,depth:Depth,a:&Self::T)->Option<Self::N>{
-            let rr=depth.0 as f32/self.height as f32;
-            draw_rect_isize([rr,0.0,0.0,0.3],a.get(),self.c,self.g);
+        fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
+            draw_rect_isize([0.5,0.0,0.0,0.3],a.get(),self.c,self.g);
             dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
         }
         

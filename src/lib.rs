@@ -34,13 +34,11 @@
 
 #![feature(iterator_step_by)]
 #![feature(test)]
-#![feature(repr_transparent)]
 
 extern crate axgeom;
 extern crate compt;
 extern crate pdqselect;
 extern crate rayon;
-extern crate unsafe_unwrap;
 extern crate smallvec;
 extern crate dinotree_inner;
 

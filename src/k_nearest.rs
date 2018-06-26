@@ -17,6 +17,10 @@ pub trait Knearest{
 }
 
 
+
+
+
+
 macro_rules! get_range_iter{
     ($range:expr)=>{{
         $range.iter()
@@ -278,23 +282,58 @@ pub fn k_nearest<'b,
     }
 }
 
-pub fn k_nearest_mut<'b,
-    A:AxisTrait,
-    K:Knearest,
-    >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b mut K::T,K::D)){
-    let axis=tree.get_axis();
-    let dt = tree.get_iter_mut().with_depth(Depth(0));
 
-    let mut c=ClosestCand::new(num);
+pub use self::mutable::naive_mut;
+pub use self::mutable::k_nearest_mut;
+mod mutable{
+    use super::*;
+    pub fn naive_mut<'b,K:Knearest>(bots:&'b mut [K::T],point:[K::N;2],num:usize,mut k:K,mut func:impl FnMut(&'b mut K::T,K::D)){
+        
+        let mut closest=ClosestCand::new(num);
+
+        for b in bots.iter_mut(){
+            let d=k.twod_check(point,b);
+
+            match closest.full_and_max_distance(){
+                Some(dis)=>{
+                    if d>dis{
+                        continue;
+                    }
+                },
+                None=>{}
+            }
+
+            closest.consider((b,d));
+        }
+
+        for i in closest.into_sorted(){
+            let j:&mut K::T=unsafe{&mut *i.0};
+            //let j=j.get_mut();
+            func(j,i.1);
+        }
+
+    }
 
     knearest_recc!(NdIterMut<(),K::T>,*mut T,&mut T,get_mut_range_iter);
 
-    recc(axis,dt,&mut knear,point,&mut c);
- 
-    for i in c.into_sorted(){
-        let j:&mut K::T=unsafe{&mut *i.0};
-        //let j=j.get_mut();
-        func(j,i.1);
+
+    pub fn k_nearest_mut<'b,
+        A:AxisTrait,
+        K:Knearest,
+        >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b mut K::T,K::D)){
+        let axis=tree.get_axis();
+        let dt = tree.get_iter_mut().with_depth(Depth(0));
+
+        let mut c=ClosestCand::new(num);
+
+
+        recc(axis,dt,&mut knear,point,&mut c);
+     
+        for i in c.into_sorted(){
+            let j:&mut K::T=unsafe{&mut *i.0};
+            //let j=j.get_mut();
+            func(j,i.1);
+        }
     }
 }
 

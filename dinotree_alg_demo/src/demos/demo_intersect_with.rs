@@ -166,7 +166,7 @@ impl DemoSys for IntersectWithDemo{
                 };
 
 
-                let radius=(5-depth) as f64;
+                let radius=(1isize.max(5-depth as isize)) as f64;
 
                 line([0.0, 0.0, 0.0, 0.5], // black
                      radius, // radius of line

@@ -13,7 +13,6 @@ num = "0.1.42"
 piston_window = "*"
 
 [dependencies]
-unsafe_unwrap = "0.1.0"
 rayon = "1.0.1"
 pdqselect = "0.1.0"
 compt = {path="../compt"}

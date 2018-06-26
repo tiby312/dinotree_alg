@@ -21,7 +21,7 @@ pub trait RayTrait{
     fn compute_distance_to_line<A:AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>;
 
     //The expensive collision detection
-    fn compute_distance_bot(&mut self,depth:Depth,&Self::T)->Option<Self::N>;
+    fn compute_distance_bot(&mut self,&Self::T)->Option<Self::N>;
 
 
     fn split_ray<A:AxisTrait>(&mut self,axis:A,ray1:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>;
@@ -35,9 +35,9 @@ macro_rules! raycast{
             closest:Option<($ptr,T::Num)>
         }
         impl<T:HasAabb> Closest<T>{
-            fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,depth:Depth,b:$ref,raytrait:&mut R,_ray:&Ray<T::Num>){
+            fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,b:$ref,raytrait:&mut R){
 
-                if let Some(x)=raytrait.compute_distance_bot(depth,b){
+                if let Some(x)=raytrait.compute_distance_bot(b){
                     match self.closest{
                         Some(dis)=>{
                             if x<dis.1{
@@ -74,7 +74,7 @@ macro_rules! raycast{
             >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,ray:Ray<N>,closest:&mut Closest<T>){
 
 
-            let ((depth,nn),rest)=stuff.next();
+            let ((_depth,nn),rest)=stuff.next();
          
 
             match rest {
@@ -206,7 +206,7 @@ macro_rules! raycast{
                                             }
                                             
                                             if rang.right>=a{
-                                                closest.consider(depth,bot,rtrait,&ray);
+                                                closest.consider(bot,rtrait);
                                             }
                                         }
                                     },
@@ -224,7 +224,7 @@ macro_rules! raycast{
                 _ => {
                     //Can't do better here since for leafs, cont is none.
                     for b in $get_iter!(nn.range){
-                        closest.consider(depth,b,rtrait,&ray);
+                        closest.consider(b,rtrait);
                     }       
                 }
             }
@@ -247,47 +247,65 @@ macro_rules! get_mut_range_iter{
 }
 
 
-pub fn raycast_mut<
-    'a,A:AxisTrait,
-    T:HasAabb,
-    R:RayTrait<T=T,N=T::Num>
-    >(tree:&'a mut DynTree<A,(),T>,ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a mut T,T::Num)>{
-    
-    let axis=tree.get_axis();
-    let dt = tree.get_iter_mut().with_depth(Depth(0));
-
+pub use self::mutable::naive_mut;
+pub use self::mutable::raycast_mut;
+mod mutable{
+    use super::*;
     raycast!(NdIterMut<(),T>,*mut T,&mut T,get_mut_range_iter);
 
-    let mut closest=Closest{closest:None};
-    recc(axis,dt,&mut rtrait,ray,&mut closest);
+    pub fn naive_mut<
+        'a,A:AxisTrait,
+        T:HasAabb,
+        R:RayTrait<T=T,N=T::Num>
+        >(bots:&'a mut [T],mut rtrait:R)->Option<(&'a mut T,T::Num)>{
 
-    match closest.closest{
-        Some(x)=>{
-            let bb=unsafe{&mut *x.0};
-            //let rr=bb.get_mut();
-            //let cc=ColSingle{inner:rr.1,rect:rr.0};
-            
-            Some((bb,x.1))
-        },
-        None=>{
-            None
+        let mut closest=Closest{closest:None};
+
+        for b in bots.iter_mut(){
+            closest.consider(b,&mut rtrait);
         }
-    }    
-}
 
-/*
-pub fn raycast_mut<
-    'a,A:AxisTrait,
-    T,
-    N:NumTrait,
-    R:RayTrait<T=BBox<N,T>,N=N>
-    >(tree:&'a mut DynTree<A,(),BBox<N,T>>,mut ray:Ray<N>,mut rtrait:R)->Option<(BBoxDet<'a,N,T>,N)>{
-    let res=raycast_mut_unchecked(tree,ray,rtrait);
-    res.map(|(a,b)|{
-        (a.destruct(),b)
-    })
+
+        match closest.closest{
+            Some(x)=>{
+                let bb=unsafe{&mut *x.0};
+                //let rr=bb.get_mut();
+                //let cc=ColSingle{inner:rr.1,rect:rr.0};
+                Some((bb,x.1))
+            },
+            None=>{
+                None
+            }
+        }    
+
+    }
+    pub fn raycast_mut<
+        'a,A:AxisTrait,
+        T:HasAabb,
+        R:RayTrait<T=T,N=T::Num>
+        >(tree:&'a mut DynTree<A,(),T>,ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a mut T,T::Num)>{
+        
+        let axis=tree.get_axis();
+        let dt = tree.get_iter_mut().with_depth(Depth(0));
+
+
+        let mut closest=Closest{closest:None};
+        recc(axis,dt,&mut rtrait,ray,&mut closest);
+
+        match closest.closest{
+            Some(x)=>{
+                let bb=unsafe{&mut *x.0};
+                //let rr=bb.get_mut();
+                //let cc=ColSingle{inner:rr.1,rect:rr.0};
+                
+                Some((bb,x.1))
+            },
+            None=>{
+                None
+            }
+        }    
+    }
 }
-*/
 
 
 pub fn raycast<

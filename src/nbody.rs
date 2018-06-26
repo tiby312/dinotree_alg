@@ -25,6 +25,12 @@ pub trait NodeMassTrait:Clone{
 
 
 
+pub fn naive_mut<T:HasAabb>(bots:&mut [T],nm:impl NodeMassTrait<T=T>){
+    tools::for_every_pair(bots,|a,b|{
+        nm.handle_bot_with_bot(a,b);
+    });
+}
+
 
 
 //pseudo code

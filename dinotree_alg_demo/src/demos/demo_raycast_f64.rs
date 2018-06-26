@@ -39,7 +39,7 @@ mod ray_f64{
             dinotree_geom::compute_intersection_tvalue(axis,&ray,line)
         }
 
-        fn compute_distance_bot(&mut self,_depth:Depth,a:&BBox<F64n,()>)->Option<Self::N>{
+        fn compute_distance_bot(&mut self,a:&BBox<F64n,()>)->Option<Self::N>{
             dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
         }
         

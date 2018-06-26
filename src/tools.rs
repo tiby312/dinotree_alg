@@ -2,40 +2,57 @@ use std;
 use std::marker::PhantomData;
 
 
-
-pub fn for_every_pair<T>(rest:&mut [T],mut func: impl FnMut(&mut T,&mut T)){
-    match rest.split_first_mut(){
-        Some((b1,rest))=>{
-            for b2 in rest.iter_mut(){
-                func(b1,b2);
-            } 
-            for_every_pair(rest,func);
-        },
-        None=>{
-
+pub fn for_every_pair<T>(mut arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
+    loop{
+        let temp=arr;
+        match temp.split_first_mut(){
+            Some((b1,x))=>{
+                for b2 in x.iter_mut(){
+                    func(b1,b2);
+                }
+                arr=x;
+            },
+            None=>break
         }
     }
 }
-pub fn for_every_pair_unsafe<T>(arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
-    unsafe{
-        for x in 0..arr.len(){
-            let xx=arr.get_unchecked_mut(x) as *mut T;
-            for j in (x+1)..arr.len(){
-                
-                let j=arr.get_unchecked_mut(j);
-                let xx=&mut*xx;
-                func(xx,j);
+
+
+pub use self::undo_iterator::UndoIterator;
+mod undo_iterator{
+    use smallvec::SmallVec;
+    pub struct UndoIterator<I:Iterator>{
+        it:I,
+        item:SmallVec<[I::Item;2]>
+    }
+
+    impl<I:Iterator> UndoIterator<I>{
+        pub fn new(it:I)->UndoIterator<I>{
+            UndoIterator{it,item:SmallVec::new()}
+        }
+        pub fn add_back(&mut self,item:I::Item){
+            self.item.push(item);
+        }
+
+        //We deliberately do not implement Iterator
+        //since this violates the model of an Iterator
+        //being able to 'put things back' into it.
+        pub fn next(&mut self)->Option<I::Item>{
+            match self.item.pop(){
+                Some(x)=>{
+                    Some(x)
+                },
+                None=>{
+                    self.it.next()
+                }
             }
         }
     }
 }
 
 
-
-
-
 ///A phantom data type that unsafely implements send,sync.
-pub struct PhantomSendSync<T>(pub PhantomData<T>);
+pub(crate) struct PhantomSendSync<T>(pub PhantomData<T>);
 unsafe impl<T> Send for PhantomSendSync<T> {}
 unsafe impl<T> Sync for PhantomSendSync<T> {}
 impl<T> Copy for PhantomSendSync<T> {}
