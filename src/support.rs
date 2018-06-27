@@ -40,7 +40,7 @@ impl<Nu:NumTrait,T> HasAabb for BBox<Nu,T>{
         &self.rect
     }
 }
-
+/*
 use for_every_nearest::HasCenter;
 impl<Nu:NumTrait,T:HasCenter<Num=Nu>> HasCenter for BBox<Nu,T>{
     type Num=Nu;
@@ -48,6 +48,7 @@ impl<Nu:NumTrait,T:HasCenter<Num=Nu>> HasCenter for BBox<Nu,T>{
         self.inner.get_center()
     }
 }
+*/
 impl<Nu:NumTrait,T> BBox<Nu,T>{
     pub fn new(rect:Rect<Nu>,inner:T)->BBox<Nu,T>{
         BBox{rect,inner}

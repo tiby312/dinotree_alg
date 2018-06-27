@@ -60,7 +60,7 @@ pub fn collide_two_rect_parallel<
     T: HasAabb<Num = Num>,
     F: FnMut(&mut T, &mut T),
 >(
-    tree: &'a mut DynTree<A,(),T>,
+    multi: &mut MultiRectMut<'a,A,T>,
     axis:impl AxisTrait, //axis to sort under. not neccesarily the same as dyntree axis
     rect1: &Rect<T::Num>,
     rect2: &Rect<T::Num>,
@@ -75,7 +75,7 @@ pub fn collide_two_rect_parallel<
 		}
 	}
 
-	let mut multi=multi_rect_mut(tree);
+	//let mut multi=multi_rect_mut(tree);
 
 	let mut b1=Vec::new();
 	multi.for_all_in_rect_mut(*rect1,|a|{

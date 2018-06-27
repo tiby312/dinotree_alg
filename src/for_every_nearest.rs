@@ -3,29 +3,24 @@ use inner_prelude::*;
 use dinotree_inner::*;
 use k_nearest::Knearest;
 
-///This center must be inside of the aabb if HasAAbb is already implemented
-///By implementing this, the following must be true:
-///nearest(bot.center)=bot
-pub trait HasCenter{
-    type Num:NumTrait;
-    fn get_center(&self)->&[Self::Num;2];
+///By implementing this, the aabb returned by this object must be such that
+///the left and right x vales are the same and the left and right y values are the same.
+pub trait IsPoint:HasAabb{
+	fn get_center(&self)->[Self::Num;2]{
+		let r=self.get();
+		[r.as_axis().get(axgeom::XAXISS).left,r.as_axis().get(axgeom::YAXISS).left]
+	}
 }
 
 
-///Only in certain cases is it true that if a nearest bot B to the center of bot A then 
-///the nearest bot to bot B's center is also A.
-///Only use this function if this is true.
-///For example, the tree is full of circles of the same size.
-///Tree is full of squares that are rotated the same and are the samse size.
-///In most cases, where bots have varied aabb's, this fuction cannot be used.
-///because in most cases if nearest(A.center)=B then its not true that nearest(B.center)=A.
-
 ///Here we exploit the fact that if the nearest bot to a bot A is B, then the nearest bot to B is A.
-///By exploiting this propety, then halves the numbers of knearest() queries that need to be done.
+///Finding the nearest distance between two shapes is difficult, and not implemented here.
+///Finding the nearest distance betweeen two points is easy.
+///By exploiting this propety that B.nearest()=A.nearest(), we can half the numbers of knearest() queries that need to be done.
 ///This function is implemented simply, by iterating thorugh all the bots and calling knearest on it.
 ///I think there room for improvement here. I think it can be turned into a divider and conquer type problem.
 ///But it is difficult to know which nodes to exclude. The "nearest" is specifcally a 2d problem. hard to split into 1d.
-pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:HasAabb<Num=N>+HasCenter<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
+pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
 	let mut already_hit:Vec<*const T>=Vec::with_capacity(tree.tree.get_num_bots()/2);
 
 	let tree2=tree as *mut DynTree<A,(),T>;
@@ -42,7 +37,7 @@ pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:HasAabb<Num=N>+HasCenter<N
 	        //We query for the 2 nearest because one that will be returned is itself.
 			//If the current bot and its nearest are on top of each other,
 	        //its entirely possible for the current bot to be returned second.
-	        k_nearest::k_nearest_mut(tree2,*b.get_center(),2,kn,|a,bb|{
+	        k_nearest::k_nearest_mut(tree2,b.get_center(),2,kn,|a,bb|{
         		if a as *const T!=b as *const T{
         			nearest_bot=Some((a,bb))
         		}

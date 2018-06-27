@@ -2,7 +2,7 @@ use support::prelude::*;
 use dinotree::k_nearest;
 use dinotree::for_every_nearest;
 
-use dinotree::for_every_nearest::HasCenter;
+use dinotree::for_every_nearest::IsPoint;
 
 use dinotree_geom;
 
@@ -15,7 +15,6 @@ pub struct Bot{
     pub pos:[f64;2],
     pub vel:[f64;2],
     pub acc:[f64;2],
-    pub radius:[f64;2],
 }
 
 impl Bot{
@@ -42,7 +41,7 @@ impl KnearestEveryDemo{
         let radius=[5,6];
         let velocity=[1,3];
         let bots=create_world_generator(100,dim2,radius,velocity).map(|ret|{
-            Bot{id:ret.id,pos:ret.pos,vel:ret.vel,radius:ret.radius,acc:[0.0;2]}
+            Bot{id:ret.id,pos:ret.pos,vel:ret.vel,acc:[0.0;2]}
         }).collect();
 
         KnearestEveryDemo{bots,dim}
@@ -61,16 +60,12 @@ impl DemoSys for KnearestEveryDemo{
         {
             
             pub struct BInner{
-                center:[F64n;2],
                 acc:[f64;2],
                 rect:axgeom::Rect<F64n>
             }
 
-            impl HasCenter for BInner{
-                type Num=F64n;
-                fn get_center(&self)->&[F64n;2]{
-                    &self.center
-                }
+            impl IsPoint for BInner{
+                
             }
             impl HasAabb for BInner{
                 type Num=F64n;
@@ -107,24 +102,25 @@ impl DemoSys for KnearestEveryDemo{
 
             let mut tree=DynTree::new(axgeom::YAXISS,(),bots.iter().map(|bot|{
                 let p=bot.pos;
-                let r=bot.radius;
                 let acc=bot.acc;
-                let center=[f64n!(p[0]),f64n!(p[1])];
-                BInner{acc,rect:Conv::from_rect(aabb_from_pointf64(p,r)),center}          
+                BInner{acc,rect:Conv::from_rect(aabb_from_pointf64(p,[0.0;2]))}          
             }));
 
             for a in tree.iter(){
-                draw_rect_f64n([0.0,1.0,0.0,0.5],a.get(),c,g);
+                let p=Conv::point_to_inner(a.get_center());
+                let r=5.0;
+                let r=Conv::from_rect(aabb_from_pointf64(p,[r;2]));
+                draw_rect_f64n([0.0,1.0,0.0,0.5],&r,c,g);
             } 
 
             for_every_nearest::for_every_nearest_mut(&mut tree,|a,b,_dis|{
-                let p1=*a.get_center();
-                let p2=*b.get_center();
+                let p1=a.get_center();
+                let p2=b.get_center();
                 let p1=[p1[0].into_inner(),p1[1].into_inner()];
                 let p2=[p2[0].into_inner(),p2[1].into_inner()];
                 
-                let diff=[(p2[0]-p1[0])*0.0005,
-                            (p2[1]-p1[1])*0.0005];
+                let diff=[(p2[0]-p1[0])*0.001,
+                            (p2[1]-p1[1])*0.001];
                 a.acc[0]+=diff[0];
                 a.acc[1]+=diff[1];
                 b.acc[0]-=diff[0];
