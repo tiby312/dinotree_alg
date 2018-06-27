@@ -121,6 +121,7 @@ impl DemoSys for KnearestEveryDemo{
                 
                 let diff=[(p2[0]-p1[0])*0.001,
                             (p2[1]-p1[1])*0.001];
+                            
                 a.acc[0]+=diff[0];
                 a.acc[1]+=diff[1];
                 b.acc[0]-=diff[0];
