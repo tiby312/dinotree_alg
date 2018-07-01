@@ -44,15 +44,14 @@ mod demo_iter{
                 self.0=0
             }
             match curr{
-                0=>{Box::new(data_theory::theory_colfind::DataColFind::new(area))},
-                1=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
-                3=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
-                4=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
-                5=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
-                6=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                7=>{Box::new(demo_intersect_pair::IntersectEveryDemo::new(area))}
-                8=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
+                0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
+                1=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
+                2=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
+                3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
+                4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
+                5=>{Box::new(demo_nbody::DemoNbody::new(area))},
+                6=>{Box::new(demo_intersect_pair::IntersectEveryDemo::new(area))}
+                7=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
                 _=>{panic!("Not possible")}
             }
         }
@@ -75,40 +74,44 @@ fn main(){
 
     let mut demo_iter=demo_iter::DemoIter::new();
     
-    let mut curr=match args[1].trim(){
-        "data"=>{
-            match args[2].trim(){
-                "bench-colfind"=>{
-                    let area=[area[0] as f64,area[1] as f64];
-            
-                    let k:Box<DemoSys>=Box::new(data_bench::bench_colfind::DataColFind::new(area));
-                    k
-                },
-                "theory-colfind"=>{
-                    let area=[area[0] as f64,area[1] as f64];
-            
-                    let k:Box<DemoSys>=Box::new(data_theory::theory_colfind::DataColFind::new(area));
-                    k
-                },
-                "theory-colfind-3d"=>{
-                    let area=[area[0] as f64,area[1] as f64];
-            
-                    let k:Box<DemoSys>=Box::new(data_theory::theory_colfind_3d::DataColFind3d::new(area));
-                    k
-                },
-                "theory-sweep-3d"=>{
-                    let area=[area[0] as f64,area[1] as f64];
-            
-                    let k:Box<DemoSys>=Box::new(data_theory::theory_sweep_3d::DataColFind3d::new(area));
-                    k
-                },
-                _=>{
-                    panic!("unknown arg");
-                }
-            }
-        },
-        _=>{
+    let mut curr=if args.len()==1{
             demo_iter.next(area)
+    }else{
+        match args[1].trim(){
+            "data"=>{
+                match args[2].trim(){
+                    "bench-colfind"=>{
+                        let area=[area[0] as f64,area[1] as f64];
+                
+                        let k:Box<DemoSys>=Box::new(data_bench::bench_colfind::DataColFind::new(area));
+                        k
+                    },
+                    "theory-colfind"=>{
+                        let area=[area[0] as f64,area[1] as f64];
+                
+                        let k:Box<DemoSys>=Box::new(data_theory::theory_colfind::DataColFind::new(area));
+                        k
+                    },
+                    "theory-colfind-3d"=>{
+                        let area=[area[0] as f64,area[1] as f64];
+                
+                        let k:Box<DemoSys>=Box::new(data_theory::theory_colfind_3d::DataColFind3d::new(area));
+                        k
+                    },
+                    "theory-sweep-3d"=>{
+                        let area=[area[0] as f64,area[1] as f64];
+                
+                        let k:Box<DemoSys>=Box::new(data_theory::theory_sweep_3d::DataColFind3d::new(area));
+                        k
+                    },
+                    _=>{
+                        panic!("unknown arg");
+                    }
+                }
+            },
+            _=>{
+                panic!("unknown arg");
+            }
         }
     };
 

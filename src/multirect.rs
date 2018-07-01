@@ -91,14 +91,14 @@ pub fn collide_two_rect_parallel<
     sweeper_update(axis,&mut b2);
     
 
-    let mut sweeper = oned::mod_mut::Sweeper::new();
+    let mut sweeper = oned::Sweeper::new();
 
     struct Bl<T:HasAabb,F:FnMut(&mut T,&mut T)> {
         a: F,
         _p:PhantomData<T>
     }
 
-    impl<T:HasAabb,F:FnMut(&mut T,&mut T)> colfind::mutable::ColMulti for Bl<T,F> {
+    impl<T:HasAabb,F:FnMut(&mut T,&mut T)> colfind::ColMulti for Bl<T,F> {
         type T = T;
 
         fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {

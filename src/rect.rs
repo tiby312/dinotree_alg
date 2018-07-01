@@ -15,8 +15,10 @@ macro_rules! get_slice{
     }}
 }
 
+
+
 macro_rules! rect{
-    ($iterator:ty,$colsingle:ty,$sweeper:ty,$get_range:ident)=>{     
+    ($iterator:ty,$colsingle:ty,$get_section:ident,$get_range:ident)=>{     
         fn rect_recurse<
             A: AxisTrait,
             T: HasAabb,
@@ -25,12 +27,11 @@ macro_rules! rect{
             this_axis: A,
             m: $iterator,
             rect: &Rect<T::Num>,
-            func: &mut F,
-            sweeper:&mut $sweeper
+            func: &mut F
         ) {
             let (nn, rest) = m.next();
             {
-                let sl = sweeper.get_section(this_axis.next(),$get_range!(nn.range), rect.as_axis().get(this_axis.next()));
+                let sl = $get_section(this_axis.next(),$get_range!(nn.range), rect.as_axis().get(this_axis.next()));
 
                 for i in sl {
                     func(i);
@@ -46,10 +47,10 @@ macro_rules! rect{
                     let rr = rect.as_axis().get(this_axis);
 
                     if !(div < rr.left) {
-                        self::rect_recurse(this_axis.next(), left, rect, func,sweeper);
+                        self::rect_recurse(this_axis.next(), left, rect, func);
                     }
                     if !(div > rr.right) {
-                        self::rect_recurse(this_axis.next(), right, rect, func,sweeper);
+                        self::rect_recurse(this_axis.next(), right, rect, func);
                     }
                 }
                 _ => {}
@@ -72,8 +73,9 @@ pub use self::constant::for_all_in_rect;
 
 
 mod mutable{
+    use oned::get_section_mut;
     use super::*;
-    rect!(NdIterMut<(),T>,&mut T,oned::mod_mut::Sweeper<T>,get_mut_slice);
+    rect!(NdIterMut<(),T>,&mut T,get_section_mut,get_mut_slice);
     pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
         tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
@@ -88,8 +90,7 @@ mod mutable{
         let axis=tree.get_axis();
         let ta = tree.get_iter_mut();
 
-        let mut sweeper=oned::mod_mut::Sweeper::new();
-        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
+        self::rect_recurse(axis, ta, rect, &mut f);
     }
 
     pub fn naive_for_all_in_rect_mut<T: HasAabb, F: FnMut(&mut T)>(
@@ -129,14 +130,15 @@ mod mutable{
         };
         let axis=tree.get_axis();
         let ta = tree.get_iter_mut();
-        let mut sweeper=oned::mod_mut::Sweeper::new();
-        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
+        self::rect_recurse(axis, ta, rect, &mut f);
     }
 
 }
 mod constant{
+
+    use oned::get_section;
     use super::*;
-    rect!(NdIter<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice);
+    rect!(NdIter<(),T>,&T,get_section,get_slice);
     //rect!(NdIter<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
     pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(
@@ -152,8 +154,7 @@ mod constant{
         };
         let axis=tree.get_axis();
         let ta = tree.get_iter();
-        let mut sweeper=oned::mod_const::Sweeper::new();
-        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
+        self::rect_recurse(axis, ta, rect, &mut f);
     }
 
     pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
@@ -170,8 +171,7 @@ mod constant{
 
         let axis=tree.get_axis();
         let ta = tree.get_iter();
-        let mut sweeper=oned::mod_const::Sweeper::new();
-        self::rect_recurse(axis, ta, rect, &mut f,&mut sweeper);
+        self::rect_recurse(axis, ta, rect, &mut f);
     }
 
 }
