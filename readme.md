@@ -16,6 +16,10 @@ in which the collision finding functionality was being provided. Does not suffer
 
 
 #
+Ideally you only construct the bounding box for the duration that you use the tree.
+This way, the algorithms that dont use the bounding box have better spatial locality in memory.
+
+#
 let X be the random variable destrbing whether or not two bots collide.
 Becuase the two bots are indenentantly placed in the word uniformly, we can say:
 P(X)=(bot_width/dim_x)^2*(bot_height/dim_y)^2

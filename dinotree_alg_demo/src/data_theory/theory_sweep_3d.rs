@@ -61,7 +61,7 @@ pub fn test(s:SpiralGenerator,num_bots:usize)->usize{
         
 
 
-        colfind::sweep_mut(axgeom::XAXISS,&mut bb,|a, b| {
+        colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a, b| {
             a.inner.num+=2;
             b.inner.num+=2;
             let a=datanum::into_rect(*a.get());

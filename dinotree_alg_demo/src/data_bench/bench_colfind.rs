@@ -152,7 +152,7 @@ impl DemoSys for DataColFind{
                 b
             }).collect();
 
-            colfind::sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
+            colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
                 a.inner.num-=2;
                 b.inner.num-=2;
             });

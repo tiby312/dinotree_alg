@@ -78,7 +78,7 @@ impl DemoSys for DataColFind{
                 BBox::new(datanum::from_rect(&mut counter,*b.get()),b.inner)
             }).collect();
 
-            colfind::naive_mut(&mut bb,|a,b|{
+            colfind::query_naive_mut(&mut bb,|a,b|{
                 a.inner.num-=1;
                 b.inner.num-=1;
             });
@@ -97,7 +97,7 @@ impl DemoSys for DataColFind{
                 BBox::new(datanum::from_rect(&mut counter,*b.get()),b.inner)
             }).collect();
 
-            colfind::sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
+            colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
                 a.inner.num-=1;
                 b.inner.num-=1;
             });
