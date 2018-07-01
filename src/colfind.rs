@@ -2,10 +2,18 @@ use inner_prelude::*;
 use oned;
 use dinotree_inner::par::Joiner;
 
+///Naive version.
+pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
+    tools::for_every_pair(bots,|a,b|{
+        if a.get().get_intersect_rect(b.get()).is_some(){
+            func(a,b);
+        }
+    });
+}
 
 
-
-pub fn sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(&mut T,&mut T)){  
+///Sweep and prune algorithm.
+pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(&mut T,&mut T)){  
     ///Sorts the bots.
     fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
@@ -44,18 +52,8 @@ pub fn sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(&m
 
     let mut s=oned::Sweeper::new();
     s.find_2d(axis,bots,Bl{func,_p:PhantomData});
-
-
 }
 
-
-pub fn naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
-    tools::for_every_pair(bots,|a,b|{
-        if a.get().get_intersect_rect(b.get()).is_some(){
-            func(a,b);
-        }
-    });
-}
 
 
 
@@ -319,11 +317,6 @@ impl<'a, C: ColMulti + 'a> ColMulti for ColMultiWrapper<'a, C> {
 }
 
 
-
-    
-
-
-
 //TODO implement
 mod todo{
     use super::*;
@@ -396,7 +389,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl 
     let wrap=wrap::Wrapper(&mut func,PhantomData);
 
     let tree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(tree)};
-    self::for_every_col_pair_mut::<_,_, _, _, TreeTimerEmpty>(
+    self::query_par_adv_mut::<_,_, _, _, TreeTimerEmpty>(
         par::Sequential,
         tree,
         wrap,
@@ -428,14 +421,16 @@ pub fn query_par_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:
         Depth(height-DEPTH_SEQ)
     };
 
-    self::for_every_col_pair_mut::<_,_, _, _, TreeTimerEmpty>(
+    self::query_par_adv_mut::<_,_, _, _, TreeTimerEmpty>(
         par::Parallel::new(gg),
         tree,
         clos,
     );        
 }
 
-pub fn for_every_col_pair_mut<
+///The user has more control using this version of the query.
+///It also returns time information.
+pub fn query_par_adv_mut<
     A: AxisTrait,
     JJ: par::Joiner,
     T: HasAabb+Send,

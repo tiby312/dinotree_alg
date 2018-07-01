@@ -5,12 +5,7 @@
 
 
 use inner_prelude::*;
-//pub use dinotree_inner::compute_tree_height;
-pub use compt::compute_num_nodes;
-pub use axgeom::AxisTrait;
-pub use axgeom::XAXISS;
-pub use axgeom::YAXISS;
-pub use dinotree_inner::*;
+use dinotree_inner::*;
 
 
 pub trait DividerDrawer{

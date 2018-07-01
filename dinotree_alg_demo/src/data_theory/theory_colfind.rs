@@ -19,11 +19,10 @@ impl DataColFind{
         DataColFind{num_bots:0,wtr}
     }
 }
-/*
-pub testy(func:impl FnMut(&mut Vec<Bot>)->usize,naive:impl FnMut(&mut Vec<Bot>)){
 
-}
-*/
+
+
+
 impl DemoSys for DataColFind{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
 
