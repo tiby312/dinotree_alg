@@ -457,7 +457,7 @@ pub fn for_every_col_pair_mut<
 }
 
 
-pub mod closure_struct {
+mod closure_struct {
     use super::*;
 
     pub struct ColMultiStruct<

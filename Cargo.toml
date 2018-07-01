@@ -14,7 +14,7 @@ piston_window = "*"
 
 [dependencies]
 rayon = "1.0.1"
-pdqselect = "0.1.0"
+#pdqselect = "0.1.0"
 compt = {path="../compt"}
 axgeom = {path="../axgeom"}
 smallvec = "0.6.1"

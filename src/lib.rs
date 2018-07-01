@@ -37,7 +37,7 @@
 
 extern crate axgeom;
 extern crate compt;
-extern crate pdqselect;
+//extern crate pdqselect;
 extern crate rayon;
 extern crate smallvec;
 extern crate dinotree_inner;
