@@ -101,79 +101,10 @@ mod oned;
 ///Contains misc tools
 pub mod tools;
 
-//pub use rects::Rects;
-//pub use rects::RectIntersectError;
-//mod rects;
 
-//use dinotree_inner::support::DefaultDepthLevel;
-//pub use dinotree_inner::AABBox;
 pub use dinotree_inner::NumTrait;
 pub use dinotree_inner::HasAabb;
 use dinotree_inner::treetimer::TreeTimerTrait;
 use axgeom::Rect;
-//use axgeom::XAXISS;
-//use axgeom::YAXISS;
 use smallvec::SmallVec;
-//use dinotree_inner::treetimer::TreeTimer2;
 use dinotree_inner::treetimer::TreeTimerEmpty;
-
-/*
-pub struct DynTreeExt<A:AxisTrait,T:HasAabb>{
-    tree:*mut DynTree<A,(),T>,
-    used_bots:Vec<*mut T> 
-}
-impl<A:AxisTrait,T:HasAabb> DynTreeExt<A,T>{
-    pub fn k_nearest<
-
-        K:k_nearest::Knearest<N=T::Num,T=T>>(
-                &mut self,
-                point:[T::Num;2],
-                num_find:usize,
-                knear:K,mut func:impl FnMut(Option<(&mut T,K::D)>)){
-
-        let tree=unsafe{&mut*self.tree};
-        
-        let used_bots=&mut self.used_bots;
-        k_nearest::k_nearest_mut(tree,point,num_find+1,knear,|a,dis|{
-            if used_bots.contains(&(a as *mut T)){
-                func(None)
-            }else{
-                func(Some((a,dis)))
-            }
-        });
-    }
-
-    pub fn for_all_intersect_rect_mut(
-        &mut self,
-        rect: &Rect<T::Num>,
-        mut func: impl FnMut(Option<&mut T>),
-    ) {
-
-        let tree=unsafe{&mut*self.tree};
-        
-        let used_bots=&mut self.used_bots;
-        rect::for_all_intersect_rect_mut(tree,rect,|a|{
-            if used_bots.contains(&(a as *mut T)){
-                func(None)
-            }else{
-                func(Some(a))
-            }
-        });
-    }
-    
-    pub fn raycast<R:raycast::RayTrait<T=T,N=T::Num>>(&mut self,mut ray:raycast::Ray<T::Num>,mut rtrait:R){
-        unimplemented!();
-    }
-}
-
-
-pub fn iter_mut_special<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut DynTreeExt<A,T>)){
-   let tree2=tree as *mut DynTree<A,(),T>;
-   for bot in tree.get_iter_mut().dfs_preorder_iter().flat_map(|a|a.range.iter_mut()){
-        let mut used_bots=Vec::new();
-        used_bots.push(bot as *mut T);
-        let mut d=DynTreeExt{tree:tree2,used_bots};
-        func(bot,&mut d);
-   }
-}
-*/

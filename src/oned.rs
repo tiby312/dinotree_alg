@@ -13,7 +13,7 @@ impl<A: AxisTrait, F: ColMulti> ColMulti for Bl<A, F> {
         //only check if the opoosite axis intersects.
         //already know they intersect
         let a2 = self.axis.next();
-        if a.get().as_axis().get(a2).intersects(b.get().as_axis().get(a2))
+        if a.get().get_range(a2).intersects(b.get().get_range(a2))
         {
             self.a.collide(a, b);
         }
@@ -125,10 +125,10 @@ impl<I: HasAabb> Sweeper<I> {
         for curr_bot in collision_botids.iter_mut() {
             {
                 {
-                    let crr = curr_bot.get().as_axis().get(axis);
+                    let crr = curr_bot.get().get_range(axis);
                     //change this to do retain and then iter
                     active.retain(|that_bot| {
-                        let brr = that_bot.get().as_axis().get(axis);
+                        let brr = that_bot.get().get_range(axis);
 
                         if brr.right < crr.left {
                             false
@@ -140,7 +140,7 @@ impl<I: HasAabb> Sweeper<I> {
 
                 for that_bot in active.iter_mut() {
                     
-                    debug_assert!(curr_bot.get().as_axis().get(axis).intersects(that_bot.get().as_axis().get(axis)));
+                    debug_assert!(curr_bot.get().get_range(axis).intersects(that_bot.get().get_range(axis)));
                 
                     func.collide(curr_bot, that_bot);
                 }
@@ -169,7 +169,7 @@ impl<I: HasAabb> Sweeper<I> {
             loop{
                 match xs.next(){
                     Some(x)=>{
-                        if x.get().as_axis().get(axis).left > y.get().as_axis().get(axis).right{
+                        if x.get().get_range(axis).left > y.get().get_range(axis).right{
                             xs.add_back(x);
                             break;
                         }else{
@@ -184,8 +184,8 @@ impl<I: HasAabb> Sweeper<I> {
 
             //Prune all the x's that are no longer touching the y.
             active_x.retain(|x: &mut &mut I| {
-                if x.get().as_axis().get(axis).right
-                    < y.get().as_axis().get(axis).left
+                if x.get().get_range(axis).right
+                    < y.get().get_range(axis).left
                 {
                     false
                 } else {
@@ -199,11 +199,11 @@ impl<I: HasAabb> Sweeper<I> {
             //That is why we have that condition to break out of the below loop
 
             for x in active_x.iter_mut() {
-                if x.get().as_axis().get(axis).left>y.get().as_axis().get(axis).right{
+                if x.get().get_range(axis).left>y.get().get_range(axis).right{
                     break;
                 }
 
-                debug_assert!(x.get().as_axis().get(axis).intersects(y.get().as_axis().get(axis)));
+                debug_assert!(x.get().get_range(axis).intersects(y.get().get_range(axis)));
                 func.collide(x, y);
             }
         }
@@ -217,7 +217,7 @@ impl<I: HasAabb> Sweeper<I> {
 pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Range<I::Num>) -> &'a [I] {
     let mut start = 0;
     for (e, i) in arr.iter().enumerate() {
-        let rr = i.get().as_axis().get(axis);
+        let rr = i.get().get_range(axis);
         if rr.right >= range.left {
             start = e;
             break;
@@ -226,7 +226,7 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Rang
 
     let mut end = arr.len();
     for (e, i) in arr[start..].iter().enumerate() {
-        let rr = i.get().as_axis().get(axis);
+        let rr = i.get().get_range(axis);
         if rr.left > range.right {
             end = start + e;
             break;
@@ -241,7 +241,7 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Rang
 pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut [I], range: &Range<I::Num>) -> &'a mut [I] {
     let mut start = 0;
     for (e, i) in arr.iter().enumerate() {
-        let rr = i.get().as_axis().get(axis);
+        let rr = i.get().get_range(axis);
         if rr.right >= range.left {
             start = e;
             break;
@@ -250,7 +250,7 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut [I], rang
 
     let mut end = arr.len();
     for (e, i) in arr[start..].iter().enumerate() {
-        let rr = i.get().as_axis().get(axis);
+        let rr = i.get().get_range(axis);
         if rr.left > range.right {
             end = start + e;
             break;

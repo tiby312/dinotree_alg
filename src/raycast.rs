@@ -200,7 +200,7 @@ macro_rules! raycast{
                                 match rtrait.compute_intersection_range(axis,ff){
                                     Some((a,b))=>{
                                         for bot in $get_iter!(nn.range){
-                                            let rang=*bot.get().as_axis().get(axis.next());
+                                            let rang=*bot.get().get_range(axis.next());
                                             if rang.left>b{
                                                 break;
                                             }

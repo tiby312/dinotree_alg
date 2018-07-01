@@ -188,7 +188,7 @@ macro_rules! knearest_recc{
                                         }
 
                                         let [leftbot,rightbot]={
-                                            [bot.get().as_axis().get(axis.next()).left,bot.get().as_axis().get(axis.next()).right]
+                                            [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
                                         };
                                         
                                         if leftbot>rightr{
@@ -221,7 +221,7 @@ macro_rules! knearest_recc{
                                 let [_leftr,rightr]=knear.create_range(ppother,dis);
 
                                 let [leftbot,_rightbot]={
-                                    [bot.get().as_axis().get(axis.next()).left,bot.get().as_axis().get(axis.next()).right]
+                                    [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
                                 };
                                 
                                 if leftbot>rightr{
