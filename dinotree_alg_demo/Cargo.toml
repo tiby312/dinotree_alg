@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 
 [dependencies]
+serde = "*"
+serde_derive = "*"
+csv="*"
 rayon="*"
 compt={path="../../compt"}
 dinotree_geom={path="../../dinotree_geom"}

@@ -16,6 +16,59 @@ in which the collision finding functionality was being provided. Does not suffer
 
 
 #
+let X be the random variable destrbing whether or not two bots collide.
+Becuase the two bots are indenentantly placed in the word uniformly, we can say:
+P(X)=(bot_width/dim_x)^2*(bot_height/dim_y)^2
+Because X only has the values true or false, E[X]=P(X).
+
+let Y be the random variable describing the number of bots colliding.
+So Y=X1+X2+X3..Xn where n is the number of pairs of bots.
+Or Y=X*(n choose 2) where n is the number of bots.
+Each of these events is independant, and identical to each other.
+Exploiting the linearity property of the expected value, 
+E[Y]=E[X*(n choose 2)]=(n choose 2)*E[X]
+
+What we want to find is the average number of bots colliding for a particular point
+in the 2d space (lets call this L). So we simply divide the number of bots colliding by the area.
+E[L]=E[Y]/(dim_x*dim_y)
+
+E[L]=(n choose 2)*E[X]/(dim_x*dim_y)
+E[L]=(n choose 2)*( (bot_width/dim_x)^2*(bot_height/dim_y)^2 ) /( dim_x*dim_y)
+Simplifying this much further is hard.
+Let as make an assumption that the word and the bots are square.
+E[L]=(n choose 2)*( (bot_width/dim_x)^2*(bot_width/dim_x)^2 ) /(dim_x*dim_x)
+E[L]=(n choose 2)*( (bot_width/dim_x)^4 ) /(dim_x^2)
+E[L]=(n choose 2)* bot_width^4 / dim_x^2
+
+So now if we fix any of the 3 variabes, we can calculate the third.
+Lets solve for the dim.
+
+dim_x^2=(n choose 2)* bot_width^4 /E[L]
+dim_x=sqrt((n choose 2)* bot_width^4 /E[L])
+
+
+ Now lets sanity check.
+ If we plug in:
+ n=100*100.
+ bot_width=1;
+ E[L]=1;
+ we should get 100 back.
+
+#
+It's important that if we write a test over n, we dont not inadvertatly influence other variables.
+As n grows, if we keep adding bots to the same enclosed space, then they will overlap more.
+What we want to test is what happens as n grows, and density stays roughly the same.
+I tried to come up with a formula to calculate the dimensions needed for given desntiy and number of bots,
+with a random distribution, but couldnt come up with it. If some one could help that would be great.
+Instead, I used a simple spiral. It grows from the center, adding bots as it goes.
+
+
+
+
+
+
+
+#
 The main point is that no arithmatic is done. Use must supply this.
 
 # The Data Structure itself

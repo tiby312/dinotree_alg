@@ -4,7 +4,52 @@ use dinotree_inner::par::Joiner;
 
 
 
-pub fn naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&T,&T)){
+
+pub fn sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){  
+    ///Sorts the bots.
+    fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
+
+        let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
+            let (p1,p2)=(a.get().as_axis().get(axis).left,b.get().as_axis().get(axis).left);
+            if p1 > p2 {
+                return std::cmp::Ordering::Greater;
+            }
+            std::cmp::Ordering::Less
+        };
+
+        collision_botids.sort_unstable_by(sclosure);
+    }
+
+    sweeper_update(axis,bots);
+
+
+    struct Bl<T:HasAabb,F: FnMut(&mut T,&mut T)> {
+        func: F,
+        _p:PhantomData<T>
+    }
+
+    impl<T:HasAabb,F: FnMut(&mut T,&mut T)> colfind::mutable::ColMulti for Bl<T,F> {
+        type T = T;
+
+        fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {    
+            (self.func)(a, b);
+        }
+        fn div(self)->(Self,Self){
+            unreachable!();
+        }
+        fn add(self,_:Self)->Self{
+            unreachable!();
+        }   
+    }
+
+    let mut s=oned::mod_mut::Sweeper::new();
+    s.find_2d(axis,bots,Bl{func,_p:PhantomData});
+
+
+}
+
+
+pub fn naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,|a,b|{
         if a.get().get_intersect_rect(b.get()).is_some(){
             func(a,b);
@@ -183,6 +228,7 @@ macro_rules! recurse{
                     let (ta, tb) = timer_log.next();
 
                     let (clos,ta, tb) = if !par.should_switch_to_sequential(level) {
+                        //println!("parallel! {:?}",level.0);
                         let (mut aa,mut bb)=clos.div();
 
                         let af = || {
@@ -215,6 +261,7 @@ macro_rules! recurse{
                         let a=ta.0.add(tb.0);
                         (a,ta.1, tb.1)
                     } else {
+                        //println!("sequential! {:?}",level.0);
                         let (clos,ta) = self::recurse(
                             this_axis.next(),
                             par.into_seq(),
@@ -532,7 +579,7 @@ pub fn query_par<A:AxisTrait,T:HasAabb+Send>(tree:&DynTree<A,(),T>,func:impl Fn(
 
 
 
-    const DEPTH_SEQ:usize=4;
+    const DEPTH_SEQ:usize=6;
 
     let height=tree.get_height();
     let gg=if height<=DEPTH_SEQ{

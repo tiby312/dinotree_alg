@@ -8,11 +8,18 @@ extern crate ordered_float;
 extern crate dinotree_inner;
 extern crate rayon;
 extern crate dinotree_geom;
+extern crate csv;
+
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 use piston_window::*;
 #[macro_use]
 pub(crate) mod support;
 pub(crate) mod demos;
+pub(crate) mod data_theory;
+pub(crate) mod data_bench;
 
 pub trait DemoSys{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d);
@@ -37,20 +44,26 @@ mod demo_iter{
                 self.0=0
             }
             match curr{
-                0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                1=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
-                2=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
-                3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
-                4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
-                5=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                6=>{Box::new(demo_intersect_pair::IntersectEveryDemo::new(area))}
-                7=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
+                0=>{Box::new(data_theory::theory_colfind::DataColFind::new(area))},
+                1=>{Box::new(demo_knearest::KnearestDemo::new(area))},
+                2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
+                3=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
+                4=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
+                5=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
+                6=>{Box::new(demo_nbody::DemoNbody::new(area))},
+                7=>{Box::new(demo_intersect_pair::IntersectEveryDemo::new(area))}
+                8=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
                 _=>{panic!("Not possible")}
             }
         }
     }
 }
+
+use std::env;
+
 fn main(){
+    let args: Vec<String> = env::args().collect();
+    
     let area=[1024u32,768];
 
     let mut window: PistonWindow = WindowSettings::new("dinotree test",area)
@@ -59,11 +72,51 @@ fn main(){
         .unwrap();
 
 
+
     let mut demo_iter=demo_iter::DemoIter::new();
+    
+    let mut curr=match args[1].trim(){
+        "data"=>{
+            match args[2].trim(){
+                "bench-colfind"=>{
+                    let area=[area[0] as f64,area[1] as f64];
+            
+                    let k:Box<DemoSys>=Box::new(data_bench::bench_colfind::DataColFind::new(area));
+                    k
+                },
+                "theory-colfind"=>{
+                    let area=[area[0] as f64,area[1] as f64];
+            
+                    let k:Box<DemoSys>=Box::new(data_theory::theory_colfind::DataColFind::new(area));
+                    k
+                },
+                "theory-colfind-3d"=>{
+                    let area=[area[0] as f64,area[1] as f64];
+            
+                    let k:Box<DemoSys>=Box::new(data_theory::theory_colfind_3d::DataColFind3d::new(area));
+                    k
+                },
+                "theory-sweep-3d"=>{
+                    let area=[area[0] as f64,area[1] as f64];
+            
+                    let k:Box<DemoSys>=Box::new(data_theory::theory_sweep_3d::DataColFind3d::new(area));
+                    k
+                },
+                _=>{
+                    panic!("unknown arg");
+                }
+            }
+        },
+        _=>{
+            demo_iter.next(area)
+        }
+    };
+
+    
+    
     
     let mut cursor=[0.0,0.0];
 
-    let mut curr=demo_iter.next(area);
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
             cursor = [x, y];
@@ -72,7 +125,7 @@ fn main(){
             if key == Key::C {
                 curr=demo_iter.next(area);
             }
-            println!("Pressed keyboard key '{:?}'", key);
+            //println!("Pressed keyboard key '{:?}'", key);
         };
 
         window.draw_2d(&e, |c, mut g| {
@@ -81,4 +134,5 @@ fn main(){
             curr.step(cursor,&c,&mut g);
         });
     }
+    
 }
