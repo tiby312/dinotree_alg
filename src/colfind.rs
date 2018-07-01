@@ -119,7 +119,8 @@ fn go_down<
             let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
 
             let r2=if rest.is_some(){
-                //let this_box=nn.cont.unwrap();
+
+                //This node could possible not have bots in it.
                 match &nn.cont{
                     Some(cont)=>{
                         oned::get_section_mut(this_axis,anchor_bots, cont)       

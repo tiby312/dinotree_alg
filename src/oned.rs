@@ -181,24 +181,6 @@ impl<I: HasAabb> Sweeper<I> {
                     }
                 }
             }
-            /*
-            while xs.peek().is_some() {
-                unsafe{
-                    let v = {
-                        let x = xs.peek().unsafe_unwrap();
-                        x.get().as_axis().get(axis).left
-                            > y.get().as_axis().get(axis).right
-                    };
-                    if v {
-                        break;
-                    } else {
-                        active_x.push(xs.next().unsafe_unwrap());
-                    }
-                }
-            }
-            */
-
-            
 
             //Prune all the x's that are no longer touching the y.
             active_x.retain(|x: &mut &mut I| {
