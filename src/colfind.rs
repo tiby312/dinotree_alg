@@ -94,10 +94,10 @@ fn go_down<
         },
         compt::LeafEx::NonLeaf((nonleaf,left,right))=>{
             match nonleaf{
-                NonLeafDynMut::NoBotsHereOrBelow=>{
+                NonLeafDynMut::NoBotsHereOrBelow(_)=>{
                     return;
                 },
-                NonLeafDynMut::Bots(bots,cont,div)=>{
+                NonLeafDynMut::Bots(bots,cont,div,_)=>{
                     {
                         let func=ColMultiWrapper(func);
                         if !this_axis.is_equal_to(anchor_axis) {
@@ -171,11 +171,11 @@ fn recurse<
         },
         compt::LeafEx::NonLeaf((nonleaf,mut left,mut right))=>{
             match nonleaf{
-                NonLeafDynMut::NoBotsHereOrBelow=>{
+                NonLeafDynMut::NoBotsHereOrBelow(_)=>{
                    //Dont even need to recurse futher down.
                     return (clos,timer_log.leaf_finish())
                 },
-                NonLeafDynMut::Bots(bots,cont,div)=>{
+                NonLeafDynMut::Bots(bots,cont,div,_)=>{
                     let mut nn=DestructuredNode{range:bots,cont,div,axis:this_axis};
                     {
                         sweeper.find_2d(this_axis.next(),nn.range, ColMultiWrapper(&mut clos));

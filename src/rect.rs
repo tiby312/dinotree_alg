@@ -24,10 +24,10 @@ macro_rules! rect{
                 },
                 compt::LeafEx::NonLeaf((nonleaf,left,right))=>{
                     match nonleaf{
-                        $leafdyn::NoBotsHereOrBelow=>{
+                        $leafdyn::NoBotsHereOrBelow(_)=>{
                             return;
                         },
-                        $leafdyn::Bots(bots,_cont,div)=>{
+                        $leafdyn::Bots(bots,_cont,div,_)=>{
                             let sl = $get_section(this_axis.next(),bots, rect.as_axis().get(this_axis.next()));
 
                             for i in sl {

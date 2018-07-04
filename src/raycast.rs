@@ -82,10 +82,10 @@ macro_rules! raycast{
                 },
                 compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
                     match nonleaf{
-                        $nonleaf::NoBotsHereOrBelow=>{
+                        $nonleaf::NoBotsHereOrBelow(_)=>{
                             return; //There is nothing to consider in this node or any decendants.
                         },
-                        $nonleaf::Bots(bots,cont,div)=>{
+                        $nonleaf::Bots(bots,cont,div,_)=>{
                             {
                                 let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
 

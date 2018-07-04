@@ -10,7 +10,7 @@ use dinotree_inner::*;
 
 pub trait DividerDrawer{
     type N:NumTrait;
-    fn draw_divider<A:AxisTrait>(&mut self,axis:A,div:Self::N,cont:Option<[Self::N;2]>,length:[Self::N;2],depth:usize);
+    fn draw_divider<A:AxisTrait>(&mut self,axis:A,div:Self::N,cont:[Self::N;2],length:[Self::N;2],depth:usize);
 }
 
 
@@ -24,6 +24,34 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
 ) {
     fn recc<A:AxisTrait,T:HasAabb,D:DividerDrawer<N=T::Num>>
         (axis:A,stuff:LevelIter<NdIter<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
+
+        match compt::CTreeIteratorEx::next(stuff){
+            compt::LeafEx::Leaf((depth,leaf))=>{
+
+            },
+            compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
+                match nonleaf{
+                    NonLeafDyn::NoBotsHereOrBelow(_)=>{
+                        return;
+                    }
+                    NonLeafDyn::Bots(bots,cont,div,_)=>{
+                        
+                        let cont=[cont.left,cont.right];
+                        let rr=rect.as_axis().get(axis.next());
+                        dr.draw_divider::<A>(axis,div,cont,[rr.left,rr.right],depth.0);
+
+
+                        let (a,b)=rect.subdivide(axis,div);
+
+                        recc(axis.next(),left,dr,&a);
+                        recc(axis.next(),right,dr,&b);
+                    }
+                }
+            }
+        }
+
+            
+        /*
         let ((depth,nn),rest)=stuff.next();
 
         let div=match nn.div{
@@ -57,6 +85,7 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
 
             }
         }
+        */
     }
 
     recc(gentree.get_axis(),gentree.get_iter().with_depth(Depth(0)),dr,rect);

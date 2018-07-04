@@ -152,10 +152,10 @@ macro_rules! knearest_recc{
                 },
                 compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
                     match nonleaf{
-                        $nonleaf::NoBotsHereOrBelow=>{
+                        $nonleaf::NoBotsHereOrBelow(_)=>{
                             return;
                         },
-                        $nonleaf::Bots(bots,cont,div)=>{
+                        $nonleaf::Bots(bots,cont,div,_)=>{
 
                             match pp.cmp(&div){
                                 std::cmp::Ordering::Less=>{

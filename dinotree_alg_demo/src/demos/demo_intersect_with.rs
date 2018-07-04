@@ -155,7 +155,7 @@ impl DemoSys for IntersectWithDemo{
         }
         impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
             type N=F64n;
-            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F64n,cont:Option<[F64n;2]>,length:[F64n;2],depth:usize){
+            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F64n,cont:[F64n;2],length:[F64n;2],depth:usize){
                 let div=div.into_inner();
                 
 
@@ -174,23 +174,17 @@ impl DemoSys for IntersectWithDemo{
                      self.c.transform,
                      self.g);
 
-                match cont{
-                    Some(cont)=>{
-                        let [x1,y1,w1,w2]=if axis.is_xaxis(){
-                            [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
-                        }else{
-                            [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
-                        };
-                        //let ((x1,x2),(w1,w2))=((x1 as f64,x2 as f64),(w1 as f64,w2 as f64));
-        
-                        let square = [x1.into_inner(),y1.into_inner(),w1.into_inner(),w2.into_inner()];
-                        rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
-                    
-                    },
-                    None=>{
+                let [x1,y1,w1,w2]=if axis.is_xaxis(){
+                    [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
+                }else{
+                    [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
+                };
+                //let ((x1,x2),(w1,w2))=((x1 as f64,x2 as f64),(w1 as f64,w2 as f64));
 
-                    }
-                }
+                let square = [x1.into_inner(),y1.into_inner(),w1.into_inner(),w2.into_inner()];
+                rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
+            
+                
                 
             }
         }

@@ -45,55 +45,46 @@ fn buildtree<'a,
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
         (axis:impl AxisTrait,stuff:NdIterMut<N::No,T>,ncontext:N){
         
-        let (nn,rest)=stuff.next();
-
-
-        match rest{
-            Some((mut left,mut righ))=>{
-                
-
-                match nn.div{
-                    Some(_div)=>{
+        match compt::CTreeIteratorEx::next(stuff){
+            compt::LeafEx::Leaf(leaf)=>{
+                let mut nodeb=ncontext.new(leaf.range.iter());
+                *(leaf.misc)=nodeb;
+            },
+            compt::LeafEx::NonLeaf((nonleaf,mut left,mut right))=>{
+                match nonleaf{
+                    NonLeafDynMut::NoBotsHereOrBelow(misc)=>{
+                        let empty:&[T]=&[];
+                        let mut nodeb=ncontext.new(empty.iter());
                         
-                        
-                        let nodeb={
-       
-                            let left=left.create_wrap_mut();
-                            let righ=righ.create_wrap_mut();
-
-                            
-                            let i1=left.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
-                            let i2=righ.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
-                            let i3=nn.range.iter().chain(i1.chain(i2));
-                            let mut nodeb=ncontext.new(i3);
-                            
-                            nodeb
-                        };
-
-                        nn.misc=nodeb;
-
-                        let n2=ncontext.clone();
-                        recc(axis.next(),left,ncontext);
-                        recc(axis.next(),righ,n2);
-                    },
-                    None=>{
-                        let mut nodeb=ncontext.new(nn.range.iter());
-                        
-                        nn.misc=nodeb;
+                        *misc=nodeb;
                         let n2=ncontext.clone();
                         //recurse anyway even though there is no divider.
                         //we want to populate this tree entirely.
                         recc(axis.next(),left,ncontext);    
-                        recc(axis.next(),righ,n2); 
+                        recc(axis.next(),right,n2);
+                    },
+                    NonLeafDynMut::Bots(bots,cont,div,misc)=>{
+
+                        let nodeb={
+                            let left=left.create_wrap_mut();
+                            let right=right.create_wrap_mut();
+
+                            
+                            let i1=left.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
+                            let i2=right.dfs_preorder_iter().flat_map(|node|{node.range.iter()});
+                            let i3=bots.iter().chain(i1.chain(i2));
+                            ncontext.new(i3)
+                        };
+
+                        *misc=nodeb;
+
+                        let n2=ncontext.clone();
+                        recc(axis.next(),left,ncontext);
+                        recc(axis.next(),right,n2);
                     }
                 }
-            },
-            None=>{
-                let mut nodeb=ncontext.new(nn.range.iter());
-                nn.misc=nodeb;
             }
         }
-
     }
     recc(axis,node,ncontext);
 }
@@ -106,36 +97,32 @@ fn apply_tree<'a,
 
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
         (stuff:NdIterMut<N::No,T>,ncontext:N){
-
-        let (nn1,rest)=stuff.next();
         
-        let nodeb=&mut nn1.misc;
-        match rest{
-            Some((mut left,mut righ))=>{
-                
-                let _div=match nn1.div{
-                    Some(div)=>{div},
-                    None=>{return;}
-                };
-
-                
-                {
-                    let left=left.create_wrap_mut();
-                    let righ=righ.create_wrap_mut();
-
-                                            
-                    let i1=left.dfs_preorder_iter().flat_map(|node|{node.range.iter_mut()});
-                    let i2=righ.dfs_preorder_iter().flat_map(|node|{node.range.iter_mut()});
-                    let i3=nn1.range.iter_mut().chain(i1.chain(i2));
-                    
-                    ncontext.apply_to_bots(nodeb,i3);
-                }
-                let n2=ncontext.clone();
-                recc(left,ncontext);
-                recc(righ,n2);
+        match compt::CTreeIteratorEx::next(stuff){
+            compt::LeafEx::Leaf(leaf)=>{
+                ncontext.apply_to_bots(leaf.misc,leaf.range.iter_mut());
             },
-            None=>{
-                ncontext.apply_to_bots(nodeb,nn1.range.iter_mut());
+            compt::LeafEx::NonLeaf((nonleaf,mut left,mut right))=>{
+                match nonleaf{
+                    NonLeafDynMut::NoBotsHereOrBelow(_)=>{
+                        return;
+                    },
+                    NonLeafDynMut::Bots(bots,cont,div,misc)=>{
+                        {
+                            let left=left.create_wrap_mut();
+                            let right=right.create_wrap_mut();
+                                                    
+                            let i1=left.dfs_preorder_iter().flat_map(|node|{node.range.iter_mut()});
+                            let i2=right.dfs_preorder_iter().flat_map(|node|{node.range.iter_mut()});
+                            let i3=bots.iter_mut().chain(i1.chain(i2));
+                            
+                            ncontext.apply_to_bots(misc,i3);
+                        }
+                        let n2=ncontext.clone();
+                        recc(left,ncontext);
+                        recc(right,n2);
+                    }
+                }
             }
         }
     }
@@ -262,13 +249,71 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
 }
 
 fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIter<NdIterMut<N::No,N::T>>,ncontext:N) where N::T:Send,N::No:Send{
-    let ((depth,nn1),rest)=it.next();
     
 
-    //handle bots in itself
-    tools::for_every_pair(&mut nn1.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
     
+     match compt::CTreeIteratorEx::next(it){
+        compt::LeafEx::Leaf((depth,leaf))=>{
+            //handle bots in itself
+            tools::for_every_pair(leaf.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
+        },
+        compt::LeafEx::NonLeaf(((depth,nonleaf),mut left,mut right))=>{
+          
+            match nonleaf{
+                NonLeafDynMut::NoBotsHereOrBelow(_)=>{
+                    return;
+                },
+                NonLeafDynMut::Bots(bots,cont,div,misc)=>{
+                    
+                    //handle bots in itself
+                    tools::for_every_pair(bots,|a,b|{ncontext.handle_bot_with_bot(a,b)});
+                    {
+                        let depth=left.depth;
+                        let l1=left.inner.create_wrap_mut().with_depth(depth);
+                        let l2=right.inner.create_wrap_mut().with_depth(depth);
+                        let mut anchor=Anchor{axis:axis,range:bots,div};
 
+                        handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,&ncontext);
+                    }
+                    //At this point, everything has been handled with the root.
+                    //before we can fully remove the root, and reduce this problem to two smaller trees,
+                    //we have to do one more thing.
+                    //we have to handle all the bots on the left of the root with all the bots on the right of the root.
+
+                    //from the left side,get a list of nodemases.
+                    //from the right side,get a list of nodemases.
+                    //collide the two.
+
+
+                    {
+                        let depth=left.depth;
+                            
+                        let l1=left.inner.create_wrap_mut().with_depth(depth);
+                        let l2=right.inner.create_wrap_mut().with_depth(depth);
+                        let mut anchor=Anchor{axis:axis,range:bots,div};
+
+                        handle_left_with_right(axis.next(),&mut anchor,l1,l2,&ncontext);
+                    }
+                    //at this point we have successfully broken up this problem
+                    //into two independant ones, and we can do this all over again for the two children.
+                    //potentially in parlalel.
+                   
+                    let n2=ncontext.clone();
+                    if join.should_switch_to_sequential(depth){
+                        recc(join.into_seq(),axis.next(),left,ncontext);
+                        recc(join.into_seq(),axis.next(),right,n2);
+                    }else{
+                        rayon::join(
+                        ||recc(join,axis.next(),left,ncontext),
+                        ||recc(join,axis.next(),right,n2)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /*
     match rest{
         Some((mut left,mut right))=>{
             let div=match nn1.div{
@@ -328,6 +373,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
 
         }
     }
+    */
 }
 
 
@@ -350,6 +396,37 @@ fn generic_rec<
     T:HasAabb,
     >(this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:LevelIter<NdIterMut<N::No,T>>,bok:&mut B){
 
+
+    match compt::CTreeIteratorEx::next(stuff){
+        compt::LeafEx::Leaf((depth,leaf))=>{       
+            for i in leaf.range.iter_mut(){
+                bok.handle_every_node(this_axis,i,anchor);    
+            }
+        },
+        compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
+            match nonleaf{
+                NonLeafDynMut::NoBotsHereOrBelow(_)=>{
+                    return;
+                },
+                NonLeafDynMut::Bots(bots,cont,div,misc)=>{
+                    for i in bots.iter_mut(){
+                        bok.handle_every_node(this_axis,i,anchor);    
+                    }
+
+                    if this_axis.is_equal_to(anchor.axis){
+                        if bok.is_far_enough(depth,[div,anchor.div]){
+                            bok.handle_far_enough(this_axis,misc,anchor);
+                            return;
+                        }        
+                    }
+
+                    generic_rec(this_axis.next(),anchor,left,bok);
+                    generic_rec(this_axis.next(),anchor,right,bok);
+                }
+            }
+        }
+    }
+    /*
     let ((_depth,nn1),rest)=stuff.next();
     
     for i in nn1.range.iter_mut(){
@@ -378,7 +455,8 @@ fn generic_rec<
         None=>{
 
         }
-    }       
+    }  
+    */     
 }
 
 
