@@ -57,9 +57,6 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 
-
-
-
 fn go_down<
     A: AxisTrait, //this axis
     B: AxisTrait, //anchor axis

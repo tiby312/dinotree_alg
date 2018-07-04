@@ -35,7 +35,7 @@ macro_rules! get_mut_range_iter{
 }
 
 macro_rules! knearest_recc{
-    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident)=>{
+    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident)=>{
         
     
         struct ClosestCand<T:HasAabb,D:Ord+Copy>{
@@ -117,59 +117,80 @@ macro_rules! knearest_recc{
             K:Knearest,
             >(axis:A,stuff:LevelIter<$iterator>,knear:&mut K,point:[K::N;2],res:&mut ClosestCand<K::T,K::D>){
 
-            let ((_depth,nn),rest)=stuff.next();
-
             let pp=*axgeom::AxisWrapRef(&point).get(axis);
             let ppother=*axgeom::AxisWrapRef(&point).get(axis.next());
 
-            match rest {
-                Some((left, right)) => {
-                    let div=match nn.div{
-                        Some(div)=>{div},
-                        None=>{return;}
-                    };
-            
+            match compt::CTreeIteratorEx::next(stuff){
+                compt::LeafEx::Leaf((depth,leaf))=>{
+                    for bot in $get_iter!(leaf.range){
+                        match res.full_and_max_distance(){
+                            Some(dis)=>{
 
-                    match pp.cmp(&div){
-                        std::cmp::Ordering::Less=>{
+                                //TODO use leftr??
+                                let [_leftr,rightr]=knear.create_range(ppother,dis);
 
-                            recc(axis.next(), left,knear,point,res);
-                           
-                            if traverse_other(res,knear,pp,div){
-                                recc(axis.next(),right,knear,point,res);
-                            }
-                        },
-                        std::cmp::Ordering::Greater=>{
-
-                            recc(axis.next(), right,knear,point,res);
-                           
-                            if traverse_other(res,knear,pp,div){
-                                recc(axis.next(),left,knear,point,res);
-                            }
-                        },
-                        std::cmp::Ordering::Equal=>{
-                            //This case it doesnt really matter whether we traverse left or right first.
+                                let [leftbot,_rightbot]={
+                                    [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
+                                };
+                                
+                                if leftbot>rightr{
+                                    //All the bots after this will also be too far away.
+                                    //because the bots are sorted in ascending order.
+                                    break;
+                                }else{
+                                    let dis_sqr=knear.twod_check(point,bot);
+                                    res.consider((bot,dis_sqr));
+                                }
+                            },
+                            None=>{
+                                let dis_sqr=knear.twod_check(point,bot);
+                                res.consider((bot,dis_sqr));
                             
-                            recc(axis.next(), left,knear,point,res);
-                           
-                            if traverse_other(res,knear,pp,div){
-                                recc(axis.next(),right,knear,point,res);
                             }
-                        }
+                        }                          
                     }
-
-
-                    //Check again incase the other recursion took care of everything
-                    //We are hoping that it is more likely that the closest points are found
-                    //in decendant nodes instead of ancestor nodes.
-                    //if traverse_other(res,knear,pp,div){
-                
-                    match nn.cont{
-                        None=>{
-                            //No bots in this node
+                },
+                compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
+                    match nonleaf{
+                        $nonleaf::NoBotsHereOrBelow=>{
+                            return;
                         },
-                        Some(cont)=>{
-                            for bot in $get_iter!(nn.range){
+                        $nonleaf::Bots(bots,cont,div)=>{
+
+                            match pp.cmp(&div){
+                                std::cmp::Ordering::Less=>{
+
+                                    recc(axis.next(), left,knear,point,res);
+                                   
+                                    if traverse_other(res,knear,pp,div){
+                                        recc(axis.next(),right,knear,point,res);
+                                    }
+                                },
+                                std::cmp::Ordering::Greater=>{
+
+                                    recc(axis.next(), right,knear,point,res);
+                                   
+                                    if traverse_other(res,knear,pp,div){
+                                        recc(axis.next(),left,knear,point,res);
+                                    }
+                                },
+                                std::cmp::Ordering::Equal=>{
+                                    //This case it doesnt really matter whether we traverse left or right first.
+                                    
+                                    recc(axis.next(), left,knear,point,res);
+                                   
+                                    if traverse_other(res,knear,pp,div){
+                                        recc(axis.next(),right,knear,point,res);
+                                    }
+                                }
+                            }
+
+
+                            //Check again incase the other recursion took care of everything
+                            //We are hoping that it is more likely that the closest points are found
+                            //in decendant nodes instead of ancestor nodes.
+                            //if traverse_other(res,knear,pp,div){
+                            for bot in $get_iter!(bots){
                                 match res.full_and_max_distance(){
                                     Some(dis)=>{
 
@@ -206,45 +227,13 @@ macro_rules! knearest_recc{
                                         res.consider((bot,dis_sqr));
                                     
                                     }
-                                }                          
+                                }                           
                             }
                         }
                     }
-                }
-                _ => {
-
-                    for bot in $get_iter!(nn.range){
-                        match res.full_and_max_distance(){
-                            Some(dis)=>{
-
-                                //TODO use leftr??
-                                let [_leftr,rightr]=knear.create_range(ppother,dis);
-
-                                let [leftbot,_rightbot]={
-                                    [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
-                                };
-                                
-                                if leftbot>rightr{
-                                    //All the bots after this will also be too far away.
-                                    //because the bots are sorted in ascending order.
-                                    break;
-                                }else{
-                                    let dis_sqr=knear.twod_check(point,bot);
-                                    res.consider((bot,dis_sqr));
-                                }
-                            },
-                            None=>{
-                                let dis_sqr=knear.twod_check(point,bot);
-                                res.consider((bot,dis_sqr));
-                            
-                            }
-                        }                          
-                    }
-                           
-                }
+                }   
             }
         }
-
     }
 }
 
@@ -271,7 +260,7 @@ pub fn k_nearest<'b,
 
     let mut c=ClosestCand::new(num);
 
-    knearest_recc!(NdIter<(),K::T>,*const T,&T,get_range_iter);
+    knearest_recc!(NdIter<(),K::T>,*const T,&T,get_range_iter,NonLeafDyn);
 
     recc(axis,dt,&mut knear,point,&mut c);
  
@@ -314,7 +303,7 @@ mod mutable{
 
     }
 
-    knearest_recc!(NdIterMut<(),K::T>,*mut T,&mut T,get_mut_range_iter);
+    knearest_recc!(NdIterMut<(),K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut);
 
 
     pub fn k_nearest_mut<'b,

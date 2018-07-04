@@ -14,7 +14,6 @@ macro_rules! rect{
             func: &mut F
         ) {
             
-            //use dinotree_inner::
             match compt::CTreeIteratorEx::next(m){
                 compt::LeafEx::Leaf(leaf)=>{
                     let sl = $get_section(this_axis.next(),leaf.range, rect.as_axis().get(this_axis.next()));
@@ -28,7 +27,7 @@ macro_rules! rect{
                         $leafdyn::NoBotsHereOrBelow=>{
                             return;
                         },
-                        $leafdyn::Bots(bots,cont,div)=>{
+                        $leafdyn::Bots(bots,_cont,div)=>{
                             let sl = $get_section(this_axis.next(),bots, rect.as_axis().get(this_axis.next()));
 
                             for i in sl {
@@ -46,34 +45,6 @@ macro_rules! rect{
                     }
                 }
             }
-            
-            /*
-            {
-                let sl = $get_section(this_axis.next(),$get_range!(nn.range), rect.as_axis().get(this_axis.next()));
-
-                for i in sl {
-                    func(i);
-                }
-            }
-            match rest {
-                Some((left, right)) => {
-                    let div=match nn.div{
-                        Some(div)=>div,
-                        None=>return
-                    };
-
-                    let rr = rect.as_axis().get(this_axis);
-
-                    if !(div < rr.left) {
-                        self::rect_recurse(this_axis.next(), left, rect, func);
-                    }
-                    if !(div > rr.right) {
-                        self::rect_recurse(this_axis.next(), right, rect, func);
-                    }
-                }
-                _ => {}
-            }
-            */
         }
     }
 }
