@@ -57,36 +57,6 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 
-use self::anchor::DestructuredNode;
-mod anchor{
-    use super::*;
-    pub struct DestructuredNode<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a>{
-        pub cont:&'a Range<T::Num>,
-        pub div:&'a T::Num,
-        pub range:&'a mut [T],
-        _p:PhantomData<AnchorAxis>
-    }
-    pub enum ErrEnum{
-        NoBots,
-        NoChildrenOrBots
-    }
-    impl<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a> DestructuredNode<'a,T,AnchorAxis>{
-
-        pub fn new(nd:&'a mut NodeDyn<(),T>)->Result<DestructuredNode<'a,T,AnchorAxis>,ErrEnum>{
-            let cont=match &nd.cont{
-                &Some(ref x)=>{x},
-                &None=>return Err(ErrEnum::NoBots)
-            };
-            let div=match &nd.div{
-                &Some(ref x)=>{x},
-                &None=>return Err(ErrEnum::NoChildrenOrBots)
-            };
-            
-            let range=&mut nd.range;
-            Ok(DestructuredNode{_p:PhantomData,cont,div:div,range})
-        }
-    }
-}
 
 
 
@@ -104,71 +74,81 @@ fn go_down<
     func: &mut F,
     depth:Depth
 ) {
+    match compt::CTreeIteratorEx::next(m){
+        compt::LeafEx::Leaf(leaf)=>{
+            let func=ColMultiWrapper(func);
+            if !this_axis.is_equal_to(anchor_axis) {
 
-    let (nn,rest) = m.next();
+                let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
 
+                let r1 =oned::get_section_mut(anchor_axis,leaf.range, anchor_box);
+                let r2= anchor_bots;
 
-    {
-        let func=ColMultiWrapper(func);
-        if !this_axis.is_equal_to(anchor_axis) {
+                sweeper.find_perp_2d(r1,r2,func);
 
-            let (anchor_box,anchor_bots)=(anchor.cont,&mut anchor.range);
+            } else {
+                sweeper.find_parallel_2d(
+                    this_axis.next(),
+                    leaf.range,
+                    anchor.range,
+                    func,
+                );
+            }
+        },
+        compt::LeafEx::NonLeaf((nonleaf,left,right))=>{
+            match nonleaf{
+                NonLeafDynMut::NoBotsHereOrBelow=>{
+                    return;
+                },
+                NonLeafDynMut::Bots(bots,cont,div)=>{
+                    {
+                        let func=ColMultiWrapper(func);
+                        if !this_axis.is_equal_to(anchor_axis) {
 
-            let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
+                            let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
 
-            let r2=if rest.is_some(){
+                            let r1 = oned::get_section_mut(anchor_axis,bots, anchor_box);
 
-                //This node could possible not have bots in it.
-                match &nn.cont{
-                    Some(cont)=>{
-                        oned::get_section_mut(this_axis,anchor_bots, cont)       
-                    },
-                    None=>{
-                        anchor_bots
+                            let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
+
+                            sweeper.find_perp_2d(r1,r2,func);
+
+                        } else {
+                            sweeper.find_parallel_2d(
+                                this_axis.next(),
+                                bots,
+                                anchor.range,
+                                func,
+                            );
+                        }                            
+                    }
+
+                    //This can be evaluated at compile time!
+                    if this_axis.is_equal_to(anchor_axis) {
+                        if !(div < anchor.cont.left) {
+                            self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
+                        };
+                        if !(div > anchor.cont.right) {
+                            self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, right, func,depth.next_down());
+                        };
+                    } else {
+                        self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
+                        self::go_down(this_axis.next(), anchor_axis, sweeper, anchor,right, func,depth.next_down());
                     }
                 }
-            }else{
-                anchor_bots
-            };
-
-            sweeper.find_perp_2d(r1,r2,func);
-
-        } else {
-            sweeper.find_parallel_2d(
-                this_axis.next(),
-                &mut nn.range,
-                anchor.range,
-                func,
-            );
-        }
-    }
-
-    
-    match rest {
-        Some((left, right)) => {
-            let div=match nn.div{
-                Some(div)=>div,
-                None=>return
-            };
-                    
-            //This can be evaluated at compile time!
-            if this_axis.is_equal_to(anchor_axis) {
-                if !(div < anchor.cont.left) {
-                    self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
-                };
-                if !(div > anchor.cont.right) {
-                    self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, right, func,depth.next_down());
-                };
-            } else {
-                self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
-                self::go_down(this_axis.next(), anchor_axis, sweeper, anchor,right, func,depth.next_down());
             }
         }
-        _ => {}
     }
 }
 
 
+
+pub struct DestructuredNode<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a>{
+    pub cont:Range<T::Num>,
+    pub div:T::Num,
+    pub range:&'a mut [T],
+    pub axis:AnchorAxis
+}
 
 fn recurse<
     A: AxisTrait,
@@ -187,111 +167,59 @@ fn recurse<
 ) -> (F,K::Bag) {
     timer_log.start();
 
-    let (nn, rest) = m.next();
-
-    let k = match rest {
-        None => {
-            sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
-
+    match compt::CTreeIteratorEx::next(m){
+        compt::LeafEx::Leaf(leaf)=>{
+            sweeper.find_2d(this_axis.next(),leaf.range, ColMultiWrapper(&mut clos));
             (clos,timer_log.leaf_finish())
         },
-        Some((mut left, mut right)) => {
-
-            match anchor::DestructuredNode::<X,A>::new(nn){
-                Ok(mut nn)=>{
-                    sweeper.find_2d(this_axis.next(),nn.range, ColMultiWrapper(&mut clos));
-
-                    let left=left.create_wrap_mut();
-                    let right=right.create_wrap_mut();
-
-                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos,level.next_down());
-                    self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos,level.next_down());
+        compt::LeafEx::NonLeaf((nonleaf,mut left,mut right))=>{
+            match nonleaf{
+                NonLeafDynMut::NoBotsHereOrBelow=>{
+                   //Dont even need to recurse futher down.
+                    return (clos,timer_log.leaf_finish())
                 },
-                Err(e)=>{
-                    match e{
-                        anchor::ErrEnum::NoBots=>{
-                            //Do nothing. Dont need to check against self, or children
-                        },
-                        anchor::ErrEnum::NoChildrenOrBots=>{
-                            //Dont even need to recurse futher down.
-                            return (clos,timer_log.leaf_finish())
-                        }
+                NonLeafDynMut::Bots(bots,cont,div)=>{
+                    let mut nn=DestructuredNode{range:bots,cont,div,axis:this_axis};
+                    {
+                        sweeper.find_2d(this_axis.next(),nn.range, ColMultiWrapper(&mut clos));
+
+                        let left=left.create_wrap_mut();
+                        let right=right.create_wrap_mut();
+
+                        self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos,level.next_down());
+                        self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos,level.next_down());
                     }
+                    let (ta, tb) = timer_log.next();
+
+                    let (clos,ta, tb) = if !par.should_switch_to_sequential(level) {
+                        let (mut aa,mut bb)=clos.div();
+
+                        let af = || {
+                            self::recurse(this_axis.next(),par,sweeper,left,aa,ta,level.next_down())
+                        };
+                        let bf = || {
+                            let mut sweeper = oned::Sweeper::new();
+                            self::recurse(this_axis.next(),par,&mut sweeper,right,bb,tb,level.next_down())
+                        };
+                        let (ta, tb) = rayon::join(af, bf);
+
+                        let a=ta.0.add(tb.0);
+                        (a,ta.1, tb.1)
+                    } else {
+                        let (clos,ta) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,ta,level.next_down());
+                        let (clos,tb) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,tb,level.next_down());
+
+                        (clos,ta, tb)
+                    };
+
+                    let b=K::combine(ta, tb);
+                    (clos,b)
+
                 }
             }
-
-
-            let (ta, tb) = timer_log.next();
-
-            let (clos,ta, tb) = if !par.should_switch_to_sequential(level) {
-                let (mut aa,mut bb)=clos.div();
-
-                let af = || {
-                    self::recurse(
-                        this_axis.next(),
-                        par,
-                        sweeper,
-                        left,
-                        aa,
-                        ta,
-                        level.next_down()
-                        
-                    )
-                };
-                let bf = || {
-                    let mut sweeper = oned::Sweeper::new();
-                    self::recurse(
-                        this_axis.next(),
-                        par,
-                        &mut sweeper,
-                        right,
-                        bb,
-                        tb,
-                        level.next_down()
-                        
-                    )
-                };
-                let (ta, tb) = rayon::join(af, bf);
-
-                let a=ta.0.add(tb.0);
-                (a,ta.1, tb.1)
-            } else {
-                let (clos,ta) = self::recurse(
-                    this_axis.next(),
-                    par.into_seq(),
-                    sweeper,
-                    left,
-                    clos,
-                    ta,
-                    level.next_down()
-                    
-                );
-                let (clos,tb) = self::recurse(
-                    this_axis.next(),
-                    par.into_seq(),
-                    sweeper,
-                    right,
-                    clos,
-                    tb,
-                    level.next_down()
-                    
-                );
-
-                (clos,ta, tb)
-            };
-
-            let b=K::combine(ta, tb);
-            (clos,b)
         }
-    };
-
-    k
+    }
 }
-
-
-
-
-
 
 
 pub trait ColMulti:Sized {
