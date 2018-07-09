@@ -120,9 +120,90 @@ macro_rules! knearest_recc{
             let pp=*axgeom::AxisWrapRef(&point).get(axis);
             let ppother=*axgeom::AxisWrapRef(&point).get(axis.next());
 
-            match compt::CTreeIteratorEx::next(stuff){
-                compt::LeafEx::Leaf((depth,leaf))=>{
-                    for bot in $get_iter!(leaf.range){
+            let ((depth,nn),rest)=stuff.next();
+
+            match rest{
+                Some((extra,left,right))=>{
+                    let (div,cont)=match extra{
+                        Some(b)=>b,
+                        None=>return
+                    };
+
+                    match pp.cmp(&div){
+                    std::cmp::Ordering::Less=>{
+
+                        recc(axis.next(), left,knear,point,res);
+                       
+                        if traverse_other(res,knear,pp,div){
+                            recc(axis.next(),right,knear,point,res);
+                        }
+                    },
+                    std::cmp::Ordering::Greater=>{
+
+                        recc(axis.next(), right,knear,point,res);
+                       
+                        if traverse_other(res,knear,pp,div){
+                            recc(axis.next(),left,knear,point,res);
+                        }
+                    },
+                    std::cmp::Ordering::Equal=>{
+                        //This case it doesnt really matter whether we traverse left or right first.
+                        
+                        recc(axis.next(), left,knear,point,res);
+                       
+                        if traverse_other(res,knear,pp,div){
+                            recc(axis.next(),right,knear,point,res);
+                        }
+                    }
+                }
+
+
+                //Check again incase the other recursion took care of everything
+                //We are hoping that it is more likely that the closest points are found
+                //in decendant nodes instead of ancestor nodes.
+                //if traverse_other(res,knear,pp,div){
+                for bot in $get_iter!(nn.range){
+                    match res.full_and_max_distance(){
+                        Some(dis)=>{
+
+                            //Used for both x and y.
+                            //Think of this is a bounding box around the point that grows
+                            let [leftr,rightr]=knear.create_range(ppother,dis);
+
+                            let conty=if pp<div{
+                                cont.left
+                            }else{
+                                cont.right
+                            };
+                            
+                            if dis<knear.oned_check(conty,pp){
+                                break;
+                            }
+
+                            let [leftbot,rightbot]={
+                                [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
+                            };
+                            
+                            if leftbot>rightr{
+                                //All the bots after this will also be too far away.
+                                //because the bots are sorted in ascending order.
+                                break;
+                            }else if rightbot>=leftr{
+                                let dis_sqr=knear.twod_check(point,bot);
+                                res.consider((bot,dis_sqr));
+                            
+                            }
+                        },
+                        None=>{
+                            let dis_sqr=knear.twod_check(point,bot);
+                            res.consider((bot,dis_sqr));
+                        
+                        }
+                    }                           
+                }
+                },
+                None=>{
+                    for bot in $get_iter!(nn.range){
                         match res.full_and_max_distance(){
                             Some(dis)=>{
 
@@ -149,89 +230,7 @@ macro_rules! knearest_recc{
                             }
                         }                          
                     }
-                },
-                compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
-                    match nonleaf{
-                        $nonleaf::NoBotsHereOrBelow(_)=>{
-                            return;
-                        },
-                        $nonleaf::Bots(bots,cont,div,_)=>{
-
-                            match pp.cmp(&div){
-                                std::cmp::Ordering::Less=>{
-
-                                    recc(axis.next(), left,knear,point,res);
-                                   
-                                    if traverse_other(res,knear,pp,div){
-                                        recc(axis.next(),right,knear,point,res);
-                                    }
-                                },
-                                std::cmp::Ordering::Greater=>{
-
-                                    recc(axis.next(), right,knear,point,res);
-                                   
-                                    if traverse_other(res,knear,pp,div){
-                                        recc(axis.next(),left,knear,point,res);
-                                    }
-                                },
-                                std::cmp::Ordering::Equal=>{
-                                    //This case it doesnt really matter whether we traverse left or right first.
-                                    
-                                    recc(axis.next(), left,knear,point,res);
-                                   
-                                    if traverse_other(res,knear,pp,div){
-                                        recc(axis.next(),right,knear,point,res);
-                                    }
-                                }
-                            }
-
-
-                            //Check again incase the other recursion took care of everything
-                            //We are hoping that it is more likely that the closest points are found
-                            //in decendant nodes instead of ancestor nodes.
-                            //if traverse_other(res,knear,pp,div){
-                            for bot in $get_iter!(bots){
-                                match res.full_and_max_distance(){
-                                    Some(dis)=>{
-
-                                        //Used for both x and y.
-                                        //Think of this is a bounding box around the point that grows
-                                        let [leftr,rightr]=knear.create_range(ppother,dis);
-
-                                        let conty=if pp<div{
-                                            cont.left
-                                        }else{
-                                            cont.right
-                                        };
-                                        
-                                        if dis<knear.oned_check(conty,pp){
-                                            break;
-                                        }
-
-                                        let [leftbot,rightbot]={
-                                            [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
-                                        };
-                                        
-                                        if leftbot>rightr{
-                                            //All the bots after this will also be too far away.
-                                            //because the bots are sorted in ascending order.
-                                            break;
-                                        }else if rightbot>=leftr{
-                                            let dis_sqr=knear.twod_check(point,bot);
-                                            res.consider((bot,dis_sqr));
-                                        
-                                        }
-                                    },
-                                    None=>{
-                                        let dis_sqr=knear.twod_check(point,bot);
-                                        res.consider((bot,dis_sqr));
-                                    
-                                    }
-                                }                           
-                            }
-                        }
-                    }
-                }   
+                }
             }
         }
     }

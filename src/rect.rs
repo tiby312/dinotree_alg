@@ -1,8 +1,22 @@
 use inner_prelude::*;
 
 
+macro_rules! get_range{
+    ($range:expr)=>{{
+        &$range
+    }}
+}
+
+
+macro_rules! get_range_mut{
+    ($range:expr)=>{{
+        &mut $range
+    }}
+}
+
+
 macro_rules! rect{
-    ($iterator:ty,$colsingle:ty,$get_section:ident,$leafdyn:ident)=>{     
+    ($iterator:ty,$colsingle:ty,$get_section:ident,$get_ref:ident)=>{     
         fn rect_recurse<
             A: AxisTrait,
             T: HasAabb,
@@ -14,34 +28,33 @@ macro_rules! rect{
             func: &mut F
         ) {
             
-            match compt::CTreeIteratorEx::next(m){
-                compt::LeafEx::Leaf(leaf)=>{
-                    let sl = $get_section(this_axis.next(),leaf.range, rect.as_axis().get(this_axis.next()));
+
+            let (nn,rest)=m.next();
+            match rest{
+                Some((extra,left,right))=>{
+                    let (div,cont)=match extra{
+                        Some(b)=>b,
+                        None=>return
+                    };
+                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.as_axis().get(this_axis.next()));
 
                     for i in sl {
                         func(i);
                     }
+                    let rr = rect.as_axis().get(this_axis);
+
+                    if !(div < rr.left) {
+                        self::rect_recurse(this_axis.next(), left, rect, func);
+                    }
+                    if !(div > rr.right) {
+                        self::rect_recurse(this_axis.next(), right, rect, func);
+                    }
                 },
-                compt::LeafEx::NonLeaf((nonleaf,left,right))=>{
-                    match nonleaf{
-                        $leafdyn::NoBotsHereOrBelow(_)=>{
-                            return;
-                        },
-                        $leafdyn::Bots(bots,_cont,div,_)=>{
-                            let sl = $get_section(this_axis.next(),bots, rect.as_axis().get(this_axis.next()));
+                None=>{
+                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.as_axis().get(this_axis.next()));
 
-                            for i in sl {
-                                func(i);
-                            }
-                            let rr = rect.as_axis().get(this_axis);
-
-                            if !(div < rr.left) {
-                                self::rect_recurse(this_axis.next(), left, rect, func);
-                            }
-                            if !(div > rr.right) {
-                                self::rect_recurse(this_axis.next(), right, rect, func);
-                            }
-                        }
+                    for i in sl {
+                        func(i);
                     }
                 }
             }
@@ -66,7 +79,7 @@ mod mutable{
     use oned::get_section_mut;
     use super::*;
 
-    rect!(NdIterMut<(),T>,&mut T,get_section_mut,NonLeafDynMut);
+    rect!(NdIterMut<(),T>,&mut T,get_section_mut,get_range_mut);
     pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
         tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
@@ -129,7 +142,7 @@ mod constant{
 
     use oned::get_section;
     use super::*;
-    rect!(NdIter<(),T>,&T,get_section,NonLeafDyn);
+    rect!(NdIter<(),T>,&T,get_section,get_range);
     //rect!(NdIter<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
     pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(

@@ -25,28 +25,27 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
     fn recc<A:AxisTrait,T:HasAabb,D:DividerDrawer<N=T::Num>>
         (axis:A,stuff:LevelIter<NdIter<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
 
-        match compt::CTreeIteratorEx::next(stuff){
-            compt::LeafEx::Leaf((depth,leaf))=>{
+        let ((depth,nn),rest)=stuff.next();
 
+        match rest{
+            Some((extra,left,right))=>{
+                let (div,cont)=match extra{
+                    Some(d)=>d,
+                    None=>return
+                };
+
+                let cont=[cont.left,cont.right];
+                let rr=rect.as_axis().get(axis.next());
+                dr.draw_divider::<A>(axis,div,cont,[rr.left,rr.right],depth.0);
+
+
+                let (a,b)=rect.subdivide(axis,div);
+
+                recc(axis.next(),left,dr,&a);
+                recc(axis.next(),right,dr,&b);
             },
-            compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
-                match nonleaf{
-                    NonLeafDyn::NoBotsHereOrBelow(_)=>{
-                        return;
-                    }
-                    NonLeafDyn::Bots(bots,cont,div,_)=>{
-                        
-                        let cont=[cont.left,cont.right];
-                        let rr=rect.as_axis().get(axis.next());
-                        dr.draw_divider::<A>(axis,div,cont,[rr.left,rr.right],depth.0);
+            None=>{
 
-
-                        let (a,b)=rect.subdivide(axis,div);
-
-                        recc(axis.next(),left,dr,&a);
-                        recc(axis.next(),right,dr,&b);
-                    }
-                }
             }
         }
 

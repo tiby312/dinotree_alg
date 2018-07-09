@@ -28,6 +28,9 @@ pub trait RayTrait{
 
 }
 
+
+
+
 macro_rules! raycast{
     ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident)=>{
         
@@ -73,151 +76,148 @@ macro_rules! raycast{
             R: RayTrait<T=T,N=N>
             >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,ray:Ray<N>,closest:&mut Closest<T>){
 
-            match compt::CTreeIteratorEx::next(stuff){
-                compt::LeafEx::Leaf((depth,leaf))=>{
-                    //Can't do better here since for leafs, cont is none.
-                    for b in $get_iter!(leaf.range){
-                        closest.consider(b,rtrait);
-                    }  
-                },
-                compt::LeafEx::NonLeaf(((depth,nonleaf),left,right))=>{
-                    match nonleaf{
-                        $nonleaf::NoBotsHereOrBelow(_)=>{
-                            return; //There is nothing to consider in this node or any decendants.
-                        },
-                        $nonleaf::Bots(bots,cont,div,_)=>{
-                            {
-                                let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
+            let ((depth,nn),rest)=stuff.next();
+            match rest{
+                Some((extra,left,right))=>{
+                    let (div,cont)=match extra{
+                        Some(b)=>b,
+                        None=>return
+                    };
+                    {
+                        let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
 
-                                let axis_next=axis.next();
+                        let axis_next=axis.next();
 
-                                match ray_point.cmp(&div){
-                                    std::cmp::Ordering::Less=>{
-                                        match rtrait.split_ray(axis,&ray,div){
-                                            Some((ray_closer,ray_further))=>{
-                                                recc(axis_next,left,rtrait,ray_closer,closest);
-                                                dop(axis,right,rtrait,ray_further,closest,div);
-                                            },
-                                            None=>{
-                                                //The ray isnt long enough to touch the divider.
-                                                //So just recurse the one side.
-                                                recc(axis_next,left,rtrait,ray,closest);
-                                            }
-                                        }
+                        match ray_point.cmp(&div){
+                            std::cmp::Ordering::Less=>{
+                                match rtrait.split_ray(axis,&ray,div){
+                                    Some((ray_closer,ray_further))=>{
+                                        recc(axis_next,left,rtrait,ray_closer,closest);
+                                        dop(axis,right,rtrait,ray_further,closest,div);
                                     },
-                                    std::cmp::Ordering::Greater=>{
-                                        match rtrait.split_ray(axis,&ray,div){
-                                            Some((ray_closer,ray_further))=>{
-                                                recc(axis_next,right,rtrait,ray_closer,closest);
-                                                dop(axis,left,rtrait,ray_further,closest,div);
-                                            },
-                                            None=>{
-                                                recc(axis_next,right,rtrait,ray,closest);
-                                            }
-                                        }
-                                    },
-                                    std::cmp::Ordering::Equal=>{ //We might potentially recurse the wrong way unless we recurse both, so recurse both
+                                    None=>{
+                                        //The ray isnt long enough to touch the divider.
+                                        //So just recurse the one side.
                                         recc(axis_next,left,rtrait,ray,closest);
-                                        recc(axis_next,right,rtrait,ray,closest);   
                                     }
-                                };             
-                            };
+                                }
+                            },
+                            std::cmp::Ordering::Greater=>{
+                                match rtrait.split_ray(axis,&ray,div){
+                                    Some((ray_closer,ray_further))=>{
+                                        recc(axis_next,right,rtrait,ray_closer,closest);
+                                        dop(axis,left,rtrait,ray_further,closest,div);
+                                    },
+                                    None=>{
+                                        recc(axis_next,right,rtrait,ray,closest);
+                                    }
+                                }
+                            },
+                            std::cmp::Ordering::Equal=>{ //We might potentially recurse the wrong way unless we recurse both, so recurse both
+                                recc(axis_next,left,rtrait,ray,closest);
+                                recc(axis_next,right,rtrait,ray,closest);   
+                            }
+                        };             
+                    };
 
 
-                            //Possibly recurse this side if the closest possible ray distance for a bot in this side
-                            //of the divider is less than the current closest ray distance found.
-                            fn dop<
-                                N:NumTrait,
-                                A: AxisTrait,
-                                T: HasAabb<Num=N>,
-                                R: RayTrait<T=T,N=N>
-                                >(axis:A,nd:LevelIter<$iterator>,rtrait:&mut R,ray:Ray<N>,closest:&mut Closest<T>,div:N){
-                                match closest.get_dis(){
-                                    Some(dis)=>{
-                                        match rtrait.compute_distance_to_line(axis,div){
-                                            Some(dis2)=>{
-                                                if dis2<dis{
-                                                    recc(axis.next(),nd,rtrait,ray,closest);
-                                                }else{
-                                                    //We get to skip here
-                                                }
-                                            },
-                                            None=>{
-                                                //Ray doesnt intersect other side
-                                            }
+                    //Possibly recurse this side if the closest possible ray distance for a bot in this side
+                    //of the divider is less than the current closest ray distance found.
+                    fn dop<
+                        N:NumTrait,
+                        A: AxisTrait,
+                        T: HasAabb<Num=N>,
+                        R: RayTrait<T=T,N=N>
+                        >(axis:A,nd:LevelIter<$iterator>,rtrait:&mut R,ray:Ray<N>,closest:&mut Closest<T>,div:N){
+                        match closest.get_dis(){
+                            Some(dis)=>{
+                                match rtrait.compute_distance_to_line(axis,div){
+                                    Some(dis2)=>{
+                                        if dis2<dis{
+                                            recc(axis.next(),nd,rtrait,ray,closest);
+                                        }else{
+                                            //We get to skip here
                                         }
                                     },
                                     None=>{
-                                        recc(axis.next(),nd,rtrait,ray,closest);
+                                        //Ray doesnt intersect other side
                                     }
                                 }
+                            },
+                            None=>{
+                                recc(axis.next(),nd,rtrait,ray,closest);
                             }
+                        }
+                    }
 
 
-                            //Check the bots in this node only after recursing children.
-                            //We recurse first since this way we might find out we dont need to recurse the bots in this node
-                            //since its more likely that we will find the closest bot in a child node
-                    
-                            let ff=[cont.left,cont.right];
+                    //Check the bots in this node only after recursing children.
+                    //We recurse first since this way we might find out we dont need to recurse the bots in this node
+                    //since its more likely that we will find the closest bot in a child node
+            
+                    let ff=[cont.left,cont.right];
 
-                            let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
+                    let ray_point=*axgeom::AxisWrapRef(&ray.point).get(axis);
 
-                            //TODO figure out correct inequalities
-                            let handle_middle=if ray_point>=ff[0] && ray_point<=ff[1]{
-                                true
-                            }else{
+                    //TODO figure out correct inequalities
+                    let handle_middle=if ray_point>=ff[0] && ray_point<=ff[1]{
+                        true
+                    }else{
 
-                                let ray_point_wrap=axgeom::AxisWrapRef(&ray.point);
-                                let closer_line=if *ray_point_wrap.get(axis)<div{
-                                    ff[0]
-                                }else{
-                                    ff[1]
-                                };
+                        let ray_point_wrap=axgeom::AxisWrapRef(&ray.point);
+                        let closer_line=if *ray_point_wrap.get(axis)<div{
+                            ff[0]
+                        }else{
+                            ff[1]
+                        };
 
-                                match closest.get_dis(){
-                                    Some(dis)=>{
-                                        match rtrait.compute_distance_to_line(axis,closer_line){
-                                            Some(dis2)=>{
-                                                if dis2<dis{
-                                                    true
-                                                }else{
-                                                    false
-                                                }
-                                            },
-                                            None=>{
-                                                true
-                                            }
+                        match closest.get_dis(){
+                            Some(dis)=>{
+                                match rtrait.compute_distance_to_line(axis,closer_line){
+                                    Some(dis2)=>{
+                                        if dis2<dis{
+                                            true
+                                        }else{
+                                            false
                                         }
                                     },
                                     None=>{
                                         true
                                     }
                                 }
-                            };
+                            },
+                            None=>{
+                                true
+                            }
+                        }
+                    };
 
 
-                            if handle_middle{
-                                match rtrait.compute_intersection_range(axis,ff){
-                                    Some((a,b))=>{
-                                        for bot in $get_iter!(bots){
-                                            let rang=*bot.get().get_range(axis.next());
-                                            if rang.left>b{
-                                                break;
-                                            }
-                                            
-                                            if rang.right>=a{
-                                                closest.consider(bot,rtrait);
-                                            }
-                                        }
-                                    },
-                                    None=>{
-                                        //Do nothing
+                    if handle_middle{
+                        match rtrait.compute_intersection_range(axis,ff){
+                            Some((a,b))=>{
+                                for bot in $get_iter!(nn.range){
+                                    let rang=*bot.get().get_range(axis.next());
+                                    if rang.left>b{
+                                        break;
+                                    }
+                                    
+                                    if rang.right>=a{
+                                        closest.consider(bot,rtrait);
                                     }
                                 }
-                            } 
-                                
+                            },
+                            None=>{
+                                //Do nothing
+                            }
                         }
                     }
+                },
+                None=>{
+                    //Can't do better here since for leafs, cont is none.
+                    for b in $get_iter!(nn.range){
+                        closest.consider(b,rtrait);
+                    } 
                 }
             }
         }

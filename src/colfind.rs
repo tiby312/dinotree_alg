@@ -71,14 +71,56 @@ fn go_down<
     func: &mut F,
     depth:Depth
 ) {
-    match compt::CTreeIteratorEx::next(m){
-        compt::LeafEx::Leaf(leaf)=>{
+    let (nn,rest)=m.next();
+    match rest{
+        Some((extra,left,right))=>{
+            let (div,cont)=match extra{
+                Some(d)=>d,
+                None=>return
+            };
+
+            {
+                let func=ColMultiWrapper(func);
+                if !this_axis.is_equal_to(anchor_axis) {
+
+                    let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
+
+                    let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
+
+                    let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
+
+                    sweeper.find_perp_2d(r1,r2,func);
+
+                } else {
+                    sweeper.find_parallel_2d(
+                        this_axis.next(),
+                        &mut nn.range,
+                        anchor.range,
+                        func,
+                    );
+                }                            
+            }
+
+            //This can be evaluated at compile time!
+            if this_axis.is_equal_to(anchor_axis) {
+                if !(div < anchor.cont.left) {
+                    self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
+                };
+                if !(div > anchor.cont.right) {
+                    self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, right, func,depth.next_down());
+                };
+            } else {
+                self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
+                self::go_down(this_axis.next(), anchor_axis, sweeper, anchor,right, func,depth.next_down());
+            }
+        },
+        None=>{
             let func=ColMultiWrapper(func);
             if !this_axis.is_equal_to(anchor_axis) {
 
                 let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
 
-                let r1 =oned::get_section_mut(anchor_axis,leaf.range, anchor_box);
+                let r1 =oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
                 let r2= anchor_bots;
 
                 sweeper.find_perp_2d(r1,r2,func);
@@ -86,53 +128,10 @@ fn go_down<
             } else {
                 sweeper.find_parallel_2d(
                     this_axis.next(),
-                    leaf.range,
+                    &mut nn.range,
                     anchor.range,
                     func,
                 );
-            }
-        },
-        compt::LeafEx::NonLeaf((nonleaf,left,right))=>{
-            match nonleaf{
-                NonLeafDynMut::NoBotsHereOrBelow(_)=>{
-                    return;
-                },
-                NonLeafDynMut::Bots(bots,cont,div,_)=>{
-                    {
-                        let func=ColMultiWrapper(func);
-                        if !this_axis.is_equal_to(anchor_axis) {
-
-                            let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
-
-                            let r1 = oned::get_section_mut(anchor_axis,bots, anchor_box);
-
-                            let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
-
-                            sweeper.find_perp_2d(r1,r2,func);
-
-                        } else {
-                            sweeper.find_parallel_2d(
-                                this_axis.next(),
-                                bots,
-                                anchor.range,
-                                func,
-                            );
-                        }                            
-                    }
-
-                    //This can be evaluated at compile time!
-                    if this_axis.is_equal_to(anchor_axis) {
-                        if !(div < anchor.cont.left) {
-                            self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
-                        };
-                        if !(div > anchor.cont.right) {
-                            self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, right, func,depth.next_down());
-                        };
-                    } else {
-                        self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
-                        self::go_down(this_axis.next(), anchor_axis, sweeper, anchor,right, func,depth.next_down());
-                    }
-                }
             }
         }
     }
@@ -164,56 +163,56 @@ fn recurse<
 ) -> (F,K::Bag) {
     timer_log.start();
 
-    match compt::CTreeIteratorEx::next(m){
-        compt::LeafEx::Leaf(leaf)=>{
-            sweeper.find_2d(this_axis.next(),leaf.range, ColMultiWrapper(&mut clos));
-            (clos,timer_log.leaf_finish())
-        },
-        compt::LeafEx::NonLeaf((nonleaf,mut left,mut right))=>{
-            match nonleaf{
-                NonLeafDynMut::NoBotsHereOrBelow(_)=>{
-                   //Dont even need to recurse futher down.
-                    return (clos,timer_log.leaf_finish())
-                },
-                NonLeafDynMut::Bots(bots,cont,div,_)=>{
-                    let mut nn=DestructuredNode{range:bots,cont,div,axis:this_axis};
-                    {
-                        sweeper.find_2d(this_axis.next(),nn.range, ColMultiWrapper(&mut clos));
+    let(nn,rest)=m.next();
 
-                        let left=left.create_wrap_mut();
-                        let right=right.create_wrap_mut();
+    match rest{
+        Some((extra,mut left,mut right))=>{
+            let (div,cont)=match extra{
+                Some(d)=>d,
+                None=>return (clos,timer_log.leaf_finish())
+            };
+            
 
-                        self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos,level.next_down());
-                        self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos,level.next_down());
-                    }
-                    let (ta, tb) = timer_log.next();
+            let mut nn=DestructuredNode{range:&mut nn.range,cont,div,axis:this_axis};
+            {
+                sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
 
-                    let (clos,ta, tb) = if !par.should_switch_to_sequential(level) {
-                        let (mut aa,mut bb)=clos.div();
+                let left=left.create_wrap_mut();
+                let right=right.create_wrap_mut();
 
-                        let af = || {
-                            self::recurse(this_axis.next(),par,sweeper,left,aa,ta,level.next_down())
-                        };
-                        let bf = || {
-                            let mut sweeper = oned::Sweeper::new();
-                            self::recurse(this_axis.next(),par,&mut sweeper,right,bb,tb,level.next_down())
-                        };
-                        let (ta, tb) = rayon::join(af, bf);
-
-                        let a=ta.0.add(tb.0);
-                        (a,ta.1, tb.1)
-                    } else {
-                        let (clos,ta) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,ta,level.next_down());
-                        let (clos,tb) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,tb,level.next_down());
-
-                        (clos,ta, tb)
-                    };
-
-                    let b=K::combine(ta, tb);
-                    (clos,b)
-
-                }
+                self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos,level.next_down());
+                self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos,level.next_down());
             }
+            let (ta, tb) = timer_log.next();
+
+            let (clos,ta, tb) = if !par.should_switch_to_sequential(level) {
+                let (mut aa,mut bb)=clos.div();
+
+                let af = || {
+                    self::recurse(this_axis.next(),par,sweeper,left,aa,ta,level.next_down())
+                };
+                let bf = || {
+                    let mut sweeper = oned::Sweeper::new();
+                    self::recurse(this_axis.next(),par,&mut sweeper,right,bb,tb,level.next_down())
+                };
+                let (ta, tb) = rayon::join(af, bf);
+
+                let a=ta.0.add(tb.0);
+                (a,ta.1, tb.1)
+            } else {
+                let (clos,ta) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,ta,level.next_down());
+                let (clos,tb) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,tb,level.next_down());
+
+                (clos,ta, tb)
+            };
+
+            let b=K::combine(ta, tb);
+            (clos,b)
+
+        },
+        None=>{
+            sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
+            (clos,timer_log.leaf_finish())
         }
     }
 }

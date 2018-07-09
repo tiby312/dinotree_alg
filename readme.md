@@ -68,6 +68,17 @@ Instead, I used a simple spiral. It grows from the center, adding bots as it goe
 
 
 
+#
+The leaf nodes do not need a divider of a container. The leaf nodes are not partitionaing anything. If we reused the same type
+for the leafs, these fields would be wasted space. This wouldnt be a problem if for the fact that it is a complete tree. What is more, because of the way we lay out the tree in memory in a dfs inorder manner, spacial locality between any of the nodes suffers.
+If it were laid out in bfs order this wouldnt be a problem.
+
+When we first construct the tree with fixed sized nodes pointing to ranges in a seperate array, we have to use a singular type.
+So in this first tree, the leaf nodes have a lot of wasted space. On the other hand, by using a singular type, every node does not need a pointers to the children, so it is very compact.
+
+Its important to note that this isnt that big of a deal considering every node is expected to have around 12 bots in it. 
+
+But when we move to the dynamic tree, since we are using pointesr to the children nodes anyway (to take advantage ot memory locality of the bots), we might as well also use seperate sized types for the leafs.
 
 
 
