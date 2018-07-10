@@ -60,7 +60,7 @@ fn buildtree<'a,
                         recc(axis.next(),left,ncontext);    
                         recc(axis.next(),right,n2);
                     },
-                    Some((div,cont))=>{
+                    Some(FullComp{div,cont})=>{
 
                         let nodeb={
                             let left=left.create_wrap_mut();
@@ -102,7 +102,7 @@ fn apply_tree<'a,
         let (nn,rest)=stuff.next();
         match rest{
             Some((extra,mut left,mut right))=>{
-                let (div,cont)=match extra{
+                let FullComp{div,cont}=match extra{
                     Some(b)=>b,
                     None=>return
                 };
@@ -254,7 +254,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
     let ((depth,nn),rest)=it.next();
     match rest{
         Some((extra,mut left,mut right))=>{
-            let (div,cont)=match extra{
+            let FullComp{div,cont}=match extra{
                 Some(b)=>b,
                 None=>return
             };
@@ -395,7 +395,7 @@ fn generic_rec<
     let ((depth,nn),rest)=stuff.next();
     match rest{
         Some((extra,left,right))=>{
-            let (div,cont)=match extra{
+            let FullComp{div,cont}=match extra{
                 Some(b)=>b,
                 None=>return
             };

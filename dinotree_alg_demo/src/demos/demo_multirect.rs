@@ -33,7 +33,7 @@ impl DemoSys for MultiRectDemo{
         
         let tree=&mut self.tree;
 
-        for bot in tree.iter(){
+        for bot in tree.iter_every_bot(){
             draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 

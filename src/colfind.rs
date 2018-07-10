@@ -74,7 +74,7 @@ fn go_down<
     let (nn,rest)=m.next();
     match rest{
         Some((extra,left,right))=>{
-            let (div,cont)=match extra{
+            let FullComp{div,cont}=match extra{
                 Some(d)=>d,
                 None=>return
             };
@@ -167,7 +167,7 @@ fn recurse<
 
     match rest{
         Some((extra,mut left,mut right))=>{
-            let (div,cont)=match extra{
+            let FullComp{div,cont}=match extra{
                 Some(d)=>d,
                 None=>return (clos,timer_log.leaf_finish())
             };

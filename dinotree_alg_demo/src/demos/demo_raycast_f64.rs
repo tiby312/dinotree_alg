@@ -71,7 +71,7 @@ impl DemoSys for RaycastF64Demo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
         let tree=&self.tree;
         //Draw bots
-        for bot in tree.iter(){
+        for bot in tree.iter_every_bot(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
     

@@ -79,7 +79,7 @@ impl DemoSys for IntersectEveryDemo{
             b.inner.repel_mouse(cursor);
         });
         
-        for bot in tree.iter(){
+        for bot in tree.iter_every_bot(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
     

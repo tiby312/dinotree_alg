@@ -29,7 +29,7 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
 
         match rest{
             Some((extra,left,right))=>{
-                let (div,cont)=match extra{
+                let FullComp{div,cont}=match extra{
                     Some(d)=>d,
                     None=>return
                 };

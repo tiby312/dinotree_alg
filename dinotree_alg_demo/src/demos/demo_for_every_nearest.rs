@@ -106,7 +106,7 @@ impl DemoSys for KnearestEveryDemo{
                 BInner{acc,rect:Conv::from_rect(aabb_from_pointf64(p,[0.0;2]))}          
             }));
 
-            for a in tree.iter(){
+            for a in tree.iter_every_bot(){
                 let p=Conv::point_to_inner(a.get_center());
                 let r=5.0;
                 let r=Conv::from_rect(aabb_from_pointf64(p,[r;2]));

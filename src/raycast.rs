@@ -79,7 +79,7 @@ macro_rules! raycast{
             let ((depth,nn),rest)=stuff.next();
             match rest{
                 Some((extra,left,right))=>{
-                    let (div,cont)=match extra{
+                    let FullComp{div,cont}=match extra{
                         Some(b)=>b,
                         None=>return
                     };

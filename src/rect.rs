@@ -32,7 +32,7 @@ macro_rules! rect{
             let (nn,rest)=m.next();
             match rest{
                 Some((extra,left,right))=>{
-                    let (div,cont)=match extra{
+                    let FullComp{div,cont}=match extra{
                         Some(b)=>b,
                         None=>return
                     };

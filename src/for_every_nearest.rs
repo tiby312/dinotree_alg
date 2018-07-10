@@ -24,7 +24,7 @@ pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>,K:Knearest<
 	let mut already_hit:Vec<*const T>=Vec::with_capacity(tree.tree.get_num_bots()/2);
 
 	let tree2=tree as *mut DynTree<A,(),T>;
-	for b in tree.iter_mut(){
+	for b in tree.iter_every_bot_mut(){
         if !already_hit.contains(&(b as *const T)){	        
 	        
 	        let mut nearest_bot=None;
