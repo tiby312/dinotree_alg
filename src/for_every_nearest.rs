@@ -13,15 +13,15 @@ pub trait IsPoint:HasAabb{
 }
 
 
-///Here we exploit the fact that if the nearest bot to a bot A is B, then the nearest bot to B is A.
+///Here we exploit the fact that if the nearest point to a point A is B, then the nearest point to B is A.
 ///Finding the nearest distance between two shapes is difficult, and not implemented here.
 ///Finding the nearest distance betweeen two points is easy.
-///By exploiting this propety that B.nearest()=A.nearest(), we can half the numbers of knearest() queries that need to be done.
+///By exploiting this propety that B.nearest()==A.nearest(), we can half the numbers of knearest() queries that need to be done.
 ///This function is implemented simply, by iterating thorugh all the bots and calling knearest on it.
 ///I think there room for improvement here. I think it can be turned into a divider and conquer type problem.
 ///But it is difficult to know which nodes to exclude. The "nearest" is specifcally a 2d problem. hard to split into 1d.
 pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
-	let mut already_hit:Vec<*const T>=Vec::with_capacity(tree.tree.get_num_bots()/2);
+	let mut already_hit:Vec<*const T>=Vec::with_capacity(tree.get_num_bots()/2);
 
 	let tree2=tree as *mut DynTree<A,(),T>;
 	for b in tree.iter_every_bot_mut(){

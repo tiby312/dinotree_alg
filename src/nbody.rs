@@ -254,7 +254,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
     let ((depth,nn),rest)=it.next();
     match rest{
         Some((extra,mut left,mut right))=>{
-            let FullComp{div,cont}=match extra{
+            let &FullComp{div,cont}=match extra{
                 Some(b)=>b,
                 None=>return
             };
@@ -395,7 +395,7 @@ fn generic_rec<
     let ((depth,nn),rest)=stuff.next();
     match rest{
         Some((extra,left,right))=>{
-            let FullComp{div,cont}=match extra{
+            let &FullComp{div,cont}=match extra{
                 Some(b)=>b,
                 None=>return
             };
@@ -458,7 +458,7 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut D
     let axis=t1.get_axis();
     let height=t1.get_height();
  
-    buildtree(axis,t1.tree.get_iter_mut(),ncontext.clone());
+    buildtree(axis,t1.get_iter_mut(),ncontext.clone());
 
     {
         let kk=if height<3{
@@ -466,11 +466,11 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut D
         }else{
             height-3
         };
-        let d=t1.tree.get_iter_mut().with_depth(Depth(0));
+        let d=t1.get_iter_mut().with_depth(Depth(0));
         recc(par::Parallel(Depth(kk)),axis,d,ncontext.clone());    
     }
 
-    apply_tree(axis,t1.tree.get_iter_mut(),ncontext);
+    apply_tree(axis,t1.get_iter_mut(),ncontext);
 }
 
 
@@ -536,14 +536,14 @@ pub fn nbody<A:AxisTrait,N:NodeMassTrait>(t1:&mut DynTree<A,N::No,N::T>,ncontext
     let t1:&mut DynTree<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
 
 
-    buildtree(axis,t1.tree.get_iter_mut(),ncontext.clone());
+    buildtree(axis,t1.get_iter_mut(),ncontext.clone());
 
     {
-        let d=t1.tree.get_iter_mut().with_depth(Depth(0));
+        let d=t1.get_iter_mut().with_depth(Depth(0));
         recc(par::Sequential,axis,d,ncontext.clone());    
     }
 
-    apply_tree(axis,t1.tree.get_iter_mut(),ncontext);
+    apply_tree(axis,t1.get_iter_mut(),ncontext);
 
 }
 

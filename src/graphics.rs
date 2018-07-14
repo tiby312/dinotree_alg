@@ -1,22 +1,16 @@
 
-//!Provides capability to draw the dividers of each node.
-
-//TODO move this to dinotree inner!!!!
-
-
 use inner_prelude::*;
 use dinotree_inner::*;
 
 
+///Trait user must implement.
 pub trait DividerDrawer{
     type N:NumTrait;
     fn draw_divider<A:AxisTrait>(&mut self,axis:A,div:Self::N,cont:[Self::N;2],length:[Self::N;2],depth:usize);
 }
 
-
-//TODO fix this to hide rect.
-///Meant to then be drawn using triangles.
-///User must provide a mutable slice of verticies of the length returned by get_num_verticies().
+///Call the user supplied function on each divider.
+///Since the leaves do not have dividers, it is not called for the leaves.
 pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
     gentree: &DynTree<A,(),T>,
     dr:&mut D,
@@ -29,7 +23,7 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
 
         match rest{
             Some((extra,left,right))=>{
-                let FullComp{div,cont}=match extra{
+                let &FullComp{div,cont}=match extra{
                     Some(d)=>d,
                     None=>return
                 };

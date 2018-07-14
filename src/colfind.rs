@@ -1,8 +1,14 @@
+//!
+//! An mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
+//!
+//!
+//!
 use inner_prelude::*;
 use oned;
 use dinotree_inner::par::Joiner;
-
-///Naive version.
+use dinotree_inner::treetimer::TreeTimer2;
+    
+///Naive algorithm.
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,|a,b|{
         if a.get().get_intersect_rect(b.get()).is_some(){
@@ -74,7 +80,7 @@ fn go_down<
     let (nn,rest)=m.next();
     match rest{
         Some((extra,left,right))=>{
-            let FullComp{div,cont}=match extra{
+            let &FullComp{div,cont}=match extra{
                 Some(d)=>d,
                 None=>return
             };
@@ -139,11 +145,11 @@ fn go_down<
 
 
 
-pub struct DestructuredNode<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a>{
-    pub cont:Range<T::Num>,
-    pub div:T::Num,
-    pub range:&'a mut [T],
-    pub axis:AnchorAxis
+struct DestructuredNode<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a>{
+    cont:Range<T::Num>,
+    div:T::Num,
+    range:&'a mut [T],
+    axis:AnchorAxis
 }
 
 fn recurse<
@@ -167,7 +173,7 @@ fn recurse<
 
     match rest{
         Some((extra,mut left,mut right))=>{
-            let FullComp{div,cont}=match extra{
+            let &FullComp{div,cont}=match extra{
                 Some(d)=>d,
                 None=>return (clos,timer_log.leaf_finish())
             };
@@ -218,7 +224,7 @@ fn recurse<
 }
 
 
-pub trait ColMulti:Sized {
+pub(crate) trait ColMulti:Sized {
     type T: HasAabb;
     fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
     fn div(self)->(Self,Self);
@@ -254,7 +260,20 @@ mod todo{
     }
 }
 
-pub fn query_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
+
+///Debug Sequential
+pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T))->Vec<f64>{
+    let height=tree.get_height();
+    query_seq_mut_inner(tree,func,TreeTimer2::new(height)).into_vec()
+}
+
+///Sequential
+pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
+    let height=tree.get_height();
+    let _ = query_seq_mut_inner(tree,func,TreeTimerEmpty::new(height));
+}
+
+fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerTrait>(tree:&mut DynTree<A,(),T>,mut func:F,h:K)->K::Bag{
 
     mod wrap{
         //Use this to get rid of Send trait constraint.
@@ -313,16 +332,49 @@ pub fn query_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl 
     let wrap=wrap::Wrapper(&mut func,PhantomData);
 
     let tree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(tree)};
-    self::query_par_adv_mut::<_,_, _, _, TreeTimerEmpty>(
+    self::query_par_adv_mut(
         par::Sequential,
         tree,
+        h,
         wrap,
-    );
+    ).1
     
 }
 
+///Debug Parallel
+pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,mut func:impl Fn(&mut T,&mut T)+Copy+Send)->Vec<f64>{
+    
+    let c1=move |_:&mut (),a:&mut T,b:&mut T|{
+        func(a,b);
+    };
 
-pub fn query_par_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+    let c2=|_:()|((),());
+    let c3=|_:(),_:()|();
+
+    let clos = self::closure_struct::ColMultiStruct{aa
+        :(),a:c1,f2:c2,f3:c3,_p:PhantomData};
+
+
+
+    const DEPTH_SEQ:usize=4;
+
+    let height=tree.get_height();
+    let gg=if height<=DEPTH_SEQ{
+        Depth(0)
+    }else{
+        Depth(height-DEPTH_SEQ)
+    };
+
+    self::query_par_adv_mut(
+        par::Parallel::new(gg),
+        tree,
+        TreeTimer2::new(height),
+        clos,
+    ).1.into_vec()
+}
+
+///Parallel
+pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
 
     let c1=move |_:&mut (),a:&mut T,b:&mut T|{
         func(a,b);
@@ -345,16 +397,17 @@ pub fn query_par_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:
         Depth(height-DEPTH_SEQ)
     };
 
-    self::query_par_adv_mut::<_,_, _, _, TreeTimerEmpty>(
+    self::query_par_adv_mut(
         par::Parallel::new(gg),
         tree,
+        TreeTimerEmpty::new(height),
         clos,
     );        
 }
 
 ///The user has more control using this version of the query.
 ///It also returns time information.
-pub fn query_par_adv_mut<
+fn query_par_adv_mut<
     A: AxisTrait,
     JJ: par::Joiner,
     T: HasAabb+Send,
@@ -363,6 +416,7 @@ pub fn query_par_adv_mut<
 >(
     par: JJ,
     kdtree: &mut DynTree<A,(), T>,
+    h:K,
     clos: F,
 ) -> (F,K::Bag) {
     let this_axis=kdtree.get_axis();
@@ -370,7 +424,7 @@ pub fn query_par_adv_mut<
     let dt = kdtree.get_iter_mut();
     let mut sweeper = oned::Sweeper::new();
 
-    let h = K::new(height);
+    //let h = K::new(height);
     let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h,Depth(0));
     bag
 }

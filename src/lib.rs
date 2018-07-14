@@ -1,10 +1,9 @@
-//! An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
 //! ## Goal
 //! To provide a fast and simple to use broad-phase collision system.
 //!
 //! ## Notes                      
 //!
-//! Checkout included examples. 
+//! Checkout the demo inner project to see how all these algorithms can be used.
 //!
 //! The mutable reference to each element in the callback functions do not point to elements
 //! in the user supplied slice of elements. The elements are internally unsafely copied directly into a tree structure
@@ -78,21 +77,28 @@ pub mod support;
 ///Contains query code
 pub mod colfind;
 
+///Allows use to intersect the tree with a seperate group of bots.
 pub mod intersect_with;
 
+///Contains all k_nearest code.
 pub mod k_nearest;
 
+///Contains all for_every_nearest code.
 pub mod for_every_nearest;
 
+///Contains all nbody code.
 pub mod nbody;
 
+///Contains all raycast code.
 pub mod raycast;
 
+///Contains find element code.
 pub mod find_element;
 
-
+///Contains rect code.
 pub mod rect;
 
+///Contains multirect code.
 pub mod multirect;
 
 ///A collection of 1d functions that operate on lists of 2d objects.

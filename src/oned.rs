@@ -44,7 +44,7 @@ impl<I: HasAabb> Sweeper<I> {
 
 
     //Bots a sorted along the axis.
-    pub fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
+    pub(crate) fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
         bots: &mut [F::T],
@@ -58,7 +58,7 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
 
-    pub fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
+    pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
         bots1: &mut [F::T],
@@ -74,7 +74,7 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
 
-    pub fn find_parallel_2d_no_check<A: AxisTrait, F: ColMulti<T=I>>(
+    pub(crate) fn find_parallel_2d_no_check<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
         bots1: &mut [F::T],
@@ -84,7 +84,7 @@ impl<I: HasAabb> Sweeper<I> {
         self.find_bijective_parallel(axis,(bots1, bots2), clos2);
     }
 
-    pub fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
+    pub(crate) fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
         r1: &mut [F::T],
         r2: &mut [F::T],
         mut clos2: F){
