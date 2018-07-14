@@ -4,20 +4,10 @@
 An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
 
 
-#prefer NotNaN<> over OrderedFloat<>.
-NotNaN has no overhead for comparisions, but has overhead for computation, the opposite is true for OrderedFloat.
-For querying the tree colliding pairs, since no calculations are done, just a whole lot of comparisions, prefer NotNaN<>.
-Other queries do require arithmatic, like raycast and knearest. So in those cases maybe ordered float is preferred.
-
-
 # Goal
 Create a fast and simple to use broad-phase collision system whose running time did not depend on the size of the 2d space
 in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
 
-
-#
-Ideally you only construct the bounding box for the duration that you use the tree.
-This way, the algorithms that dont use the bounding box have better spatial locality in memory.
 
 #
 let X be the random variable destrbing whether or not two bots collide.

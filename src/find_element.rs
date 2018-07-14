@@ -13,7 +13,7 @@ pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(tree:&DynTree<A,(),
         }
 
         match rest{
-            Some((extra,left,right))=>{
+            Some((_extra,left,right))=>{
                 let mut tl=trail.clone();
                 let mut tr=trail.clone();
                 tl.push(true);

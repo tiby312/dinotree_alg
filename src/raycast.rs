@@ -76,7 +76,7 @@ macro_rules! raycast{
             R: RayTrait<T=T,N=N>
             >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,ray:Ray<N>,closest:&mut Closest<T>){
 
-            let ((depth,nn),rest)=stuff.next();
+            let ((_depth,nn),rest)=stuff.next();
             match rest{
                 Some((extra,left,right))=>{
                     let &FullComp{div,cont}=match extra{

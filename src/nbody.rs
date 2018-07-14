@@ -60,15 +60,15 @@ fn buildtree<'a,
                         recc(axis.next(),left,ncontext);    
                         recc(axis.next(),right,n2);
                     },
-                    Some(FullComp{div,cont})=>{
+                    Some(FullComp{div:_,cont:_})=>{
 
                         let nodeb={
                             let left=left.create_wrap_mut();
                             let right=right.create_wrap_mut();
 
                             
-                            let i1=left.dfs_preorder_iter().flat_map(|(node,extra)|{node.range.iter()});
-                            let i2=right.dfs_preorder_iter().flat_map(|(node,extra)|{node.range.iter()});
+                            let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
+                            let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
                             let i3=nn.range.iter().chain(i1.chain(i2));
                             ncontext.new(i3)
                         };
@@ -102,7 +102,7 @@ fn apply_tree<'a,
         let (nn,rest)=stuff.next();
         match rest{
             Some((extra,mut left,mut right))=>{
-                let FullComp{div,cont}=match extra{
+                let FullComp{div:_,cont:_}=match extra{
                     Some(b)=>b,
                     None=>return
                 };
@@ -111,8 +111,8 @@ fn apply_tree<'a,
                     let left=left.create_wrap_mut();
                     let right=right.create_wrap_mut();
                                             
-                    let i1=left.dfs_preorder_iter().flat_map(|(node,extra)|{node.range.iter_mut()});
-                    let i2=right.dfs_preorder_iter().flat_map(|(node,extra)|{node.range.iter_mut()});
+                    let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
+                    let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
                     let i3=nn.range.iter_mut().chain(i1.chain(i2));
                     
                     ncontext.apply_to_bots(&mut nn.misc,i3);
@@ -254,7 +254,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
     let ((depth,nn),rest)=it.next();
     match rest{
         Some((extra,mut left,mut right))=>{
-            let &FullComp{div,cont}=match extra{
+            let &FullComp{div,cont:_}=match extra{
                 Some(b)=>b,
                 None=>return
             };
@@ -395,7 +395,7 @@ fn generic_rec<
     let ((depth,nn),rest)=stuff.next();
     match rest{
         Some((extra,left,right))=>{
-            let &FullComp{div,cont}=match extra{
+            let &FullComp{div,cont:_}=match extra{
                 Some(b)=>b,
                 None=>return
             };

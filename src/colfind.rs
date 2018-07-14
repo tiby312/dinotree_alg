@@ -70,13 +70,13 @@ fn go_down<
     F: ColMulti<T = X>
 >(
     this_axis: A,
-    anchor_axis: B,
     sweeper: &mut oned::Sweeper<X>,
     anchor: &mut DestructuredNode<X,B>,
     m: NdIterMut<(),X>,
     func: &mut F,
     depth:Depth
 ) {
+    let anchor_axis=anchor.axis;
     let (nn,rest)=m.next();
     match rest{
         Some((extra,left,right))=>{
@@ -110,14 +110,14 @@ fn go_down<
             //This can be evaluated at compile time!
             if this_axis.is_equal_to(anchor_axis) {
                 if !(div < anchor.cont.left) {
-                    self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
+                    self::go_down(this_axis.next(), sweeper, anchor, left, func,depth.next_down());
                 };
                 if !(div > anchor.cont.right) {
-                    self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, right, func,depth.next_down());
+                    self::go_down(this_axis.next(), sweeper, anchor, right, func,depth.next_down());
                 };
             } else {
-                self::go_down(this_axis.next(), anchor_axis, sweeper, anchor, left, func,depth.next_down());
-                self::go_down(this_axis.next(), anchor_axis, sweeper, anchor,right, func,depth.next_down());
+                self::go_down(this_axis.next(), sweeper, anchor, left, func,depth.next_down());
+                self::go_down(this_axis.next(), sweeper, anchor,right, func,depth.next_down());
             }
         },
         None=>{
@@ -147,7 +147,7 @@ fn go_down<
 
 struct DestructuredNode<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a>{
     cont:Range<T::Num>,
-    div:T::Num,
+    _div:T::Num,
     range:&'a mut [T],
     axis:AnchorAxis
 }
@@ -179,15 +179,15 @@ fn recurse<
             };
             
 
-            let mut nn=DestructuredNode{range:&mut nn.range,cont,div,axis:this_axis};
+            let mut nn=DestructuredNode{range:&mut nn.range,cont,_div:div,axis:this_axis};
             {
                 sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
 
                 let left=left.create_wrap_mut();
                 let right=right.create_wrap_mut();
 
-                self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, left, &mut clos,level.next_down());
-                self::go_down(this_axis.next(), this_axis, sweeper, &mut nn, right, &mut clos,level.next_down());
+                self::go_down(this_axis.next(), sweeper, &mut nn, left, &mut clos,level.next_down());
+                self::go_down(this_axis.next(), sweeper, &mut nn, right, &mut clos,level.next_down());
             }
             let (ta, tb) = timer_log.next();
 
@@ -262,13 +262,13 @@ mod todo{
 
 
 ///Debug Sequential
-pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T))->Vec<f64>{
+pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T))->Vec<f64>{
     let height=tree.get_height();
     query_seq_mut_inner(tree,func,TreeTimer2::new(height)).into_vec()
 }
 
 ///Sequential
-pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T)){
+pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
     let height=tree.get_height();
     let _ = query_seq_mut_inner(tree,func,TreeTimerEmpty::new(height));
 }
@@ -342,7 +342,7 @@ fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerT
 }
 
 ///Debug Parallel
-pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,mut func:impl Fn(&mut T,&mut T)+Copy+Send)->Vec<f64>{
+pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send)->Vec<f64>{
     
     let c1=move |_:&mut (),a:&mut T,b:&mut T|{
         func(a,b);
@@ -420,11 +420,9 @@ fn query_par_adv_mut<
     clos: F,
 ) -> (F,K::Bag) {
     let this_axis=kdtree.get_axis();
-    let height = kdtree.get_height();
     let dt = kdtree.get_iter_mut();
     let mut sweeper = oned::Sweeper::new();
 
-    //let h = K::new(height);
     let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h,Depth(0));
     bag
 }

@@ -120,7 +120,7 @@ macro_rules! knearest_recc{
             let pp=*axgeom::AxisWrapRef(&point).get(axis);
             let ppother=*axgeom::AxisWrapRef(&point).get(axis.next());
 
-            let ((depth,nn),rest)=stuff.next();
+            let ((_depth,nn),rest)=stuff.next();
 
             match rest{
                 Some((extra,left,right))=>{
