@@ -83,7 +83,7 @@ impl DemoSys for IntersectEveryDemo{
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
     
-        colfind::query_mut(&mut tree,|a, b| {
+        colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.repel(&mut b.inner);
             draw_rect_f64n([1.0,0.0,0.0,0.2],a.get(),c,g);
             draw_rect_f64n([1.0,0.0,0.0,0.2],b.get(),c,g);

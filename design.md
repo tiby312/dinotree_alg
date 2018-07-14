@@ -1,4 +1,4 @@
-In this document, we'll go over the high level design of all the non trivial algorithms provided by this crate.
+In this document, we'll go over the high level design of some of the algorithms provided by this crate.
 
 # Tree data structure
 
@@ -29,6 +29,11 @@ So that should give you an idea of how we achieve great memory compactness, but 
 So how can we layout the nodes in memory to achieve this? Well, putting them in memory in breadth first order doesnt cut it. This achieves the exact opposite. For example, the children of the root are literally right next to it. On the other hand the children of the most left node on the 5th level only show up after you look over all the other nodes at the 5th level. It turns out in-order depth first search gives us the properties that we want. With this ordering, all the parents of leaf nodes are literally right next to them in memory. The children of the root node are potentially extremely far apart, but that is okay since there is only one of them.
 
 
+### Knowing the axis as compile time.
+
+A problem with using recursion on an kd tree is that every time you recurse, you have to access a different axis, so you might have branches in your code. A branch predictor might have problems seeing the pattern that the axis alternate with each call. One way to avoid this would be to handle the nodes in bfs order. Then you only have to alternate the axis once every level. But this way you lose the nice divide and conquer aspect of splitting the problem into two and handling those two problems concurrently. So to avoid, this, the axis of a particular recursive call is known at compile time. Each recursive call, will call the next with the next axis type. This way all branching based off of the axis is known at compile time. A downside to this is that the starting axis of the tree
+must be chosen at compile time. It is certainly possible to create a wrapper around two specialized versions of the tree, one for each axis, but this would leads to alot of generated code, for I suspect little benefit. Not much time is spent handling the root node anyway, so even if the suboptimal starting axis is picked it is not that big of a deal.
+
 
 
 # Algorithms overview
@@ -51,21 +56,9 @@ Done via divide and conquer. For every node we do the following:
 
 The sweep and prune algorithm is a good candidate to use since, for one thing is uses very little memory (just a stack that can be reused as you handle decendant nodes). But the real reason why it is good is the fact that the bots are likely to be stewn across a line. Sweep and prune degenerates when the active list that it must maintain has many bots that end up not intersecting. This isnt likely to happen for the bots that belong to a node. The bots that belong to a non leaf node are guarenteed to touch the divider. If the divider partitions bots based off their x value, then the bots that belong to that node will all have x values that are roughly close together (they must intersect divider), but they y values can be vastly different (all the bots will be scattered up and down the dividing line). So when we do sweep and prune, it is important that we sweep and prune along axis that is different from the axis along which the divider is partitioning.
 
-## Knowing the axis as compile time.
-
-A problem with using recursion on an kd tree is that every time you recurse, you have to access a different axis, so you might have branches in your code. A branch predictor might have problems seeing the pattern that the axis alternate with each call. One way to avoid this would be to handle the nodes in bfs order. Then you only have to alternate the axis once every level. But this way you lose the nice divide and conquer aspect of splitting the problem into two and handling those two problems concurrently. So to avoid, this, the axis of a particular recursive call is known at compile time. Each recursive call, will call the next with the next axis type. This way all branching based off of the axis is known at compile time. A downside to this is that the starting axis of the tree
-must be chosen at compile time. It is certainly possible to create a wrapper around two specialized versions of the tree, one for each axis, but this would leads to alot of generated code, for I suspect little benefit. Not much time is spent handling the root node anyway, so even if the suboptimal starting axis is picked it is not that big of a deal.
-
 ## Performance
 
 The construction of the tree may seem expensive, but it is still less than the possible cost of this algorithm. This algorithm could dominate very easily depending on how many bots intersect. That is why the cost of sorting the bots in each node is worth it because our goal is to make this algorithm the fasted it possibly can be. The load of the rebalancing of the tree doesnt very as much as the load of this algorithm. 
-
-
-
-# Raycasting
-
-
-# Knearest
 
 
 # Nbody
@@ -85,4 +78,16 @@ So once the extra data is setup, for every node we do the following:
     At this point we can safely exclude this node and handle the children and completely independent problems.
 
 
+
+# Raycasting
+
+TODO explain
+
+# Knearest
+
+TODO explain
+
+
 # Rect
+
+TODO explain.

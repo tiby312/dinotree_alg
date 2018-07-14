@@ -51,7 +51,7 @@ impl DemoSys for DataColFind{
             }));
 
 
-            colfind::query_mut(&mut tree,|a, b| {
+            colfind::query_seq_mut(&mut tree,|a, b| {
                 a.inner.num+=2;
                 b.inner.num+=2;
                 let a=datanum::into_rect(*a.get());

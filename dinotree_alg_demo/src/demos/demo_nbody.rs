@@ -203,7 +203,7 @@ impl DemoSys for DemoNbody{
 
         let mut tree=tree.with_extra(());                
       
-        colfind::query_par_mut(&mut tree,|a, b| {
+        colfind::query_seq_mut(&mut tree,|a, b| {
             let (a,b)=if a.inner.mass>b.inner.mass{
                 (a,b)
             }else{
