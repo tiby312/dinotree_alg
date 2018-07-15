@@ -1,7 +1,5 @@
 use support::prelude::*;
 use dinotree::colfind;
-use dinotree::rect;
-use dinotree_geom;
 use csv;
 use std;
 
@@ -18,11 +16,11 @@ pub struct DataColFind{
 
 
 impl DataColFind{
-    pub fn new(dim:[f64;2])->DataColFind{    
-        let mut wtr = csv::Writer::from_writer(std::io::stdout());
+    pub fn new(_dim:[f64;2])->DataColFind{    
+        let wtr = csv::Writer::from_writer(std::io::stdout());
         DataColFind{num_bots:0,wtr}
     }
-}
+} 
 
 
 fn instant_to_sec(elapsed:Duration)->f64{
@@ -30,7 +28,7 @@ fn instant_to_sec(elapsed:Duration)->f64{
            
 }
 impl DemoSys for DataColFind{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,_cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
        
         let s=SpiralGenerator::new([400.0,400.0],12.0,2.0);
 

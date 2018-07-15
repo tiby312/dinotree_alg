@@ -29,7 +29,7 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
                 };
 
                 let cont=[cont.left,cont.right];
-                let rr=rect.as_axis().get(axis.next());
+                let rr=rect.get_range(axis.next());
                 dr.draw_divider::<A>(axis,div,cont,[rr.left,rr.right],depth.0);
 
 

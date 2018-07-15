@@ -1,7 +1,5 @@
 use support::prelude::*;
 use dinotree::colfind;
-use dinotree::rect;
-use dinotree_geom;
 use csv;
 use std;
 pub struct Bot{
@@ -14,8 +12,8 @@ pub struct DataColFind{
 
 
 impl DataColFind{
-    pub fn new(dim:[f64;2])->DataColFind{    
-        let mut wtr = csv::Writer::from_writer(std::io::stdout());
+    pub fn new(_dim:[f64;2])->DataColFind{    
+        let wtr = csv::Writer::from_writer(std::io::stdout());
         DataColFind{num_bots:0,wtr}
     }
 }
@@ -47,9 +45,11 @@ pub fn test(s:SpiralGenerator,num_bots:usize)->usize{
         }
     ).collect();
 
+    /*
     for bot in bots.iter(){
-        //draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
-    }  
+        draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
+    } 
+    */ 
 
     let c1={
         let mut counter=datanum::Counter::new();
@@ -63,8 +63,8 @@ pub fn test(s:SpiralGenerator,num_bots:usize)->usize{
         colfind::query_mut(&mut tree,|a, b| {
             a.inner.num+=2;
             b.inner.num+=2;
-            let a=datanum::into_rect(*a.get());
-            let b=datanum::into_rect(*b.get());
+            //let a=datanum::into_rect(*a.get());
+            //let b=datanum::into_rect(*b.get());
             //draw_rect_isize([1.0,0.0,0.0,0.2],&a,c,g);
             //draw_rect_isize([1.0,0.0,0.0,0.2],&b,c,g);
     
@@ -90,17 +90,17 @@ pub struct DataColFind3d{
 
 
 impl DataColFind3d{
-    pub fn new(dim:[f64;2])->DataColFind3d{    
-        let mut wtr = csv::Writer::from_writer(std::io::stdout());
+    pub fn new(_dim:[f64;2])->DataColFind3d{    
+        let wtr = csv::Writer::from_writer(std::io::stdout());
         DataColFind3d{num_bots:0,wtr}
     }
 }
 
 
 impl DemoSys for DataColFind3d{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,_cursor:[f64;2],_c:&piston_window::Context,_g:&mut piston_window::G2d){
 
-        let mut cc=ClosenessCounter{radius:12.0};
+        let cc=ClosenessCounter{radius:12.0};
         for s in cc{
             let circular_grow=s.get_circular_grow();
                 

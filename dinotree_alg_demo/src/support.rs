@@ -22,10 +22,7 @@ use ordered_float::NotNan;
 
 
 pub mod datanum{
-    use std;
     use std::cmp::Ordering;
-    use std::cell::UnsafeCell;
-    use std::marker::PhantomData;
     use axgeom::Rect;
 
     pub struct Counter(usize);
@@ -61,9 +58,11 @@ pub mod datanum{
     unsafe impl Sync for DataNum{}
 
     impl DataNum{
+        /*
         pub fn new(&self,a:isize)->DataNum{
             DataNum(a,self.1)
         }
+        */
         pub fn into_inner(&self)->isize{
             self.0
         }
@@ -86,7 +85,7 @@ pub mod datanum{
         fn cmp(&self, other: &DataNum) -> Ordering {
 
             unsafe{
-                let mut p=self.1;
+                let p=self.1;
                 (*p).0+=1;
             }
             self.0.cmp(&other.0)

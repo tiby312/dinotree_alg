@@ -36,12 +36,12 @@ macro_rules! rect{
                         Some(b)=>b,
                         None=>return
                     };
-                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.as_axis().get(this_axis.next()));
+                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.get_range(this_axis.next()));
 
                     for i in sl {
                         func(i);
                     }
-                    let rr = rect.as_axis().get(this_axis);
+                    let rr = rect.get_range(this_axis);
 
                     if !(div < rr.left) {
                         self::rect_recurse(this_axis.next(), left, rect, func);
@@ -51,7 +51,7 @@ macro_rules! rect{
                     }
                 },
                 None=>{
-                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.as_axis().get(this_axis.next()));
+                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.get_range(this_axis.next()));
 
                     for i in sl {
                         func(i);

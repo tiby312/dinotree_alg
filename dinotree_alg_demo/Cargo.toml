@@ -8,11 +8,12 @@ serde = "*"
 serde_derive = "*"
 csv="*"
 rayon="*"
-compt={path="../../compt"}
-dinotree_geom={path="../../dinotree_geom"}
+compt = {git ="https://github.com/tiby312/compt.git"}
+axgeom = {git="https://github.com/tiby312/axgeom.git"}
+smallvec = "0.6.1"
+dinotree_inner = {git="https://github.com/tiby312/dinotree_inner.git"}
+dinotree_geom={git="https://github.com/tiby312/dinotree_geom"}
 dinotree = {path=".."}
-dinotree_inner = {path="../../dinotree_inner"}
-axgeom={path="../../axgeom"}
 new-ordered-float = "1.0.1"
 rand = "0.3"
 rustc-test = "0.3.0"

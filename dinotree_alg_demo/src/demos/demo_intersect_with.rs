@@ -82,8 +82,8 @@ impl DemoSys for IntersectWithDemo{
             let fric=0.8;
 
 
-            let wallx=wall.get().as_axis().get(axgeom::XAXISS);
-            let wally=wall.get().as_axis().get(axgeom::YAXISS);
+            let wallx=wall.get().get_range(axgeom::XAXISS);
+            let wally=wall.get().get_range(axgeom::YAXISS);
             let vel=bot.inner.vel;
 
             let ret=match dinotree_geom::collide_with_rect(bot.get(),wall.get()){

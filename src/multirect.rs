@@ -40,7 +40,7 @@ pub fn multi_rect_mut<'a,A:AxisTrait,T:HasAabb>(tree:&'a mut DynTree<A,(),T>)->M
 fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
     let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
-        let (p1,p2)=(a.get().as_axis().get(axis).left,b.get().as_axis().get(axis).left);
+        let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
         if p1 > p2 {
             return std::cmp::Ordering::Greater;
         }

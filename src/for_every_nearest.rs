@@ -8,7 +8,7 @@ use k_nearest::Knearest;
 pub trait IsPoint:HasAabb{
 	fn get_center(&self)->[Self::Num;2]{
 		let r=self.get();
-		[r.as_axis().get(axgeom::XAXISS).left,r.as_axis().get(axgeom::YAXISS).left]
+		[r.get_range(axgeom::XAXISS).left,r.get_range(axgeom::YAXISS).left]
 	}
 }
 
