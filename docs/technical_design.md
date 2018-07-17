@@ -1,6 +1,18 @@
 The main point is that no arithmatic is done. Use must supply this.
 
 
+## Continuous Collision detection
+TODO
+
+## Dynamic Allocation
+
+Sure dynamic allocation is "slow", but that mean you should avoid it. You should use it as a tool to speed up a program. It has a cost, but the idea is that with that allocated memory you can get more performance gains.
+
+The problem is that everybody has to buy into the system for it to work. Anybody who allocated a bunch of memory and doesn't return it because they want to avoid allocating it again is not hogging that space for longer than it needs it.
+
+Writing apis that don't do dynamic allocation is tough and can be cumbursome., since you probably have to have the user give you a slice of a certain size. On the other hand this let's the user know exactly how much memory your crate needs.
+
+
 
 
 Parallalization is done using rayon. The rust slice provided split_at_mut() and rayon's join() are two extremely powerful constructs. Seeing and understanding the api and implementation of split_at_mut() is what convinced me that rust was the future.

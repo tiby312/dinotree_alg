@@ -32,6 +32,15 @@ So that should give you an idea of how we achieve great memory compactness, but 
 
 So how can we layout the nodes in memory to achieve this? Well, putting them in memory in breadth first order doesnt cut it. This achieves the exact opposite. For example, the children of the root are literally right next to it. On the other hand the children of the most left node on the 5th level only show up after you look over all the other nodes at the 5th level. It turns out in-order depth first search gives us the properties that we want. With this ordering, all the parents of leaf nodes are literally right next to them in memory. The children of the root node are potentially extremely far apart, but that is okay since there is only one of them.
 
+### Destruction of tree
+
+When we destroy the tree, we want to return the bots to the user is the same order that they were put in. This way the user can rely on indicies for other algorithms to uniquely identify a bot. To do this, during tree construction, we also build up a Vec of offsets to be used to return the bots to their original position. We keep this as a seperate data structure as it will only be used on destruction of the tree. If we were to put the offset data into the tree itself, it would be wasted space and would degrade the memory localicty of the tree query algorithms.
+
+### Memory complexity during construction
+
+Construction involves a couple of allocations. TODO talk
+
+
 ### Leaves
 
 The leaves do not have dividers. This means that if we use the same type for both nonleaves, and leaves we have wasted space in our leaf objects. This wouldnt be so bad if it wernt for two things. First, this is a complete binary tree, so literally half the nodes are leaves. Second, before the tree is laid out in dfs in order order in memory, this means that the distance between the root node and its children is effected by the empty space all of the leaves between them of which a quarter of the leaves will be. Our goal is to make this as compact in memory as possible, so to avoid this, we simply have two different types. 

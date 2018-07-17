@@ -71,9 +71,6 @@ mod inner_prelude {
 ///Provides functionality to draw the dividers of a dinotree.
 pub mod graphics;
 
-///Contains convenience structs.
-pub mod support;
-
 ///Contains query code
 pub mod colfind;
 
