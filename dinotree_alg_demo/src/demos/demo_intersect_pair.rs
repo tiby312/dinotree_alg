@@ -3,6 +3,7 @@ use dinotree::colfind;
 use dinotree::rect;
 use dinotree_geom;
 
+#[derive(Copy,Clone)]
 pub struct Bot{
     pos:[f64;2],
     vel:[f64;2],
@@ -71,9 +72,8 @@ impl DemoSys for IntersectEveryDemo{
         }
 
 
-        let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
-            BBox::new(Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2])),b)
-        }));
+        let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2]))});
+
 
         rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             b.inner.repel_mouse(cursor);
@@ -90,8 +90,8 @@ impl DemoSys for IntersectEveryDemo{
         });
     
     
-        for b in tree.into_iter_orig_order(){
-            bots.push(b.inner);
+        for (b,ff) in tree.into_iter_orig_order().zip(bots.iter_mut()){
+            *ff=b.inner;
         }
      }
 }

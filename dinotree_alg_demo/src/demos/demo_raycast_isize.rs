@@ -57,15 +57,18 @@ impl RaycastDemo{
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
-        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+        let mut bots_fake=create_world_generator(500,dim,radius,velocity);
+
+        let bots=vec![();500];
+
+        //let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
+        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|a|{
+            let ret=bots_fake.next().unwrap();
             let ret=ret.into_isize();
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),())
+            axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
         });
-
-        //let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
-        let tree = DynTree::new(axgeom::XAXISS,(),bots);
         RaycastDemo{tree,counter:0.0}
     }
 }

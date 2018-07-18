@@ -3,7 +3,7 @@ use dinotree::nbody;
 use dinotree::colfind;
 use dinotree_geom;
 use dinotree_geom::GravityTrait;
-
+use dinotree_inner::HasAabb;
 
 #[derive(Copy,Clone)]
 struct NodeMass{
@@ -111,7 +111,7 @@ impl nbody::NodeMassTrait for Bla{
 }
 
 
-
+#[derive(Copy,Clone)]
 pub struct Bot{
     pos:[f64;2],
     vel:[f64;2],
@@ -192,10 +192,8 @@ impl DemoSys for DemoNbody{
         
         let mut tree={
             let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2]};
-            DynTree::new(axgeom::XAXISS,n,bots.drain(..).map(
-                |a|{
-                    BBox::new(a.create_aabb(),a)
-                }))
+
+            DynTree::new(axgeom::XAXISS,n,&bots,|b|{b.create_aabb()})
         };
         
         nbody::nbody_par(&mut tree,Bla);
@@ -245,8 +243,8 @@ impl DemoSys for DemoNbody{
             draw_rect_f64n([0.0,0.5,0.0,1.0],bot.get(),c,g);
         }
 
-        for b in tree.into_iter_orig_order(){
-            bots.push(b.inner);
+        for (b,ff) in tree.into_iter_orig_order().zip(bots.iter_mut()){
+            *ff=b.inner;
         }
         
         {

@@ -15,7 +15,7 @@ pub mod prelude{
     pub(crate) use axgeom;
     pub(crate) use support::*;
     
-    pub use dinotree::support::*;
+    pub use dinotree_inner::BBox;
 
 }
 use ordered_float::NotNan;

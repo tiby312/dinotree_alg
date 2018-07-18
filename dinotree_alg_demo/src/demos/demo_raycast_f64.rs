@@ -56,13 +56,17 @@ impl RaycastF64Demo{
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
-        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+        let mut bot_iter=create_world_generator(500,dim,radius,velocity);
+
+        let bots=vec![();500];
+
+        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|b|{
+            let ret=bot_iter.next().unwrap();
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(Conv::from_rect(aabb_from_pointf64(p,r)),())
+            Conv::from_rect(aabb_from_pointf64(p,r))
         });
 
-        let tree = DynTree::new(axgeom::XAXISS,(),bots);
         RaycastF64Demo{tree}
     }
 }

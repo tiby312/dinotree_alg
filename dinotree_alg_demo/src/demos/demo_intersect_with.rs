@@ -4,6 +4,10 @@ use dinotree::rect;
 use dinotree::intersect_with;
 use dinotree_geom;
 use dinotree;
+use dinotree_inner;
+
+
+#[derive(Copy,Clone)]
 pub struct Bot{
     pos:[f64;2],
     vel:[f64;2],
@@ -19,6 +23,16 @@ impl dinotree_geom::RepelTrait for Bot{
         self.force[1]+=force[1];
     }
 }
+/*
+impl dinotree_inner::GenerateAabb for Bot{
+    type Num=F64n;
+    fn create_aabb(&self)->axgeom::Rect<F64n>{
+        let rect=aabb_from_pointf64(self.pos,[radius;2]);
+        BBox::new(Conv::from_rect(rect),b)
+    }
+}
+*/
+
 impl Bot{
     fn update(&mut self){
         self.vel[0]+=self.force[0];
@@ -34,10 +48,20 @@ impl Bot{
         self.force[1]=0.0;
     }
 }
+
+
+struct Wall(axgeom::Rect<F64n>);
+impl HasAabb for Wall{
+    type Num=F64n;
+    fn get(&self)->&axgeom::Rect<F64n>{
+        &self.0
+    }
+
+}
 pub struct IntersectWithDemo{
     radius:f64,
     bots:Vec<Bot>,
-    walls:Vec<BBox<F64n,()>>,
+    walls:Vec<Wall>,
     dim:[f64;2]
 }
 impl IntersectWithDemo{
@@ -52,7 +76,7 @@ impl IntersectWithDemo{
         let radius=[10,60];
         let walls=create_world_generator(40,dim2,radius,velocity).map(|ret|{
             let rect=aabb_from_pointf64(ret.pos,ret.radius);
-            BBox::new(Conv::from_rect(rect),())//{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
+            Wall(Conv::from_rect(rect))
         }).collect();
 
         IntersectWithDemo{radius:5.0,bots,walls,dim}
@@ -72,11 +96,9 @@ impl DemoSys for IntersectWithDemo{
         bots[0].pos=cursor;
 
 
-        let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
-            let p=b.pos;
-            let rect=aabb_from_pointf64(p,[radius;2]);
-            BBox::new(Conv::from_rect(rect),b)
-        })); 
+        let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|bot|{
+           Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
+        }); 
 
         intersect_with::intersect_with_mut(&mut tree,walls,|bot,wall|{
             let fric=0.8;
@@ -118,16 +140,17 @@ impl DemoSys for IntersectWithDemo{
         });
 
         
-        for b in tree.into_iter_orig_order(){
-            bots.push(b.inner);
+        for (a,b) in bots.iter_mut().zip(tree.into_iter_orig_order()){
+            *a=b.inner;
+            //bots[0](b.inner);
         }
 
         //Update the aabbs to match the new positions.
-        let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{
+        let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{
             let p=b.pos;
             let rect=aabb_from_pointf64(p,[radius;2]);
-            BBox::new(Conv::from_rect(rect),b)
-        }));
+            Conv::from_rect(rect)
+        });
     
 
 
@@ -192,8 +215,8 @@ impl DemoSys for IntersectWithDemo{
         let mut dd=Bla{c:&c,g};
         dinotree::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
 
-        for b in tree.into_iter_orig_order(){
-            bots.push(b.inner);
+        for (b,ff) in tree.into_iter_orig_order().zip(bots.iter_mut()){
+            *ff=b.inner;
         }
      }
 }

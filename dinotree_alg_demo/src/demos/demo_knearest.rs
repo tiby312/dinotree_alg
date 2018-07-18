@@ -2,20 +2,21 @@ use support::prelude::*;
 use dinotree::k_nearest;
 use dinotree_geom;
 pub struct KnearestDemo{
-    tree:DynTree<axgeom::XAXISS,(),BBox<F64n,()>>
+    tree:DynTree<axgeom::XAXISS,(),BBox<F64n,([f64;2],[f64;2])>>
 }
 impl KnearestDemo{
     pub fn new(dim:[f64;2])->KnearestDemo{
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
-        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+        let bots:Vec<([f64;2],[f64;2])>=create_world_generator(500,dim,radius,velocity).map(|ret|{
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(Conv::from_rect(aabb_from_pointf64(p,r)),())
-        });
+            (p,r)
+            //BBox::new(Conv::from_rect(aabb_from_pointf64(p,r)),())
+        }).collect();
 
-        let tree = DynTree::new(axgeom::XAXISS,(),bots);
+        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|(p,r)|{Conv::from_rect(aabb_from_pointf64(*p,*r))});
         KnearestDemo{tree}
     }
 }
@@ -36,7 +37,7 @@ impl DemoSys for KnearestDemo{
         };
 
         impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
-            type T=BBox<F64n,()>;
+            type T=BBox<F64n,([f64;2],[f64;2])>;
             type N=F64n;
             type D=DisSqr;
             fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
@@ -60,7 +61,7 @@ impl DemoSys for KnearestDemo{
             }
         }
 
-        let mut vv:Vec<(&BBox<F64n,()>,DisSqr)>=Vec::new();
+        let mut vv:Vec<(&BBox<F64n,([f64;2],[f64;2])>,DisSqr)>=Vec::new();
         {
             let kn=Kn{c:&c,g};
             let point=[f64n!(cursor[0]),f64n!(cursor[1])];

@@ -3,15 +3,6 @@ use inner_prelude::*;
 use dinotree_inner::*;
 use k_nearest::Knearest;
 
-///By implementing this, the aabb returned by this object must be such that
-///the left and right x vales are the same and the left and right y values are the same.
-pub trait IsPoint:HasAabb{
-	fn get_center(&self)->[Self::Num;2]{
-		let r=self.get();
-		[r.get_range(axgeom::XAXISS).left,r.get_range(axgeom::YAXISS).left]
-	}
-}
-
 
 ///Here we exploit the fact that if the nearest point to a point A is B, then the nearest point to B is A.
 ///Finding the nearest distance between two shapes is difficult, and not implemented here.
@@ -20,7 +11,7 @@ pub trait IsPoint:HasAabb{
 ///This function is implemented simply, by iterating thorugh all the bots and calling knearest on it.
 ///I think there room for improvement here. I think it can be turned into a divider and conquer type problem.
 ///But it is difficult to know which nodes to exclude. The "nearest" is specifcally a 2d problem. hard to split into 1d.
-pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
+pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>+HasAabb<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
 	let mut already_hit:Vec<*const T>=Vec::with_capacity(tree.get_num_bots()/2);
 
 	let tree2=tree as *mut DynTree<A,(),T>;

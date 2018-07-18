@@ -1,7 +1,9 @@
 use support::prelude::*;
 use dinotree::multirect;
 
+#[derive(Copy,Clone)]
 struct Bot{
+    radius:[isize;2],
     pos:[isize;2]
 }
 
@@ -13,14 +15,16 @@ impl MultiRectDemo{
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
-        let bots=create_world_generator(500,dim,radius,velocity).map(|ret|{
+        
+        //let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2]))});
+        let bots:Vec<Bot>=create_world_generator(500,dim,radius,velocity).map(|ret|{
             let ret=ret.into_isize();
             let p=ret.pos;
             let r=ret.radius;
-            BBox::new(axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1]),Bot{pos:p})
-        });
+            Bot{radius:ret.radius,pos:ret.pos}
+        }).collect();
 
-        let tree = DynTree::new(axgeom::XAXISS,(),bots);
+        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|b|{aabb_from_point_isize(b.pos,b.radius)});
 
         //let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
         //let tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter().map(|b|b.into_bbox()));

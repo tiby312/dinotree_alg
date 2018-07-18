@@ -2,19 +2,27 @@ use support::prelude::*;
 use dinotree::k_nearest;
 use dinotree::for_every_nearest;
 
-use dinotree::for_every_nearest::IsPoint;
+use dinotree_inner::IsPoint;
 
 use dinotree_geom;
 
 
 
 
-
+#[derive(Copy,Clone)]
 pub struct Bot{
     pub id:usize,
     pub pos:[f64;2],
     pub vel:[f64;2],
     pub acc:[f64;2],
+}
+
+
+impl IsPoint for Bot{
+    type Num=F64n;
+    fn get_center(&self)->[F64n;2]{
+        [f64n!(self.pos[0]),f64n!(self.pos[1])]
+    }
 }
 
 impl Bot{
@@ -58,23 +66,6 @@ impl DemoSys for KnearestEveryDemo{
         }
 
         {
-            
-            pub struct BInner{
-                acc:[f64;2],
-                rect:axgeom::Rect<F64n>
-            }
-
-            impl IsPoint for BInner{
-                
-            }
-            impl HasAabb for BInner{
-                type Num=F64n;
-                fn get(&self)->&axgeom::Rect<F64n>{
-                    &self.rect
-                }
-            }
-        
-            
 
             #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
             struct DisSqr(F64n);
@@ -82,7 +73,7 @@ impl DemoSys for KnearestEveryDemo{
             struct Kn;
 
             impl k_nearest::Knearest for Kn{
-                type T=BInner;
+                type T=BBox<F64n,Bot>;
                 type N=F64n;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
@@ -100,20 +91,21 @@ impl DemoSys for KnearestEveryDemo{
                 }
             }
 
-            let mut tree=DynTree::new(axgeom::YAXISS,(),bots.iter().map(|bot|{
-                let p=bot.pos;
-                let acc=bot.acc;
-                BInner{acc,rect:Conv::from_rect(aabb_from_pointf64(p,[0.0;2]))}          
-            }));
+            let mut tree=DynTree::new(axgeom::YAXISS,(),&bots,|b|{
+                Conv::from_rect(aabb_from_pointf64(b.pos,[0.0;2]))
+            });
+
 
             for a in tree.iter_every_bot(){
-                let p=Conv::point_to_inner(a.get_center());
+                let p=Conv::point_to_inner(a.inner.get_center());
                 let r=5.0;
                 let r=Conv::from_rect(aabb_from_pointf64(p,[r;2]));
                 draw_rect_f64n([0.0,1.0,0.0,0.5],&r,c,g);
             } 
 
             for_every_nearest::for_every_nearest_mut(&mut tree,|a,b,_dis|{
+                let a=&mut a.inner;
+                let b=&mut b.inner;
                 let p1=a.get_center();
                 let p2=b.get_center();
                 let p1=[p1[0].into_inner(),p1[1].into_inner()];
@@ -141,8 +133,8 @@ impl DemoSys for KnearestEveryDemo{
             //changes back into the bots.
             
             for (b,bot) in tree.into_iter_orig_order().zip(bots.iter_mut()){
-                bot.acc[0]+=b.acc[0];
-                bot.acc[1]+=b.acc[1];
+                bot.acc[0]+=b.inner.acc[0];
+                bot.acc[1]+=b.inner.acc[1];
             }
             
         }

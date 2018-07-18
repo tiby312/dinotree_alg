@@ -18,8 +18,8 @@ use piston_window::*;
 #[macro_use]
 pub(crate) mod support;
 pub(crate) mod demos;
-pub(crate) mod data_theory;
-pub(crate) mod data_bench;
+//pub(crate) mod data_theory;
+//pub(crate) mod data_bench;
 
 pub trait DemoSys{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d);
@@ -77,6 +77,7 @@ fn main(){
     let mut curr=if args.len()==1{
             demo_iter.next(area)
     }else{
+        /*
         match args[1].trim(){
             "data"=>{
                 match args[2].trim(){
@@ -113,6 +114,8 @@ fn main(){
                 panic!("unknown arg");
             }
         }
+        */
+        panic!("Not implemented yet");
     };
 
     

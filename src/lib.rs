@@ -64,7 +64,7 @@ mod inner_prelude {
     //pub use par;
     pub use axgeom::AxisTrait;
     pub use std::marker::PhantomData;
-    pub use NumTrait;
+    
     pub use ::*;
 }
 
@@ -105,8 +105,6 @@ mod oned;
 pub mod tools;
 
 
-pub use dinotree_inner::NumTrait;
-pub use dinotree_inner::HasAabb;
 use dinotree_inner::treetimer::TreeTimerTrait;
 use axgeom::Rect;
 use smallvec::SmallVec;
