@@ -152,7 +152,7 @@ impl DemoSys for IntersectWithDemo{
             Conv::from_rect(rect)
         });
     
-
+        println!("tree health={:?}",tree.compute_tree_health());
 
         
         rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{

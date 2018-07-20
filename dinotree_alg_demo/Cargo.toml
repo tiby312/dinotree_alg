@@ -11,7 +11,8 @@ rayon="*"
 compt = {git ="https://github.com/tiby312/compt.git"}
 axgeom = {git="https://github.com/tiby312/axgeom.git"}
 smallvec = "0.6.1"
-dinotree_inner = {git="https://github.com/tiby312/dinotree_inner.git"}
+dinotree_inner = {path="../../dinotree_inner"}
+
 dinotree_geom={git="https://github.com/tiby312/dinotree_geom"}
 dinotree = {path=".."}
 new-ordered-float = "1.0.1"
