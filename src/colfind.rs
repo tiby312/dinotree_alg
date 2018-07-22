@@ -7,7 +7,7 @@ use inner_prelude::*;
 use oned;
 use dinotree_inner::par::Joiner;
 use dinotree_inner::treetimer::TreeTimer2;
-    
+use dinotree_inner::treetimer::TreeTimeResultIterator;
 ///Naive algorithm.
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,|a,b|{
@@ -85,6 +85,8 @@ fn go_down<
                 None=>return
             };
 
+
+            
             {
                 let func=ColMultiWrapper(func);
                 if !this_axis.is_equal_to(anchor_axis) {
@@ -98,14 +100,18 @@ fn go_down<
                     sweeper.find_perp_2d(r1,r2,func);
 
                 } else {
-                    sweeper.find_parallel_2d(
-                        this_axis.next(),
-                        &mut nn.range,
-                        anchor.range,
-                        func,
-                    );
-                }                            
+                    if cont.intersects(&anchor.cont){
+                        sweeper.find_parallel_2d(
+                            this_axis.next(),
+                            &mut nn.range,
+                            anchor.range,
+                            func,
+                        );
+                    }
+                }
             }
+                                      
+            
 
             //This can be evaluated at compile time!
             if this_axis.is_equal_to(anchor_axis) {
@@ -262,9 +268,9 @@ mod todo{
 
 
 ///Debug Sequential
-pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T))->Vec<f64>{
+pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T))->TreeTimeResultIterator{
     let height=tree.get_height();
-    query_seq_mut_inner(tree,func,TreeTimer2::new(height)).into_vec()
+    query_seq_mut_inner(tree,func,TreeTimer2::new(height)).into_iter()
 }
 
 ///Sequential
@@ -342,7 +348,7 @@ fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerT
 }
 
 ///Debug Parallel
-pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send)->Vec<f64>{
+pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send)->TreeTimeResultIterator{
     
     let c1=move |_:&mut (),a:&mut T,b:&mut T|{
         func(a,b);
@@ -370,7 +376,7 @@ pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,fun
         tree,
         TreeTimer2::new(height),
         clos,
-    ).1.into_vec()
+    ).1.into_iter()
 }
 
 ///Parallel

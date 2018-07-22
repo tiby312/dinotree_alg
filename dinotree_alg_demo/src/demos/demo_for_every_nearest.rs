@@ -132,11 +132,13 @@ impl DemoSys for KnearestEveryDemo{
             //We didnt actualy modify anything in the tree so we dont need to inject
             //changes back into the bots.
             
-            for (b,bot) in tree.into_iter_orig_order().zip(bots.iter_mut()){
-                bot.acc[0]+=b.inner.acc[0];
-                bot.acc[1]+=b.inner.acc[1];
-            }
-            
+
+            tree.apply_orig_order(bots,|b,t|{
+                t.acc[0]+=b.inner.acc[0];
+                t.acc[1]+=b.inner.acc[1];
+            })
+
+
         }
 
         

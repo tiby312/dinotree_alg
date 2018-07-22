@@ -50,7 +50,7 @@ mod demo_iter{
                 3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
                 4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
                 5=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                6=>{Box::new(demo_intersect_pair::IntersectEveryDemo::new(area))}
+                6=>{Box::new(demo_original_order::OrigOrderDemo::new(area))}
                 7=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
                 _=>{panic!("Not possible")}
             }

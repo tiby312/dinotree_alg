@@ -1,4 +1,4 @@
-pub mod demo_intersect_pair;
+pub mod demo_original_order;
 pub mod demo_multirect;
 pub mod demo_nbody;
 pub mod demo_knearest;

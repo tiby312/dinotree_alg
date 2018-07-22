@@ -12,6 +12,7 @@ pub struct Bot{
     pos:[f64;2],
     vel:[f64;2],
     force:[f64;2],
+    wall_move:[Option<(F64n,f64)>;2]
 }
 impl dinotree_geom::RepelTrait for Bot{
     type N=f64;
@@ -23,15 +24,7 @@ impl dinotree_geom::RepelTrait for Bot{
         self.force[1]+=force[1];
     }
 }
-/*
-impl dinotree_inner::GenerateAabb for Bot{
-    type Num=F64n;
-    fn create_aabb(&self)->axgeom::Rect<F64n>{
-        let rect=aabb_from_pointf64(self.pos,[radius;2]);
-        BBox::new(Conv::from_rect(rect),b)
-    }
-}
-*/
+
 
 impl Bot{
     fn update(&mut self){
@@ -70,7 +63,7 @@ impl IntersectWithDemo{
         let radius=[3,5];
         let velocity=[1,3];
         let bots=create_world_generator(4000,dim2,radius,velocity).map(|ret|{
-            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
+            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],wall_move:[None;2]}
         }).collect();
 
         let radius=[10,60];
@@ -91,6 +84,24 @@ impl DemoSys for IntersectWithDemo{
 
         for b in bots.iter_mut(){
             b.update();
+            
+            match b.wall_move[0]{
+                Some((pos,vel))=>{
+                    b.pos[0]=pos.into_inner();
+                    b.vel[0]=vel;
+                },
+                None=>{}
+            }
+            match b.wall_move[1]{
+                Some((pos,vel))=>{
+                    b.pos[1]=pos.into_inner();
+                    b.vel[1]=vel;
+                },
+                None=>{}
+            }
+            b.wall_move[0]=None;
+            b.wall_move[1]=None;
+            
             dinotree_geom::wrap_position(&mut b.pos,self.dim);
         }
         bots[0].pos=cursor;
@@ -122,38 +133,14 @@ impl DemoSys for IntersectWithDemo{
                     [Some((wallx.right+radius,-vel[0]*fric)),None]
                 }
             };
-
-            match ret[0]{
-                Some((pos,vel))=>{
-                    bot.inner.pos[0]=pos.into_inner();
-                    bot.inner.vel[0]=vel;
-                },
-                None=>{}
-            }
-            match ret[1]{
-                Some((pos,vel))=>{
-                    bot.inner.pos[1]=pos.into_inner();
-                    bot.inner.vel[1]=vel;
-                },
-                None=>{}
-            }
+            bot.inner.wall_move=ret;
         });
 
-        
-        for (a,b) in bots.iter_mut().zip(tree.into_iter_orig_order()){
-            *a=b.inner;
-            //bots[0](b.inner);
-        }
-
-        //Update the aabbs to match the new positions.
-        let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{
-            let p=b.pos;
-            let rect=aabb_from_pointf64(p,[radius;2]);
-            Conv::from_rect(rect)
-        });
-    
-        println!("tree health={:?}",tree.compute_tree_health());
-
+        /*    
+        let cont=tree.compute_tree_health().collect::<Vec<f64>>();
+        let sum=cont.iter().fold(0.0,|sum,a|sum+a);
+        println!("tree health={:?} sum={:?}",cont,sum);
+        */
         
         rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             //b.inner.repel_mouse(cursor);
@@ -172,52 +159,10 @@ impl DemoSys for IntersectWithDemo{
             let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
         });
     
-        struct Bla<'a,'b:'a>{
-            c:&'a Context,
-            g:&'a mut G2d<'b>
-        }
-        impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
-            type N=F64n;
-            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F64n,cont:[F64n;2],length:[F64n;2],depth:usize){
-                let div=div.into_inner();
-                
+        
 
-                let arr=if axis.is_xaxis(){
-                    [div,length[0].into_inner(),div,length[1].into_inner()]
-                }else{
-                    [length[0].into_inner(),div,length[1].into_inner(),div]
-                };
-
-
-                let radius=(1isize.max(5-depth as isize)) as f64;
-
-                line([0.0, 0.0, 0.0, 0.5], // black
-                     radius, // radius of line
-                     arr, // [x0, y0, x1,y1] coordinates of line
-                     self.c.transform,
-                     self.g);
-
-                let [x1,y1,w1,w2]=if axis.is_xaxis(){
-                    [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
-                }else{
-                    [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
-                };
-                //let ((x1,x2),(w1,w2))=((x1 as f64,x2 as f64),(w1 as f64,w2 as f64));
-
-                let square = [x1.into_inner(),y1.into_inner(),w1.into_inner(),w2.into_inner()];
-                rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
-            
-                
-                
-            }
-        }
-
-        let mut dd=Bla{c:&c,g};
-        dinotree::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
-
-        for (b,ff) in tree.into_iter_orig_order().zip(bots.iter_mut()){
-            *ff=b.inner;
-        }
+        tree.apply_orig_order(bots,|b,t|*t=b.inner);
+        
      }
 }
 

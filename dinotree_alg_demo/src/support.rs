@@ -16,7 +16,7 @@ pub mod prelude{
     pub(crate) use support::*;
     
     pub use dinotree_inner::BBox;
-
+    //pub(crate) use ColorGenerator;
 }
 use ordered_float::NotNan;
 
@@ -93,6 +93,26 @@ pub mod datanum{
     }
 }
 
+
+pub struct ColorGenerator{
+    rgb:[u8;3]
+}
+impl ColorGenerator{
+    pub fn new()->ColorGenerator{
+        ColorGenerator{rgb:[50,100,200]}
+    }
+}
+
+impl std::iter::FusedIterator for ColorGenerator{}
+impl Iterator for ColorGenerator{
+    type Item=[u8;3];
+    fn next(&mut self)->Option<Self::Item>{
+        self.rgb[0]=((self.rgb[0] as usize + 1) % 256) as u8;
+        self.rgb[1]=((self.rgb[1] as usize + 1) % 256) as u8;
+        self.rgb[2]=((self.rgb[2] as usize + 1) % 256) as u8;
+        Some(self.rgb)
+    }
+}
 
 
 macro_rules! f64n {
@@ -222,6 +242,7 @@ impl Retf64{
         RetInteger{id,pos,vel,radius}
     }
 }
+impl std::iter::FusedIterator for RangeGenIterf64{}
 impl ExactSizeIterator for RangeGenIterf64{}
 impl Iterator for RangeGenIterf64{
     type Item=Retf64;

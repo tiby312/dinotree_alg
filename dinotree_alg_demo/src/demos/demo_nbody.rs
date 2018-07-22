@@ -243,9 +243,8 @@ impl DemoSys for DemoNbody{
             draw_rect_f64n([0.0,0.5,0.0,1.0],bot.get(),c,g);
         }
 
-        for (b,ff) in tree.into_iter_orig_order().zip(bots.iter_mut()){
-            *ff=b.inner;
-        }
+
+        tree.apply_orig_order(bots,|b,t|*t=b.inner);
         
         {
             let mut new_bots=Vec::new();
