@@ -61,17 +61,20 @@ impl DemoSys for MultiRectDemo{
             });
 
             
-            draw_rect_isize([0.0,0.0,0.0,0.3],&r1,c,g);
-            draw_rect_isize([0.0,0.0,0.0,0.3],&r2,c,g);
             
             match res{
                 Ok(())=>{
+                    draw_rect_isize([0.0,0.0,0.0,0.3],&r1,c,g);
+                    draw_rect_isize([0.0,0.0,0.0,0.3],&r2,c,g);
+            
                     for r in to_draw.iter(){
                         draw_rect_isize([1.0,0.0,0.0,0.3],r.get(),c,g);
                     }
                 },
                 Err(st)=>{
-                    println!("{:?}",st);
+                    draw_rect_isize([1.0,0.0,0.0,0.3],&r1,c,g);
+                    draw_rect_isize([1.0,0.0,0.0,0.3],&r2,c,g);
+            
                 }
 
             }

@@ -67,8 +67,8 @@ fn buildtree<'a,
                             let right=right.create_wrap_mut();
 
                             
-                            let i1=left.dfs_preorder_iter(0).flat_map(|(node,_extra)|{node.range.iter()});
-                            let i2=right.dfs_preorder_iter(0).flat_map(|(node,_extra)|{node.range.iter()});
+                            let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
+                            let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
                             let i3=nn.range.iter().chain(i1.chain(i2));
                             ncontext.new(i3)
                         };
@@ -111,8 +111,8 @@ fn apply_tree<'a,
                     let left=left.create_wrap_mut();
                     let right=right.create_wrap_mut();
                                             
-                    let i1=left.dfs_preorder_iter(0).flat_map(|(node,_extra)|{node.range.iter_mut()});
-                    let i2=right.dfs_preorder_iter(0).flat_map(|(node,_extra)|{node.range.iter_mut()});
+                    let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
+                    let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
                     let i3=nn.range.iter_mut().chain(i1.chain(i2));
                     
                     ncontext.apply_to_bots(&mut nn.misc,i3);
@@ -479,7 +479,7 @@ pub fn nbody<A:AxisTrait,N:NodeMassTrait>(t1:&mut DynTree<A,N::No,N::T>,ncontext
     #[repr(transparent)]
     struct Wrap<T>(T);
     unsafe impl<T> Send for Wrap<T>{}
-    impl<T:HasAabb> HasAabb for Wrap<T>{
+    unsafe impl<T:HasAabb> HasAabb for Wrap<T>{
         type Num=T::Num;
         fn get(&self)->&Rect<Self::Num>{
             self.0.get()

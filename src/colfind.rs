@@ -74,7 +74,6 @@ fn go_down<
     anchor: &mut DestructuredNode<X,B>,
     m: NdIterMut<(),X>,
     func: &mut F,
-    depth:Depth
 ) {
     let anchor_axis=anchor.axis;
     let (nn,rest)=m.next();
@@ -116,14 +115,14 @@ fn go_down<
             //This can be evaluated at compile time!
             if this_axis.is_equal_to(anchor_axis) {
                 if !(div < anchor.cont.left) {
-                    self::go_down(this_axis.next(), sweeper, anchor, left, func,depth.next_down());
+                    self::go_down(this_axis.next(), sweeper, anchor, left, func);
                 };
                 if !(div > anchor.cont.right) {
-                    self::go_down(this_axis.next(), sweeper, anchor, right, func,depth.next_down());
+                    self::go_down(this_axis.next(), sweeper, anchor, right, func);
                 };
             } else {
-                self::go_down(this_axis.next(), sweeper, anchor, left, func,depth.next_down());
-                self::go_down(this_axis.next(), sweeper, anchor,right, func,depth.next_down());
+                self::go_down(this_axis.next(), sweeper, anchor, left, func);
+                self::go_down(this_axis.next(), sweeper, anchor,right, func);
             }
         },
         None=>{
@@ -168,14 +167,13 @@ fn recurse<
     this_axis: A,
     par: JJ,
     sweeper:&mut oned::Sweeper<F::T>,
-    m: NdIterMut<(),X>,
+    m: LevelIter<NdIterMut<(),X>>,
     mut clos: F,
-    mut timer_log: K,
-    level:Depth
+    mut timer_log: K
 ) -> (F,K::Bag) {
     timer_log.start();
 
-    let(nn,rest)=m.next();
+    let((depth,nn),rest)=m.next();
 
     match rest{
         Some((extra,mut left,mut right))=>{
@@ -189,31 +187,31 @@ fn recurse<
             {
                 sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
 
-                let left=left.create_wrap_mut();
-                let right=right.create_wrap_mut();
+                let left=left.inner.create_wrap_mut();
+                let right=right.inner.create_wrap_mut();
 
-                self::go_down(this_axis.next(), sweeper, &mut nn, left, &mut clos,level.next_down());
-                self::go_down(this_axis.next(), sweeper, &mut nn, right, &mut clos,level.next_down());
+                self::go_down(this_axis.next(), sweeper, &mut nn, left, &mut clos,);
+                self::go_down(this_axis.next(), sweeper, &mut nn, right, &mut clos);
             }
             let (ta, tb) = timer_log.next();
 
-            let (clos,ta, tb) = if !par.should_switch_to_sequential(level) {
+            let (clos,ta, tb) = if !par.should_switch_to_sequential(depth) {
                 let (mut aa,mut bb)=clos.div();
 
                 let af = || {
-                    self::recurse(this_axis.next(),par,sweeper,left,aa,ta,level.next_down())
+                    self::recurse(this_axis.next(),par,sweeper,left,aa,ta)
                 };
                 let bf = || {
                     let mut sweeper = oned::Sweeper::new();
-                    self::recurse(this_axis.next(),par,&mut sweeper,right,bb,tb,level.next_down())
+                    self::recurse(this_axis.next(),par,&mut sweeper,right,bb,tb)
                 };
                 let (ta, tb) = rayon::join(af, bf);
 
                 let a=ta.0.add(tb.0);
                 (a,ta.1, tb.1)
             } else {
-                let (clos,ta) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,ta,level.next_down());
-                let (clos,tb) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,tb,level.next_down());
+                let (clos,ta) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,ta,);
+                let (clos,tb) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,tb,);
 
                 (clos,ta, tb)
             };
@@ -287,7 +285,7 @@ fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerT
         pub struct Wrap<T:HasAabb>(T);
         unsafe impl<T:HasAabb> Send for Wrap<T>{}
         unsafe impl<T:HasAabb> Sync for Wrap<T>{}
-        impl<T:HasAabb> HasAabb for Wrap<T>{
+        unsafe impl<T:HasAabb> HasAabb for Wrap<T>{
             type Num=T::Num;
             fn get(&self)->&Rect<Self::Num>{
                 self.0.get()
@@ -426,10 +424,10 @@ fn query_par_adv_mut<
     clos: F,
 ) -> (F,K::Bag) {
     let this_axis=kdtree.get_axis();
-    let dt = kdtree.get_iter_mut();
+    let dt = kdtree.get_iter_mut().with_depth(Depth(0));
     let mut sweeper = oned::Sweeper::new();
 
-    let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h,Depth(0));
+    let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h);
     bag
 }
 

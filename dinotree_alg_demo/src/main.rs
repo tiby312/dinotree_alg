@@ -71,7 +71,7 @@ fn main(){
         .unwrap();
 
 
-
+    
     let mut demo_iter=demo_iter::DemoIter::new();
     
     let mut curr=if args.len()==1{
@@ -119,7 +119,7 @@ fn main(){
     };
 
     
-    
+    println!("Press \"C\" to go to the next example");
     
     let mut cursor=[0.0,0.0];
 
@@ -138,6 +138,8 @@ fn main(){
             clear([1.0; 4], g);
 
             curr.step(cursor,&c,&mut g);
+
+
         });
     }
     

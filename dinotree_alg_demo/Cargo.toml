@@ -7,17 +7,18 @@ authors = ["Ken Reed <kenakioreed@gmail.com>"]
 serde = "*"
 serde_derive = "*"
 csv="*"
-rayon="*"
-compt = {git ="https://github.com/tiby312/compt.git"}
-axgeom = {git="https://github.com/tiby312/axgeom.git"}
+rayon="1.0.2"
+compt = "1.0.0"
+axgeom = "1.0.0"
 smallvec = "0.6.1"
 dinotree_inner = {path="../../dinotree_inner"}
 
-dinotree_geom={git="https://github.com/tiby312/dinotree_geom"}
+dinotree_geom={path="../../dinotree_geom"}
+
 dinotree = {path=".."}
 new-ordered-float = "1.0.1"
 rand = "0.3"
 rustc-test = "0.3.0"
 collision = "0.15.0"
 cgmath = "0.16.0"
-piston_window = "*"
+piston_window = "0.80.0"

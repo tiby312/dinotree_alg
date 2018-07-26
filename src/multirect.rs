@@ -68,7 +68,7 @@ pub fn collide_two_rect_parallel<
 )->Result<(),RectIntersectErr> {
 
 	struct Wr<'a,T:HasAabb+'a>(&'a mut T);
-	impl<'a,T:HasAabb+'a> HasAabb for Wr<'a,T>{
+	unsafe impl<'a,T:HasAabb+'a> HasAabb for Wr<'a,T>{
 		type Num=T::Num;
 		fn get(&self)->&Rect<Self::Num>{
 			self.0.get()

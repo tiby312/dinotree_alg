@@ -1,6 +1,5 @@
 
 use inner_prelude::*;
-use dinotree_inner::*;
 
 
 ///Trait user must implement.

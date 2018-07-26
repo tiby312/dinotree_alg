@@ -1,6 +1,5 @@
 
 use inner_prelude::*;
-use dinotree_inner::*;
 use k_nearest::Knearest;
 
 

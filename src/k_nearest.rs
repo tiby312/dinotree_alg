@@ -1,5 +1,4 @@
 use inner_prelude::*;
-use dinotree_inner::*;
 
 pub trait Knearest{
     type T:HasAabb<Num=Self::N>;

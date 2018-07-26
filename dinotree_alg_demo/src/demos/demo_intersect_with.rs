@@ -44,13 +44,14 @@ impl Bot{
 
 
 struct Wall(axgeom::Rect<F64n>);
-impl HasAabb for Wall{
+
+unsafe impl HasAabb for Wall{
     type Num=F64n;
     fn get(&self)->&axgeom::Rect<F64n>{
         &self.0
     }
-
 }
+
 pub struct IntersectWithDemo{
     radius:f64,
     bots:Vec<Bot>,
