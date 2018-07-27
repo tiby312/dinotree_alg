@@ -14,7 +14,7 @@ piston_window = "*"
 
 [dependencies]
 rayon = "1.0.2"
-compt = "1.0.0"
+compt = "1.1.0"
 axgeom = "1.0.0"
 smallvec = "0.6.1"
 dinotree_inner = {path="../dinotree_inner"}

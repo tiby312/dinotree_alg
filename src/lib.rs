@@ -105,7 +105,7 @@ mod oned;
 pub mod tools;
 
 
-use dinotree_inner::treetimer::TreeTimerTrait;
+use compt::timer::TreeTimerTrait;
 use axgeom::Rect;
 use smallvec::SmallVec;
-use dinotree_inner::treetimer::TreeTimerEmpty;
+use compt::timer::TreeTimerEmpty;

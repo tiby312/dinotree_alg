@@ -5,9 +5,8 @@
 //!
 use inner_prelude::*;
 use oned;
-use dinotree_inner::par::Joiner;
-use dinotree_inner::treetimer::TreeTimer2;
-use dinotree_inner::treetimer::TreeTimeResultIterator;
+use compt::timer::TreeTimer2;
+use compt::timer::TreeTimeResultIterator;
 ///Naive algorithm.
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,|a,b|{
@@ -273,8 +272,7 @@ pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func
 
 ///Sequential
 pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
-    let height=tree.get_height();
-    let _ = query_seq_mut_inner(tree,func,TreeTimerEmpty::new(height));
+    let _ = query_seq_mut_inner(tree,func,TreeTimerEmpty);
 }
 
 fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerTrait>(tree:&mut DynTree<A,(),T>,mut func:F,h:K)->K::Bag{
@@ -404,7 +402,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl
     self::query_par_adv_mut(
         par::Parallel::new(gg),
         tree,
-        TreeTimerEmpty::new(height),
+        TreeTimerEmpty,
         clos,
     );        
 }
