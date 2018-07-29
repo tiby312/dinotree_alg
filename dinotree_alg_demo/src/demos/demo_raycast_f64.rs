@@ -40,7 +40,8 @@ mod ray_f64{
         }
 
         fn compute_distance_bot(&mut self,a:&BBox<F64n,()>)->Option<Self::N>{
-            dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
+            //dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
+            unimplemented!();
         }
         
     }
@@ -93,7 +94,8 @@ impl DemoSys for RaycastF64Demo{
 
                 
                 let k=raycast::raycast(&tree,ray,ray_f64::RayT{ray,c:&c,g});
-
+                unimplemented!();
+                /*
                 let (ppx,ppy)=if let Some(k)=k{
                     let ppx=ray.point[0]+ray.dir[0]*k.1;
                     let ppy=ray.point[1]+ray.dir[1]*k.1;
@@ -110,6 +112,7 @@ impl DemoSys for RaycastF64Demo{
                      arr, // [x0, y0, x1,y1] coordinates of line
                      c.transform,
                      g);
+                */
             }
         }
     }

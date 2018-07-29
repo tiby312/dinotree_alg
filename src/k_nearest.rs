@@ -8,9 +8,11 @@ pub trait Knearest{
     //Expensive check
     fn twod_check(&mut self, [Self::N;2],&Self::T)->Self::D;
     
+
     fn oned_check(&mut self,Self::N,Self::N)->Self::D;
 
     //create a range around n.
+    //TODO make this optional
     fn create_range(&mut self,Self::N,Self::D)->[Self::N;2];
 
 }

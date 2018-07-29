@@ -76,6 +76,7 @@ impl DemoSys for KnearestDemo{
                         //If you don't care about a single solution existing, you can simply return zero
                         //for the cases that the point is inside of the rect.
 
+                        
                         let point=Conv::point_to_inner(point);
                         -dinotree_geom::distance_squred_point(bot.inner.pos,point)
                     }
