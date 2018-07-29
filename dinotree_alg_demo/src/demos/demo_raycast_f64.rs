@@ -18,14 +18,14 @@ mod ray_f64{
         type T=BBox<F64n,()>;
         type N=F64n;
 
-        fn split_ray<A:axgeom::AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
-            let ray=dinotree_geom::Ray{point:ray.point,dir:ray.dir,tlen:ray.tlen};
-            dinotree_geom::split_ray(axis,&ray,fo).map(|(a,b)|{
-                let r1=Ray{point:a.point,dir:a.dir,tlen:a.tlen};
-                let r2=Ray{point:b.point,dir:b.dir,tlen:b.tlen};
-                (r1,r2)
-            })   
+
+        fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
+            unimplemented!()
         }
+        fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
+            unimplemented!()
+        }
+
         
         //First option is min, second is max
         fn compute_intersection_range<A:axgeom::AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>
@@ -93,7 +93,7 @@ impl DemoSys for RaycastF64Demo{
                 };
 
                 
-                let k=raycast::raycast(&tree,ray,ray_f64::RayT{ray,c:&c,g});
+                //let k=raycast::raycast(&tree,ray,ray_f64::RayT{ray,c:&c,g});
                 unimplemented!();
                 /*
                 let (ppx,ppy)=if let Some(k)=k{

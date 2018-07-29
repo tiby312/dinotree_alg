@@ -1,12 +1,14 @@
 use support::prelude::*;
 use dinotree::raycast;
 use dinotree;
+use std;
 //isize implementation of a ray.
 mod ray_isize{
     use super::*;
     use self::raycast::Ray;
     use self::raycast::RayTrait;
     use dinotree_geom;
+
 
     pub struct RayT<'a,'c:'a>{
         pub ray:Ray<isize>,
@@ -19,6 +21,7 @@ mod ray_isize{
         type T=BBox<isize,Bot>;
         type N=isize;
 
+        /*
         fn split_ray<A:axgeom::AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
             let ray=dinotree_geom::Ray{point:ray.point,dir:ray.dir,tlen:ray.tlen};
             dinotree_geom::split_ray(axis,&ray,fo).map(|(a,b)|{
@@ -26,6 +29,30 @@ mod ray_isize{
                 let r2=Ray{point:b.point,dir:b.dir,tlen:b.tlen};
                 (r1,r2)
             })   
+        }
+        */
+
+        fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
+            //println!("Checking rect={:?}",(rect,self.ray));
+            use dinotree_geom::IntersectsBotResult;
+            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,rect){
+                IntersectsBotResult::Hit(val)=>{
+                    true
+                },
+                IntersectsBotResult::NoHit=>{
+                    false
+                },
+                IntersectsBotResult::Inside=>{
+                    true
+                }
+            }
+        }
+        fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
+            if axis.is_xaxis(){
+                div.cmp(&self.ray.point[0])
+            }else{
+                div.cmp(&self.ray.point[1])
+            }
         }
 
         //First option is min, second is max
@@ -41,7 +68,7 @@ mod ray_isize{
         }
 
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
-            draw_rect_isize([0.5,0.0,0.0,0.3],a.get(),self.c,self.g);
+            draw_rect_isize([1.0,0.0,0.0,0.8],a.get(),self.c,self.g);
             use dinotree_geom::IntersectsBotResult;
             match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get()){
                 IntersectsBotResult::Hit(val)=>{
@@ -50,7 +77,7 @@ mod ray_isize{
                 IntersectsBotResult::NoHit=>{
                     None
                 },
-                IntersectsBotResult::Inside|IntersectsBotResult::TooFar=>{
+                IntersectsBotResult::Inside=>{
                     /*
                     let ((a,b),(c,d))=a.get().get();
                     let point=[a,c];
@@ -64,6 +91,7 @@ mod ray_isize{
         
     }
 
+    #[derive(Copy,Clone,Debug)]
     pub struct RayNoDraw{
         pub ray:Ray<isize>
     }
@@ -72,13 +100,11 @@ mod ray_isize{
         type T=BBox<isize,Bot>;
         type N=isize;
 
-        fn split_ray<A:axgeom::AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
-            let ray=dinotree_geom::Ray{point:ray.point,dir:ray.dir,tlen:ray.tlen};
-            dinotree_geom::split_ray(axis,&ray,fo).map(|(a,b)|{
-                let r1=Ray{point:a.point,dir:a.dir,tlen:a.tlen};
-                let r2=Ray{point:b.point,dir:b.dir,tlen:b.tlen};
-                (r1,r2)
-            })   
+        fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
+            unimplemented!();
+        }
+        fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
+            unimplemented!();
         }
 
         //First option is min, second is max
@@ -102,7 +128,7 @@ mod ray_isize{
                 IntersectsBotResult::NoHit=>{
                     None
                 },
-                IntersectsBotResult::Inside|IntersectsBotResult::TooFar=>{
+                IntersectsBotResult::Inside=>{
                     /*
                     let ((a,b),(c,d))=a.get().get();
                     let point=[a,c];
@@ -170,7 +196,7 @@ impl DemoSys for RaycastDemo{
 
         let k={
             let height=tree.get_height();
-            let mut res1:Vec<(&BBox<isize,Bot>,isize)>=raycast::raycast(&tree,ray,ray_isize::RayT{ray,c:&c,g,height}).collect();
+            let mut res1:Vec<(&BBox<isize,Bot>,isize)>=raycast::raycast(&tree,axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height}).collect();
             res1.sort_by(|a,b|a.0.inner.id.cmp(&b.0.inner.id));
 
             
@@ -196,6 +222,7 @@ impl DemoSys for RaycastDemo{
             
             res1.into_iter().next()
         };
+        
         
         {
             struct Bla<'a,'b:'a>{
