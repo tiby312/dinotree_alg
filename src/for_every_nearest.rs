@@ -27,11 +27,11 @@ pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>+HasAabb<Num
 	        //We query for the 2 nearest because one that will be returned is itself.
 			//If the current bot and its nearest are on top of each other,
 	        //its entirely possible for the current bot to be returned second.
-	        k_nearest::k_nearest_mut(tree2,b.get_center(),2,kn,|a,bb|{
+	        for (a,bb) in k_nearest::k_nearest_mut(tree2,b.get_center(),2,kn){
         		if a as *const T!=b as *const T{
         			nearest_bot=Some((a,bb))
         		}
-	        });
+	        }
 
 	        if let Some(nb)=nearest_bot{
 	        	func(b,nb.0,nb.1);

@@ -77,7 +77,9 @@ impl DemoSys for KnearestEveryDemo{
                 type N=F64n;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                    DisSqr(dinotree_geom::distance_squared_point_to_rect(point,bot.get()))
+                    let k=dinotree_geom::distance_squared_point_to_rect(point,bot.get()).unwrap();
+
+                    DisSqr(k)
                 }
 
                 fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{

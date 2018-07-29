@@ -72,8 +72,11 @@ macro_rules! knearest_recc{
                     let arr=&mut self.a;
                     for i in 0..arr.len(){
                         if a.1<arr[i].1{
-                            arr.pop();
+                            let v=arr.pop().unwrap();
                             arr.insert(i,a);
+
+                            let max=arr.iter().max().unwrap();
+                            assert!(max.1<v.1);
                             return true;
                         }
                     }
@@ -82,6 +85,8 @@ macro_rules! knearest_recc{
 
             }
             fn full_and_max_distance(&self)->Option<D>{
+                use is_sorted::IsSorted;
+                assert!(self.a.iter().map(|a|&a.1).is_sorted());
                 match self.a.get(self.num-1){
                     Some(x)=>
                     {
@@ -128,84 +133,68 @@ macro_rules! knearest_recc{
                         None=>return
                     };
 
-                    match pp.cmp(&div){
-                    std::cmp::Ordering::Less=>{
+                    let (first,second)=match pp.cmp(&div){
+                        std::cmp::Ordering::Less=>{
+                            (left,right)
+                        },
+                        std::cmp::Ordering::Greater=>{
+                            (right,left)
+                        },
+                        std::cmp::Ordering::Equal=>{
+                            //This case it doesnt really matter whether we traverse left or right first.
+                            (left,right)
+                        }
+                    };
 
-                        recc(axis.next(), left,knear,point,res);
-                       
-                        if traverse_other(res,knear,pp,div){
-                            recc(axis.next(),right,knear,point,res);
-                        }
-                    },
-                    std::cmp::Ordering::Greater=>{
+                    recc(axis.next(),first,knear,point,res);
 
-                        recc(axis.next(), right,knear,point,res);
-                       
-                        if traverse_other(res,knear,pp,div){
-                            recc(axis.next(),left,knear,point,res);
-                        }
-                    },
-                    std::cmp::Ordering::Equal=>{
-                        //This case it doesnt really matter whether we traverse left or right first.
-                        
-                        recc(axis.next(), left,knear,point,res);
-                       
-                        if traverse_other(res,knear,pp,div){
-                            recc(axis.next(),right,knear,point,res);
-                        }
+                    if traverse_other(res,knear,pp,div){
+                        recc(axis.next(),second,knear,point,res);
                     }
-                }
+                    //Check again incase the other recursion took care of everything
+                    //We are hoping that it is more likely that the closest points are found
+                    //in decendant nodes instead of ancestor nodes.
+                    //if traverse_other(res,knear,pp,div){
+                    for bot in $get_iter!(nn.range){
+                        match res.full_and_max_distance(){
+                            Some(dis)=>{
+                                
+                                //Used for both x and y.
+                                //Think of this is a bounding box around the point that grows
+                                let [leftr,rightr]=knear.create_range(ppother,dis);
 
-
-                //Check again incase the other recursion took care of everything
-                //We are hoping that it is more likely that the closest points are found
-                //in decendant nodes instead of ancestor nodes.
-                //if traverse_other(res,knear,pp,div){
-                for bot in $get_iter!(nn.range){
-                    match res.full_and_max_distance(){
-                        Some(dis)=>{
-
-                            //Used for both x and y.
-                            //Think of this is a bounding box around the point that grows
-                            let [leftr,rightr]=knear.create_range(ppother,dis);
-
-                            let conty=if pp<div{
-                                cont.left
-                            }else{
-                                cont.right
-                            };
-                            
-                            if dis<knear.oned_check(conty,pp){
-                                break;
-                            }
-
-                            let [leftbot,rightbot]={
-                                [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
-                            };
-                            
-                            if leftbot>rightr{
-                                //All the bots after this will also be too far away.
-                                //because the bots are sorted in ascending order.
-                                break;
-                            }else if rightbot>=leftr{
+                                let [leftbot,rightbot]={
+                                    [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
+                                };
+                                
+                                if leftbot>rightr{
+                                    //All the bots after this will also be too far away.
+                                    //because the bots are sorted in ascending order.
+                                    break;
+                                }else if rightbot>=leftr{
+                                    let dis_sqr=knear.twod_check(point,bot);
+                                    res.consider((bot,dis_sqr));
+                                
+                                }
+                            },
+                            None=>{
                                 let dis_sqr=knear.twod_check(point,bot);
                                 res.consider((bot,dis_sqr));
                             
                             }
-                        },
-                        None=>{
-                            let dis_sqr=knear.twod_check(point,bot);
-                            res.consider((bot,dis_sqr));
-                        
-                        }
-                    }                           
-                }
+                        }                           
+                    }
+
+                    
+
+
+                
                 },
                 None=>{
                     for bot in $get_iter!(nn.range){
                         match res.full_and_max_distance(){
                             Some(dis)=>{
-
+                                
                                 //TODO use leftr??
                                 let [_leftr,rightr]=knear.create_range(ppother,dis);
 
@@ -220,7 +209,7 @@ macro_rules! knearest_recc{
                                 }else{
                                     let dis_sqr=knear.twod_check(point,bot);
                                     res.consider((bot,dis_sqr));
-                                }
+                                } 
                             },
                             None=>{
                                 let dis_sqr=knear.twod_check(point,bot);
@@ -249,36 +238,44 @@ macro_rules! knearest_recc{
 ///The callback function will be called on the closest object, then the second closest, and so on up 
 ///until k.
 ///User can also this way choose whether to use manhatan distance or not.
-pub fn k_nearest<'b,
-    A:AxisTrait,
-    K:Knearest,
-    >(tree:&'b DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b K::T,K::D)){
-    let axis=tree.get_axis();
-    let dt = tree.get_iter().with_depth(Depth(0));
 
-    let mut c=ClosestCand::new(num);
+///Its important to distinguish the fact that there is no danger of any of the references returned being the same.
+///The closest is guarenteed to be distinct from the second closest. That is not to say they they don't overlap in 2d space.
+
+
+
+
+pub use self::con::naive;
+pub use self::con::k_nearest;
+mod con{
+    use super::*;
+    pub fn k_nearest<'b,
+        A:AxisTrait,
+        K:Knearest,
+        >(tree:&'b DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K)->KnearestResult<'b,K::T,K::D>{
+        let axis=tree.get_axis();
+        let dt = tree.get_iter().with_depth(Depth(0));
+
+        let mut c=ClosestCand::new(num);
+
+
+        recc(axis,dt,&mut knear,point,&mut c);
+     
+
+        let v:Vec<(&'b K::T,K::D)>=c.into_sorted().into_iter().map(|i|{
+            let j:& K::T=unsafe{& *i.0};
+            (j,i.1)
+        }).collect();
+        KnearestResult{it:v.into_iter()}
+    }
 
     knearest_recc!(NdIter<(),K::T>,*const T,&T,get_range_iter,NonLeafDyn);
 
-    recc(axis,dt,&mut knear,point,&mut c);
- 
-    for i in c.into_sorted(){
-        let j:& K::T=unsafe{&*i.0};
-        //let j=j.get_mut();
-        func(j,i.1);
-    }
-}
-
-
-pub use self::mutable::naive_mut;
-pub use self::mutable::k_nearest_mut;
-mod mutable{
-    use super::*;
-    pub fn naive_mut<'b,K:Knearest>(bots:&'b mut [K::T],point:[K::N;2],num:usize,mut k:K,mut func:impl FnMut(&'b mut K::T,K::D)){
+    pub fn naive<'b,K:Knearest>(bots:impl Iterator<Item=&'b K::T>,point:[K::N;2],num:usize,mut k:K)->KnearestResult<'b,K::T,K::D>{
         
         let mut closest=ClosestCand::new(num);
 
-        for b in bots.iter_mut(){
+        for b in bots{
             let d=k.twod_check(point,b);
 
             match closest.full_and_max_distance(){
@@ -293,21 +290,55 @@ mod mutable{
             closest.consider((b,d));
         }
 
-        for i in closest.into_sorted(){
-            let j:&mut K::T=unsafe{&mut *i.0};
-            //let j=j.get_mut();
-            func(j,i.1);
+
+        let v:Vec<(&'b K::T,K::D)>=closest.into_sorted().into_iter().map(|i|{
+            let j:& K::T=unsafe{&*i.0};
+            (j,i.1)
+        }).collect();
+        KnearestResult{it:v.into_iter()}
+
+    }
+
+}
+
+pub use self::mutable::naive_mut;
+pub use self::mutable::k_nearest_mut;
+mod mutable{
+    use super::*;
+    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=&'b mut K::T>,point:[K::N;2],num:usize,mut k:K)->KnearestResultMut<'b,K::T,K::D>{
+        
+        let mut closest=ClosestCand::new(num);
+
+        for b in bots{
+            let d=k.twod_check(point,b);
+
+            match closest.full_and_max_distance(){
+                Some(dis)=>{
+                    if d>dis{
+                        continue;
+                    }
+                },
+                None=>{}
+            }
+
+            closest.consider((b,d));
         }
+
+
+        let v:Vec<(&'b mut K::T,K::D)>=closest.into_sorted().into_iter().map(|i|{
+            let j:&mut K::T=unsafe{&mut *i.0};
+            (j,i.1)
+        }).collect();
+        KnearestResultMut{it:v.into_iter()}
 
     }
 
     knearest_recc!(NdIterMut<(),K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut);
 
-
     pub fn k_nearest_mut<'b,
         A:AxisTrait,
         K:Knearest,
-        >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(&'b mut K::T,K::D)){
+        >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K)->KnearestResultMut<'b,K::T,K::D>{
         let axis=tree.get_axis();
         let dt = tree.get_iter_mut().with_depth(Depth(0));
 
@@ -316,11 +347,47 @@ mod mutable{
 
         recc(axis,dt,&mut knear,point,&mut c);
      
-        for i in c.into_sorted(){
+
+        let v:Vec<(&'b mut K::T,K::D)>=c.into_sorted().into_iter().map(|i|{
             let j:&mut K::T=unsafe{&mut *i.0};
-            //let j=j.get_mut();
-            func(j,i.1);
-        }
+            (j,i.1)
+        }).collect();
+        KnearestResultMut{it:v.into_iter()}
+    }
+}
+
+
+pub struct KnearestResult<'b,T:'b,F>{
+    it:std::vec::IntoIter<(&'b T,F)>
+}
+
+impl<'b,T:'b,F> ExactSizeIterator for KnearestResult<'b,T,F>{}
+unsafe impl<'b,T:'b,F> std::iter::TrustedLen for KnearestResult<'b,T,F>{}
+
+impl<'b,T:'b,F> Iterator for KnearestResult<'b,T,F>{
+    type Item=(&'b T,F);
+    fn next(&mut self)->Option<Self::Item>{
+        self.it.next()
+    }
+    fn size_hint(&self)->(usize,Option<usize>){
+        self.it.size_hint()
+    }
+}
+
+pub struct KnearestResultMut<'b,T:'b,F>{
+    it:std::vec::IntoIter<(&'b mut T,F)>
+}
+
+impl<'b,T:'b,F> ExactSizeIterator for KnearestResultMut<'b,T,F>{}
+unsafe impl<'b,T:'b,F> std::iter::TrustedLen for KnearestResultMut<'b,T,F>{}
+
+impl<'b,T:'b,F> Iterator for KnearestResultMut<'b,T,F>{
+    type Item=(&'b mut T,F);
+    fn next(&mut self)->Option<Self::Item>{
+        self.it.next()
+    }
+    fn size_hint(&self)->(usize,Option<usize>){
+        self.it.size_hint()
     }
 }
 

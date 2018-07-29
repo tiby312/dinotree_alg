@@ -298,31 +298,61 @@ mod mutable{
     }
 }
 
+pub use self::cons::naive;
+pub use self::cons::raycast;
+mod cons{
+    use super::*;
+    pub fn naive<
+        'a,
+        T:HasAabb,
+        R:RayTrait<T=T,N=T::Num>
+        >(bots:impl Iterator<Item=&'a T>,mut rtrait:R)->Option<(&'a T,T::Num)>{
 
-pub fn raycast<
-    'a,A:AxisTrait,
-    T:HasAabb,
-    R:RayTrait<T=T,N=T::Num>
-    >(tree:&'a DynTree<A,(),T>,ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a T,T::Num)>{
-    
-    let axis=tree.get_axis();
-    let dt = tree.get_iter().with_depth(Depth(0));
+        let mut closest=Closest{closest:None};
 
-    raycast!(NdIter<(),T>,*const T,&T,get_range_iter,NonLeafDyn);
-
-    let mut closest=Closest{closest:None};
-    recc(axis,dt,&mut rtrait,ray,&mut closest);
-
-    match closest.closest{
-        Some(x)=>{
-            let bb=unsafe{&*x.0};
-            //let rr=bb.get_mut();
-            //let cc=ColSingle{inner:rr.1,rect:rr.0};
-            Some((bb,x.1))
-        },
-        None=>{
-            None
+        for b in bots{
+            closest.consider(b,&mut rtrait);
         }
-    }    
+
+
+        match closest.closest{
+            Some(x)=>{
+                let bb=unsafe{& *x.0};
+                //let rr=bb.get_mut();
+                //let cc=ColSingle{inner:rr.1,rect:rr.0};
+                Some((bb,x.1))
+            },
+            None=>{
+                None
+            }
+        }    
+
+    }
+    raycast!(NdIter<(),T>,*const T,&T,get_range_iter,NonLeafDyn);
+    pub fn raycast<
+        'a,A:AxisTrait,
+        T:HasAabb,
+        R:RayTrait<T=T,N=T::Num>
+        >(tree:&'a DynTree<A,(),T>,ray:Ray<T::Num>,mut rtrait:R)->Option<(&'a T,T::Num)>{
+        
+        let axis=tree.get_axis();
+        let dt = tree.get_iter().with_depth(Depth(0));
+
+
+        let mut closest=Closest{closest:None};
+        recc(axis,dt,&mut rtrait,ray,&mut closest);
+
+        match closest.closest{
+            Some(x)=>{
+                let bb=unsafe{&*x.0};
+                //let rr=bb.get_mut();
+                //let cc=ColSingle{inner:rr.1,rect:rr.0};
+                Some((bb,x.1))
+            },
+            None=>{
+                None
+            }
+        }    
+    }
 }
 

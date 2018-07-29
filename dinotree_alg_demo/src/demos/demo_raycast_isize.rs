@@ -95,7 +95,27 @@ impl DemoSys for RaycastDemo{
 
         let k={
             let height=tree.get_height();
-            raycast::raycast(&tree,ray,ray_isize::RayT{ray,c:&c,g,height})
+            let v=raycast::raycast(&tree,ray,ray_isize::RayT{ray,c:&c,g,height});
+
+            let check_naive=true;
+            if check_naive{
+                let p = raycast::naive(tree.iter_every_bot(),ray_isize::RayT{ray,c:&c,g,height});
+                match (v,p){
+                    (Some(v),Some(p))=>{
+
+                        if v.0 as *const BBox<isize,()> != p.0 as *const BBox<isize,()>{
+                            println!("fail");
+                        }   
+                    },
+                    (None,None)=>{
+
+                    },
+                    _=>{
+                        println!("fail");
+                    }
+                }
+            }
+            v
         };
 
         let (ppx,ppy)=if let Some(k)=k{

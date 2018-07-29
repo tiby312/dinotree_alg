@@ -33,6 +33,7 @@
 
 #![feature(iterator_step_by)]
 #![feature(test)]
+#![feature(trusted_len)]
 
 extern crate axgeom;
 extern crate compt;
@@ -51,6 +52,8 @@ extern crate collision;
 extern crate rand;
 #[cfg(test)]
 extern crate test;
+
+extern crate is_sorted;
 
 
 
