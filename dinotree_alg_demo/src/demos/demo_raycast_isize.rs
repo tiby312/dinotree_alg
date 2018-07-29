@@ -179,14 +179,18 @@ impl DemoSys for RaycastDemo{
                 let mut res2:Vec<(&BBox<isize,Bot>,isize)> = raycast::naive(tree.iter_every_bot(),ray_isize::RayNoDraw{ray}).collect();
                 res2.sort_by(|a,b|a.0.inner.id.cmp(&b.0.inner.id));
 
-                assert_eq!(res1.len(),res2.len());
-                for (v,p) in res1.iter().zip(res2.iter()){
+                if res1.len()!=res2.len(){
+                    println!("lengths dont match");
+                }else{
+                    for (v,p) in res1.iter().zip(res2.iter()){
                    
-                    if v.0 as *const BBox<isize,Bot> != p.0 as *const BBox<isize,Bot>{
-                        println!("fail");
-                    }   
-                 
+                        if v.0 as *const BBox<isize,Bot> != p.0 as *const BBox<isize,Bot>{
+                            println!("fail");
+                        }   
+                     
+                    }
                 }
+                
                 
             }
             
@@ -241,7 +245,6 @@ impl DemoSys for RaycastDemo{
 
 
         let (ppx,ppy)=if let Some(k)=k{
-            println!("k={:?}",k.1);
             let ppx=ray.point[0]+ray.dir[0]*k.1;
             let ppy=ray.point[1]+ray.dir[1]*k.1;
             (ppx,ppy)
@@ -250,7 +253,6 @@ impl DemoSys for RaycastDemo{
             let ppy=ray.point[1]+ray.dir[1]*800;
             (ppx,ppy)
         };
-        println!("dir={:?}",ray.dir);
 
         let arr=[ray.point[0] as f64,ray.point[1] as f64,ppx as f64,ppy as f64];
         line([0.0, 0.0, 0.0, 1.0], // black

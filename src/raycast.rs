@@ -9,6 +9,8 @@ pub struct Ray<N>{
 }
 
 
+
+
 pub trait RayTrait{
     type T:HasAabb<Num=Self::N>;
     type N:NumTrait;
@@ -117,6 +119,9 @@ macro_rules! raycast{
                                         //The ray isnt long enough to touch the divider.
                                         //So just recurse the one side.
                                         recc(axis_next,left,rtrait,ray,closest);
+                                        
+                                        //recc(axis_next,right,rtrait,ray,closest);
+                                        
                                     }
                                 }
                             },
@@ -130,6 +135,9 @@ macro_rules! raycast{
                                     },
                                     None=>{
                                         recc(axis_next,right,rtrait,ray,closest);
+
+                                        //recc(axis_next,left,rtrait,ray,closest);
+                                        
                                     }
                                 }
                             },
@@ -420,19 +428,7 @@ mod cons{
                 
             }
         }
-        /*
-        match closest.closest{
-            Some(x)=>{
-                let bb=unsafe{&*x.0};
-                //let rr=bb.get_mut();
-                //let cc=ColSingle{inner:rr.1,rect:rr.0};
-                Some((bb,x.1))
-            },
-            None=>{
-                None
-            }
-        } 
-        */   
+ 
     }
 }
 
