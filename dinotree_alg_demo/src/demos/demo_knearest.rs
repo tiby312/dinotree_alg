@@ -6,6 +6,7 @@ use dinotree;
 
 #[derive(Copy,Clone)]
 struct Bot{
+    id:usize,
     pos:[f64;2],
     radius:[f64;2]
 }
@@ -20,10 +21,10 @@ impl KnearestDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
-        let bots:Vec<Bot>=create_world_generator(500,dim2,radius,velocity).map(|ret|{
+        let bots:Vec<Bot>=create_world_generator(500,dim2,radius,velocity).enumerate().map(|(id,ret)|{
             let p=ret.pos;
             let r=ret.radius;
-            Bot{pos:ret.pos,radius:ret.radius}
+            Bot{id,pos:ret.pos,radius:ret.radius}
         }).collect();
 
         let tree = DynTree::new(axgeom::XAXISS,(),&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))});
@@ -113,7 +114,7 @@ impl DemoSys for KnearestDemo{
         let vv={
             let kn=Kn{c:&c,g};
             let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-            k_nearest::k_nearest(tree,point,1,kn)
+            k_nearest::k_nearest(tree,point,3,kn)
         };
 
         let check_naive=true;
@@ -161,20 +162,30 @@ impl DemoSys for KnearestDemo{
             let vv2={
                 let kn=Kn2{};
                 let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                k_nearest::naive(tree.iter_every_bot(),point,1,kn)
+                k_nearest::naive(tree.iter_every_bot(),point,3,kn)
             };
             
 
-            for ((a,color),b) in vv.zip(cols.iter()).zip(vv2){
-                if a.0 as *const BBox<F64n,Bot> != b.0 as *const BBox<F64n,Bot>{
+            for ((mut a,color),mut b) in vv.zip(cols.iter()).zip(vv2){
+                a.0.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
+                b.0.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
+                
+                for (&a,&b) in a.0.iter().zip(b.0.iter()){
+                    if a as *const BBox<F64n,Bot> != b as *const BBox<F64n,Bot>{
+                        println!("Fail");
+                    }    
+                }
+
+                if a.1!=b.1{
                     println!("Fail");
                 }
-                draw_rect_f64n(*color,a.0.get(),c,g);
+                
+                draw_rect_f64n(*color,(a.0)[0].get(),c,g);
             }
         
         }else{
             for (a,color) in vv.zip(cols.iter()){
-                draw_rect_f64n(*color,a.0.get(),c,g);
+                draw_rect_f64n(*color,(a.0)[0].get(),c,g);
             }
         }
     }   

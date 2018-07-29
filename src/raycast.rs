@@ -51,10 +51,9 @@ macro_rules! raycast{
                                     //do nothing.
                                 },
                                 std::cmp::Ordering::Less=>{
-                                    let mut s=SmallVec::new();
-                                    s.push(b as $ptr);
+                                    
                                     //TODO clear instead of remaking vec??
-                                    (s,x)
+                                    (smallvec![b as $ptr],x)
                                 },
                                 std::cmp::Ordering::Equal=>{
                                     dis.0.push(b as $ptr);
@@ -62,10 +61,8 @@ macro_rules! raycast{
                                 }
                             }
                         },
-                        None=>{
-                            let mut s=SmallVec::new();
-                            s.push(b as $ptr);     
-                            (s,x)
+                        None=>{  
+                            (smallvec![b as $ ptr],x)
                         }
                     };
                     self.closest=Some(diff);

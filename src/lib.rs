@@ -35,10 +35,16 @@
 #![feature(test)]
 #![feature(trusted_len)]
 
+
+
+
 extern crate axgeom;
 extern crate compt;
 //extern crate pdqselect;
 extern crate rayon;
+
+//So that we can import smallvec creation macro
+#[macro_use]
 extern crate smallvec;
 extern crate dinotree_inner;
 

@@ -40,20 +40,20 @@ mod demo_iter{
             self.0+=1;
 
 
-            if self.0==8{
+            if self.0==9{
                 self.0=0
             }
             match curr{
 
                 0=>{Box::new(demo_test_raycast::TestRaycastDemo::new(area))},
-                0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                1=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
-                2=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
-                3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
-                4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
-                5=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                6=>{Box::new(demo_original_order::OrigOrderDemo::new(area))}
-                7=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
+                1=>{Box::new(demo_knearest::KnearestDemo::new(area))},
+                2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
+                3=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
+                4=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
+                5=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
+                6=>{Box::new(demo_nbody::DemoNbody::new(area))},
+                7=>{Box::new(demo_original_order::OrigOrderDemo::new(area))}
+                8=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
                 _=>{panic!("Not possible")}
             }
         }

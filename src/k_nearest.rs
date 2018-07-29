@@ -38,47 +38,64 @@ macro_rules! get_mut_range_iter{
 macro_rules! knearest_recc{
     ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident)=>{
         
-    
+        struct Unit<T:HasAabb,D:Ord+Copy>{
+            bots:SmallVec<[$ptr;2]>,
+            dis:D
+        }
         struct ClosestCand<T:HasAabb,D:Ord+Copy>{
-            a:SmallVec<[($ptr,D);32]>,
+            a:Vec<Unit<T,D>>,
             num:usize
         }
         impl<T:HasAabb,D:Ord+Copy> ClosestCand<T,D>{
 
             //First is the closest
-            fn into_sorted(self)->SmallVec<[($ptr,D);32]>{
+            fn into_sorted(self)->Vec<Unit<T,D>>{
                 self.a
             }
             fn new(num:usize)->ClosestCand<T,D>{
-                let a=SmallVec::with_capacity(num);
+                let a=Vec::with_capacity(num);
                 ClosestCand{a,num}
             }
 
             fn consider(&mut self,a:($ref,D))->bool{
-                let a=(a.0 as $ptr,a.1);
+                use smallvec;
+
+                //let a=(a.0 as $ptr,a.1);
+                let curr_bot=a.0 as $ptr;
+                let curr_dis=a.1;
 
                 if self.a.len()<self.num{
                     let arr=&mut self.a;
                     
                     for i in 0..arr.len(){
-                        if a.1<arr[i].1{
-                            arr.insert(i,a);
+                        if curr_dis<arr[i].dis{
+                            let unit=Unit{bots:smallvec![curr_bot],dis:curr_dis};
+                            arr.insert(i,unit);
+                            return true;
+                        }else if curr_dis==arr[i].dis{
+                            arr[i].bots.push(curr_bot);
                             return true;
                         }
                     }
 
                     //only way we get here is if the above didnt return.
-                    arr.push(a);
+                    let unit=Unit{bots:smallvec![curr_bot],dis:curr_dis};
+                    arr.push(unit);
                     
                 }else{
                     let arr=&mut self.a;
                     for i in 0..arr.len(){
-                        if a.1<arr[i].1{
+                        if curr_dis<arr[i].dis{
                             let v=arr.pop().unwrap();
-                            arr.insert(i,a);
+                            let unit=Unit{bots:smallvec![curr_bot],dis:curr_dis};
+                            arr.insert(i,unit);
+                        
 
-                            let max=arr.iter().max().unwrap();
-                            assert!(max.1<v.1);
+                            let max=arr.iter().map(|a|a.dis).max().unwrap();
+                            assert!(max<v.dis);
+                            return true;
+                        }else if curr_dis==arr[i].dis{
+                            arr[i].bots.push(curr_bot);
                             return true;
                         }
                     }
@@ -88,11 +105,11 @@ macro_rules! knearest_recc{
             }
             fn full_and_max_distance(&self)->Option<D>{
                 use is_sorted::IsSorted;
-                assert!(self.a.iter().map(|a|&a.1).is_sorted());
+                assert!(self.a.iter().map(|a|a.dis).is_sorted());
                 match self.a.get(self.num-1){
                     Some(x)=>
                     {
-                        Some(x.1)
+                        Some(x.dis)
                     },
                     None=>{
                         None
@@ -264,9 +281,12 @@ mod con{
         recc(axis,dt,&mut knear,point,&mut c);
      
 
-        let v:Vec<(&'b K::T,K::D)>=c.into_sorted().into_iter().map(|i|{
-            let j:& K::T=unsafe{& *i.0};
-            (j,i.1)
+        let v:Vec<(SmallVec<[&'b K::T;2]>,K::D)>=c.into_sorted().into_iter().map(|i|{
+            let Unit{bots,dis}=i;
+
+            let bots:SmallVec<[*const K::T;2]>=bots;
+            let j:SmallVec<[&'b K::T;2]>=unsafe{std::mem::transmute(bots)};
+            (j,dis)
         }).collect();
         KnearestResult{it:v.into_iter()}
     }
@@ -293,9 +313,12 @@ mod con{
         }
 
 
-        let v:Vec<(&'b K::T,K::D)>=closest.into_sorted().into_iter().map(|i|{
-            let j:& K::T=unsafe{&*i.0};
-            (j,i.1)
+        let v:Vec<(SmallVec<[&'b K::T;2]>,K::D)>=closest.into_sorted().into_iter().map(|i|{
+            let Unit{bots,dis}=i;
+
+            let bots:SmallVec<[*const K::T;2]>=bots;
+            let j:SmallVec<[&'b K::T;2]>=unsafe{std::mem::transmute(bots)};
+            (j,dis)
         }).collect();
         KnearestResult{it:v.into_iter()}
 
@@ -327,9 +350,12 @@ mod mutable{
         }
 
 
-        let v:Vec<(&'b mut K::T,K::D)>=closest.into_sorted().into_iter().map(|i|{
-            let j:&mut K::T=unsafe{&mut *i.0};
-            (j,i.1)
+        let v:Vec<(SmallVec<[&'b mut K::T;2]>,K::D)>=closest.into_sorted().into_iter().map(|i|{
+            let Unit{bots,dis}=i;
+
+            let bots:SmallVec<[*mut K::T;2]>=bots;
+            let j:SmallVec<[&'b mut K::T;2]>=unsafe{std::mem::transmute(bots)};
+            (j,dis)
         }).collect();
         KnearestResultMut{it:v.into_iter()}
 
@@ -350,24 +376,30 @@ mod mutable{
         recc(axis,dt,&mut knear,point,&mut c);
      
 
-        let v:Vec<(&'b mut K::T,K::D)>=c.into_sorted().into_iter().map(|i|{
-            let j:&mut K::T=unsafe{&mut *i.0};
-            (j,i.1)
+        let v:Vec<(SmallVec<[&'b mut K::T;2]>,K::D)>=c.into_sorted().into_iter().map(|i|{
+            let Unit{bots,dis}=i;
+
+            let bots:SmallVec<[*mut K::T;2]>=bots;
+            let j:SmallVec<[&'b mut K::T;2]>=unsafe{std::mem::transmute(bots)};
+            (j,dis)
         }).collect();
         KnearestResultMut{it:v.into_iter()}
     }
 }
 
 
+
+
+
 pub struct KnearestResult<'b,T:'b,F>{
-    it:std::vec::IntoIter<(&'b T,F)>
+    it:std::vec::IntoIter<(SmallVec<[&'b T;2]>,F)>
 }
 
 impl<'b,T:'b,F> ExactSizeIterator for KnearestResult<'b,T,F>{}
-unsafe impl<'b,T:'b,F> std::iter::TrustedLen for KnearestResult<'b,T,F>{}
+//unsafe impl<'b,T:'b,F> std::iter::TrustedLen for KnearestResult<'b,T,F>{}
 
 impl<'b,T:'b,F> Iterator for KnearestResult<'b,T,F>{
-    type Item=(&'b T,F);
+    type Item=(SmallVec<[&'b T;2]>,F);
     fn next(&mut self)->Option<Self::Item>{
         self.it.next()
     }
@@ -377,14 +409,14 @@ impl<'b,T:'b,F> Iterator for KnearestResult<'b,T,F>{
 }
 
 pub struct KnearestResultMut<'b,T:'b,F>{
-    it:std::vec::IntoIter<(&'b mut T,F)>
+    it:std::vec::IntoIter<(SmallVec<[&'b mut T;2]>,F)>
 }
 
 impl<'b,T:'b,F> ExactSizeIterator for KnearestResultMut<'b,T,F>{}
-unsafe impl<'b,T:'b,F> std::iter::TrustedLen for KnearestResultMut<'b,T,F>{}
+//unsafe impl<'b,T:'b,F> std::iter::TrustedLen for KnearestResultMut<'b,T,F>{}
 
 impl<'b,T:'b,F> Iterator for KnearestResultMut<'b,T,F>{
-    type Item=(&'b mut T,F);
+    type Item=(SmallVec<[&'b mut T;2]>,F);
     fn next(&mut self)->Option<Self::Item>{
         self.it.next()
     }
@@ -392,18 +424,3 @@ impl<'b,T:'b,F> Iterator for KnearestResultMut<'b,T,F>{
         self.it.size_hint()
     }
 }
-
-/*
-pub fn k_nearest_mut<'b,
-    A:AxisTrait,
-    N:NumTrait,
-    T,
-    K:Knearest<N=N,T=BBox<N,T>>,
-    >(tree:&'b mut DynTree<A,(),BBox<N,T>>,point:[K::N;2],num:usize,mut knear: K,mut func:impl FnMut(BBoxDet<'b,N,T>,K::D)){
-
-
-    k_nearest_mut_unchecked(tree,point,num,knear,|a,b|{
-        func(a.destruct(),b)
-    });
-}
-*/
