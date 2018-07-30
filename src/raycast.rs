@@ -29,18 +29,23 @@ pub trait RayTrait{
 }
 
 
+fn new_smallvec<T>(a:T)->SmallVec<[T;2]>{
+    let mut b=SmallVec::new();
+    b.push(a);
+    b
+}
 
 
 
 macro_rules! raycast{
-    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident)=>{
+    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty)=>{
         
-        struct Closest<T:HasAabb>{
+        struct Closest<'a,T:HasAabb+'a>{
             //closest:Option<($ptr,T::Num)>
-            closest:Option<(SmallVec<[$ptr;4]>,T::Num)>
+            closest:Option<(SmallVec<[$ref_lifetime;2]>,T::Num)>
         }
-        impl<T:HasAabb> Closest<T>{
-            fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,b:$ref,raytrait:&mut R){
+        impl<'a,T:HasAabb+'a> Closest<'a,T>{
+            fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,b:$ref_lifetime,raytrait:&mut R){
 
                 if let Some(x)=raytrait.compute_distance_bot(b){
                     let diff=match self.closest.take(){
@@ -53,16 +58,16 @@ macro_rules! raycast{
                                 std::cmp::Ordering::Less=>{
                                     
                                     //TODO clear instead of remaking vec??
-                                    (smallvec![b as $ptr],x)
+                                    (new_smallvec(b),x)
                                 },
                                 std::cmp::Ordering::Equal=>{
-                                    dis.0.push(b as $ptr);
+                                    dis.0.push(b);
                                     dis
                                 }
                             }
                         },
                         None=>{  
-                            (smallvec![b as $ ptr],x)
+                            (new_smallvec(b),x)
                         }
                     };
                     self.closest=Some(diff);
@@ -84,12 +89,12 @@ macro_rules! raycast{
 
 
         //Returns the first object that touches the ray.
-        fn recc<'x,'a,
-            N:NumTrait,
-            A: AxisTrait,
-            T: HasAabb<Num=N>,
+        fn recc<'a,
+            N:NumTrait+'a,
+            A: AxisTrait+'a,
+            T: HasAabb<Num=N>+'a,
             R: RayTrait<T=T,N=N>
-            >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,rect:Rect<N>,closest:&mut Closest<T>){
+            >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,rect:Rect<N>,closest:&mut Closest<'a,T>){
 
             let ((_depth,nn),rest)=stuff.next();
             match rest{
@@ -237,7 +242,7 @@ impl<'b,T:'b,F> Iterator for RaycastResultMut<'b,T,F>{
 
 mod mutable{
     use super::*;
-    raycast!(NdIterMut<(),T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut);
+    raycast!(NdIterMut<'a,(),T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T);
 
     pub fn naive_mut<
         'a,A:AxisTrait,
@@ -254,8 +259,10 @@ mod mutable{
         
         match closest.closest{
             Some(x)=>{
-
-                let v:Vec<(&'a mut T,T::Num)>=x.0.iter().map(|&a|(unsafe{&mut *a},x.1)).collect();
+                let xx=x.0;
+                let dis=x.1;
+                let v:Vec<(&'a mut T,T::Num)>=xx.into_iter().map(|a|(a,dis)).collect();
+                
                 RaycastResultMut{it:v.into_iter()}
             },
             None=>{
@@ -281,8 +288,10 @@ mod mutable{
 
         match closest.closest{
             Some(x)=>{
-
-                let v:Vec<(&'a mut T,T::Num)>=x.0.iter().map(|&a|(unsafe{&mut *a},x.1)).collect();
+                let xx=x.0;
+                let dis=x.1;
+                let v:Vec<(&'a mut T,T::Num)>=xx.into_iter().map(|a|(a,dis)).collect();
+                
                 RaycastResultMut{it:v.into_iter()}
             },
             None=>{
@@ -312,8 +321,10 @@ mod cons{
 
         match closest.closest{
             Some(x)=>{
-
-                let v:Vec<(&'a T,T::Num)>=x.0.iter().map(|&a|(unsafe{& *a},x.1)).collect();
+                let xx=x.0;
+                let dis=x.1;
+                let v:Vec<(&'a T,T::Num)>=xx.into_iter().map(|a|(a,dis)).collect();
+                
                 RaycastResult{it:v.into_iter()}
             },
             None=>{
@@ -324,7 +335,7 @@ mod cons{
         }  
 
     }
-    raycast!(NdIter<(),T>,*const T,&T,get_range_iter,NonLeafDyn);
+    raycast!(NdIter<'a,(),T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
     pub fn raycast<
         'a,A:AxisTrait,
         T:HasAabb,
@@ -340,8 +351,10 @@ mod cons{
 
         match closest.closest{
             Some(x)=>{
-
-                let v:Vec<(&'a T,T::Num)>=x.0.iter().map(|&a|(unsafe{& *a},x.1)).collect();
+                let xx=x.0;
+                let dis=x.1;
+                let v:Vec<(&'a T,T::Num)>=xx.into_iter().map(|a|(a,dis)).collect();
+                
                 RaycastResult{it:v.into_iter()}
             },
             None=>{
