@@ -196,31 +196,41 @@ impl DemoSys for RaycastDemo{
 
         let k={
             let height=tree.get_height();
-            let mut res1:Vec<(&BBox<isize,Bot>,isize)>=raycast::raycast(&tree,axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height}).collect();
-            res1.sort_by(|a,b|a.0.inner.id.cmp(&b.0.inner.id));
+            let mut res1=raycast::raycast(&tree,axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height});
+            match res1{
+                Some((mut bots,dis))=>{
+                    bots.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
-            
-            let check_naive=true;
-            if check_naive{
-                let mut res2:Vec<(&BBox<isize,Bot>,isize)> = raycast::naive(tree.iter_every_bot(),ray_isize::RayNoDraw{ray}).collect();
-                res2.sort_by(|a,b|a.0.inner.id.cmp(&b.0.inner.id));
+                    let check_naive=true;
+                    if check_naive{
+                        let (mut bots2,dis2)  = raycast::naive(tree.iter_every_bot(),ray_isize::RayNoDraw{ray}).unwrap();
+                        bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
-                if res1.len()!=res2.len(){
-                    println!("lengths dont match");
-                }else{
-                    for (v,p) in res1.iter().zip(res2.iter()){
-                   
-                        if v.0 as *const BBox<isize,Bot> != p.0 as *const BBox<isize,Bot>{
-                            println!("fail");
-                        }   
-                     
+                        if bots.len()!=bots2.len(){
+                            println!("lengths dont match");
+                        }else{
+                            for (&v,&p) in bots.iter().zip(bots2.iter()){
+                           
+                                if v as *const BBox<isize,Bot> != p as *const BBox<isize,Bot>{
+                                    println!("fail");
+                                }   
+                             
+                            }
+                        }
+                        
+                        
                     }
+                    
+                    bots.into_iter().next().map(|a|(a,dis))
+
+                },
+                None=>{
+                    None
                 }
-                
-                
             }
             
-            res1.into_iter().next()
+            
+            
         };
         
         

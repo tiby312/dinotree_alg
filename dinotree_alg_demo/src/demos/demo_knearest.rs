@@ -114,7 +114,7 @@ impl DemoSys for KnearestDemo{
         let vv={
             let kn=Kn{c:&c,g};
             let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-            k_nearest::k_nearest(tree,point,3,kn)
+            k_nearest::k_nearest(tree,point,3,kn).into_iter()
         };
 
         let check_naive=true;
@@ -162,30 +162,30 @@ impl DemoSys for KnearestDemo{
             let vv2={
                 let kn=Kn2{};
                 let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                k_nearest::naive(tree.iter_every_bot(),point,3,kn)
+                k_nearest::naive(tree.iter_every_bot(),point,3,kn).into_iter()
             };
             
 
             for ((mut a,color),mut b) in vv.zip(cols.iter()).zip(vv2){
-                a.0.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
-                b.0.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
+                a.bots.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
+                b.bots.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
                 
-                for (&a,&b) in a.0.iter().zip(b.0.iter()){
+                for (&a,&b) in a.bots.iter().zip(b.bots.iter()){
                     if a as *const BBox<F64n,Bot> != b as *const BBox<F64n,Bot>{
                         println!("Fail");
                     }    
                 }
 
-                if a.1!=b.1{
+                if a.dis!=b.dis{
                     println!("Fail");
                 }
                 
-                draw_rect_f64n(*color,(a.0)[0].get(),c,g);
+                draw_rect_f64n(*color,(a.bots)[0].get(),c,g);
             }
         
         }else{
             for (a,color) in vv.zip(cols.iter()){
-                draw_rect_f64n(*color,(a.0)[0].get(),c,g);
+                draw_rect_f64n(*color,(a.bots)[0].get(),c,g);
             }
         }
     }   
