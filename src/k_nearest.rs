@@ -1,3 +1,6 @@
+//!
+//! Provides k_nearest functionality. There is no unsafe code in this module.
+//!
 use inner_prelude::*;
 
 pub trait Knearest{

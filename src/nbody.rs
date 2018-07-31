@@ -1,3 +1,8 @@
+//!
+//! Provides nbody functionality. There is some unsafe code to reuse code between sequential and parallel versions.
+//!
+//!
+//!
 use inner_prelude::*;
 
 pub trait NodeMassTrait:Clone{

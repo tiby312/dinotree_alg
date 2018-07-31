@@ -1,31 +1,98 @@
+//!
+//! # User guide
+//!
+//! There are four flavors of the same fundamental raycast api provided in this module.
+//! There is a naive version, and there is a version that uses the tree, and there are mutable versions of those 
+//! that return mutable references.
+//!
+//! They all look something like this:
+//!
+//! ```
+//! pub fn raycast_mut<'a,A:AxisTrait,T:HasAabb>(
+//!              tree:&'a mut DynTree<A,(),T>,
+//!              rect:Rect<T::Num>,
+//!              mut rtrait:impl RayTrait<T=T,N=T::Num>)
+//!       ->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+//!    
+//! ```
+//! In addition to the tree, the user provides the geometric functions needed by passing an implementation of RayTrait.
+//! The user must also provide a rectangle within which all objects that the user is interested in possibly
+//! being hit by the raycast must include. 
+//!
+//! What is returned is the distance to where the ray cast stopped, plus a list of all bots at that distance. 
+//! In most cases, only one object is returned, but in the cases where they are ties more can be returned. 
+//! All possible solutions are returned since it would be hard to define which of the tied objects would be returned.
+//! So the Option returns Some() if and only if the list returned has atleast one element in it.
+//!
+//! # Notes
+
+//! At first the algorithm worked by splitting the ray into two where the ray intersected the divider.
+//! So one ray would have the same origin point, and the other would have the point at which the ray
+//! intersected the divder as the origin point. The problem with this is that there might not be a clean solution
+//! to the new point of the second ray. The point that you compute may not lie exactly on a point along the ray. 
+//!
+//! With real numbers this isnt a problem. There would always be a solution. But real numbers don't exist
+//! in the real world. Floating points will be close, but not perfect. If you are using integers, the corner case problems
+//! are more apparent.
+//! 
+//! The solution instead was to never subdivide the ray. Its always the same. Instead, keep subdividing the area into rectangles.
+//!
+//! Why does the user have to provide a finite rectangle up front? The reason is implementation simplicity/performance.
+//! By doing this, we don't have to special case the nodes along the outside of the tree.
+//! We also don't have have to worry about overflow and underflow problems of providing a rectangle that 
+//! just barely fits into the number type.
+//! 
+//! # Unsafety
+//!
+//! There is no unsafety in this module.
+//!
+//!
+
 use inner_prelude::*;
 use smallvec::SmallVec;
 
-#[derive(Debug,Copy,Clone)]
-pub struct Ray<N>{
-    pub point:[N;2],
-    pub dir:[N;2],
-    pub tlen:N,
-}
 
 
 
-
+///This is the trait that defines raycast specific geometric functions that are needed by this raytracing algorithm.
+///By containing all these functions in this trait, we can keep the trait bounds of the underlying NumTrait to a minimum
+///of only needing Ord.
 pub trait RayTrait{
     type T:HasAabb<Num=Self::N>;
     type N:NumTrait;
 
-    //Returns the y range of the fat line that needs to be checked
-    fn compute_intersection_range<A:AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
-
-    //Returns distance from ray origin to the line.
+    ///Returns the length of ray between its origin, and where it intersects the line provided.
+    ///Returns none if the ray doesnt intersect it.
+    ///We use this to further prune nodes.If the closest possible distance of a bot in a particular node is 
+    ///bigger than what we've already seen, then we dont need to visit that node.
     fn compute_distance_to_line<A:AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>;
 
-    //The expensive collision detection
+    ///The expensive collision detection
+    ///This is where the user can do expensive collision detection on the shape
+    ///contains within it's bounding box.
     fn compute_distance_bot(&mut self,&Self::T)->Option<Self::N>;
 
+
+    ///Returns true if the ray intersects with this rectangle.
+    ///This function allows as to prune which nodes to visit.
     fn intersects_rect(&self,&Rect<Self::N>)->bool;
+
+    ///Return the ordering of the divider relative to the ray's origin point.
+    ///So if, for the particular axis, the point is less than the divider,
+    ///return Less. If they are equal, return equal. If the popint is greater than the divider,
+    ///return greater.
+    ///This function allows us to determine which children to recurse. We want to recurse
+    ///towards the origin of the ray since we want to find things that are closer to the ray first.
     fn divider_side(&self,axis:impl AxisTrait,div:&Self::N)->std::cmp::Ordering;
+
+
+    ///Returns the y range of the fat line that needs to be checked
+    ///We use this to only check the portions of bots that belong to a divider.
+    ///Many bots could possibly lie on a divider. Especially the root divider.
+    ///This allows us to only check the bots on the divider that could possibly intersect the ray.
+    ///The first value returned is the min of the range, and the second is the max.
+    fn compute_intersection_range<A:AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
+
 }
 
 
@@ -109,12 +176,11 @@ macro_rules! raycast{
 
                     let (first,second)=match rtrait.divider_side(axis,&div){
                         std::cmp::Ordering::Less=>{
-
-                            ((right,rright),(left,rleft))
+                            ((left,rleft),(right,rright))
                         },
                         std::cmp::Ordering::Greater=>{
 
-                            ((left,rleft),(right,rright))
+                            ((right,rright),(left,rleft))
                         },
                         std::cmp::Ordering::Equal=>{ //We might potentially recurse the wrong way unless we recurse both, so recurse both
                             ((left,rleft),(right,rright))
@@ -212,8 +278,7 @@ mod mutable{
     pub fn naive_mut<
         'a,A:AxisTrait,
         T:HasAabb,
-        R:RayTrait<T=T,N=T::Num>
-        >(bots:&'a mut [T],mut rtrait:R)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(bots:&'a mut [T],mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
@@ -227,8 +292,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,A:AxisTrait,
         T:HasAabb,
-        R:RayTrait<T=T,N=T::Num>
-        >(tree:&'a mut DynTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:R)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(tree:&'a mut DynTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
         
         let axis=tree.get_axis();
         let dt = tree.get_iter_mut().with_depth(Depth(0));
@@ -248,8 +312,7 @@ mod cons{
     pub fn naive<
         'a,
         T:HasAabb,
-        R:RayTrait<T=T,N=T::Num>
-        >(bots:impl Iterator<Item=&'a T>,mut rtrait:R)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(bots:impl Iterator<Item=&'a T>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
@@ -263,8 +326,7 @@ mod cons{
     pub fn raycast<
         'a,A:AxisTrait,
         T:HasAabb,
-        R:RayTrait<T=T,N=T::Num>
-        >(tree:&'a DynTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:R)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(tree:&'a DynTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
         
         let axis=tree.get_axis();
         let dt = tree.get_iter().with_depth(Depth(0));

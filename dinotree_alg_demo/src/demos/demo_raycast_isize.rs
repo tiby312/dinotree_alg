@@ -2,16 +2,19 @@ use support::prelude::*;
 use dinotree::raycast;
 use dinotree;
 use std;
+use dinotree_geom;
+
 //isize implementation of a ray.
 mod ray_isize{
     use super::*;
-    use self::raycast::Ray;
+    //use self::raycast::Ray;
     use self::raycast::RayTrait;
     use dinotree_geom;
 
 
+
     pub struct RayT<'a,'c:'a>{
-        pub ray:Ray<isize>,
+        pub ray:dinotree_geom::Ray<isize>,
         pub c:&'a Context,
         pub g:&'a mut G2d<'c>,
         pub height:usize
@@ -49,9 +52,11 @@ mod ray_isize{
         }
         fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
             if axis.is_xaxis(){
-                div.cmp(&self.ray.point[0])
+                self.ray.point[0].cmp(&div)
+                //div.cmp(&self.ray.point[0])
             }else{
-                div.cmp(&self.ray.point[1])
+                self.ray.point[1].cmp(&div)
+                //div.cmp(&self.ray.point[1])
             }
         }
 
@@ -93,7 +98,7 @@ mod ray_isize{
 
     #[derive(Copy,Clone,Debug)]
     pub struct RayNoDraw{
-        pub ray:Ray<isize>
+        pub ray:dinotree_geom::Ray<isize>
     }
 
     impl RayTrait for RayNoDraw{
@@ -187,7 +192,7 @@ impl DemoSys for RaycastDemo{
             //let dir=[counter.cos()*10.0,counter.sin()*10.0];
             let dir=[1,1];
             let dir=[dir[0] as isize,dir[1] as isize];
-            raycast::Ray{point,dir,tlen:500}
+            dinotree_geom::Ray{point,dir,tlen:500}
         };
 
         for bot in tree.iter_every_bot(){

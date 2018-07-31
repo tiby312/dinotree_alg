@@ -97,11 +97,6 @@ So once the extra data is setup, for every node we do the following:
 
 # Raycasting
 
-At first i would split the ray into two where the ray intersected the divider.
-So one ray would have the same orign point, and the other would have the point at which the ray intersected the divder as the origin point. The problem with this is that there might not be a clean solution to the new point of the second ray. The point that you compute may not lie exactly on a point along the ray. With real numbers this isnt a big problem, but if you are using integers, there are corner case problems where the algorithm produces too many soltuons.
-
-The solution instead was to never alter the ray. Its always the same. Instead keep split bounding boxes.
-
 
 TODO explain
 

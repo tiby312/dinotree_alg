@@ -3,7 +3,12 @@ use dinotree::raycast;
 use dinotree;
 use std;
 use dinotree_geom;
-
+#[derive(Debug,Copy,Clone)]
+struct Ray<N>{
+    pub point:[N;2],
+    pub dir:[N;2],
+    pub tlen:N,
+}
 
 pub struct TestRaycastDemo{
     counter:f64
@@ -26,7 +31,7 @@ impl DemoSys for TestRaycastDemo{
             let dir=[counter.cos()*10.0,counter.sin()*10.0];
             //let dir=[1,1];
             let dir=[dir[0] as isize,dir[1] as isize];
-            raycast::Ray{point,dir,tlen:50}
+            dinotree_geom::Ray{point,dir,tlen:50}
         };
 
         let rect=axgeom::Rect::new(100,140,200,300);

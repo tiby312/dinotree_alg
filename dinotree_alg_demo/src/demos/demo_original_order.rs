@@ -6,6 +6,12 @@ use dinotree_geom;
 use dinotree;
 use dinotree_inner;
 
+#[derive(Debug,Copy,Clone)]
+struct Ray<N>{
+    pub point:[N;2],
+    pub dir:[N;2],
+    pub tlen:N,
+}
 
 #[derive(Copy,Clone)]
 pub struct Bot{

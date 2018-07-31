@@ -1,15 +1,15 @@
 use support::prelude::*;
 use dinotree::raycast;
 use std;
+use dinotree_geom;
 mod ray_f64{
     use super::*;
 
-    use self::raycast::Ray;
     use self::raycast::RayTrait;
     use dinotree_geom;
 
     pub struct RayT<'a,'c:'a>{
-        pub ray:Ray<F64n>,
+        pub ray:dinotree_geom::Ray<F64n>,
         pub c:&'a Context,
         pub g:&'a mut G2d<'c>
     }
@@ -89,7 +89,7 @@ impl DemoSys for RaycastF64Demo{
                 let ray={
                     let dir=[f64n!(x),f64n!(y)];
                     let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                    raycast::Ray{point,dir,tlen:f64n!(300.0)}
+                    dinotree_geom::Ray{point,dir,tlen:f64n!(300.0)}
                 };
 
                 
