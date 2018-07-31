@@ -157,7 +157,7 @@ macro_rules! raycast{
         //Returns the first object that touches the ray.
         fn recc<'a,
             N:NumTrait+'a,
-            A: AxisTrait+'a,
+            A: AxisTrait,
             T: HasAabb<Num=N>+'a,
             R: RayTrait<T=T,N=N>
             >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,rect:Rect<N>,closest:&mut Closest<'a,T>){

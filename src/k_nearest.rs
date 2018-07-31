@@ -301,11 +301,10 @@ pub use self::con::k_nearest;
 mod con{
     use super::*;
     pub fn k_nearest<'b,
-        N:NumTrait+'b,
-        T:HasAabb<Num=N>+'b,
+        T:HasAabb,
         A:AxisTrait,
-        K:Knearest<T=T,N=N>,
-        >(tree:&'b DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K)->Vec<Unit<'b,K::T,K::D>>{
+        K:Knearest<T=T,N=T::Num>,
+        >(tree:&'b DynTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<Unit<'b,T,K::D>>{
         let axis=tree.get_axis();
         let dt = tree.get_iter().with_depth(Depth(0));
 
@@ -374,11 +373,10 @@ mod mutable{
     knearest_recc!(NdIterMut<'a,(),K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T,UnitMut<'a,T,D>,unit_mut_create);
 
     pub fn k_nearest_mut<'b,
-        N:NumTrait+'b,
-        T:HasAabb<Num=N>+'b,
+        T:HasAabb,
         A:AxisTrait,
-        K:Knearest<N=N,T=T>,
-        >(tree:&'b mut DynTree<A,(),K::T>,point:[K::N;2],num:usize,mut knear: K)->Vec<UnitMut<'b,K::T,K::D>>{
+        K:Knearest<N=T::Num,T=T>,
+        >(tree:&'b mut DynTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<UnitMut<'b,T,K::D>>{
         let axis=tree.get_axis();
         let dt = tree.get_iter_mut().with_depth(Depth(0));
 
