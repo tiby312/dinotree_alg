@@ -1,23 +1,49 @@
 //!
-//! Provides k_nearest functionality. There is no unsafe code in this module.
+//! # User Guide
 //!
+//! ```
+//! pub fn k_nearest_mut<'b, T: HasAabb, A: AxisTrait, K: Knearest<N = T::Num, T = T>>(
+//!     tree: &'b mut DynTree<A, (), T>, 
+//!     point: [T::Num; 2], 
+//!     num: usize, 
+//!     knear: K
+//! ) -> Vec<UnitMut<'b, T, K::D>>
+//! ```
+//! Along with a reference to the tree, the user provides the needed geometric functions by passing an implementation of Knearest.
+//! The user provides a point, and a number. Then a Vec containing up to that number of units is returned. 
+//! A unit is a distance plus one or bots. This is to handle solutions where there is a tie. There may be multiple nearest elements.
+//! The first element returned is the closest, and the last the furtheset.
+//! It is possible  for the vec to be empty if the tree does not contain any bots. 
+//! All bots are returned for ties since it is hard to define exactly which bot would be returned by this algorithm, otherwise.
+//!
+//! # Unsafety
+//!
+//! There is no unsafe code in this module
+
 use inner_prelude::*;
 
+
+///The geometric functions that the user must provide.
 pub trait Knearest{
     type T:HasAabb<Num=Self::N>;
     type N:NumTrait;
+
+    ///The type of number of minimize based off on.
+    ///It would be distance or distance squared.
     type D:Ord+Copy+std::fmt::Debug;
 
-    //Expensive check
+
+    ///User defined expensive distance function. Here the user can return fine-grained distance
+    ///of the shape contained in T instead of its bounding box.
     fn twod_check(&mut self, [Self::N;2],&Self::T)->Self::D;
     
 
+    ///Return the distance between two objects
     fn oned_check(&mut self,Self::N,Self::N)->Self::D;
 
-    //create a range around n.
-    //TODO make this optional
-    fn create_range(&mut self,Self::N,Self::D)->[Self::N;2];
-
+    ///Create a range about the point n. This is used to
+    ///limit the number of bots in a node that need to be checked.
+    fn create_range(&mut self,point:Self::N,dis:Self::D)->[Self::N;2];
 }
 
 
@@ -44,11 +70,12 @@ macro_rules! get_mut_range_iter{
     }}
 }
 
-
+/// Returned by k_nearest
 pub struct Unit<'a,T:HasAabb+'a,D:Ord+Copy>{
     pub bots:SmallVec<[&'a T;2]>,
     pub dis:D
 }
+/// Returned by k_nearest_mut
 pub struct UnitMut<'a,T:HasAabb+'a,D:Ord+Copy>{
     pub bots:SmallVec<[&'a mut T;2]>,
     pub dis:D
