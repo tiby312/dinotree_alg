@@ -35,11 +35,11 @@ pub trait Knearest{
 
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
-    fn twod_check(&mut self, [Self::N;2],&Self::T)->Self::D;
+    fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D;
     
 
     ///Return the distance between two objects
-    fn oned_check(&mut self,Self::N,Self::N)->Self::D;
+    fn oned_check(&mut self,val1:Self::N,val2:Self::N)->Self::D;
 
     ///Create a range about the point n. This is used to
     ///limit the number of bots in a node that need to be checked.

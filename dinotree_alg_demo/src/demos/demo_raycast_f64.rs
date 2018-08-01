@@ -20,10 +20,25 @@ mod ray_f64{
 
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            unimplemented!()
+            use dinotree_geom::IntersectsBotResult;
+            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,rect){
+                IntersectsBotResult::Hit(val)=>{
+                    true
+                },
+                IntersectsBotResult::NoHit=>{
+                    false
+                },
+                IntersectsBotResult::Inside=>{
+                    true
+                }
+            }
         }
         fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
-            unimplemented!()
+            if axis.is_xaxis(){
+                self.ray.point[0].cmp(&div)
+            }else{
+                self.ray.point[1].cmp(&div)
+            }
         }
 
         
@@ -40,8 +55,19 @@ mod ray_f64{
         }
 
         fn compute_distance_bot(&mut self,a:&BBox<F64n,()>)->Option<Self::N>{
-            //dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get())
-            unimplemented!();
+            use dinotree_geom::IntersectsBotResult;
+            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get()){
+                IntersectsBotResult::Hit(val)=>{
+                    Some(val)
+                },
+                IntersectsBotResult::NoHit=>{
+                    None
+                },
+                IntersectsBotResult::Inside=>{
+                    Some(f64n!(0.0))
+                    //None
+                }
+            }
         }
         
     }
@@ -50,14 +76,15 @@ mod ray_f64{
 
 pub struct RaycastF64Demo{
     tree:DynTree<axgeom::XAXISS,(),BBox<F64n,()>>,
+    dim:[f64;2]
 }
 impl RaycastF64Demo{
 
     pub fn new(dim:[f64;2])->RaycastF64Demo{
-        let dim=&[0,dim[0] as isize,0,dim[1] as isize];
+        let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
-        let mut bot_iter=create_world_generator(500,dim,radius,velocity);
+        let mut bot_iter=create_world_generator(500,dim2,radius,velocity);
 
         let bots=vec![();500];
 
@@ -68,7 +95,7 @@ impl RaycastF64Demo{
             Conv::from_rect(aabb_from_pointf64(p,r))
         });
 
-        RaycastF64Demo{tree}
+        RaycastF64Demo{tree,dim}
     }
 }
 
@@ -93,9 +120,8 @@ impl DemoSys for RaycastF64Demo{
                 };
 
                 
-                //let k=raycast::raycast(&tree,ray,ray_f64::RayT{ray,c:&c,g});
-                unimplemented!();
-                /*
+                let k=raycast::raycast(&tree,axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
+                
                 let (ppx,ppy)=if let Some(k)=k{
                     let ppx=ray.point[0]+ray.dir[0]*k.1;
                     let ppy=ray.point[1]+ray.dir[1]*k.1;
@@ -112,7 +138,7 @@ impl DemoSys for RaycastF64Demo{
                      arr, // [x0, y0, x1,y1] coordinates of line
                      c.transform,
                      g);
-                */
+                
             }
         }
     }

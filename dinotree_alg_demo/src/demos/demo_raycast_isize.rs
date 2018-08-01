@@ -24,19 +24,9 @@ mod ray_isize{
         type T=BBox<isize,Bot>;
         type N=isize;
 
-        /*
-        fn split_ray<A:axgeom::AxisTrait>(&mut self,axis:A,ray:&Ray<Self::N>,fo:Self::N)->Option<(Ray<Self::N>,Ray<Self::N>)>{
-            let ray=dinotree_geom::Ray{point:ray.point,dir:ray.dir,tlen:ray.tlen};
-            dinotree_geom::split_ray(axis,&ray,fo).map(|(a,b)|{
-                let r1=Ray{point:a.point,dir:a.dir,tlen:a.tlen};
-                let r2=Ray{point:b.point,dir:b.dir,tlen:b.tlen};
-                (r1,r2)
-            })   
-        }
-        */
+ 
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            //println!("Checking rect={:?}",(rect,self.ray));
             use dinotree_geom::IntersectsBotResult;
             match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,rect){
                 IntersectsBotResult::Hit(val)=>{
@@ -83,13 +73,8 @@ mod ray_isize{
                     None
                 },
                 IntersectsBotResult::Inside=>{
-                    /*
-                    let ((a,b),(c,d))=a.get().get();
-                    let point=[a,c];
-                    let d=dinotree_geom::distance_squred_point(point,self.ray.point);
-                    Some(self.ray.tlen*2+d)
-                    */
-                    None
+                    Some(0)
+                    //None
                 }
             }
         }
@@ -134,13 +119,8 @@ mod ray_isize{
                     None
                 },
                 IntersectsBotResult::Inside=>{
-                    /*
-                    let ((a,b),(c,d))=a.get().get();
-                    let point=[a,c];
-                    let d=dinotree_geom::distance_squred_point(point,self.ray.point);
-                    Some(self.ray.tlen*2+d)
-                    */
-                    None
+                    Some(0)
+                    //None
                 }
             }
         }
@@ -188,9 +168,9 @@ impl DemoSys for RaycastDemo{
             let point=[cursor[0] as isize,cursor[1] as isize];
             //let point=[214,388];
             //println!("cursor={:?}",point);
-            //*counter+=0.005;         
-            //let dir=[counter.cos()*10.0,counter.sin()*10.0];
-            let dir=[1,1];
+            *counter+=0.005;         
+            let dir=[counter.cos()*10.0,counter.sin()*10.0];
+            //let dir=[1,1];
             let dir=[dir[0] as isize,dir[1] as isize];
             dinotree_geom::Ray{point,dir,tlen:500}
         };
