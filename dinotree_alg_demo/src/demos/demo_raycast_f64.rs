@@ -41,13 +41,14 @@ mod ray_f64{
             }
         }
 
-        
+        /*
         //First option is min, second is max
         fn compute_intersection_range<A:axgeom::AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>
         {
             let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};
             dinotree_geom::compute_intersection_range(&ray,axis,fat_line)
         }
+        */
         
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
             let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};

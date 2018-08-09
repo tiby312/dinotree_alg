@@ -85,14 +85,14 @@ pub trait RayTrait{
     ///towards the origin of the ray since we want to find things that are closer to the ray first.
     fn divider_side(&self,axis:impl AxisTrait,div:&Self::N)->std::cmp::Ordering;
 
-
+    /*
     ///Returns the y range of the fat line that needs to be checked
     ///We use this to only check the portions of bots that belong to a divider.
     ///Many bots could possibly lie on a divider. Especially the root divider.
     ///This allows us to only check the bots on the divider that could possibly intersect the ray.
     ///The first value returned is the min of the range, and the second is the max.
     fn compute_intersection_range<A:AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
-
+    */
 }
 
 
@@ -213,6 +213,9 @@ macro_rules! raycast{
                                 recc(axis_next,second.0,rtrait,second.1,closest);
                             }
                         }
+                        
+                        //recc(axis_next,second.0,rtrait,second.1,closest);
+                          
                     }      
                 
                     //Check the bots in this node only after recursing children.
@@ -221,11 +224,12 @@ macro_rules! raycast{
                     
                     let ff=[cont.left,cont.right];
                     
-                    
+                    /*
                     match rtrait.compute_intersection_range(axis,ff){
                         Some((a,b))=>{
                             for bot in $get_iter!(nn.range){
                                 let rang=*bot.get().get_range(axis.next());
+                                
                                 if rang.left>b{
                                     break;
                                 }
@@ -238,7 +242,11 @@ macro_rules! raycast{
                             //Do nothing
                         }
                     }
-                
+                    */
+                    //TODO improve this
+                    for b in $get_iter!(nn.range){
+                        closest.consider(b,rtrait);
+                    }
                 },
                 None=>{
                     //Can't do better here since for leafs, cont is none.

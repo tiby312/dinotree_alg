@@ -7,7 +7,6 @@ use dinotree_geom;
 //isize implementation of a ray.
 mod ray_isize{
     use super::*;
-    //use self::raycast::Ray;
     use self::raycast::RayTrait;
     use dinotree_geom;
 
@@ -43,18 +42,9 @@ mod ray_isize{
         fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
             if axis.is_xaxis(){
                 self.ray.point[0].cmp(&div)
-                //div.cmp(&self.ray.point[0])
             }else{
                 self.ray.point[1].cmp(&div)
-                //div.cmp(&self.ray.point[1])
             }
-        }
-
-        //First option is min, second is max
-        fn compute_intersection_range<A:axgeom::AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>
-        {
-            let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};
-            dinotree_geom::compute_intersection_range(&ray,axis,fat_line)
         }
   
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
@@ -74,6 +64,7 @@ mod ray_isize{
                 },
                 IntersectsBotResult::Inside=>{
                     Some(0)
+                    //Return none if you do not want results that intersect the ray origin.
                     //None
                 }
             }
@@ -95,13 +86,6 @@ mod ray_isize{
         }
         fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
             unimplemented!();
-        }
-
-        //First option is min, second is max
-        fn compute_intersection_range<A:axgeom::AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>
-        {
-            let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};
-            dinotree_geom::compute_intersection_range(&ray,axis,fat_line)
         }
   
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
@@ -166,11 +150,12 @@ impl DemoSys for RaycastDemo{
 
         let ray={
             let point=[cursor[0] as isize,cursor[1] as isize];
+            //let point=[573,161];
             //let point=[214,388];
             //println!("cursor={:?}",point);
             *counter+=0.005;         
             let dir=[counter.cos()*10.0,counter.sin()*10.0];
-            //let dir=[1,1];
+            //let dir=[1,0];
             let dir=[dir[0] as isize,dir[1] as isize];
             dinotree_geom::Ray{point,dir,tlen:500}
         };
@@ -191,13 +176,20 @@ impl DemoSys for RaycastDemo{
                         let (mut bots2,dis2)  = raycast::naive(tree.iter_every_bot(),ray_isize::RayNoDraw{ray}).unwrap();
                         bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
+                        println!("len={:?}",bots.len());
                         if bots.len()!=bots2.len(){
-                            println!("lengths dont match");
+                            println!("lengths dont match raycast:{:?} naive:{:?}",bots.len(),bots2.len());
                         }else{
                             for (&v,&p) in bots.iter().zip(bots2.iter()){
-                           
-                                if v as *const BBox<isize,Bot> != p as *const BBox<isize,Bot>{
-                                    println!("fail");
+                                
+                                {
+                                    let a=v as *const BBox<isize,Bot>;
+                                    let b=p as *const BBox<isize,Bot>;
+                                    //println!("{:?}",(a,b));
+                                    if  a!=b {
+                                        println!("{:?}\n{:?}\n{:?}",v,p,ray.point);
+                                        panic!();
+                                    }
                                 }   
                              
                             }
@@ -212,10 +204,7 @@ impl DemoSys for RaycastDemo{
                 None=>{
                     None
                 }
-            }
-            
-            
-            
+            } 
         };
         
         
