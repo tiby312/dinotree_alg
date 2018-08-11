@@ -18,6 +18,11 @@ pub struct KnearestDemo{
 }
 impl KnearestDemo{
     pub fn new(dim:[f64;2])->KnearestDemo{
+        println!("
+            Knearest demo.
+            Can toggle naive.
+            ");
+
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
@@ -33,7 +38,7 @@ impl KnearestDemo{
 }
 
 impl DemoSys for KnearestDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&mut self.tree;
 
         for bot in tree.iter_every_bot(){
@@ -117,9 +122,7 @@ impl DemoSys for KnearestDemo{
             k_nearest::k_nearest(tree,point,3,kn).into_iter()
         };
 
-        let check_naive=true;
         if check_naive{
-
             struct Kn2{};
 
             impl k_nearest::Knearest for Kn2{

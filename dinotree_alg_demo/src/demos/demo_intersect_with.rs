@@ -78,7 +78,7 @@ impl IntersectWithDemo{
 }
 
 impl DemoSys for IntersectWithDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
         let bots=&mut self.bots;
         let walls=&mut self.walls;

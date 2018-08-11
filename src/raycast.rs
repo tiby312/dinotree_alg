@@ -85,14 +85,6 @@ pub trait RayTrait{
     ///towards the origin of the ray since we want to find things that are closer to the ray first.
     fn divider_side(&self,axis:impl AxisTrait,div:&Self::N)->std::cmp::Ordering;
 
-    /*
-    ///Returns the y range of the fat line that needs to be checked
-    ///We use this to only check the portions of bots that belong to a divider.
-    ///Many bots could possibly lie on a divider. Especially the root divider.
-    ///This allows us to only check the bots on the divider that could possibly intersect the ray.
-    ///The first value returned is the min of the range, and the second is the max.
-    fn compute_intersection_range<A:AxisTrait>(&mut self,axis:A,fat_line:[Self::N;2])->Option<(Self::N,Self::N)>;
-    */
 }
 
 
@@ -162,7 +154,7 @@ macro_rules! raycast{
             R: RayTrait<T=T,N=N>
             >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,rect:Rect<N>,closest:&mut Closest<'a,T>){
 
-            let ((_depth,nn),rest)=stuff.next();
+            let ((depth,nn),rest)=stuff.next();
             match rest{
                 Some((extra,left,right))=>{
                     let &FullComp{div,cont}=match extra{
@@ -243,10 +235,42 @@ macro_rules! raycast{
                         }
                     }
                     */
+                    //Check again incase the other recursion took care of everything
+                    //We are hoping that it is more likely that the closest points are found
+                    //in decendant nodes instead of ancestor nodes.
+                    //if traverse_other(res,knear,pp,div){
+
+                    /*  
+                    match rtrait.compute_line_intersection(axis,div){
+                        Some(yval)=>{
+                            for bot in $get_iter!(nn.range){
+                                let [leftbot,rightbot]={
+                                    [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
+                                };
+
+                                if leftbot>yval{
+                                    //All the bots after this will also be too far away.
+                                    //because the bots are sorted in ascending order.
+                                    break;
+                                }else if rightbot>=yval{
+                                    closest.consider(bot,rtrait);
+                                }
+                            }
+                        },
+                        None=>{
+                            //Ray doesnt intersect other side??
+                        }
+                    }*/
+                
+            
+                    
+
                     //TODO improve this
                     for b in $get_iter!(nn.range){
                         closest.consider(b,rtrait);
                     }
+                
+                    
                 },
                 None=>{
                     //Can't do better here since for leafs, cont is none.

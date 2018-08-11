@@ -22,7 +22,7 @@ pub(crate) mod demos;
 //pub(crate) mod data_bench;
 
 pub trait DemoSys{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d);
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool);
 }
 
 mod demo_iter{
@@ -40,20 +40,19 @@ mod demo_iter{
             self.0+=1;
 
 
-            if self.0==9{
+            if self.0==8{
                 self.0=0
             }
             match curr{
 
-                0=>{Box::new(demo_test_raycast::TestRaycastDemo::new(area))},
-                1=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
-                3=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
-                4=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
-                5=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
-                6=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                7=>{Box::new(demo_original_order::OrigOrderDemo::new(area))}
-                8=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
+                0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
+                1=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
+                2=>{Box::new(demo_for_every_nearest::KnearestEveryDemo::new(area))}
+                3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
+                4=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
+                5=>{Box::new(demo_nbody::DemoNbody::new(area))},
+                6=>{Box::new(demo_original_order::OrigOrderDemo::new(area))}
+                7=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
                 _=>{panic!("Not possible")}
             }
         }
@@ -121,17 +120,26 @@ fn main(){
     };
 
     
-    println!("Press \"C\" to go to the next example");
-    
+    println!("Press \"N\" to go to the next example");
+    println!("Press \"C\" to turn off verification against naive algorithms.");
     let mut cursor=[0.0,0.0];
 
+    let mut check_naive=false;
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
             cursor = [x, y];
         });
         if let Some(Button::Keyboard(key)) = e.press_args() {
-            if key == Key::C {
+            if key == Key::N {
                 curr=demo_iter.next(area);
+            }
+            if key == Key::C{
+                check_naive=!check_naive;
+                if check_naive{
+                    println!("Naive checking is on. Some demo's will now check the tree algorithm against a naive non tree version");
+                }else{
+                    println!("Naive checking is off.");
+                }
             }
             //println!("Pressed keyboard key '{:?}'", key);
         };
@@ -139,7 +147,7 @@ fn main(){
         window.draw_2d(&e, |c, mut g| {
             clear([1.0; 4], g);
 
-            curr.step(cursor,&c,&mut g);
+            curr.step(cursor,&c,&mut g,check_naive);
 
 
         });

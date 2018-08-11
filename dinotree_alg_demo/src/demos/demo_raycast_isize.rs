@@ -52,6 +52,7 @@ mod ray_isize{
             dinotree_geom::compute_intersection_tvalue(axis,&ray,line)
         }
 
+
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
             draw_rect_isize([1.0,0.0,0.0,0.8],a.get(),self.c,self.g);
             use dinotree_geom::IntersectsBotResult;
@@ -144,7 +145,7 @@ impl RaycastDemo{
 }
 
 impl DemoSys for RaycastDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&self.tree;
         let counter=&mut self.counter;
 
@@ -171,12 +172,11 @@ impl DemoSys for RaycastDemo{
                 Some((mut bots,dis))=>{
                     bots.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
-                    let check_naive=true;
                     if check_naive{
                         let (mut bots2,dis2)  = raycast::naive(tree.iter_every_bot(),ray_isize::RayNoDraw{ray}).unwrap();
                         bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
-                        println!("len={:?}",bots.len());
+                        //println!("len={:?}",bots.len());
                         if bots.len()!=bots2.len(){
                             println!("lengths dont match raycast:{:?} naive:{:?}",bots.len(),bots2.len());
                         }else{

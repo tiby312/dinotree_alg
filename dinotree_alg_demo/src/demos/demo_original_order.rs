@@ -15,6 +15,7 @@ struct Ray<N>{
 
 #[derive(Copy,Clone)]
 pub struct Bot{
+    id:usize, //id used to verify pairs against naive
     pos:[f64;2],
     vel:[f64;2],
     force:[f64;2],
@@ -59,8 +60,8 @@ impl OrigOrderDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[3,5];
         let velocity=[1,3];
-        let bots=create_world_generator(4000,dim2,radius,velocity).map(|ret|{
-            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2]}
+        let bots=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
+            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],id}
         }).collect();
 
         let radius=[10,60];
@@ -71,7 +72,7 @@ impl OrigOrderDemo{
 }
 
 impl DemoSys for OrigOrderDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
         let bots=&mut self.bots;
 
@@ -90,10 +91,7 @@ impl DemoSys for OrigOrderDemo{
             let _ =dinotree_geom::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
         
- 
-        colfind::query_mut(&mut tree,|a, b| {
-            let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
-        });
+
         
         {
             struct Bla<'a,'b:'a>{
@@ -138,7 +136,72 @@ impl DemoSys for OrigOrderDemo{
             let mut dd=Bla{c:&c,g};
             dinotree::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
         }
+
+        if !check_naive{
+            colfind::query_mut(&mut tree,|a, b| {
+                let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+            });
+        }else{
+            let mut res=Vec::new();
+            colfind::query_seq_mut(&mut tree,|a, b| {
+                let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+                let (a,b)=if a.inner.id<b.inner.id{
+                    (a,b)
+                }else{
+                    (b,a)
+                };
+                res.push((a.inner.id,b.inner.id));
+            });
+
+
+            let mut res2=Vec::new();
+            let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)).collect();
+            colfind::query_naive_mut(&mut bots2,|a,b|{
+                let (a,b)=if a.inner.id<b.inner.id{
+                    (a,b)
+                }else{
+                    (b,a)
+                };
+                res2.push((a.inner.id,b.inner.id))
+            });
+
+            let cmp=|a:&(usize,usize),b:&(usize,usize)|{
+                use std::cmp::Ordering;
+           
+                match a.0.cmp(&b.0){
+                    Ordering::Less=>{
+                        Ordering::Less
+                    },
+                    Ordering::Greater=>{
+                        Ordering::Greater
+                    },
+                    Ordering::Equal=>{
+                        match a.1.cmp(&b.1){
+                            Ordering::Less=>{
+                                Ordering::Less
+                            },
+                            Ordering::Greater=>{
+                                Ordering::Greater
+                            },
+                            Ordering::Equal=>{
+                                Ordering::Equal
+                            }
+                        }
+                    }
+                }
+            };
+
+            res.sort_by(cmp);
+            res2.sort_by(cmp);
+            println!("lens={:?}",(res.len(),res2.len()));
+            assert_eq!(res.len(),res2.len());
+            for (a,b) in res.iter().zip(res2.iter()){
+                assert_eq!(a,b)
+            }
+
+        }
         tree.apply_orig_order(bots,|b,t|*t=b.inner);
+
         /*
         //If you dont care about the order, you can do this instead.
         //But in this case, this will cause the colors to not be assigned to the correct bots.
