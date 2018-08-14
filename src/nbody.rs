@@ -5,9 +5,41 @@
 //!
 use inner_prelude::*;
 
-pub trait NodeMassTrait:Clone{
+
+
+pub trait NodeMassTraitMut{
     type T:HasAabb;
     type No:Copy;
+
+    //Returns the bounding rectangle for this node.
+    fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
+
+    //gravitate this node mass with another node mass
+    fn handle_node_with_node(&mut self,&mut Self::No,b:&mut Self::No);
+
+    //gravitate a bot with a bot
+    fn handle_bot_with_bot(&mut self,&mut Self::T,&mut Self::T);
+
+    //gravitate a nodemass with a bot
+    fn handle_node_with_bot(&mut self,&mut Self::No,b:&mut Self::T);
+
+    fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+
+    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+
+    //This unloads the force accumulated by this node to the bots.
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,&'a Self::No,it:I);
+
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a mut self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
+}
+
+pub trait NodeMassTraitConst{
+    type T:HasAabb;
+    type No:Copy;
+
+    //Returns the bounding rectangle for this node.
+    fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
+
 
     //gravitate this node mass with another node mass
     fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);
@@ -25,15 +57,42 @@ pub trait NodeMassTrait:Clone{
     //This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I);
 
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No;
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
 }
 
 
 
-pub fn naive_mut<T:HasAabb>(bots:&mut [T],nm:impl NodeMassTrait<T=T>){
-    tools::for_every_pair(bots,|a,b|{
-        nm.handle_bot_with_bot(a,b);
-    });
+
+trait NodeMassTrait:Clone{
+    type T:HasAabb;
+    type No:Copy;
+
+    //Returns the bounding rectangle for this node.
+    fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
+
+    //gravitate this node mass with another node mass
+    fn handle_node_with_node(&mut self,&mut Self::No,b:&mut Self::No);
+
+    //gravitate a bot with a bot
+    fn handle_bot_with_bot(&mut self,&mut Self::T,&mut Self::T);
+
+    //gravitate a nodemass with a bot
+    fn handle_node_with_bot(&mut self,&mut Self::No,b:&mut Self::T);
+
+    fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+
+    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+
+    //This unloads the force accumulated by this node to the bots.
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,&'a Self::No,it:I);
+
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a mut self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
+}
+
+
+
+pub fn naive_mut<T:HasAabb>(bots:&mut [T],func:impl FnMut(&mut T,&mut T)){
+    tools::for_every_pair(bots,func);
 }
 
 
@@ -44,28 +103,30 @@ fn buildtree<'a,
     T:HasAabb+Send+'a,
     N:NodeMassTrait<T=T>
     >
-    (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:N){
+    (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
 
 
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
-        (axis:impl AxisTrait,stuff:NdIterMut<N::No,T>,ncontext:N){
+        (axis:impl AxisTrait,stuff:NdIterMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
         
         let (nn,rest)=stuff.next();
         match rest{
             Some((extra,mut left,mut right))=>{
+
                 match extra{
                     None=>{
                         let empty:&[T]=&[];
-                        let mut nodeb=ncontext.new(empty.iter());
+                        let mut nodeb=ncontext.new(empty.iter(),rect);
                         
                         nn.misc=nodeb;
-                        let n2=ncontext.clone();
+                        //let n2=ncontext.clone();
                         //recurse anyway even though there is no divider.
                         //we want to populate this tree entirely.
-                        recc(axis.next(),left,ncontext);    
-                        recc(axis.next(),right,n2);
+                        recc(axis.next(),left,ncontext,rect);    
+                        recc(axis.next(),right,ncontext,rect);
                     },
-                    Some(FullComp{div:_,cont:_})=>{
+                    Some(FullComp{div,cont:_})=>{
+                        let (l,r)=rect.subdivide(axis,*div);
 
                         let nodeb={
                             let left=left.create_wrap_mut();
@@ -75,56 +136,56 @@ fn buildtree<'a,
                             let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
                             let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
                             let i3=nn.range.iter().chain(i1.chain(i2));
-                            ncontext.new(i3)
+                            ncontext.new(i3,rect)
                         };
 
                         nn.misc=nodeb;
 
-                        let n2=ncontext.clone();
-                        recc(axis.next(),left,ncontext);
-                        recc(axis.next(),right,n2);
+                        //let n2=ncontext.clone();
+                        recc(axis.next(),left,ncontext,l);
+                        recc(axis.next(),right,ncontext,r);
                     }
                 }
             },
             None=>{
-                let mut nodeb=ncontext.new(nn.range.iter());
+                let mut nodeb=ncontext.new(nn.range.iter(),rect);
                 nn.misc=nodeb;
             }
         }
     }
-    recc(axis,node,ncontext);
+    recc(axis,node,ncontext,rect);
 }
 
 fn apply_tree<'a,   
     T:HasAabb+'a,
     N:NodeMassTrait<T=T>
     >
-    (_axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:N){
+    (_axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:&mut N){
 
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
-        (stuff:NdIterMut<N::No,T>,ncontext:N){
+        (stuff:NdIterMut<N::No,T>,ncontext:&mut N){
         
         let (nn,rest)=stuff.next();
         match rest{
             Some((extra,mut left,mut right))=>{
-                let FullComp{div:_,cont:_}=match extra{
-                    Some(b)=>b,
-                    None=>return
+                match extra{
+                    Some(_)=>{
+                        {
+                            let left=left.create_wrap_mut();
+                            let right=right.create_wrap_mut();
+                                                    
+                            let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
+                            let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
+                            let i3=nn.range.iter_mut().chain(i1.chain(i2));
+                            
+                            ncontext.apply_to_bots(&mut nn.misc,i3);
+                        }
+                    },
+                    None=>{}
                 };
 
-                {
-                    let left=left.create_wrap_mut();
-                    let right=right.create_wrap_mut();
-                                            
-                    let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
-                    let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
-                    let i3=nn.range.iter_mut().chain(i1.chain(i2));
-                    
-                    ncontext.apply_to_bots(&mut nn.misc,i3);
-                }
-                let n2=ncontext.clone();
                 recc(left,ncontext);
-                recc(right,n2);
+                recc(right,ncontext);
             },
             None=>{
                 ncontext.apply_to_bots(&nn.misc,nn.range.iter_mut());
@@ -147,113 +208,167 @@ fn handle_anchor_with_children<'a,
 	A:AxisTrait,
 	B:AxisTrait,
     N:NodeMassTrait+'a>
-(thisa:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<N::No,N::T>>,right:LevelIter<NdIterMut<N::No,N::T>>,ncontext:&N){
+(thisa:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<N::No,N::T>>,right:LevelIter<NdIterMut<N::No,N::T>>,ncontext:&mut N){
     
-    struct Bo<'a,B:AxisTrait,N:NodeMassTrait+'a>{
+
+    struct BoLeft<'a,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
         _p:PhantomData<N::No>,
-        ncontext:&'a N
+        ncontext:&'a mut N
     }
     
-    impl<'a,B:AxisTrait,N:NodeMassTrait+'a> Bok for Bo<'a,B,N>{
-        type N=N;
+    impl<'a,B:AxisTrait,N:NodeMassTrait+'a> Bok2 for BoLeft<'a,B,N>{
+        type No=N::No;
         type T=N::T;
-        type B=B;
+        type AnchorAxis=B;
 
-        fn handle_every_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
                 self.ncontext.handle_bot_with_bot(i,b);
             }
         }
-        fn handle_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
+        fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
                 self.ncontext.handle_node_with_bot(a,i);
             }
         }
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.ncontext.is_far_enough(depth.0,b)
+
+        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
+            let rect=N::get_rect(misc);
+            let range=rect.get_range(axis);
+            self.ncontext.is_far_enough(0,[anchor.div,range.right])
         }
     }
-    let mut bo= Bo{_anchor_axis:anchor.axis,_p:PhantomData,ncontext:ncontext};
-    generic_rec(thisa,anchor,left,&mut bo);  
-    generic_rec(thisa,anchor,right,&mut bo);  
+    struct BoRight<'a,B:AxisTrait,N:NodeMassTrait+'a>{
+        _anchor_axis:B,
+        _p:PhantomData<N::No>,
+        ncontext:&'a mut N
+    }
+    
+    impl<'a,B:AxisTrait,N:NodeMassTrait+'a> Bok2 for BoRight<'a,B,N>{
+        type No=N::No;
+        type T=N::T;
+        type AnchorAxis=B;
+
+        fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+            for i in anchor.range.iter_mut(){
+                self.ncontext.handle_bot_with_bot(i,b);
+            }
+        }
+        fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
+            for i in anchor.range.iter_mut(){
+                self.ncontext.handle_node_with_bot(a,i);
+            }
+        }
+
+        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
+            let rect=N::get_rect(misc);
+            let range=rect.get_range(axis);
+            self.ncontext.is_far_enough(0,[anchor.div,range.left])
+        }
+    }
+    {
+        let mut bo= BoLeft{_anchor_axis:anchor.axis,_p:PhantomData,ncontext:ncontext};
+        bo.generic_rec2(thisa,anchor,left);  
+    }
+    {
+        let mut bo= BoRight{_anchor_axis:anchor.axis,_p:PhantomData,ncontext:ncontext};
+        bo.generic_rec2(thisa,anchor,right);  
+    }
 }
 
 fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
-    (axis:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<'a,N::No,N::T>>,mut right:LevelIter<NdIterMut<'a,N::No,N::T>>,ncontext:&N){
+    (axis:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<'a,N::No,N::T>>,mut right:LevelIter<NdIterMut<'a,N::No,N::T>>,ncontext:&mut N){
+
 
 	struct Bo4<'a,B:AxisTrait,N:NodeMassTrait+'a,>{
         _anchor_axis:B,
         bot:&'a mut N::T,
-        ncontext:&'a N
+        ncontext:&'a mut N,
+        div:<N::T as HasAabb>::Num
     }
 
-    impl<'a,B:AxisTrait,N:NodeMassTrait+'a,> Bok for Bo4<'a,B,N>{
-    	type N=N;
+    impl<'a,B:AxisTrait,N:NodeMassTrait+'a,> Bok2 for Bo4<'a,B,N>{
+    	type No=N::No;
         type T=N::T;
-        type B=B;
-    	fn handle_every_node<A:AxisTrait>(&mut self,_axis:A,b:&mut Self::T,_anchor:&mut Anchor<B,Self::T>){
+        type AnchorAxis=B;
+    	fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut Self::T,_anchor:&mut Anchor<B,Self::T>){
             self.ncontext.handle_bot_with_bot(self.bot,b);
     	}
-    	fn handle_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
+    	fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_bot(a,self.bot);
     	}
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.ncontext.is_far_enough_half(depth.0,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
+            let rect=N::get_rect(misc);
+            let range=rect.get_range(axis);
+            self.ncontext.is_far_enough_half(0,[self.div,range.left])
         }
     }
     struct Bo2<'a,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
         node:&'a mut N::No,
-        ncontext:&'a N
+        ncontext:&'a mut N,
+        div:<N::T as HasAabb>::Num
     }
 
-    impl<'a,B:AxisTrait,N:NodeMassTrait+'a> Bok for Bo2<'a,B,N>{
-    	type N=N;
+    impl<'a,B:AxisTrait,N:NodeMassTrait+'a> Bok2 for Bo2<'a,B,N>{
+    	type No=N::No;
         type T=N::T;
-        type B=B;
-        fn handle_every_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,_anchor:&mut Anchor<B,Self::T>){
+        type AnchorAxis=B;
+        fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,_anchor:&mut Anchor<B,Self::T>){
             self.ncontext.handle_node_with_bot(self.node,b);
     	}
-    	fn handle_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
+    	fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_node(self.node,a);
     	}
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.ncontext.is_far_enough_half(depth.0,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
+            let rect=N::get_rect(misc);
+            let range=rect.get_range(axis);
+            self.ncontext.is_far_enough_half(0,[self.div,range.left])
         }
     }
 
     struct Bo<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
         right:&'b mut LevelIter<NdIterMut<'a,N::No,N::T>>,
-        ncontext:&'b N
+        ncontext:&'b mut N
     }
     
-    impl<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a> Bok for Bo<'a,'b,B,N>{
-    	type N=N;
+    impl<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a> Bok2 for Bo<'a,'b,B,N>{
+    	type No=N::No;
         type T=N::T;
-        type B=B;
-        fn handle_every_node<A:AxisTrait>(&mut self,axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        type AnchorAxis=B;
+        fn handle_node<A:AxisTrait>(&mut self,axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
     		let d=self.right.depth;
             let r=self.right.inner.create_wrap_mut().with_depth(d);
             let anchor_axis=anchor.axis;
-    		generic_rec(axis,anchor,r,&mut Bo4{_anchor_axis:anchor_axis,bot:b,ncontext:self.ncontext})
+
+            let right_most=b.get().get_range(axis).right;
+
+            let mut bok=Bo4{_anchor_axis:anchor_axis,bot:b,ncontext:self.ncontext,div:anchor.div};
+            bok.generic_rec2(axis,anchor,r);
     	}
-    	fn handle_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
+    	fn handle_node_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
     		let d=self.right.depth;
             let r=self.right.inner.create_wrap_mut().with_depth(d);
             let anchor_axis=anchor.axis;
-    		generic_rec(axis,anchor,r,&mut Bo2{_anchor_axis:anchor_axis,node:a,ncontext:self.ncontext})
+
+            let right_most=N::get_rect(a).get_range(axis).right;
+            let mut bok=Bo2{_anchor_axis:anchor_axis,node:a,ncontext:self.ncontext,div:anchor.div};
+            bok.generic_rec2(axis,anchor,r);
     	}
-        fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.ncontext.is_far_enough_half(depth.0,b)
+        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
+            let rect=N::get_rect(misc);
+            let range=rect.get_range(axis);
+            self.ncontext.is_far_enough_half(0,[range.right,anchor.div])
         }
     }
     let mut bo= Bo{_anchor_axis:anchor.axis,right:&mut right,ncontext};
-    generic_rec(axis,anchor,left,&mut bo);  
+    bo.generic_rec2(axis,anchor,left); 
+    
 }
 
-fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIter<NdIterMut<N::No,N::T>>,ncontext:N) where N::T:Send,N::No:Send{
+fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIter<NdIterMut<N::No,N::T>>,ncontext:&mut N) where N::T:Send,N::No:Send{
     
 
     let ((depth,nn),rest)=it.next();
@@ -272,7 +387,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
                 let l2=right.inner.create_wrap_mut().with_depth(depth);
                 let mut anchor=Anchor{axis:axis,range:&mut nn.range,div};
 
-                handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,&ncontext);
+                handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,ncontext);
             }
             //At this point, everything has been handled with the root.
             //before we can fully remove the root, and reduce this problem to two smaller trees,
@@ -291,20 +406,20 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
                 let l2=right.inner.create_wrap_mut().with_depth(depth);
                 let mut anchor=Anchor{axis:axis,range:&mut nn.range,div};
 
-                handle_left_with_right(axis.next(),&mut anchor,l1,l2,&ncontext);
+                handle_left_with_right(axis.next(),&mut anchor,l1,l2,ncontext);
             }
             //at this point we have successfully broken up this problem
             //into two independant ones, and we can do this all over again for the two children.
             //potentially in parlalel.
            
-            let n2=ncontext.clone();
             if join.should_switch_to_sequential(depth){
                 recc(join.into_seq(),axis.next(),left,ncontext);
-                recc(join.into_seq(),axis.next(),right,n2);
+                recc(join.into_seq(),axis.next(),right,ncontext);
             }else{
+                let mut n2=ncontext.clone();
                 rayon::join(
                 ||recc(join,axis.next(),left,ncontext),
-                ||recc(join,axis.next(),right,n2)
+                ||recc(join,axis.next(),right,&mut n2)
                 );
             }
         },
@@ -313,157 +428,116 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
             tools::for_every_pair(&mut nn.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
         }
     }
-
-    /*
-    match rest{
-        Some((mut left,mut right))=>{
-            let div=match nn1.div{
-                Some(div)=>{div},
-                None=>{return;}
-            };
-
-            match nn1.cont{
-                Some(_cont)=>{
-                    let depth=left.depth;
-                    let l1=left.inner.create_wrap_mut().with_depth(depth);
-                    let l2=right.inner.create_wrap_mut().with_depth(depth);
-                    let mut anchor=Anchor{axis:axis,range:&mut nn1.range,div};
-
-                    handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,&ncontext);
-                },
-                None=>{
-
-                }
-            }
-
-            //At this point, everything has been handled with the root.
-            //before we can fully remove the root, and reduce this problem to two smaller trees,
-            //we have to do one more thing.
-            //we have to handle all the bots on the left of the root with all the bots on the right of the root.
-
-            //from the left side,get a list of nodemases.
-            //from the right side,get a list of nodemases.
-            //collide the two.
-
-
-            {
-                let depth=left.depth;
-                    
-                let l1=left.inner.create_wrap_mut().with_depth(depth);
-                let l2=right.inner.create_wrap_mut().with_depth(depth);
-                let mut anchor=Anchor{axis:axis,range:&mut nn1.range,div};
-
-                handle_left_with_right(axis.next(),&mut anchor,l1,l2,&ncontext);
-            }
-            //at this point we have successfully broken up this problem
-            //into two independant ones, and we can do this all over again for the two children.
-            //potentially in parlalel.
-           
-            let n2=ncontext.clone();
-            if join.should_switch_to_sequential(depth){
-                recc(join.into_seq(),axis.next(),left,ncontext);
-                recc(join.into_seq(),axis.next(),right,n2);
-            }else{
-                rayon::join(
-                ||recc(join,axis.next(),left,ncontext),
-                ||recc(join,axis.next(),right,n2)
-                );
-            }
-        },
-        None=>{
-
-        }
-    }
-    */
 }
 
 
 
-trait Bok{
-    type N:NodeMassTrait<T=Self::T>;
+
+
+trait Bok2{
+    type No:Copy;
     type T:HasAabb;
-    type B:AxisTrait;
-    fn is_far_enough(&mut self,depth:Depth,b:[<Self::T as HasAabb>::Num;2])->bool;
-    fn handle_every_node<A:AxisTrait>(&mut self,axis:A,n:&mut Self::T,anchor:&mut Anchor<Self::B,Self::T>);
-    fn handle_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut <Self::N as NodeMassTrait>::No,anchor:&mut Anchor<Self::B,Self::T>);
-}
+    type AnchorAxis:AxisTrait;
+    fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,misc:&Self::No)->bool;
+    fn handle_node<A:AxisTrait>(&mut self,axis:A,n:&mut Self::T,anchor:&mut Anchor<Self::AnchorAxis,Self::T>);
+    fn handle_node_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut Self::No,anchor:&mut Anchor<Self::AnchorAxis,Self::T>);
 
 
-fn generic_rec<
-    A:AxisTrait,
-    AnchorAxis:AxisTrait,
-    B:Bok<N=N,T=T,B=AnchorAxis>,
-    N:NodeMassTrait<T=T>,
-    T:HasAabb,
-    >(this_axis:A,anchor:&mut Anchor<AnchorAxis,T>,stuff:LevelIter<NdIterMut<N::No,T>>,bok:&mut B){
+    fn generic_rec2<
+        A:AxisTrait,
+        >(&mut self,this_axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,stuff:LevelIter<NdIterMut<Self::No,Self::T>>){
 
-    let ((depth,nn),rest)=stuff.next();
-    match rest{
-        Some((extra,left,right))=>{
-            let &FullComp{div,cont:_}=match extra{
-                Some(b)=>b,
-                None=>return
-            };
-            for i in nn.range.iter_mut(){
-                bok.handle_every_node(this_axis,i,anchor);    
-            }
-
-            if this_axis.is_equal_to(anchor.axis){
-                if bok.is_far_enough(depth,[div,anchor.div]){
-                    bok.handle_far_enough(this_axis,&mut nn.misc,anchor);
-                    return;
-                }        
-            }
-
-            generic_rec(this_axis.next(),anchor,left,bok);
-            generic_rec(this_axis.next(),anchor,right,bok);
-        },
-        None=>{
-            for i in nn.range.iter_mut(){
-                bok.handle_every_node(this_axis,i,anchor);    
-            }
+        let ((depth,nn),rest)=stuff.next();
+        
+        if this_axis.is_equal_to(anchor.axis){
+            if self.is_far_enough(this_axis,anchor,&nn.misc){
+                self.handle_node_far_enough(this_axis,&mut nn.misc,anchor);
+                return;
+            }        
         }
-    }
-    
-    /*
-    let ((_depth,nn1),rest)=stuff.next();
-    
-    for i in nn1.range.iter_mut(){
-        bok.handle_every_node(this_axis,i,anchor);    
-    }
 
-    match rest{
-        Some((left,right))=>{
-            let div=match nn1.div{
-                Some(div)=>div,
-                None=>{
-                    return;
+        match rest{
+            Some((extra,left,right))=>{
+                let &FullComp{div,cont}=match extra{
+                    Some(b)=>b,
+                    None=>return
+                };
+                
+                for i in nn.range.iter_mut(){
+                    self.handle_node(this_axis,i,anchor);    
                 }
-            };
-            
-            if this_axis.is_equal_to(anchor.axis){
-                if bok.is_far_enough(_depth,[div,anchor.div]){
-                    bok.handle_far_enough(this_axis,&mut nn1.misc,anchor);
-                    return;
-                }        
+
+                self.generic_rec2(this_axis.next(),anchor,left);
+                self.generic_rec2(this_axis.next(),anchor,right);
+            },
+            None=>{
+                for i in nn.range.iter_mut(){
+                    self.handle_node(this_axis,i,anchor);    
+                }
             }
-
-            generic_rec(this_axis.next(),anchor,left,bok);
-            generic_rec(this_axis.next(),anchor,right,bok);
-        },
-        None=>{
-
         }
-    }  
-    */     
+    }
+
 }
 
 
-pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut DynTree<A,N::No,T>,ncontext:N) where N::No:Send{
+
+pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&mut DynTree<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
     let axis=t1.get_axis();
     let height=t1.get_height();
  
-    buildtree(axis,t1.get_iter_mut(),ncontext.clone());
+    struct Wrapper<'a,N:NodeMassTraitConst+'a>(&'a N);
+    impl<'a,N:NodeMassTraitConst+'a> Clone for Wrapper<'a,N>{
+        fn clone(&self)->Wrapper<'a,N>{
+            Wrapper(self.0)
+        }
+    }
+    impl<'a,N:NodeMassTraitConst+'a> NodeMassTrait for Wrapper<'a,N>{
+        type T=N::T;
+        type No=N::No;
+
+        //Returns the bounding rectangle for this node.
+        fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>{
+            N::get_rect(no)            
+        }
+
+        //gravitate this node mass with another node mass
+        fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No){
+            self.0.handle_node_with_node(a,b);
+        }
+
+        //gravitate a bot with a bot
+        fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T){
+            self.0.handle_bot_with_bot(a,b);
+        }
+
+        //gravitate a nodemass with a bot
+        fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T){
+            self.0.handle_node_with_bot(a,b);
+        }
+
+        fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough(depth,b)
+        }
+
+        fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough_half(depth,b)
+        }
+
+        //This unloads the force accumulated by this node to the bots.
+        fn apply_to_bots<'b,I:Iterator<Item=&'b mut Self::T>> (&'b mut self,a:&'b Self::No,it:I){
+            self.0.apply_to_bots(a,it)
+        }
+
+        fn new<'b,I:Iterator<Item=&'b Self::T>> (&'b mut self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No{
+            self.0.new(it,rect)
+        }
+        
+    }
+
+
+    let mut ncontext=Wrapper(ncontext);
+    buildtree(axis,t1.get_iter_mut(),&mut ncontext,rect);
 
     {
         let kk=if height<3{
@@ -472,14 +546,15 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTrait<T=T>+Send>(t1:&mut D
             height-3
         };
         let d=t1.get_iter_mut().with_depth(Depth(0));
-        recc(par::Parallel(Depth(kk)),axis,d,ncontext.clone());    
+        recc(par::Parallel(Depth(kk)),axis,d,&mut ncontext);    
     }
 
-    apply_tree(axis,t1.get_iter_mut(),ncontext);
+    apply_tree(axis,t1.get_iter_mut(),&mut ncontext);
 }
 
 
-pub fn nbody<A:AxisTrait,N:NodeMassTrait>(t1:&mut DynTree<A,N::No,N::T>,ncontext:N){
+pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DynTree<A,N::No,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
+    
     #[derive(Copy,Clone)]
     #[repr(transparent)]
     struct Wrap<T>(T);
@@ -491,28 +566,39 @@ pub fn nbody<A:AxisTrait,N:NodeMassTrait>(t1:&mut DynTree<A,N::No,N::T>,ncontext
         }
     }
 
-    #[derive(Copy,Clone)]
     #[repr(transparent)]
-    struct Wrapper<N:NodeMassTrait>(N);
-    
-    unsafe impl<N:NodeMassTrait> Send for Wrapper<N>{}
+    struct Wrapper<'a,N:NodeMassTraitMut+'a>(&'a mut N);
+    impl<'a,N:NodeMassTraitMut+'a> Clone for Wrapper<'a,N>{
+        fn clone(&self)->Wrapper<'a,N>{
+            unreachable!()
+        }
+    }
 
-    impl<N:NodeMassTrait> NodeMassTrait for Wrapper<N>{
+    unsafe impl<'a,N:NodeMassTraitMut> Send for Wrapper<'a,N>{}
+
+    impl<'a,N:NodeMassTraitMut+'a> NodeMassTrait for Wrapper<'a,N>{
         type T=Wrap<N::T>;
         type No=Wrap<N::No>;
 
+
+        //Returns the bounding rectangle for this node.
+        fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>{
+            N::get_rect(&no.0)            
+        }
+
+
         //gravitate this node mass with another node mass
-        fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
+        fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No){
             self.0.handle_node_with_node(&mut a.0,&mut b.0);
         }
 
         //gravitate a bot with a bot
-        fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
+        fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T){
             self.0.handle_bot_with_bot(&mut a.0,&mut b.0);
         }
 
         //gravitate a nodemass with a bot
-        fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
+        fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T){
             self.0.handle_node_with_bot(&mut a.0,&mut b.0);
         }
 
@@ -525,30 +611,30 @@ pub fn nbody<A:AxisTrait,N:NodeMassTrait>(t1:&mut DynTree<A,N::No,N::T>,ncontext
         }
 
         //This unloads the force accumulated by this node to the bots.
-        fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I){
+        fn apply_to_bots<'b,I:Iterator<Item=&'b mut Self::T>> (&'b mut self,a:&'b Self::No,it:I){
             self.0.apply_to_bots(&a.0,it.map(|a|&mut a.0))
         }
 
-        fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I)->Self::No{
-            Wrap(self.0.new(it.map(|b|&b.0)))
+        fn new<'b,I:Iterator<Item=&'b Self::T>> (&'b mut self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No{
+            Wrap(self.0.new(it.map(|b|&b.0),rect))
         }
         
     }
 
 
     let axis=t1.get_axis();//A::new();
-    let ncontext=Wrapper(ncontext);
+    let mut ncontext=Wrapper(ncontext);
     let t1:&mut DynTree<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
 
 
-    buildtree(axis,t1.get_iter_mut(),ncontext.clone());
+    buildtree(axis,t1.get_iter_mut(),&mut ncontext,rect);
 
     {
         let d=t1.get_iter_mut().with_depth(Depth(0));
-        recc(par::Sequential,axis,d,ncontext.clone());    
+        recc(par::Sequential,axis,d,&mut ncontext);    
     }
 
-    apply_tree(axis,t1.get_iter_mut(),ncontext);
+    apply_tree(axis,t1.get_iter_mut(),&mut ncontext);
 
 }
 
