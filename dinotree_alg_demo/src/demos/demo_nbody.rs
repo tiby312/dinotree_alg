@@ -72,18 +72,15 @@ impl nbody::NodeMassTraitMut for Bla{
             total_x+=m*i.inner.pos[0];
             total_y+=m*i.inner.pos[1];
         }
-        //println!("total={:?}");
+        
         let center=if total_mass!=0.0{
             [total_x/total_mass,
             total_y/total_mass]
         }else{
-            //panic!("fail");
-            //println!("set to zero");
             [0.0;2]
         };
         NodeMass{center,mass:total_mass,force:[0.0;2],rect}
     }
-
 
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,a:&'a Self::No,it:I){
 
@@ -94,36 +91,20 @@ impl nbody::NodeMassTraitMut for Bla{
             let total_forcex=a.force[0];
             let total_forcey=a.force[1];
 
-            //let forcex=total_forcex/len as f64;
-            //let forcey=total_forcey/len as f64;
             for i in it{
                 let forcex=total_forcex*(i.inner.mass/a.mass);
                 let forcey=total_forcey*(i.inner.mass/a.mass);
                 i.inner.apply_force([forcex,forcey]);
             }
-        }else{
-            //No acceleration was applied to this node mass.
         }
     }
 
-    fn is_far_enough(&self,depth:usize,b:[F64n;2])->bool{
-                
-        let a=b[0];
-
-        //let x=(depth+1) as f64;
-        
-        //(a.into_inner()-b[1].into_inner()).abs()>800.0/x
-        (a.into_inner()-b[1].into_inner()).abs()>200.0
-        //false
+    fn is_far_enough(&self,b:[F64n;2])->bool{
+        (b[0].into_inner()-b[1].into_inner()).abs()>200.0
     }
 
-    fn is_far_enough_half(&self,depth:usize,b:[F64n;2])->bool{
-        
-        let a=b[0];
-        //let x=(depth+1) as f64;
-        //(a.into_inner()-b[1].into_inner()).abs()>400.0/x
-        (a.into_inner()-b[1].into_inner()).abs()>100.0
-        //false
+    fn is_far_enough_half(&self,b:[F64n;2])->bool{
+        (b[0].into_inner()-b[1].into_inner()).abs()>100.0
     }
 
 }
@@ -284,11 +265,9 @@ impl DemoSys for DemoNbody{
                 let d=max_diff.unwrap();
                 //self.max_percentage_error=self.max_percentage_error.max(d.2*100.0);
                 self.max_percentage_error=d.2*100.0;
-                
-                //println!("max percentage error={:.2}%",d.2*100.0);
-                //println!("max diff={:?} num_compare={:?}",d.0,(num_pair_naive,num_pair_alg));
+             
                 let f=num_pair_alg as f64/num_pair_naive as f64;
-                println!("maximum percentage error ={:.2}%\t\t  current bot not checked ratio={:.2}%",self.max_percentage_error,f*100.0);
+                println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",d.0,self.max_percentage_error,f*100.0);
 
                 {
                     let ((x1,x2),(y1,y2))=d.1.get().get();
@@ -299,10 +278,7 @@ impl DemoSys for DemoNbody{
                     let square = [x1.into_inner(),y1.into_inner(),w.into_inner(),h.into_inner()];
                     rectangle([1.0,0.0,1.0,1.0], square, c.transform, g);
                 }
-
-                //assert!(d.0<0.4);
             }
-            //assert!(max_diff.0/max_diff.1<10.0,"max diff={:?}",max_diff.0/max_diff.1);
         }
         
 

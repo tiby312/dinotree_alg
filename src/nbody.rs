@@ -23,9 +23,9 @@ pub trait NodeMassTraitMut{
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&mut self,&mut Self::No,b:&mut Self::T);
 
-    fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
-    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,&'a Self::No,it:I);
@@ -50,9 +50,9 @@ pub trait NodeMassTraitConst{
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,&mut Self::No,b:&mut Self::T);
 
-    fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
-    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I);
@@ -79,9 +79,9 @@ trait NodeMassTrait:Clone{
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&mut self,&mut Self::No,b:&mut Self::T);
 
-    fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
-    fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,&'a Self::No,it:I);
@@ -236,7 +236,7 @@ fn handle_anchor_with_children<'a,
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough(0,[anchor.div,range.right])
+            self.ncontext.is_far_enough([anchor.div,range.right])
         }
     }
     struct BoRight<'a,B:AxisTrait,N:NodeMassTrait+'a>{
@@ -264,7 +264,7 @@ fn handle_anchor_with_children<'a,
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough(0,[anchor.div,range.left])
+            self.ncontext.is_far_enough([anchor.div,range.left])
         }
     }
     {
@@ -301,7 +301,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough_half(0,[self.div,range.left])
+            self.ncontext.is_far_enough_half([self.div,range.left])
         }
     }
     struct Bo2<'a,B:AxisTrait,N:NodeMassTrait+'a>{
@@ -324,7 +324,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough_half(0,[self.div,range.left])
+            self.ncontext.is_far_enough_half([self.div,range.left])
         }
     }
 
@@ -360,7 +360,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough_half(0,[range.right,anchor.div])
+            self.ncontext.is_far_enough_half([range.right,anchor.div])
         }
     }
     let mut bo= Bo{_anchor_axis:anchor.axis,right:&mut right,ncontext};
@@ -516,12 +516,12 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
             self.0.handle_node_with_bot(a,b);
         }
 
-        fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.0.is_far_enough(depth,b)
+        fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough(b)
         }
 
-        fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.0.is_far_enough_half(depth,b)
+        fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough_half(b)
         }
 
         //This unloads the force accumulated by this node to the bots.
@@ -602,12 +602,12 @@ pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DynTree<A,N::No,N::T>,ncont
             self.0.handle_node_with_bot(&mut a.0,&mut b.0);
         }
 
-        fn is_far_enough(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.0.is_far_enough(depth,b)
+        fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough(b)
         }
 
-        fn is_far_enough_half(&self,depth:usize,b:[<Self::T as HasAabb>::Num;2])->bool{
-            self.0.is_far_enough_half(depth,b)
+        fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool{
+            self.0.is_far_enough_half(b)
         }
 
         //This unloads the force accumulated by this node to the bots.
