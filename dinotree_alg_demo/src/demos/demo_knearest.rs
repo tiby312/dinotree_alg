@@ -18,10 +18,6 @@ pub struct KnearestDemo{
 }
 impl KnearestDemo{
     pub fn new(dim:[f64;2])->KnearestDemo{
-        println!("
-            Knearest demo.
-            Can toggle naive.
-            ");
 
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
