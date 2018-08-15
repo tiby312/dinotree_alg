@@ -214,7 +214,7 @@ impl DemoSys for DemoNbody{
             //assert_eq!(bla.num_pairs_checked,n_choose_2(tree.get_num_bots()));
             
             let (bots2,num_pair_naive)={
-                let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(bot.create_aabb(),*bot)).collect();
+                let mut bots2:Vec<BBoxDemo<F64n,Bot>>=bots.iter().map(|bot|BBoxDemo::new(bot.create_aabb(),*bot)).collect();
                 let mut num_pairs_checked=0;
                 nbody::naive_mut(&mut bots2,|a,b|{
                     let _ = dinotree_geom::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004,|a|a.sqrt());

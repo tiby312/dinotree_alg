@@ -3,7 +3,7 @@
 //!
 //! ## Notes                      
 //!
-//! Checkout the demo inner project to see how all these algorithms can be used.
+//! Checkout the demo project to see how all these algorithms can be used.
 //!
 //! The mutable reference to each element in the callback functions do not point to elements
 //! in the user supplied slice of elements. The elements are internally unsafely copied directly into a tree structure
@@ -40,7 +40,6 @@
 
 extern crate axgeom;
 extern crate compt;
-//extern crate pdqselect;
 extern crate rayon;
 
 //So that we can import smallvec creation macro
