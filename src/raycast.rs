@@ -42,7 +42,7 @@
 //! We also don't have have to worry about overflow and underflow problems of providing a rectangle that 
 //! just barely fits into the number type.
 //! 
-//! # Unsafety
+//! # Safety
 //!
 //! There is no unsafety in this module.
 //!

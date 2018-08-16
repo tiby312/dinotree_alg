@@ -2,7 +2,21 @@
 //! An mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
 //!
 //!
+//! There a multiple versions of the same fundamental query algorithm. There are parallel/sequential and 
+//! debug/non debug versions. 
 //!
+//! ```
+//! pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T));
+//!
+//! ```
+//!
+//! 
+//!
+//! # Safety
+//!
+//! There is unsafe code to reuse code between the sequential and parallel versions.
+//!
+//! 
 use inner_prelude::*;
 use oned;
 use compt::timer::TreeTimer2;

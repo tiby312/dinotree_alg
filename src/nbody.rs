@@ -1,62 +1,89 @@
 //!
-//! Provides nbody functionality. There is some unsafe code to reuse code between sequential and parallel versions.
+//! # User Guide
 //!
+//! A nbody problem approximate solver. The user can choose the distance at which to fallback on approximate solutions.
+//! The algorithm works similar to a Barnes–Hut simulation, but uses a kdtree instead of a quad tree.
+//! 
+//! A sequential and parallel version are supplied, both with a similar api:
+//! ```
+//! pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(
+//!           t1:&mut DynTree<A,N::No,N::T>,
+//!           ncontext:&mut N,
+//!           rect:Rect<<N::T as HasAabb>::Num>){
+//! ```
+//! The user defines some geometric functions and their ideal accuracy. The user also supplies
+//! a rectangle within which the nbody simulation will take place. So the simulation is only designed to work
+//! in a finite area.
 //!
+//! # Safety
+//!
+//! There is unsafe code to reuse code between sequential and parallel versions.
 //!
 use inner_prelude::*;
 
-
-
+///A mutable version that the user can take advantage of for debugging purposes.
+///For example, the user can count how many node/node gravitations happened version bot/bot gravitations.
 pub trait NodeMassTraitMut{
     type T:HasAabb;
     type No:Copy;
 
-    //Returns the bounding rectangle for this node.
+    ///Returns the bounding rectangle for this node.
+    ///The rectangle returned here should be the rectangle supplied on creation of this node.
     fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
 
-    //gravitate this node mass with another node mass
+    ///Gravitate this node mass with another node mass
     fn handle_node_with_node(&mut self,&mut Self::No,b:&mut Self::No);
 
-    //gravitate a bot with a bot
+    ///Gravitate a bot with a bot
     fn handle_bot_with_bot(&mut self,&mut Self::T,&mut Self::T);
 
-    //gravitate a nodemass with a bot
+    ///Gravitate a nodemass with a bot
     fn handle_node_with_bot(&mut self,&mut Self::No,b:&mut Self::T);
 
+    ///Return true if this distance if far away enough to use the node mass as an approximation.
     fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
+    ///Return true if this distance if far away enough to use the node mass as an approximation.
     fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
-    //This unloads the force accumulated by this node to the bots.
+    ///This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,&'a Self::No,it:I);
 
+    ///Create a new node mass.
     fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a mut self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
 }
 
+///Use defined geometric functions to support the nbody function.
 pub trait NodeMassTraitConst{
     type T:HasAabb;
+
+    ///The nodemass. Every node in the tree has one. It's mass is equal to the sum of the masses
+    ///of all the bots in that node and the nodes under it.
     type No:Copy;
 
-    //Returns the bounding rectangle for this node.
+    ///Returns the bounding rectangle for this node.
+    //The rectangle returned here should be the rectangle supplied on creation of this node.
     fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
 
-
-    //gravitate this node mass with another node mass
+    ///Gravitate this node mass with another node mass
     fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);
 
-    //gravitate a bot with a bot
+    ///Gravitate a bot with a bot
     fn handle_bot_with_bot(&self,&mut Self::T,&mut Self::T);
 
-    //gravitate a nodemass with a bot
+    ///Gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,&mut Self::No,b:&mut Self::T);
 
+    ///Return true if this distance if far away enough to use the node mass as an approximation.
     fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
+    ///Return true if this distance if far away enough to use the node mass as an approximation.
     fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I);
 
+    ///Create a new node mass.
     fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
 }
 
@@ -90,7 +117,7 @@ trait NodeMassTrait:Clone{
 }
 
 
-
+///Naive version simply visits every pair.
 pub fn naive_mut<T:HasAabb>(bots:&mut [T],func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,func);
 }
@@ -481,7 +508,7 @@ trait Bok2{
 }
 
 
-
+///Parallel version.
 pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&mut DynTree<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
     let axis=t1.get_axis();
     let height=t1.get_height();
@@ -553,6 +580,7 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
 }
 
 
+///Sequential version.
 pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DynTree<A,N::No,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
     
     #[derive(Copy,Clone)]

@@ -1,6 +1,10 @@
 //!
 //! # User Guide
 //!
+//! There are four flavors of the same fundamental knearest api provided in this module.
+//! There is a naive version, and there is a version that uses the tree, and there are mutable versions of those 
+//! that return mutable references.
+//!
 //! ```
 //! pub fn k_nearest_mut<'b, T: HasAabb, A: AxisTrait, K: Knearest<N = T::Num, T = T>>(
 //!     tree: &'b mut DynTree<A, (), T>, 
@@ -13,10 +17,13 @@
 //! The user provides a point, and a number. Then a Vec containing up to that number of units is returned. 
 //! A unit is a distance plus one or bots. This is to handle solutions where there is a tie. There may be multiple nearest elements.
 //! The first element returned is the closest, and the last the furtheset.
-//! It is possible  for the vec to be empty if the tree does not contain any bots. 
-//! All bots are returned for ties since it is hard to define exactly which bot would be returned by this algorithm, otherwise.
+//! It is possible for the vec to be empty if the tree does not contain any bots. 
+//! All bots are returned for ties since it is hard to define exactly which bot would be returned by this algorithm otherwise.
+//! This also means that the orderding of the bots inside of a Unit has no meaning and could be returned in any order.
+//! For trees that use floating point bounding boxes, ties will be extremely rare in a lot of cases, so each Unit
+//! will have only bot inside of it.
 //!
-//! # Unsafety
+//! # Safety
 //!
 //! There is no unsafe code in this module
 
