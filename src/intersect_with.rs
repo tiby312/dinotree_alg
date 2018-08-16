@@ -1,4 +1,8 @@
-
+//!
+//! # Safety
+//!
+//! There is no unsafe code in this module.
+//!
 use inner_prelude::*;
 use rect::*;
 

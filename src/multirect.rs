@@ -1,4 +1,13 @@
 
+//! # Safety
+//!
+//! Unsafe code is used.  We unsafely convert the refernces returned by the rect query
+//! closure to have a longer lifetime.
+//! This allows the user to store mutable references of non intersecting rectangles at the same time. 
+//! The multirect api panics at run time if the user attemps to query
+//! rectangles that intersect. This protects the invariant at runtime. So it this use unsafety can be hidden by the api.
+//!
+//!
 use inner_prelude::*;
 
 

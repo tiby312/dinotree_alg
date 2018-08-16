@@ -1,3 +1,9 @@
+//! # Safety
+//!
+//! Unsafe code is used to iterate through the tree's bots while at the same time calling 
+//! knearest mut on the tree. The algorithm ensures that the bot chosen from the knearest result,
+//! and the current bot we are iterating upon are distinct bots. Therefore it is safe to return them
+//! to the user as mutable references. 
 
 use inner_prelude::*;
 use k_nearest::Knearest;
@@ -6,10 +12,9 @@ use k_nearest::Knearest;
 ///Here we exploit the fact that if the nearest point to a point A is B, then the nearest point to B is A.
 ///Finding the nearest distance between two shapes is difficult, and not implemented here.
 ///Finding the nearest distance betweeen two points is easy.
-///By exploiting this propety that B.nearest()==A.nearest(), we can half the numbers of knearest() queries that need to be done.
+///By exploiting this geometric propety that B.nearest()=A -> A.nearest()=B, we can half the
+///numbers of knearest() queries that need to be done.
 ///This function is implemented simply, by iterating thorugh all the bots and calling knearest on it.
-///I think there room for improvement here. I think it can be turned into a divider and conquer type problem.
-///But it is difficult to know which nodes to exclude. The "nearest" is specifcally a 2d problem. hard to split into 1d.
 pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>+HasAabb<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DynTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
 	let mut already_hit:Vec<*const T>=Vec::with_capacity(tree.get_num_bots()/2);
 
@@ -28,9 +33,8 @@ pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>+HasAabb<Num
 			//If the current bot and its nearest are on top of each other,
 	        //its entirely possible for the current bot to be returned second.
 	        for k_nearest::UnitMut{bots,dis} in k_nearest::k_nearest_mut(tree2,b.get_center(),2,kn).into_iter(){
-        		//let a=a.pop().unwrap();
+        		
         		for a in bots.into_iter(){
-	        		//panic!("todo check this stuff after knearest update");
 	        		if a as *const T!=b as *const T{
 	        			nearest_bot=Some((a,dis));
 	        			break;
