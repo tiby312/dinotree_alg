@@ -90,6 +90,7 @@ pub trait NodeMassTraitConst{
 
 
 
+
 trait NodeMassTrait:Clone{
     type T:HasAabb;
     type No:Copy;

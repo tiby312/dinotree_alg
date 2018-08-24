@@ -1,3 +1,21 @@
+//! Provides two basic functions: for_all_in_rect, for_all_intersect_rect that both have similar api like this:
+//!
+//! ```
+//! pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
+//!        tree: &mut DynTree<A,(),T>,
+//!        rect: &Rect<T::Num>,
+//!        mut closure: impl FnMut(&mut T),
+//! );
+//! ```
+//!
+//! for_all_in_rect allows the user to retreive references to all bots whose aabb's are strictly inside of the specified rectangle.
+//! for_all_intersect_rect is similar, but will return all bots who are inside as well as all bots whose aabb's intersect the rect.
+//! The user is allowed to hold on to the mutable references returned for as long as the tree itself is mutably borrowed.
+//!
+//! # Safety
+//!
+//! There is no unsafe code in this module.
+//!
 use inner_prelude::*;
 
 
@@ -97,10 +115,10 @@ mod mutable{
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
-    pub fn naive_for_all_in_rect_mut<T: HasAabb, F: FnMut(&mut T)>(
+    pub fn naive_for_all_in_rect_mut<T: HasAabb>(
         bots: &mut [T],
         rect: &Rect<T::Num>,
-        mut closure: F,
+        mut closure: impl FnMut(&mut T),
     ) {
         for b in bots.iter_mut(){
             if rect.contains_rect(b.get()){
@@ -110,10 +128,10 @@ mod mutable{
 
     }
 
-    pub fn naive_for_all_intersect_rect_mut<T: HasAabb, F: FnMut(&mut T)>(
+    pub fn naive_for_all_intersect_rect_mut<T: HasAabb>(
         bots: &mut [T],
         rect: &Rect<T::Num>,
-        mut closure: F,
+        mut closure: impl FnMut(&mut T),
     ) {
         for b in bots.iter_mut(){
             if rect.get_intersect_rect(b.get()).is_some(){
@@ -122,10 +140,10 @@ mod mutable{
         }
 
     }
-    pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb, F: FnMut(&mut T)>(
+    pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
         tree: &mut DynTree<A,(),T>,
         rect: &Rect<T::Num>,
-        mut closure: F,
+        mut closure: impl FnMut(&mut T),
     ) {
         let mut f = |a: &mut T | {
             if rect.contains_rect(a.get()) {
@@ -162,7 +180,7 @@ mod constant{
     }
 
     pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
-        tree: &mut DynTree<A,(),T>,
+        tree: &DynTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {

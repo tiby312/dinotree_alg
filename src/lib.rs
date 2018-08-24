@@ -57,7 +57,7 @@ pub mod graphics;
 ///Contains query code
 pub mod colfind;
 
-///Allows use to intersect the tree with a seperate group of bots.
+///Allows user to intersect the tree with a seperate group of bots.
 pub mod intersect_with;
 
 ///Contains all k_nearest code.
@@ -85,7 +85,7 @@ pub mod multirect;
 mod oned;
 
 ///Contains misc tools
-pub mod tools;
+mod tools;
 
 
 use compt::timer::TreeTimerTrait;

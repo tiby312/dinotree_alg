@@ -1,12 +1,14 @@
-
+//!
+//!
+//! If we have two non intersecting rectangles, it is safe to return to the user two sets of mutable references
+//! of the bots strictly inside each rectangle since it is impossible for a bot to belong to both sets.
+//!
 //! # Safety
 //!
-//! Unsafe code is used.  We unsafely convert the refernces returned by the rect query
+//! Unsafe code is used.  We unsafely convert the references returned by the rect query
 //! closure to have a longer lifetime.
 //! This allows the user to store mutable references of non intersecting rectangles at the same time. 
-//! The multirect api panics at run time if the user attemps to query
-//! rectangles that intersect. This protects the invariant at runtime. So it this use unsafety can be hidden by the api.
-//!
+//! If two requested rectangles intersect, an error is returned.
 //!
 use inner_prelude::*;
 
