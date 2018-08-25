@@ -1,5 +1,6 @@
 use support::prelude::*;
-use dinotree::multirect;
+use dinotree_alg::multirect;
+use dinotree_alg::rect;
 
 #[derive(Copy,Clone)]
 struct Bot{
@@ -16,24 +17,19 @@ impl MultiRectDemo{
         let radius=[5,20];
         let velocity=[1,3];
         
-        //let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2]))});
         let bots:Vec<Bot>=create_world_generator(500,dim,radius,velocity).map(|ret|{
             let ret=ret.into_isize();
-            let p=ret.pos;
-            let r=ret.radius;
             Bot{radius:ret.radius,pos:ret.pos}
         }).collect();
 
         let tree = DynTree::new(axgeom::XAXISS,(),&bots,|b|{aabb_from_point_isize(b.pos,b.radius)});
 
-        //let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
-        //let tree = DynTree::new(axgeom::XAXISS,(),bots.into_iter().map(|b|b.into_bbox()));
         MultiRectDemo{tree}
     }
 }
 
 impl DemoSys for MultiRectDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
         let tree=&mut self.tree;
 
@@ -71,14 +67,17 @@ impl DemoSys for MultiRectDemo{
                         draw_rect_isize([1.0,0.0,0.0,0.3],r.get(),c,g);
                     }
                 },
-                Err(st)=>{
+                Err(_)=>{
                     draw_rect_isize([1.0,0.0,0.0,0.3],&r1,c,g);
                     draw_rect_isize([1.0,0.0,0.0,0.3],&r2,c,g);
-            
                 }
-
             }
         }
+
+        rect::for_all_intersect_rect(tree,&r1,|a|{
+            draw_rect_isize([0.0,0.0,1.0,0.3],a.get(),c,g);
+            
+        });
 
         let mut rects=multirect::multi_rect_mut(tree);
         let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
@@ -89,9 +88,6 @@ impl DemoSys for MultiRectDemo{
                  arr, // [x0, y0, x1,y1] coordinates of line
                  c.transform,
                  g);
-
-            //let mut r=*a.get();
-            //draw_rect_isize([0.0,1.0,0.0,0.3],r.grow_to_fit(b.get()),c,g);
         });
 
         

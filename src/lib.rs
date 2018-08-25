@@ -1,24 +1,27 @@
 //! ## Goal
-//! To provide a fast and simple to use broad-phase collision system.
+//! To provide provide useful algorithms that you can perform on a dinotree.
 //!
 //! ## Notes                      
 //!
 //! Checkout the demo project to see how all these algorithms can be used.
 //!
+//! ## Testing
+//!
+//! A quick way to verify to a good level a lot of these algorithms is visually, so the demo inner project is used
+//! to verify correctness of a lot of these algorithms. Some of the more complicated algorithm demos additionally have an option to
+//! verify the algorithm against the naive algorithm. This is to catch more subtle corner case bugs.
+//! The demo projects are not deterministic. Its up to the user to try and trigger corner cases by moving their mouse around.
+//! More rigorous automated + visual testing and benchmarking is to be desired. Once the design stabalizes, this will be a priority.
+//! 
 
 #![feature(iterator_step_by)]
 #![feature(test)]
 #![feature(trusted_len)]
 
-
-
-
 extern crate axgeom;
 extern crate compt;
 extern crate rayon;
 
-//So that we can import smallvec creation macro
-#[macro_use]
 extern crate smallvec;
 extern crate dinotree_inner;
 

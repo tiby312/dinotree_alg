@@ -1,10 +1,8 @@
 use support::prelude::*;
-use dinotree::colfind;
-use dinotree::rect;
-use dinotree::intersect_with;
+use dinotree_alg::colfind;
+use dinotree_alg::rect;
+use dinotree_alg::intersect_with;
 use dinotree_geom;
-use dinotree;
-use dinotree_inner;
 
 
 #[derive(Copy,Clone)]
@@ -78,7 +76,7 @@ impl IntersectWithDemo{
 }
 
 impl DemoSys for IntersectWithDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         let bots=&mut self.bots;
         let walls=&mut self.walls;

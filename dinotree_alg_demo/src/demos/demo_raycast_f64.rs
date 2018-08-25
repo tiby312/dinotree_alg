@@ -1,5 +1,5 @@
 use support::prelude::*;
-use dinotree::raycast;
+use dinotree_alg::raycast;
 use std;
 use dinotree_geom;
 mod ray_f64{
@@ -22,7 +22,7 @@ mod ray_f64{
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
             use dinotree_geom::IntersectsBotResult;
             match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,rect){
-                IntersectsBotResult::Hit(val)=>{
+                IntersectsBotResult::Hit(_)=>{
                     true
                 },
                 IntersectsBotResult::NoHit=>{
@@ -81,7 +81,7 @@ impl RaycastF64Demo{
 
         let bots=vec![();500];
 
-        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|b|{
+        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|_|{
             let ret=bot_iter.next().unwrap();
             let p=ret.pos;
             let r=ret.radius;
@@ -93,7 +93,7 @@ impl RaycastF64Demo{
 }
 
 impl DemoSys for RaycastF64Demo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let tree=&self.tree;
         //Draw bots
         for bot in tree.iter_every_bot(){

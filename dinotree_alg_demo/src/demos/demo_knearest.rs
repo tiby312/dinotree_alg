@@ -1,7 +1,6 @@
 use support::prelude::*;
-use dinotree::k_nearest;
+use dinotree_alg::k_nearest;
 use dinotree_geom;
-use dinotree;
 
 
 #[derive(Copy,Clone)]
@@ -12,9 +11,9 @@ struct Bot{
 }
 
 pub struct KnearestDemo{
-    bots:Vec<Bot>,
+    _bots:Vec<Bot>,
     tree:DynTree<axgeom::XAXISS,(),BBox<F64n,Bot>>,
-    dim:[f64;2]
+    _dim:[f64;2]
 }
 impl KnearestDemo{
     pub fn new(dim:[f64;2])->KnearestDemo{
@@ -23,13 +22,11 @@ impl KnearestDemo{
         let radius=[5,20];
         let velocity=[1,3];
         let bots:Vec<Bot>=create_world_generator(500,dim2,radius,velocity).enumerate().map(|(id,ret)|{
-            let p=ret.pos;
-            let r=ret.radius;
             Bot{id,pos:ret.pos,radius:ret.radius}
         }).collect();
 
         let tree = DynTree::new(axgeom::XAXISS,(),&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))});
-        KnearestDemo{bots,tree,dim}
+        KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }
 

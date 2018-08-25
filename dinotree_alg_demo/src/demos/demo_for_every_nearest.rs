@@ -1,6 +1,6 @@
 use support::prelude::*;
-use dinotree::k_nearest;
-use dinotree::for_every_nearest;
+use dinotree_alg::k_nearest;
+use dinotree_alg::for_every_nearest;
 
 use dinotree_inner::IsPoint;
 
@@ -57,7 +57,7 @@ impl KnearestEveryDemo{
 }
 
 impl DemoSys for KnearestEveryDemo{
-    fn step(&mut self,_cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,_cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let bots=&mut self.bots;
         for b in bots.iter_mut(){
             b.update();

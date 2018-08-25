@@ -1,5 +1,5 @@
 [package]
-name = "dinotree"
+name = "dinotree_alg"
 version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 

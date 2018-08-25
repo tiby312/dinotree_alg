@@ -1,10 +1,8 @@
 use support::prelude::*;
-use dinotree::colfind;
-use dinotree::rect;
-use dinotree::intersect_with;
+use dinotree_alg::colfind;
+use dinotree_alg::rect;
 use dinotree_geom;
-use dinotree;
-use dinotree_inner;
+use dinotree_alg;
 
 
 #[derive(Debug,Copy,Clone)]
@@ -64,9 +62,7 @@ impl OrigOrderDemo{
         let bots=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
             Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],id}
         }).collect();
-
-        let radius=[10,60];
-        
+ 
         let colors=ColorGenerator::new().take(4000).collect();
         OrigOrderDemo{radius:5.0,bots,colors,dim}
     }
@@ -99,7 +95,7 @@ impl DemoSys for OrigOrderDemo{
                 c:&'a Context,
                 g:&'a mut G2d<'b>
             }
-            impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
+            impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
                 type N=F64n;
                 fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F64n,cont:[F64n;2],length:[F64n;2],depth:usize){
                     let div=div.into_inner();
@@ -135,7 +131,7 @@ impl DemoSys for OrigOrderDemo{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
         }
 
         if !check_naive{

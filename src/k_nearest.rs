@@ -122,8 +122,7 @@ macro_rules! knearest_recc{
             }
 
             fn consider(&mut self,a:($ref_lifetime,D))->bool{
-                use smallvec;
-
+                
                 //let a=(a.0 as $ptr,a.1);
                 let curr_bot=a.0;
                 let curr_dis=a.1;
@@ -213,7 +212,7 @@ macro_rules! knearest_recc{
 
             match rest{
                 Some((extra,left,right))=>{
-                    let &FullComp{div,cont}=match extra{
+                    let &FullComp{div,cont:_}=match extra{
                         Some(b)=>b,
                         None=>return
                     };

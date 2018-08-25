@@ -326,7 +326,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_bot(a,self.bot);
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
+        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,_anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
             self.ncontext.is_far_enough_half([self.div,range.left])
@@ -349,7 +349,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
     		self.ncontext.handle_node_with_node(self.node,a);
     	}
-        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
+        fn is_far_enough<A:AxisTrait>(&mut self,axis:A,_anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
             self.ncontext.is_far_enough_half([self.div,range.left])
@@ -371,8 +371,6 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
             let r=self.right.inner.create_wrap_mut().with_depth(d);
             let anchor_axis=anchor.axis;
 
-            let right_most=b.get().get_range(axis).right;
-
             let mut bok=Bo4{_anchor_axis:anchor_axis,bot:b,ncontext:self.ncontext,div:anchor.div};
             bok.generic_rec2(axis,anchor,r);
     	}
@@ -381,7 +379,6 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
             let r=self.right.inner.create_wrap_mut().with_depth(d);
             let anchor_axis=anchor.axis;
 
-            let right_most=N::get_rect(a).get_range(axis).right;
             let mut bok=Bo2{_anchor_axis:anchor_axis,node:a,ncontext:self.ncontext,div:anchor.div};
             bok.generic_rec2(axis,anchor,r);
     	}
@@ -475,7 +472,7 @@ trait Bok2{
         A:AxisTrait,
         >(&mut self,this_axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,stuff:LevelIter<NdIterMut<Self::No,Self::T>>){
 
-        let ((depth,nn),rest)=stuff.next();
+        let ((_depth,nn),rest)=stuff.next();
         
         if this_axis.is_equal_to(anchor.axis){
             if self.is_far_enough(this_axis,anchor,&nn.misc){
@@ -486,7 +483,7 @@ trait Bok2{
 
         match rest{
             Some((extra,left,right))=>{
-                let &FullComp{div,cont}=match extra{
+                let &FullComp{div:_,cont:_}=match extra{
                     Some(b)=>b,
                     None=>return
                 };

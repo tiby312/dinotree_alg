@@ -1,10 +1,10 @@
 use support::prelude::*;
-use dinotree::nbody;
-use dinotree::colfind;
+use dinotree_alg::nbody;
+use dinotree_alg::colfind;
 use dinotree_geom;
 use dinotree_geom::GravityTrait;
 use dinotree_inner::HasAabb;
-use dinotree;
+use dinotree_alg;
 
 #[derive(Copy,Clone)]
 struct NodeMass{
@@ -35,7 +35,6 @@ struct Bla{
 }
 impl nbody::NodeMassTraitMut for Bla{
     type T=BBox<F64n,Bot>;
-    //type N=NotNaN<f64>;
     type No=NodeMass;
 
     fn get_rect(a:&Self::No)->&axgeom::Rect<F64n>{
@@ -83,8 +82,6 @@ impl nbody::NodeMassTraitMut for Bla{
     }
 
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,a:&'a Self::No,it:I){
-
-        let len_sqr=(a.force[0]*a.force[0])+(a.force[1]*a.force[1]);
 
         if a.mass>0.0000001{
 
@@ -197,10 +194,11 @@ impl DemoSys for DemoNbody{
         };
         //println!("tree height={:?}",tree.get_height());
 
-
+        /*
         fn n_choose_2(n:usize)->usize{
             ((n-1)*n)/2
         }
+        */
 
 
         let border=axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1]));
@@ -325,7 +323,7 @@ impl DemoSys for DemoNbody{
                 c:&'a Context,
                 g:&'a mut G2d<'b>
             }
-            impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
+            impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
                 type N=F64n;
                 fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F64n,cont:[F64n;2],length:[F64n;2],depth:usize){
                     let div=div.into_inner();
@@ -361,7 +359,7 @@ impl DemoSys for DemoNbody{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
         }
 
         //Draw bots.

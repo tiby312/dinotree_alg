@@ -91,60 +91,6 @@ impl<T> PreVecMut<T> {
 
 
 
-unsafe impl<T: Send> std::marker::Send for PreVec<T> {}
-unsafe impl<T: Sync> std::marker::Sync for PreVec<T> {}
-
-///An vec api to avoid excessive dynamic allocation by reusing a Vec
-pub struct PreVec<T> {
-    vec: smallvec::SmallVec<[*const T; 64]>,
-}
-impl<T> PreVec<T> {
-    #[inline(always)]
-    pub fn new() -> PreVec<T> {
-        PreVec {
-            vec: smallvec::SmallVec::new(),
-        }
-    }
-
-    ///Clears the vec and returns a mutable reference to a vec.
-    #[inline(always)]
-    pub fn get_empty_vec<'a>(&'a mut self) -> &mut smallvec::SmallVec<[&'a T; 64]> {
-        self.vec.clear();
-        let v: &mut smallvec::SmallVec<[*const T; 64]> = &mut self.vec;
-        unsafe { std::mem::transmute(v) }
-    }
-}
-
-
-
-
-
-/*
-///An vec api to avoid excessive dynamic allocation by reusing a Vec
-pub struct PreVec<T>{
-    vec:Vec<* mut T>
-}
-impl<T> PreVec<T>{
-    #[inline(always)]
-    pub fn new()->PreVec<T>{
-        PreVec{vec:Vec::new()}
-    }
-
-    #[inline(always)]
-    pub fn with_capacity(size:usize)->PreVec<T>{
-        PreVec{vec:Vec::with_capacity(size)}
-    }
-
-    ///Clears the vec and returns a mutable reference to a vec.
-    #[inline(always)]
-    pub fn get_empty_vec_mut<'a>(&'a mut self)->&mut Vec<&'a mut T>{
-        self.vec.clear();
-        let v:&mut Vec<*mut T> = &mut self.vec;
-        unsafe{std::mem::transmute(v)}
-    }
-}
-*/
-
 /*
 ///Returns a combined slice given two slices that are next to each other in memory.
 ///Panics if they are not next to each other.

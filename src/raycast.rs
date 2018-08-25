@@ -89,10 +89,13 @@ pub trait RayTrait{
 
 
 fn new_smallvec<T>(a:T)->SmallVec<[T;2]>{
+    //Cannot use smallvec! creation macro since T does not implement Copy.
+    
     let mut b=SmallVec::new();
     b.push(a);
     b
 }
+
 
 
 
@@ -154,10 +157,10 @@ macro_rules! raycast{
             R: RayTrait<T=T,N=N>
             >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,rect:Rect<N>,closest:&mut Closest<'a,T>){
 
-            let ((depth,nn),rest)=stuff.next();
+            let ((_depth,nn),rest)=stuff.next();
             match rest{
                 Some((extra,left,right))=>{
-                    let &FullComp{div,cont}=match extra{
+                    let &FullComp{div,cont:_}=match extra{
                         Some(b)=>b,
                         None=>return
                     };
@@ -214,58 +217,7 @@ macro_rules! raycast{
                     //We recurse first since this way we might find out we dont need to recurse the bots in this node
                     //since its more likely that we will find the closest bot in a child node
                     
-                    let ff=[cont.left,cont.right];
-                    
-                    /*
-                    match rtrait.compute_intersection_range(axis,ff){
-                        Some((a,b))=>{
-                            for bot in $get_iter!(nn.range){
-                                let rang=*bot.get().get_range(axis.next());
-                                
-                                if rang.left>b{
-                                    break;
-                                }
-                                if rang.right>=a{
-                                    closest.consider(bot,rtrait);
-                                }
-                            }
-                        },
-                        None=>{
-                            //Do nothing
-                        }
-                    }
-                    */
-                    //Check again incase the other recursion took care of everything
-                    //We are hoping that it is more likely that the closest points are found
-                    //in decendant nodes instead of ancestor nodes.
-                    //if traverse_other(res,knear,pp,div){
-
-                    /*  
-                    match rtrait.compute_line_intersection(axis,div){
-                        Some(yval)=>{
-                            for bot in $get_iter!(nn.range){
-                                let [leftbot,rightbot]={
-                                    [bot.get().get_range(axis.next()).left,bot.get().get_range(axis.next()).right]
-                                };
-
-                                if leftbot>yval{
-                                    //All the bots after this will also be too far away.
-                                    //because the bots are sorted in ascending order.
-                                    break;
-                                }else if rightbot>=yval{
-                                    closest.consider(bot,rtrait);
-                                }
-                            }
-                        },
-                        None=>{
-                            //Ray doesnt intersect other side??
-                        }
-                    }*/
-                
-            
-                    
-
-                    //TODO improve this
+                    //TODO prune bots here?
                     for b in $get_iter!(nn.range){
                         closest.consider(b,rtrait);
                     }

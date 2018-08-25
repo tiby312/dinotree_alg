@@ -1,16 +1,19 @@
 [package]
-name = "dinotree_alg_demo"
+name = "dinotree_alg_data"
 version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 
 [dependencies]
+serde = "*"
+serde_derive = "*"
+csv="*"
 rayon="1.0.2"
 compt = "1.0.0"
 axgeom = "1.0.0"
 smallvec = "0.6.1"
 dinotree_inner = {path="../../dinotree_inner"}
 dinotree_geom={path="../../dinotree_geom"}
-dinotree_alg = {path=".."}
+dinotree = {path=".."}
 new-ordered-float = "1.0.1"
 rand = "0.3"
 rustc-test = "0.3.0"

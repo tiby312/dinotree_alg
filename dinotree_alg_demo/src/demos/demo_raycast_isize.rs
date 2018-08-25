@@ -1,6 +1,6 @@
 use support::prelude::*;
-use dinotree::raycast;
-use dinotree;
+use dinotree_alg::raycast;
+use dinotree_alg;
 use std;
 use dinotree_geom;
 
@@ -28,7 +28,7 @@ mod ray_isize{
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
             use dinotree_geom::IntersectsBotResult;
             match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,rect){
-                IntersectsBotResult::Hit(val)=>{
+                IntersectsBotResult::Hit(_)=>{
                     true
                 },
                 IntersectsBotResult::NoHit=>{
@@ -82,10 +82,10 @@ mod ray_isize{
         type T=BBox<isize,Bot>;
         type N=isize;
 
-        fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
+        fn intersects_rect(&self,_rect:&axgeom::Rect<Self::N>)->bool{
             unimplemented!();
         }
-        fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
+        fn divider_side(&self,_axis:impl axgeom::AxisTrait,_div:&Self::N)->std::cmp::Ordering{
             unimplemented!();
         }
   
@@ -132,8 +132,7 @@ impl RaycastDemo{
 
         let bots:Vec<Bot>=(0..500).map(|id|Bot{id}).collect();
 
-        //let bots=create_bots_isize(|id|Bot{id,col:Vec::new()},&[0,dim[0] as isize,0,dim[1] as isize],500,[2,20]);
-        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|a|{
+        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|_a|{
             let ret=bots_fake.next().unwrap();
             let ret=ret.into_isize();
             let p=ret.pos;
@@ -171,9 +170,10 @@ impl DemoSys for RaycastDemo{
             match res1{
                 Some((mut bots,dis))=>{
                     bots.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
-
+ 
                     if check_naive{
                         let (mut bots2,dis2)  = raycast::naive(tree.iter_every_bot(),ray_isize::RayNoDraw{ray}).unwrap();
+                        assert_eq!(dis,dis2);
                         bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
                         //println!("len={:?}",bots.len());
@@ -213,7 +213,7 @@ impl DemoSys for RaycastDemo{
                 c:&'a Context,
                 g:&'a mut G2d<'b>
             }
-            impl<'a,'b:'a> dinotree::graphics::DividerDrawer for Bla<'a,'b>{
+            impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
                 type N=isize;
                 fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:isize,cont:[isize;2],length:[isize;2],depth:usize){
                     
@@ -251,7 +251,7 @@ impl DemoSys for RaycastDemo{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(0,self.dim[0],0,self.dim[1]));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(0,self.dim[0],0,self.dim[1]));
         }
 
 
