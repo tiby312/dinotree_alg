@@ -1,14 +1,22 @@
-use support::prelude::*;
-use dinotree::colfind;
+use support::*;
+use dinotree_alg::colfind;
 use csv;
 use std;
 
 use std::time::Instant;
 use std::time::Duration;
+use piston_window;
+use axgeom;
+use dinotree_inner::*;
+use DemoSys;
+use spiral::SpiralGenerator;
 
+#[derive(Copy,Clone)]
 pub struct Bot{
-    num:isize
+    num:isize,
+    pos:[isize;2]
 }
+
 pub struct DataColFind{
     num_bots:usize,
     wtr:csv::Writer<std::io::Stdout>
@@ -28,24 +36,24 @@ fn instant_to_sec(elapsed:Duration)->f64{
            
 }
 impl DemoSys for DataColFind{
-    fn step(&mut self,_cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d){
+    fn step(&mut self,_cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d)->bool{
        
-        let s=SpiralGenerator::new([400.0,400.0],12.0,2.0);
+        let mut s=SpiralGenerator::new([400.0,400.0],12.0,2.0);
 
   
-
-        let mut bots:Vec<BBox<isize,Bot>>=s.take(self.num_bots).map(|pos|{
-                let pos=[pos[0] as isize,pos[1] as isize];
-                BBox::new(aabb_from_point_isize(pos,[5,5]),Bot{num:0})
-            }
-        ).collect();
+        let mut bots:Vec<Bot>=s.take(self.num_bots).enumerate().map(|(e,pos)|{
+            let pos=[pos[0] as isize,pos[1] as isize];
+            Bot{num:e as isize,pos}
+        }).collect();
+        
 
         if self.num_bots>20000{
             panic!("")
         }
         if self.num_bots<2000{
             for bot in bots.iter(){
-                draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
+                let r=aabb_from_point_isize(bot.pos,[5,5]);
+                draw_rect_isize([0.0,0.0,0.0,0.3],&r,c,g);
             }  
         }
 
@@ -53,63 +61,43 @@ impl DemoSys for DataColFind{
             let instant=Instant::now();
             
 
-            let mut tree=DynTree::new(axgeom::XAXISS,(),bots.drain(..).map(|b|{   
-                //datanum::from_rect(&mut counter,*b.get())  
-               // BBox::new(b.get(),b.inner)
-                b
-            }));
+            let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
+                aabb_from_point_isize(b.pos,[5,5])
+            });
 
 
             colfind::query_mut(&mut tree,|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
-                //let a=datanum::into_rect(*a.get());
-                //let b=datanum::into_rect(*b.get());
-                //draw_rect_isize([1.0,0.0,0.0,0.2],&a,c,g);
-                //draw_rect_isize([1.0,0.0,0.0,0.2],&b,c,g);
         
             });
-            
 
-            //println!("Number of comparisons tree={}",counter.into_inner());
-
-
-            for b in tree.into_iter_orig_order(){
-                //let b=BBox::new(datanum::into_rect(*b.get()),b.inner);
-                bots.push(b);
-            } 
+            tree.apply_orig_order(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
 
             instant_to_sec(instant.elapsed())
         };
         let c1={
             let instant=Instant::now();
-            //let mut counter=datanum::Counter::new();
 
+            let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
+                aabb_from_point_isize(b.pos,[5,5])
+            });
 
-            let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots.drain(..).map(|b|{     
-                //BBox::new(datanum::from_rect(&mut counter,*b.get()),b.inner)
-                b
-            }));
 
 
             colfind::query_mut(&mut tree,|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
-                //let a=datanum::into_rect(*a.get());
-                //let b=datanum::into_rect(*b.get());
-                //draw_rect_isize([1.0,0.0,0.0,0.2],&a,c,g);
-                //draw_rect_isize([1.0,0.0,0.0,0.2],&b,c,g);
-        
             });
             
 
             //println!("Number of comparisons tree={}",counter.into_inner());
 
-
-            for b in tree.into_iter_orig_order(){
-                //let b=BBox::new(datanum::into_rect(*b.get()),b.inner);
-                bots.push(b);
-            } 
+            tree.apply_orig_order(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
 
             instant_to_sec(instant.elapsed())
         };
@@ -142,14 +130,15 @@ impl DemoSys for DataColFind{
         
 
         let c3={
-            let instant=Instant::now();
-            
             //let mut counter=datanum::Counter::new();
-            let mut bb:Vec<BBox<isize,Bot>>=bots.drain(..).map(|b|{
-                //BBox::new(datanum::from_rect(&mut counter,*b.get()),b.inner)
-                b
+            let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
+                BBoxDemo::new(aabb_from_point_isize(b.pos,[5,5]),*b)
             }).collect();
 
+
+            let instant=Instant::now();
+            
+            
             colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
                 a.inner.num-=2;
                 b.inner.num-=2;
@@ -157,10 +146,10 @@ impl DemoSys for DataColFind{
 
             //println!("Number of comparisions naive={}",counter.into_inner());   
 
-            for b in bb.drain(..){
+            for b in bb.iter(){
                 assert_eq!(b.inner.num,0);
                 //let b=BBox::new(datanum::into_rect(*b.get()),b.inner);
-                bots.push(b);
+                //bots.push(b);
             } 
 
             instant_to_sec(instant.elapsed())
@@ -182,6 +171,8 @@ impl DemoSys for DataColFind{
 
 
         self.num_bots+=200;
+
+        false
      }
 }
 

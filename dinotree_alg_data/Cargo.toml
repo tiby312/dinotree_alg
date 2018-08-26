@@ -13,7 +13,7 @@ axgeom = "1.0.0"
 smallvec = "0.6.1"
 dinotree_inner = {path="../../dinotree_inner"}
 dinotree_geom={path="../../dinotree_geom"}
-dinotree = {path=".."}
+dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"
 rand = "0.3"
 rustc-test = "0.3.0"

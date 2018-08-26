@@ -7,8 +7,6 @@ extern crate ordered_float;
 extern crate dinotree_inner;
 extern crate rayon;
 extern crate dinotree_geom;
-//extern crate csv;
-//extern crate serde;
 
 
 use piston_window::*;

@@ -1,7 +1,9 @@
-use support::prelude::*;
-use dinotree::colfind;
+use support::*;
+use dinotree_alg::colfind;
 use csv;
 use std;
+
+use spiral::SpiralGenerator;
 pub struct Bot{
     num:usize
 }

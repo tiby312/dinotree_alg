@@ -1,7 +1,16 @@
-use support::prelude::*;
-use dinotree::colfind;
+use support::*;
+use dinotree_alg::colfind;
 use csv;
 use std;
+use dinotree_inner::*;
+use axgeom;
+use spiral::SpiralGenerator;
+use data_theory::datanum;
+use piston_window;
+use DemoSys;
+
+
+#[derive(Copy,Clone)]
 pub struct Bot{
     num:usize
 }
@@ -37,49 +46,34 @@ impl Iterator for ClosenessCounter{
 }
 
 
-pub fn test(s:SpiralGenerator,num_bots:usize)->usize{
+pub fn test(mut s:SpiralGenerator,num_bots:usize)->usize{
 
-    let mut bots:Vec<BBox<isize,Bot>>=s.take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            BBox::new(aabb_from_point_isize(pos,[5,5]),Bot{num:0})
-        }
-    ).collect();
-
-    /*
-    for bot in bots.iter(){
-        draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
-    } 
-    */ 
+    
+    let mut bots:Vec<Bot>=(0..num_bots).map(|a|Bot{num:0}).collect();
 
     let c1={
         let mut counter=datanum::Counter::new();
 
+        let mut tree=DynTree::new_seq(axgeom::XAXISS,(),&bots,|b|{
+            let pos=s.next().unwrap();  
+            let pos=[pos[0] as isize,pos[1] as isize];
+            datanum::from_rect(&mut counter,aabb_from_point_isize(pos,[5,5]))  
+        });
 
-        let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots.drain(..).map(|b|{     
-            BBox::new(datanum::from_rect(&mut counter,*b.get()),b.inner)
-        }));
-
-
-        colfind::query_mut(&mut tree,|a, b| {
+        colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.num+=2;
             b.inner.num+=2;
-            //let a=datanum::into_rect(*a.get());
-            //let b=datanum::into_rect(*b.get());
-            //draw_rect_isize([1.0,0.0,0.0,0.2],&a,c,g);
-            //draw_rect_isize([1.0,0.0,0.0,0.2],&b,c,g);
-    
         });
-        
 
-        //println!("Number of comparisons tree={}",counter.into_inner());
+        tree.apply_orig_order(&mut bots,|a,b|{
+            b.num=a.inner.num;
+        });
 
-
-        for b in tree.into_iter_orig_order(){
-            let b=BBox::new(datanum::into_rect(*b.get()),b.inner);
-            bots.push(b);
-        } 
         counter.into_inner()
     };
+
+    //assert!(c1>0);
+    
     c1
 }
 
@@ -98,7 +92,7 @@ impl DataColFind3d{
 
 
 impl DemoSys for DataColFind3d{
-    fn step(&mut self,_cursor:[f64;2],_c:&piston_window::Context,_g:&mut piston_window::G2d){
+    fn step(&mut self,_cursor:[f64;2],_c:&piston_window::Context,_g:&mut piston_window::G2d)->bool{
 
         let cc=ClosenessCounter{radius:12.0};
         for s in cc{
@@ -118,7 +112,8 @@ impl DemoSys for DataColFind3d{
                 self.wtr.serialize(Record{num_bots,circular_grow,z});
             }
         }
-        panic!("Finish");
+
+        return true;
     }
 }
 
