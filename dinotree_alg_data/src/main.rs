@@ -16,8 +16,9 @@ extern crate serde_derive;
 
 mod support;
 mod spiral;
-pub(crate) mod data_theory;
-pub(crate) mod data_bench;
+
+mod data_theory;
+mod data_bench;
 
 
 use piston_window::*;
@@ -45,22 +46,19 @@ fn main() {
 
     let mut curr=match args[1].trim(){
         "bench-colfind"=>{
-            unimplemented!();
-            /*
             let area=[area[0] as f64,area[1] as f64];
     
             let k:Box<DemoSys>=Box::new(data_bench::bench_colfind::DataColFind::new(area));
             k
-            */
+            
         },
         "theory-colfind"=>{
-            unimplemented!();
-            /*
+            
             let area=[area[0] as f64,area[1] as f64];
     
             let k:Box<DemoSys>=Box::new(data_theory::theory_colfind::DataColFind::new(area));
             k
-            */
+            
         },
         "theory-colfind-3d"=>{
             let area=[area[0] as f64,area[1] as f64];

@@ -43,12 +43,12 @@ impl DemoSys for DataColFind{
   
         let mut bots:Vec<Bot>=s.take(self.num_bots).enumerate().map(|(e,pos)|{
             let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:e as isize,pos}
+            Bot{num:0,pos}
         }).collect();
         
 
         if self.num_bots>20000{
-            panic!("")
+            return true;
         }
         if self.num_bots<2000{
             for bot in bots.iter(){
@@ -60,11 +60,9 @@ impl DemoSys for DataColFind{
         let c0={
             let instant=Instant::now();
             
-
             let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
             });
-
 
             colfind::query_mut(&mut tree,|a, b| {
                 a.inner.num+=1;
@@ -78,6 +76,7 @@ impl DemoSys for DataColFind{
 
             instant_to_sec(instant.elapsed())
         };
+
         let c1={
             let instant=Instant::now();
 
@@ -85,15 +84,10 @@ impl DemoSys for DataColFind{
                 aabb_from_point_isize(b.pos,[5,5])
             });
 
-
-
             colfind::query_mut(&mut tree,|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
-            
-
-            //println!("Number of comparisons tree={}",counter.into_inner());
 
             tree.apply_orig_order(&mut bots,|a,b|{
                 b.num=a.inner.num;
@@ -101,36 +95,8 @@ impl DemoSys for DataColFind{
 
             instant_to_sec(instant.elapsed())
         };
-        /*
-        let c2={
-            let instant=Instant::now();
-            
-            //let mut counter=datanum::Counter::new();
-            let mut bb:Vec<BBox<isize,Bot>>=bots.drain(..).map(|b|{
-                //BBox::new(datanum::from_rect(&mut counter,*b.get()),b.inner)
-                b
-            }).collect();
-
-
-            colfind::naive_mut(&mut bb,|a,b|{
-                a.inner.num+=1;
-                b.inner.num+=1;
-            });
-
-            //println!("Number of comparisions naive={}",counter.into_inner());   
-
-            for b in bb.drain(..){
-                //let b=BBox::new(datanum::into_rect(*b.get()),b.inner);
-                bots.push(b);
-            } 
-
-            instant_to_sec(instant.elapsed())
-        };
-        */
         
-
         let c3={
-            //let mut counter=datanum::Counter::new();
             let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
                 BBoxDemo::new(aabb_from_point_isize(b.pos,[5,5]),*b)
             }).collect();
@@ -138,18 +104,13 @@ impl DemoSys for DataColFind{
 
             let instant=Instant::now();
             
-            
             colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
                 a.inner.num-=2;
                 b.inner.num-=2;
             });
 
-            //println!("Number of comparisions naive={}",counter.into_inner());   
-
             for b in bb.iter(){
                 assert_eq!(b.inner.num,0);
-                //let b=BBox::new(datanum::into_rect(*b.get()),b.inner);
-                //bots.push(b);
             } 
 
             instant_to_sec(instant.elapsed())
@@ -160,16 +121,11 @@ impl DemoSys for DataColFind{
             num_bots: usize,
             bench_alg: f64,
             bench_par:f64,
-            //bench_naive: f64,
             bench_sweep:f64
         }
 
         self.wtr.serialize(Record{num_bots:self.num_bots,bench_alg:c1,bench_par:c0,bench_sweep:c3});
-        //println!("num_bots={:?} test/naive={:?} ratio:{:.2}",self.num_bots,(c1,c2),c1 as f64/c2 as f64);
-
-
-
-
+        
         self.num_bots+=200;
 
         false
