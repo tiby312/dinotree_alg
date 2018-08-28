@@ -47,7 +47,7 @@ impl DemoSys for DataColFind{
         }).collect();
         
 
-        if self.num_bots>20000{
+        if self.num_bots>80000{
             return true;
         }
         if self.num_bots<2000{
@@ -80,11 +80,11 @@ impl DemoSys for DataColFind{
         let c1={
             let instant=Instant::now();
 
-            let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DynTree::new_seq(axgeom::XAXISS,(),&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
             });
 
-            colfind::query_mut(&mut tree,|a, b| {
+            colfind::query_seq_mut(&mut tree,|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -116,15 +116,43 @@ impl DemoSys for DataColFind{
             instant_to_sec(instant.elapsed())
         };
 
+        let c4={
+            
+            if self.num_bots<10000{
+                let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
+                    let rect=aabb_from_point_isize(b.pos,[5,5]);
+                    BBoxDemo::new(rect,*b)
+                }).collect();
+
+                let instant=Instant::now();
+            
+                colfind::query_naive_mut(&mut bb,|a,b|{
+                    a.inner.num-=1;
+                    b.inner.num-=1;
+                });
+
+
+                for (a,b) in bb.iter().zip(bots.iter_mut()){
+                    *b=a.inner;
+                }
+
+
+                instant_to_sec(instant.elapsed())
+            }else{
+                0.0
+            }
+        };
+
         #[derive(Debug, Serialize)]
         struct Record {
             num_bots: usize,
             bench_alg: f64,
             bench_par:f64,
-            bench_sweep:f64
+            bench_sweep:f64,
+            bench_naive:f64
         }
 
-        self.wtr.serialize(Record{num_bots:self.num_bots,bench_alg:c1,bench_par:c0,bench_sweep:c3});
+        self.wtr.serialize(Record{num_bots:self.num_bots,bench_alg:c1,bench_par:c0,bench_sweep:c3,bench_naive:c4});
         
         self.num_bots+=200;
 

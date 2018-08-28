@@ -36,7 +36,7 @@ impl DemoSys for DataColFind{
 
         let s=SpiralGenerator::new([400.0,400.0],12.0,2.0);
 
-        if self.num_bots>2000{
+        if self.num_bots>4000{
             return true;
         }
 
@@ -82,7 +82,7 @@ impl DemoSys for DataColFind{
             
             let mut counter=datanum::Counter::new();
             
-            if self.num_bots<400{
+            if self.num_bots<600{
                 let mut bb:Vec<BBoxDemo<datanum::DataNum,Bot>>=bots.iter().map(|b|{
                     let rect=aabb_from_point_isize(b.pos,[5,5]);
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)

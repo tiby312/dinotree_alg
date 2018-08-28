@@ -40,40 +40,30 @@ fn main() {
         .unwrap();
 
     if args.len()!=2{
-        println!("dinotree_alg_data theory-colfind-3d");
+        println!("valid arguments are \"bench-colfind\" \"theory-colfind\" \"theory-colfind-3d\" \"theory-sweep-3d\" ");
         return;
     }
 
     let mut curr=match args[1].trim(){
         "bench-colfind"=>{
             let area=[area[0] as f64,area[1] as f64];
-    
             let k:Box<DemoSys>=Box::new(data_bench::bench_colfind::DataColFind::new(area));
-            k
-            
+            k  
         },
         "theory-colfind"=>{
-            
             let area=[area[0] as f64,area[1] as f64];
-    
             let k:Box<DemoSys>=Box::new(data_theory::theory_colfind::DataColFind::new(area));
             k
-            
         },
         "theory-colfind-3d"=>{
             let area=[area[0] as f64,area[1] as f64];
-    
             let k:Box<DemoSys>=Box::new(data_theory::theory_colfind_3d::DataColFind3d::new(area));
             k
         },
         "theory-sweep-3d"=>{
-            unimplemented!();
-            /*
             let area=[area[0] as f64,area[1] as f64];
-    
             let k:Box<DemoSys>=Box::new(data_theory::theory_sweep_3d::DataColFind3d::new(area));
             k
-            */
         },
         _=>{
             panic!("unknown arg");
