@@ -2,11 +2,11 @@
 
 
 In this document, we'll go over the high level design of some of the algorithms provided by this crate.
-As a user of this crate, you don't really need to know any of thise. All you need to concern yourself about is the users guide.
+As a user of this crate, you don't really need to know any of these. All you need to concern yourself about is the users guide.
 
 # Tree data structure
 
-First lets talk about the tree data structure itself before we talking about the algorithms that exploit its properties. From benching some of the query algorithms, it was apparent that the bottleneck was the querying of the tree, not the construction of the tree. So right off the bat, the design desision was made to make the tree such that once it was constructed it was fast as possible even if this meant compramizing on efficient insertion and removal. So memory compactness is the kay goal.
+First lets talk about the tree data structure itself before we talking about the algorithms that exploit its properties. Early in development, from benching some of the early query algorithms, it was apparent that the bottleneck was the querying of the tree, not the construction of the tree. So right off the bat, the design desision was made to make the tree such that once it was constructed, querying was fast as possible even if this meant comprimizing on construction performance. So memory compactness is the key goal.
 
 ## Construction
 
@@ -16,15 +16,15 @@ For every node we do the following:
 	1) First we find the median of the remaining bots (using pattern defeating quick sort) and use its position as this nodes divider.
 	2) Then we bin the bots into three bins. Those strictly to the left of the divider, those strictly to the right, and those that intersect.
 	3) Then we sort the bots that intersect the divider along the opposite axis that was used to finding the median.
-	4) Those this node is fully set up. recurse left and right with the bots that were binned left and right. This can be done in parallel.
+	4) Now this node is fully set up. recurse left and right with the bots that were binned left and right. This can be done in parallel.
 
 ## Memory Layout
 
-Memory layout is extremely important when you have an algorithm that has an inner loop over a big data structure. (for example intersect pair finding). So our goal is to layout the tree in memory so that it is very compact, and also that when you visit all the nodes, you do so in such a way that memory localicty is a thing. 
+Memory layout is extremely important when you have an algorithm that has an inner loop over a big data structure. (for example intersect pair finding). So our goal is to layout the tree in memory so that it is very compact, and also that when you visit all the nodes, you do so in such a way that memory locality is promoted. 
 
 ### Memory compactness
 
-A typical implementation might work this way. Every node contains data about the aabb of that node, where the divider is, and then it would also contain a reference to slice of bots in a vec somewhere else in memory. The problem with this layout is that the vec of bots and the vec of nodes are allocated seperately and while they have good localicty between the elements in each other, they dont have good localicty between each other. The solution is to not have two seperate vecs, but to have just one vec where every node literally has a slice of bots - not a reference to a slice of bots, but the slice itself. Every node is therefore a dynamically sized type. So the natural problem here is that every node is going to have a different number of bots in it. So every node will have a different size. You cant have a Vec of these kinds of types since a vec assumes all the elements have the same size! The solution is manual memory management. Knowing the number of bots and the number of nodes upfront, we can calculate exactly how much memory we need to allocate. Then we can keep a counter as we insert each node. Nodes are connected via pointers to their children.
+A typical implementation might work this way. Every node contains data about the aabb of that node, where the divider is, and then it would also contain a reference to slice of bots in a vec somewhere else in memory. The problem with this layout is that the vec of bots and the vec of nodes are allocated seperately and while they have good locality between the elements in each other, they dont have good locality between each other. The solution is to not have two seperate vecs, but to have just one vec where every node literally has a slice of bots - not a reference to a slice of bots, but the slice itself. Every node is therefore a dynamically sized type. So the natural problem here is that every node is going to have a different number of bots in it. So every node will have a different size. You cant have a Vec of these kinds of types since a vec assumes all the elements have the same size! The solution is manual memory management. Knowing the number of bots and the number of nodes upfront, we can calculate exactly how much memory we need to allocate. Then we can keep a counter as we insert each node. Nodes are connected via pointers to their children.
 
 ### Memory Locality
 
@@ -34,11 +34,17 @@ So how can we layout the nodes in memory to achieve this? Well, putting them in 
 
 ### Destruction of tree
 
-When we destroy the tree, we want to return the bots to the user is the same order that they were put in. This way the user can rely on indicies for other algorithms to uniquely identify a bot. To do this, during tree construction, we also build up a Vec of offsets to be used to return the bots to their original position. We keep this as a seperate data structure as it will only be used on destruction of the tree. If we were to put the offset data into the tree itself, it would be wasted space and would degrade the memory localicty of the tree query algorithms.
+If we were inserting references into the tree, then the original order of the bots is preserved during construction/destruction of the tree. However, we are inserting the actual bots to remove this layer of indirection. So when we destroy the tree, we want to return the bots to the user is the same order that they were put in. This way the user can rely on indicies for other algorithms to uniquely identify a bot. To do this, during tree construction, we also build up a Vec of offsets to be used to return the bots to their original position. We keep this as a seperate data structure as it will only be used on destruction of the tree. If we were to put the offset data into the tree itself, it would be wasted space and would degrade the memory localicty of the tree query algorithms. We only need to use these offset once, during destruction. It shouldnt be the case that all querying algorithms that might be performed on the tree suffer performance for this.
 
 ### Memory complexity during construction
 
 Construction involves a couple of allocations. TODO talk
+The user has a vec a bots. Then a vec of aabb's and offsets is generated from this vec of bots. This vec is then sorted and binned into a dinotree. So at this point we have the original vec of bots, and a tree of aabb's and offsets. These two vecs are then melded together into one dinotree. So we end up need memory space for 2*n+(2*n) because we need:
+1) space for all the bots
+2) space for all the aabbs and offsets (well assume the size of a bot is atleast as big as this)
+3) space for the fused together tree which is a combination of the two above.
+So thats n+n+2*n=4*n memory space.
+So its a fair about of memory space needed, but at least it grows linear.
 
 
 ### Leaves
@@ -54,8 +60,8 @@ must be chosen at compile time. It is certainly possible to create a wrapper aro
 
 # Algorithms overview
 
-Now that we've estblished the properties of the tree, lets talking about what we can do with it. 
-All these algorithms use the tree provide by the dinotree_inner crate, although some do not fully exploit all properties of this tree. (nbody does not take advantage of the fact that the bots in a non leaf node are sorted)
+Now that we've estblished the properties of the tree, lets talk about what we can do with it. 
+All these algorithms use the tree provide by the dinotree_inner crate, although some do not fully exploit all properties of this tree. (nbody does not take advantage of the fact that the bots in a non leaf node are sorted, for example)
 
 # Finding all intersecting pairs
 
@@ -79,7 +85,7 @@ The construction of the tree may seem expensive, but it is still less than the p
 
 # Nbody
 
-The nbody algorithm works in three steps. First a new version tree is built with extra data for each node. Then the tree is traversed taking advantage of this data. Then the tree is traverse again applying the changes made to the extra data from the construction in the first step.
+The nbody algorithm works in three steps. First a new version tree is built with extra data for each node. Then the tree is traversed taking advantage of this data. Then the tree is traversed again applying the changes made to the extra data from the construction in the first step.
 
 The extra data that is stored in the tree is the sum of the masses of all the bots in that node and all the bots under it. The idea is that if two nodes are sufficiently far away from one another, they can be treated as a single body of mass.
 

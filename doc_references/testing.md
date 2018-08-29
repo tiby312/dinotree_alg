@@ -19,11 +19,8 @@ It's important that if we write a test over n, we dont not inadvertatly influenc
 As n grows, if we keep adding bots to the same enclosed space, then they will overlap more.
 What we want to test is what happens as n grows, and density stays roughly the same.
 I tried to come up with a formula to calculate the dimensions needed for given desntiy and number of bots,
-with a random distribution, but couldnt come up with it. If some one could help that would be great.
-Instead, I used a simple spiral. It grows from the center, adding bots as it goes.
-
-
-
+with a random distribution, but couldnt come up with it.
+Instead, I used a simple Archimedean spiral. It grows from the center, adding bots as it goes. This allows us to grow the size of the problem without effecting the density/distribution.
 
 
 # Testing correctness
@@ -41,7 +38,7 @@ The tailored inputs is important. For example, a case where two bounding boxes c
 
 Writing benches that validate every single piece of the algorithm design is a hassle ,although it would be nice. Ideally you dont want to rely on my word to say that, for example, using sweep and prune to find colliding pairs actually sped things up. It could be that while the algorithm is correct and fast that this particular aspect of the algorithm actually slows things down. 
 
-So I dont think writing tons of low level benches are worth it. If you are unsure of a piece of code, you can bench the algorithm as a whole, change a piece of the algorithm, and bench again and compare results. Because at the end of the day, we already tested the correctness, and that is the most important thing. So I think this strategy, coupled with code coverage and just general reasoning of the code can supplement tons of benches to validate the innards of the algorithm.
+So I dont think writing low level benches are worth it. If you are unsure of a piece of code, you can bench the algorithm as a whole, change a piece of the algorithm, and bench again and compare results. Because at the end of the day, we already tested the correctness, and that is the most important thing. So I think this strategy, coupled with code coverage and just general reasoning of the code can supplement tons of benches to validate the innards of the algorithm.
 
 
 
