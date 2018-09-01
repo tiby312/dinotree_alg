@@ -70,7 +70,7 @@ impl DemoSys for DataColFind{
 
         impl TreeHeightHeur for Heur{
             fn compute_tree_height_heuristic(&self,num_bots:usize)->usize{
-                compute_tree_height_heuristic(num_bots,self.num_bots_per_node)
+                compute_tree_height_heuristic_debug(num_bots,self.num_bots_per_node)
             }
         }
 
