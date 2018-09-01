@@ -17,17 +17,26 @@ pub struct Bot{
 }
 pub struct DataColFind{
     num_bots:usize,
-    wtr:csv::Writer<std::io::Stdout>
+    records:Vec<Record>
+    //wtr:csv::Writer<std::io::Stdout>
 }
 
 
 impl DataColFind{
     pub fn new(_dim:[f64;2])->DataColFind{    
-        let wtr = csv::Writer::from_writer(std::io::stdout());
-        DataColFind{num_bots:0,wtr}
+        //let wtr = csv::Writer::from_writer(std::io::stdout());
+        DataColFind{num_bots:0,records:Vec::new()}
     }
 }
 
+
+#[derive(Debug, Serialize)]
+struct Record {
+    num_bots: usize,
+    num_comparison_alg: usize,
+    num_comparison_naive: Option<usize>,
+    num_comparison_sweep:Option<usize>
+}
 
 
 
@@ -36,8 +45,29 @@ impl DemoSys for DataColFind{
 
         let s=SpiralGenerator::new([400.0,400.0],12.0,2.0);
 
-        if self.num_bots>4000{
-            return true;
+        if self.num_bots>7000{
+            {
+                let rects=&mut self.records;
+                use gnuplot::*;
+                let x=rects.iter().map(|a|a.num_bots);
+                let y1=rects.iter().map(|a|a.num_comparison_alg);
+                let y2=rects.iter().take_while(|a|a.num_comparison_naive.is_some()).map(|a|a.num_comparison_naive.unwrap());
+                let y3=rects.iter().take_while(|a|a.num_comparison_sweep.is_some()).map(|a|a.num_comparison_sweep.unwrap());
+
+                let mut fg = Figure::new();
+
+                fg.axes2d()
+                    .set_title("Comparison of AABB Collision Detection Algorithms", &[])
+                    .lines(x.clone(), y2,  &[Caption("Naive"), Color("blue"), LineWidth(2.0)])
+                    .lines(x.clone(), y3,  &[Caption("Sweep and Prune"), Color("green"), LineWidth(2.0)])
+                    .lines(x.clone(), y1,  &[Caption("Dinotree"), Color("red"), LineWidth(2.0)])
+                    .set_x_label("Number of Objects", &[])
+                    .set_y_label("Number of Comparisons", &[]);
+        
+                fg.show();
+
+                return true;
+            }
         }
 
 
@@ -80,9 +110,10 @@ impl DemoSys for DataColFind{
        
         let c2={
             
-            let mut counter=datanum::Counter::new();
             
             if self.num_bots<600{
+                let mut counter=datanum::Counter::new();
+            
                 let mut bb:Vec<BBoxDemo<datanum::DataNum,Bot>>=bots.iter().map(|b|{
                     let rect=aabb_from_point_isize(b.pos,[5,5]);
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
@@ -97,39 +128,37 @@ impl DemoSys for DataColFind{
                 for (a,b) in bb.iter().zip(bots.iter_mut()){
                     *b=a.inner;
                 }
+                Some(counter.into_inner())
+            }else{
+                None
             }
-            
-            counter.into_inner()
         };
         let c3={
-            let mut counter=datanum::Counter::new();
-            let mut bb:Vec<BBoxDemo<datanum::DataNum,Bot>>=bots.iter().map(|b|{
-                let rect=aabb_from_point_isize(b.pos,[5,5]);
-                BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
-            }).collect();
+            if self.num_bots<4000{
+                let mut counter=datanum::Counter::new();
+                let mut bb:Vec<BBoxDemo<datanum::DataNum,Bot>>=bots.iter().map(|b|{
+                    let rect=aabb_from_point_isize(b.pos,[5,5]);
+                    BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
+                }).collect();
 
-            colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
-                a.inner.num-=1;
-                b.inner.num-=1;
-            });
+                colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
+                    a.inner.num-=1;
+                    b.inner.num-=1;
+                });
 
-            //println!("Number of comparisions naive={}",counter.into_inner());   
-            for (a,b) in bb.iter().zip(bots.iter_mut()){
-                *b=a.inner;
+                //println!("Number of comparisions naive={}",counter.into_inner());   
+                for (a,b) in bb.iter().zip(bots.iter_mut()){
+                    *b=a.inner;
+                }
+                 
+                Some(counter.into_inner())
+            }else{
+                None
             }
-             
-            counter.into_inner()
+
         };
 
-        #[derive(Debug, Serialize)]
-        struct Record {
-            num_bots: usize,
-            num_comparison_alg: usize,
-            num_comparison_naive: usize,
-            num_comparison_sweep:usize
-        }
-
-        self.wtr.serialize(Record{num_bots:self.num_bots,num_comparison_alg:c1,num_comparison_naive:c2,num_comparison_sweep:c3});
+        self.records.push(Record{num_bots:self.num_bots,num_comparison_alg:c1,num_comparison_naive:c2,num_comparison_sweep:c3});
         //println!("num_bots={:?} test/naive={:?} ratio:{:.2}",self.num_bots,(c1,c2),c1 as f64/c2 as f64);
 
 

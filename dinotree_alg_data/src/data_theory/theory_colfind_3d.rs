@@ -95,22 +95,51 @@ impl DemoSys for DataColFind3d{
     fn step(&mut self,_cursor:[f64;2],_c:&piston_window::Context,_g:&mut piston_window::G2d)->bool{
 
         let cc=ClosenessCounter{radius:12.0};
+
+
+        let mut rects=Vec::new();
+
         for s in cc{
             let circular_grow=s.get_circular_grow();
                 
             for num_bots in (0..100usize).step_by(5){
                 let s2=s.clone();
                 let z=test(s2,num_bots);
-
+                
                 #[derive(Debug, Serialize)]
                 struct Record {
                     num_bots: usize,
                     circular_grow: f64,
                     z: usize
                 }
-                let num_bots=num_bots;
-                self.wtr.serialize(Record{num_bots,circular_grow,z});
+                let r=Record{num_bots,circular_grow,z};
+                rects.push(r);
+                //self.wtr.serialize();
+                
             }
+        }
+
+        {
+            use gnuplot::*;
+            let x=rects.iter().map(|a|a.num_bots as f64);
+            let y=rects.iter().map(|a|a.circular_grow as f64);
+            let z=rects.iter().map(|a|a.z as f64);
+            //let z = (0..100).map(|z| z as f32 / 10.0);
+            //let x = z.clone().map(|z| z.cos());
+            //let y = z.clone().map(|z| z.sin());
+
+            let mut fg = Figure::new();
+
+            fg.axes3d().set_view(120.0,30.0)
+                .set_title("3D lines", &[])
+                .set_x_label("Number of Objects", &[])
+                .set_y_label("Number of Intersecting Objects", &[])
+                .set_z_label("Number of Comparisons", &[Rotate(90.0),TextOffset(-2.0,0.0)])
+                .points(x, y, z, &[PointSymbol('O'), Color("violet"), PointSize(1.0)]);
+
+            fg.show();
+
+            return true;
         }
 
         return true;

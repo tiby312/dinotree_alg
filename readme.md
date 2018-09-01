@@ -13,20 +13,27 @@ in which the collision finding functionality was being provided. Does not suffer
 
 
 
-![chart](./assets/bench.png)
+![chart](./docs/assets/theory.png)
 
-So this data is very hardware dependent. This data was captured on a dual core dell xps 13 laptop. The naive pair finding algorithm grows so quickly, I stopped computing it at a certain point. The sweep and prune algorithm grows much slower than the naive algorithm, but the dinotree pair finding algorithm is still faster. The parallel version is also slighty faster.
-
-
-![chart](./assets/theory.png)
-
-This shows the number of comparisions of each algorithm. This is not machine dependant. The same trends from the benching are noticable. The sporadic jumps in the dinotree algorithm correspond to the points where the height of the tree increased by one.
+This shows the number of comparisions of each algorithm. The naive pair finding algorithm grows so fast that I stopped computing it early on. The sweep and prune algorithm does much better than the naive. The dinotree version does even better. The sporadic jumps in the dinotree algorithm correspond to the points where the height of the tree increased by one.
 
 
-![chart](./assets/sweep3d.png)
+![chart](./docs/assets/bench.png)
+
+Unlike the previous graph, this one measure computation time. So this data is very hardware dependent. This data was captured on a dual core dell xps 13 laptop. The same trends as those in the comparison graph are present.
 
 
-![chart](./assets/tree3d.png)
+
+
+
+
+![chart](./docs/assets/tree3d.png)
+
+The above graph shows how
+
+
+![chart](./docs/assets/sweep3d.png)
+
 
 ## License
 

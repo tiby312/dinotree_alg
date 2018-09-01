@@ -14,6 +14,9 @@ extern crate serde;
 extern crate serde_derive;
 
 
+
+extern crate gnuplot;
+
 mod support;
 mod spiral;
 
@@ -29,6 +32,8 @@ pub trait DemoSys{
 use std::env;
 
 fn main() {
+
+
 	let args: Vec<String> = env::args().collect();
    
     let area=[1024u32,768];
