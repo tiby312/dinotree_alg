@@ -65,11 +65,6 @@ fn main() {
             let k:Box<DemoSys>=Box::new(data_theory::theory_colfind_3d::DataColFind3d::new(area));
             k
         },
-        "theory-sweep-3d"=>{
-            let area=[area[0] as f64,area[1] as f64];
-            let k:Box<DemoSys>=Box::new(data_theory::theory_sweep_3d::DataColFind3d::new(area));
-            k
-        },
         _=>{
             panic!("unknown arg");
         }
