@@ -1,11 +1,12 @@
 [package]
-name = "dinotree_alg_data"
+name = "dists"
 version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 
-[dependencies]
-dists = {path="../dists"}
-gnuplot = "0.0.26"
+
+
+[dev-dependencies]
+find_folder = "*"
 rayon="1.0.2"
 compt = "1.0.0"
 axgeom = "1.0.0"
@@ -18,3 +19,5 @@ rand = "0.3"
 rustc-test = "0.3.0"
 collision = "0.15.0"
 cgmath = "0.16.0"
+piston_window = "0.80.0"
+

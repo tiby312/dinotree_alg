@@ -18,7 +18,7 @@ impl Counter{
     pub fn new()->Counter{
         Counter(0)
     }
-    pub fn into_inner(self)->usize{
+    pub fn into_inner(&self)->usize{
         self.0
     }
     pub fn new_num(&mut self,a:isize)->DataNum{
