@@ -1,12 +1,5 @@
-use support::*;
-use dinotree_alg::colfind;
-use std;
-use dinotree_inner::*;
-use axgeom;
-use data_theory::datanum;
-use dists;
-use std::time::Instant;
-use std::time::Duration;
+use inner_prelude::*;
+
 
 #[derive(Copy,Clone)]
 pub struct Bot{
@@ -14,10 +7,6 @@ pub struct Bot{
     num:usize
 }
 
-
-fn instant_to_sec(elapsed:Duration)->f64{
-     (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0)           
-}
 
 
 
@@ -122,23 +111,21 @@ pub fn handle(){
 
 
         fg.axes2d()
+            .set_pos_grid(2,1,0)
             .set_title("Number of Comparisons with 10,000 objects in a dinotree with different numbers of objects per node", &[])
             .lines(x, y,  &[Color("blue"), LineWidth(2.0)])
             .set_x_label("Number of Objects Per Node", &[])
             .set_y_label("Number of Comparisons", &[]);
 
-        fg.show();
-
-    }
-    {
-        use gnuplot::*;
+     
+    
+    
         let x=bench_records.iter().map(|a|a.num_bots_per_node);
         let y=bench_records.iter().map(|a|a.bench);
 
-        let mut fg = Figure::new();
-
 
         fg.axes2d()
+            .set_pos_grid(2,1,1)
             .set_title("Bench times with 10,000 objects in a dinotree with different numbers of objects per node", &[])
             .lines(x, y,  &[Color("blue"), LineWidth(2.0)])
             .set_x_label("Number of Objects Per Node", &[])

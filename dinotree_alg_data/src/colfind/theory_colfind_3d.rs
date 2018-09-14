@@ -1,11 +1,5 @@
-use support::*;
-use dinotree_alg::colfind;
-use std;
-use dinotree_inner::*;
-use axgeom;
-use data_theory::datanum;
-use gnuplot::*;
-use dists;
+use inner_prelude::*;
+
 
 #[derive(Copy,Clone)]
 pub struct Bot{

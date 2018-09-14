@@ -9,13 +9,33 @@ extern crate dinotree_geom;
 extern crate dists;
 extern crate gnuplot;
 
+mod inner_prelude{
+
+    pub use support::*;
+    pub use dinotree_alg::colfind;
+    pub(crate) use std;
+    pub use dinotree_inner::*;
+    pub(crate) use axgeom;
+    pub(crate) use datanum;
+    pub use gnuplot::*;
+    pub(crate) use dists;
+    pub use std::time::Instant;
+    pub use std::time::Duration;
+    pub(crate) use ordered_float::NotNan;
+
+}
+#[macro_use]
 mod support;
-mod data_theory;
+mod colfind;
+mod nbody;
+pub(crate) mod datanum;
 
 
 use std::env;
 
 fn main() {
+
+    
 	let args: Vec<String> = env::args().collect();   
     let area=[1024u32,768];
 
@@ -25,24 +45,28 @@ fn main() {
     }
 
     let mut curr=match args[1].trim(){
-        "theory-colfind"=>{
-            data_theory::theory_colfind::handle();
+        "colfind"=>{
+            colfind::theory_colfind::handle();
         },
-        "theory-colfind-3d"=>{
-            data_theory::theory_colfind_3d::handle();
+        "colfind-3d"=>{
+            colfind::theory_colfind_3d::handle();
             
         },
-        "theory-tree-height"=>{
-            data_theory::height_heur_comparison::handle();
+        "colfind-tree-height"=>{
+            colfind::height_heur_comparison::handle();
         },
-        "theory-construction"=>{
-            data_theory::construction_vs_query::handle();
+        "colfind-construction"=>{
+            colfind::construction_vs_query::handle();
+        }
+        "nbody"=>{
+            nbody::theory::handle();
         }
         "all"=>{
-            data_theory::theory_colfind::handle();
-            data_theory::theory_colfind_3d::handle();
-            data_theory::height_heur_comparison::handle();
-            data_theory::construction_vs_query::handle();
+            colfind::theory_colfind::handle();
+            colfind::theory_colfind_3d::handle();
+            colfind::height_heur_comparison::handle();
+            colfind::construction_vs_query::handle();
+            nbody::theory::handle();
         }
         _=>{
             panic!("unknown arg");

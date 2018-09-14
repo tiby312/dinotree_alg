@@ -1,10 +1,4 @@
-use support::*;
-use dinotree_alg::colfind;
-use std;
-use dinotree_inner::*;
-use axgeom;
-use data_theory::datanum;
-use dists;
+use inner_prelude::*;
 
 
 #[derive(Copy,Clone)]
@@ -16,7 +10,7 @@ pub struct Bot{
 
 
 
-fn handle_bench(s:&dists::spiral::Spiral){
+fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
     use std::time::Instant;
     use std::time::Duration;
@@ -146,9 +140,9 @@ fn handle_bench(s:&dists::spiral::Spiral){
     let y3=rects.iter().map(|a|a.bench_alg);
     let y4=rects.iter().map(|a|a.bench_par);
 
-    let mut fg = Figure::new();
 
     fg.axes2d()
+        .set_pos_grid(2,1,0)
         .set_title("Comparison of Benching AABB Collision Detection Algorithms", &[])
         .lines(x.clone(), y1,  &[Caption("Naive"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Sweep and Prune"), Color("green"), LineWidth(2.0)])
@@ -157,9 +151,13 @@ fn handle_bench(s:&dists::spiral::Spiral){
         .set_x_label("Number of Objects", &[])
         .set_y_label("Time taken in seconds", &[]);
 
-    fg.show();
 }
-fn handle_theory(s:&dists::spiral::Spiral){
+
+
+
+
+
+fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure){
 
     #[derive(Debug)]
     struct Record {
@@ -261,9 +259,8 @@ fn handle_theory(s:&dists::spiral::Spiral){
     let y2=rects.iter().take_while(|a|a.num_comparison_naive.is_some()).map(|a|a.num_comparison_naive.unwrap());
     let y3=rects.iter().take_while(|a|a.num_comparison_sweep.is_some()).map(|a|a.num_comparison_sweep.unwrap());
 
-    let mut fg = Figure::new();
-
     fg.axes2d()
+        .set_pos_grid(2,1,1)
         .set_title("Comparison of AABB Collision Detection Algorithms", &[])
         .lines(x.clone(), y2,  &[Caption("Naive"), Color("blue"), LineWidth(4.0)])
         .lines(x.clone(), y3,  &[Caption("Sweep and Prune"), Color("green"), LineWidth(2.0)])
@@ -271,12 +268,16 @@ fn handle_theory(s:&dists::spiral::Spiral){
         .set_x_label("Number of Objects", &[])
         .set_y_label("Number of Comparisons", &[]);
 
-    fg.show();
 }
 
 
 pub fn handle(){
     let s=dists::spiral::Spiral::new([400.0,400.0],12.0,1.5);
-    handle_theory(&s);
-    handle_bench(&s);
+
+    let mut fg = Figure::new();
+
+    handle_theory(&s,&mut fg);
+    handle_bench(&s,&mut fg);
+
+    fg.show();
 }

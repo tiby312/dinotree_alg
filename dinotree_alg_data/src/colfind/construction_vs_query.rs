@@ -1,18 +1,5 @@
-use support::*;
-use dinotree_alg::colfind;
-use std;
-use dinotree_inner::*;
-use axgeom;
-use data_theory::datanum;
-use dists;
-use std::time::Instant;
-use std::time::Duration;
-use gnuplot::*;
+use inner_prelude::*;
 
-
-fn instant_to_sec(elapsed:Duration)->f64{
-     (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0)           
-}
 
 
 #[derive(Copy,Clone)]
@@ -180,7 +167,7 @@ fn handle1(){
 }
 
 pub fn handle(){
-    handle1();
+    //handle1();
     handle2();
 }
 fn handle2(){
@@ -188,13 +175,16 @@ fn handle2(){
     let mut rects=Vec::new();
     
     struct Record{
-        num_bots:usize,
+        grow:f64,
         bench1:f64,
-        bench2:f64
+        bench2:f64,
+        comparison:f64
     }
+    let num_bots=20000;
 
-    for num_bots in (0..20000usize).step_by(100){
-        let s=dists::spiral::Spiral::new([400.0,400.0],17.0,0.2);
+    for grow in (0..50).map(|a|0.2+(a as f64)*0.2){
+        let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
+
 
 
         //let mut bots:Vec<Bot>=(0..num_bots).map(|a|Bot{num:0}).collect();
@@ -203,26 +193,37 @@ fn handle2(){
             Bot{num:0,pos}
         }).collect();
 
+        let comparison=test1(&mut bots);
         let bench1=test2(&mut bots);
         let bench2=test3(&mut bots);
 
-        let r=Record{num_bots,bench1,bench2};
+        let r=Record{grow,bench1,bench2,comparison};
         rects.push(r);   
     }
 
 
 
-    let x=rects.iter().map(|a|a.num_bots as f64);
+    let x=rects.iter().map(|a|a.grow as f64);
     let y1=rects.iter().map(|a|a.bench1);
     let y2=rects.iter().map(|a|a.bench2);
+    let y3=rects.iter().map(|a|a.comparison);
+
 
     let mut fg = Figure::new();
 
     fg.axes2d()
-        .set_title("Querying Bench Over Total Bench with a Grow of 0.2", &[])
+        .set_pos_grid(2,1,0)
+        .set_title("Querying Bench Over Total Bench with a 20000 objects", &[])
         .lines(x.clone(), y1,  &[Caption("Sequential"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Parallel"), Color("green"), LineWidth(2.0)])
-        .set_x_label("Number of Objects", &[])
+        .set_x_label("Grow", &[])
+        .set_y_label("Query/Total Time", &[]);
+
+    fg.axes2d()
+        .set_pos_grid(2,1,1)
+        .set_title("Querying Bench Over Total Bench with a 20000 objects", &[])
+        .lines(x.clone(), y3,  &[Caption("Sequential"), Color("blue"), LineWidth(2.0)])
+        .set_x_label("Grow", &[])
         .set_y_label("Query/Total Time", &[]);
 
     fg.show();

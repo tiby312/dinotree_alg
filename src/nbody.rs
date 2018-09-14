@@ -119,7 +119,7 @@ trait NodeMassTrait:Clone{
 
 
 ///Naive version simply visits every pair.
-pub fn naive_mut<T:HasAabb>(bots:&mut [T],func:impl FnMut(&mut T,&mut T)){
+pub fn naive_mut<T>(bots:&mut [T],func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,func);
 }
 
