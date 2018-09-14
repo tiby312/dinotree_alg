@@ -271,11 +271,10 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure){
 }
 
 
-pub fn handle(){
+pub fn handle(fb:&FigureBuilder){
     let s=dists::spiral::Spiral::new([400.0,400.0],12.0,1.5);
 
-    let mut fg = Figure::new();
-
+    let mut fg=fb.new("colfind_theory");
     handle_theory(&s,&mut fg);
     handle_bench(&s,&mut fg);
 

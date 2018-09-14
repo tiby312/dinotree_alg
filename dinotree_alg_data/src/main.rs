@@ -10,7 +10,7 @@ extern crate dists;
 extern crate gnuplot;
 
 mod inner_prelude{
-
+    pub(crate) use FigureBuilder;
     pub use support::*;
     pub use dinotree_alg::colfind;
     pub(crate) use std;
@@ -33,9 +33,25 @@ pub(crate) mod datanum;
 
 use std::env;
 
+
+use gnuplot::*;
+pub struct FigureBuilder{
+}
+impl FigureBuilder{
+    fn new(&self,filename:&str)->Figure{
+        let mut fg=Figure::new();
+        let ss=format!("graphs/{}.png",filename);
+        fg.set_terminal("pngcairo size 1024, 768",&ss);
+        fg
+    }
+}
 fn main() {
 
-    
+
+    let fb=FigureBuilder{};
+    colfind::float_vs_integer::handle(&fb);
+    return;
+
 	let args: Vec<String> = env::args().collect();   
     let area=[1024u32,768];
 
@@ -46,27 +62,28 @@ fn main() {
 
     let mut curr=match args[1].trim(){
         "colfind"=>{
-            colfind::theory_colfind::handle();
+            colfind::theory_colfind::handle(&fb);
         },
         "colfind-3d"=>{
-            colfind::theory_colfind_3d::handle();
+            colfind::theory_colfind_3d::handle(&fb);
             
         },
         "colfind-tree-height"=>{
-            colfind::height_heur_comparison::handle();
+            colfind::height_heur_comparison::handle(&fb);
         },
         "colfind-construction"=>{
-            colfind::construction_vs_query::handle();
+            colfind::construction_vs_query::handle(&fb);
         }
         "nbody"=>{
-            nbody::theory::handle();
+            nbody::theory::handle(&fb);
         }
+
         "all"=>{
-            colfind::theory_colfind::handle();
-            colfind::theory_colfind_3d::handle();
-            colfind::height_heur_comparison::handle();
-            colfind::construction_vs_query::handle();
-            nbody::theory::handle();
+            colfind::theory_colfind::handle(&fb);
+            colfind::theory_colfind_3d::handle(&fb);
+            colfind::height_heur_comparison::handle(&fb);
+            colfind::construction_vs_query::handle(&fb);
+            nbody::theory::handle(&fb);
         }
         _=>{
             panic!("unknown arg");

@@ -100,7 +100,7 @@ impl DataColFind3d{
 
 
 
-fn handle_spiral(){
+fn handle_spiral(fb:&FigureBuilder){
     let mut rects=Vec::new();
 
     for num_bots in (0..10000).step_by(1000){
@@ -137,9 +137,9 @@ fn handle_spiral(){
             
         }
     }
-    draw_rects(&mut rects);       
+    draw_rects(&mut rects,fb,"colfind_num_pairs_detailed","colfind_num_comparisons_detailed");       
 }
-fn handle_spiral_two(){
+fn handle_spiral_two(fb:&FigureBuilder){
     let mut rects=Vec::new();
 
     for num_bots in (0..10000).step_by(1000){
@@ -177,12 +177,12 @@ fn handle_spiral_two(){
             
         }
     }
-    draw_rects(&mut rects);    
+    draw_rects(&mut rects,fb,"colfind_num_pairs","colfind_num_comparisons");    
 }
 
 
 
-fn draw_rects(rects:&mut [Record]){
+fn draw_rects(rects:&mut [Record],fb:&FigureBuilder,name1:&str,name2:&str){
     {
         let x=rects.iter().map(|a|a.num_bots as f64);
         let y=rects.iter().map(|a|a.grow);
@@ -201,7 +201,7 @@ fn draw_rects(rects:&mut [Record]){
         };
         
 
-        let mut fg = Figure::new();
+        let mut fg=fb.new(name1);
 
         fg.axes3d().set_view(110.0,30.0)
             .set_title("Comparison of Sweep and Prune versus Dinotree", &[])
@@ -217,8 +217,8 @@ fn draw_rects(rects:&mut [Record]){
     }
 
     {
-        let mut fg = Figure::new();
-
+        //let mut fg = Figure::new();
+        let mut fg=fb.new(name2);
         let x=rects.iter().map(|a|a.num_bots);
         let y=rects.iter().map(|a|a.grow);
         let z=rects.iter().map(|a|a.num_pairs as f64);
@@ -235,7 +235,7 @@ fn draw_rects(rects:&mut [Record]){
     }
 }
 
-pub fn handle(){
-    handle_spiral();
-    handle_spiral_two();    
+pub fn handle(fb:&FigureBuilder){
+    handle_spiral(fb);
+    handle_spiral_two(fb);    
 }

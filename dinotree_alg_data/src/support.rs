@@ -97,7 +97,12 @@ impl Conv{
         let ((a,b),(c,d))=rect.get();
         Rect::new(f64n!(a),f64n!(b),f64n!(c),f64n!(d))
     }
+    pub unsafe fn from_rect_unchecked(rect:Rect<f64>)->Rect<F64n>{
+        let ((a,b),(c,d))=rect.get();
+        Rect::new(NotNan::unchecked_new(a),NotNan::unchecked_new(b),NotNan::unchecked_new(c),NotNan::unchecked_new(d))
+    }
 }
+
 
 pub fn aabb_from_pointf64(p:[f64;2],r:[f64;2])->Rect<f64>{
     Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])

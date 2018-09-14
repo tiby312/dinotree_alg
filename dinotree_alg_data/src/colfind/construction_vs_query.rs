@@ -89,7 +89,7 @@ fn test3(bots:&mut [Bot])->f64{
     return (b-a)/b;
 }
 
-fn handle1(){
+fn handle1(fb:&FigureBuilder){
 
 
     #[derive(Debug)]
@@ -133,7 +133,8 @@ fn handle1(){
     
     
 
-    let mut fg = Figure::new();
+    let mut fg=fb.new("query_over_total_theory");
+    
 
     fg.axes3d().set_view(110.0,30.0)
         .set_title("Comparisons of Querying Over Total Comparisons", &[])
@@ -147,8 +148,7 @@ fn handle1(){
 
 
  
-
-    let mut fg = Figure::new();
+    let mut fg=fb.new("query_over_total_bench");
 
     fg.axes3d().set_view(110.0,30.0)
         .set_title("Querying Bench Over Total Bench", &[])
@@ -160,17 +160,13 @@ fn handle1(){
                 
 
     fg.show();
-
-
-
-    
 }
 
-pub fn handle(){
-    //handle1();
-    handle2();
+pub fn handle(fb:&FigureBuilder){
+    handle1(fb);
+    handle2(fb);
 }
-fn handle2(){
+fn handle2(fb:&FigureBuilder){
 
     let mut rects=Vec::new();
     
@@ -209,8 +205,8 @@ fn handle2(){
     let y3=rects.iter().map(|a|a.comparison);
 
 
-    let mut fg = Figure::new();
-
+    let mut fg= fb.new("colfind_construction_vs_qyery");
+    
     fg.axes2d()
         .set_pos_grid(2,1,0)
         .set_title("Querying Bench Over Total Bench with a 20000 objects", &[])

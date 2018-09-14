@@ -437,13 +437,13 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
 
 
 
-pub fn handle(){
-    handle_spiral1();
-    handle_spiral2();
+pub fn handle(fb:&FigureBuilder){
+    handle_spiral1(fb);
+    handle_spiral2(fb);
 }
 
 
-fn handle_spiral1(){
+fn handle_spiral1(fb:&FigureBuilder){
     struct Record{
         num_bots:usize,
         dis:f64,
@@ -468,8 +468,8 @@ fn handle_spiral1(){
     let y2=rects.iter().map(|a|a.res.bench as f64);
     let y3=rects.iter().map(|a|a.res.bench_par as f64);
 
-    let mut fg = Figure::new();
 
+    let mut fg=fb.new("nbody_bench");
     fg.axes2d()
         .set_title("Comparison of Benching Dinotree Nbody algorithms vs Naive with 10,000 objects with grow of 0.3", &[])
         .lines(x.clone(), y1,  &[Caption("Naive"), Color("blue"), LineWidth(2.0)])
@@ -502,7 +502,7 @@ fn handle_spiral1(){
     fg.show(); 
     */
 }
-fn handle_spiral2(){
+fn handle_spiral2(fb:&FigureBuilder){
     struct Record{
         num_bots:usize,
         dis:f64,
@@ -529,7 +529,11 @@ fn handle_spiral2(){
     let y3=rects.iter().map(|a|a.res.error);  
     let y4=rects.iter().map(|a|a.res.error_avg);  
 
-    let mut fg = Figure::new();
+    let mut fg=fb.new("nbody_theory");
+
+    //let mut fg = Figure::new();
+
+    //fg.set_terminal("pngcairo size 1024, 768","graphs/theory.png");
 
     fg.axes2d()
         .set_pos_grid(3, 1, 0)

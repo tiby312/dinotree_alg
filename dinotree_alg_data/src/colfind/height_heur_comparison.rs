@@ -24,7 +24,7 @@ struct BenchRecord {
 
 
 
-pub fn handle(){
+pub fn handle(fb:&FigureBuilder){
 
     let mut theory_records=Vec::new();
     let mut bench_records:Vec<BenchRecord>=Vec::new();
@@ -107,8 +107,7 @@ pub fn handle(){
         let x=rects.iter().map(|a|a.num_bots_per_node);
         let y=rects.iter().map(|a|a.num_comparison);
 
-        let mut fg = Figure::new();
-
+        let mut fg = fb.new("colfind_height_heuristic");
 
         fg.axes2d()
             .set_pos_grid(2,1,0)
