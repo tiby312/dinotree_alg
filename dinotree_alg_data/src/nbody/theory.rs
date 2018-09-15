@@ -35,7 +35,7 @@ impl Bot{
     }
     fn create_aabb(&self)->axgeom::Rect<F64n>{
         let r=5.0f64.min(self.mass.sqrt()/10.0);
-        Conv::from_rect(aabb_from_pointf64(self.pos,[r;2]))             
+        ConvF64::from_rect(aabb_from_pointf64(self.pos,[r;2]))             
     }
 }
 

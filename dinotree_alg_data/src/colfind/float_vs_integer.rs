@@ -18,7 +18,11 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
     struct Record {
         num_bots: usize,
         bench_float: f64,
+        bench_float_par: f64,
         bench_integer:f64,
+        bench_integer_par:f64,
+        bench_f64:f64,
+        bench_f64_par:f64
     }
 
     fn instant_to_sec(elapsed:Duration)->f64{
@@ -60,7 +64,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DynTree::new_seq(axgeom::XAXISS,(),&bots,|b|{   
-                unsafe{Conv::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
+                unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
             });
 
             colfind::query_seq_mut(&mut tree,|a, b| {
@@ -74,9 +78,85 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
             instant_to_sec(instant.elapsed())
         };
+
+        let bench_float_par={
+            let instant=Instant::now();
+
+            let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
+                unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
+            });
+
+            colfind::query_mut(&mut tree,|a, b| {
+                a.inner.num+=1;
+                b.inner.num+=1;
+            });
+
+            tree.apply_orig_order(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
+
+            instant_to_sec(instant.elapsed())
+        };
+
+        let bench_integer_par={
+            let instant=Instant::now();
+            
+            let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
+                aabb_from_point_isize(b.pos,[5,5])
+            });
+
+            colfind::query_mut(&mut tree,|a, b| {
+                a.inner.num+=1;
+                b.inner.num+=1;
+            });
+
+            tree.apply_orig_order(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
+
+            instant_to_sec(instant.elapsed())
+        };
+
+        let bench_f64={
+            let instant=Instant::now();
+
+            let mut tree=DynTree::new_seq(axgeom::XAXISS,(),&bots,|b|{   
+                unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
+            });
+
+            colfind::query_seq_mut(&mut tree,|a, b| {
+                a.inner.num+=1;
+                b.inner.num+=1;
+            });
+
+            tree.apply_orig_order(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
+
+            instant_to_sec(instant.elapsed())
+        };
+
+        let bench_f64_par={
+            let instant=Instant::now();
+
+            let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
+                unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
+            });
+
+            colfind::query_mut(&mut tree,|a, b| {
+                a.inner.num+=1;
+                b.inner.num+=1;
+            });
+
+            tree.apply_orig_order(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
+
+            instant_to_sec(instant.elapsed())  
+        };
         
 
-        records.push(Record{num_bots,bench_float,bench_integer});
+        records.push(Record{num_bots,bench_float,bench_integer,bench_float_par,bench_integer_par,bench_f64,bench_f64_par});
     }
 
     let rects=&mut records;
@@ -84,12 +164,19 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
     let x=rects.iter().map(|a|a.num_bots);
     let y1=rects.iter().map(|a|a.bench_float);
     let y2=rects.iter().map(|a|a.bench_integer);
-    
+    let y3=rects.iter().map(|a|a.bench_float_par);
+    let y4=rects.iter().map(|a|a.bench_integer_par);
+    let y5=rects.iter().map(|a|a.bench_f64);
+    let y6=rects.iter().map(|a|a.bench_f64_par);
 
     fg.axes2d()
-        .set_title("Comparison of Benching AABB Collision Detection Algorithms", &[])
-        .lines(x.clone(), y1,  &[Caption("Floating Point"), Color("blue"), LineWidth(2.0)])
-        .lines(x.clone(), y2,  &[Caption("Integer"), Color("green"), LineWidth(2.0)])
+        .set_title("Comparison of DinoTree Performance With Different Number Types With Grow=2.0", &[])
+        .lines(x.clone(), y1,  &[Caption("f32"), Color("blue"), LineWidth(1.6)])
+        .lines(x.clone(), y2,  &[Caption("isize"), Color("green"), LineWidth(1.6)])
+        .lines(x.clone(), y3,  &[Caption("f32 parallel"), Color("red"), LineWidth(1.6)])
+        .lines(x.clone(), y4,  &[Caption("isize parallel"), Color("orange"), LineWidth(1.6)])
+        .lines(x.clone(), y5,  &[Caption("f64"), Color("violet"), LineWidth(1.6)])
+        .lines(x.clone(), y6,  &[Caption("f64 parallel"), Color("yellow"), LineWidth(1.6)])
         .set_x_label("Number of Objects", &[])
         .set_y_label("Time taken in seconds", &[]);
 
@@ -99,7 +186,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
 
 pub fn handle(fb:&FigureBuilder){
-    let s=dists::spiral::Spiral::new([400.0,400.0],12.0,1.5);
+    let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
 
     let mut fg=fb.new("colfind_float_vs_integer");
     handle_bench(&s,&mut fg);

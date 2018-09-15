@@ -28,6 +28,7 @@ mod inner_prelude{
 mod support;
 mod colfind;
 mod nbody;
+mod spiral;
 pub(crate) mod datanum;
 
 
@@ -49,7 +50,7 @@ fn main() {
 
 
     let fb=FigureBuilder{};
-    colfind::float_vs_integer::handle(&fb);
+    spiral::handle(&fb);
     return;
 
 	let args: Vec<String> = env::args().collect();   
@@ -74,11 +75,15 @@ fn main() {
         "colfind-construction"=>{
             colfind::construction_vs_query::handle(&fb);
         }
+        "colfind-float-integer"=>{
+            colfind::float_vs_integer::handle(&fb);
+        }
         "nbody"=>{
             nbody::theory::handle(&fb);
         }
 
         "all"=>{
+            colfind::float_vs_integer::handle(&fb);
             colfind::theory_colfind::handle(&fb);
             colfind::theory_colfind_3d::handle(&fb);
             colfind::height_heur_comparison::handle(&fb);

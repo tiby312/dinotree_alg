@@ -107,8 +107,6 @@ fn handle1(fb:&FigureBuilder){
         for num_bots in (0..20000usize).step_by(1000){
             let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
-
-            //let mut bots:Vec<Bot>=(0..num_bots).map(|a|Bot{num:0}).collect();
             let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{
                 let pos=[pos[0] as isize,pos[1] as isize];
                 Bot{num:0,pos}
@@ -209,7 +207,7 @@ fn handle2(fb:&FigureBuilder){
     
     fg.axes2d()
         .set_pos_grid(2,1,0)
-        .set_title("Querying Bench Over Total Bench with a 20000 objects", &[])
+        .set_title("Querying Bench Over Total Bench with 20000 objects", &[])
         .lines(x.clone(), y1,  &[Caption("Sequential"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Parallel"), Color("green"), LineWidth(2.0)])
         .set_x_label("Grow", &[])

@@ -79,10 +79,22 @@ macro_rules! f64n {
     };
 }
 
-pub type F64n=NotNan<f64>;
 
-pub struct Conv;
-impl Conv{
+
+macro_rules! f32n {
+    ( $x:expr  ) => {
+        {
+            NotNan::new($x).unwrap()
+        }
+    };
+}
+
+
+pub type F64n=NotNan<f64>;
+pub type F32n=NotNan<f32>;
+
+pub struct ConvF64;
+impl ConvF64{
 
     pub fn point_to_inner(a:[F64n;2])->[f64;2]{
         //TODO safe to use transmute?
@@ -101,6 +113,34 @@ impl Conv{
         let ((a,b),(c,d))=rect.get();
         Rect::new(NotNan::unchecked_new(a),NotNan::unchecked_new(b),NotNan::unchecked_new(c),NotNan::unchecked_new(d))
     }
+}
+
+pub struct ConvF32;
+impl ConvF32{
+
+    pub fn point_to_inner(a:[F32n;2])->[f32;2]{
+        //TODO safe to use transmute?
+        [a[0].into_inner(),a[1].into_inner()]
+    }
+    pub fn rect_to_inner(rect:Rect<F32n>)->Rect<f32>{
+        let ((a,b),(c,d))=rect.get();
+        Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
+    }
+
+    pub fn from_rect(rect:Rect<f32>)->Rect<F32n>{
+        let ((a,b),(c,d))=rect.get();
+        Rect::new(f32n!(a),f32n!(b),f32n!(c),f32n!(d))
+    }
+    pub unsafe fn from_rect_unchecked(rect:Rect<f32>)->Rect<F32n>{
+        let ((a,b),(c,d))=rect.get();
+        Rect::new(NotNan::unchecked_new(a),NotNan::unchecked_new(b),NotNan::unchecked_new(c),NotNan::unchecked_new(d))
+    }
+}
+
+
+
+pub fn aabb_from_pointf32(p:[f32;2],r:[f32;2])->Rect<f32>{
+    Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
 }
 
 
