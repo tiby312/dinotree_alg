@@ -50,25 +50,6 @@ use ordered_float::NotNan;
 
 
 
-pub struct ColorGenerator{
-    rgb:[u8;3]
-}
-impl ColorGenerator{
-    pub fn new()->ColorGenerator{
-        ColorGenerator{rgb:[50,100,200]}
-    }
-}
-
-impl std::iter::FusedIterator for ColorGenerator{}
-impl Iterator for ColorGenerator{
-    type Item=[u8;3];
-    fn next(&mut self)->Option<Self::Item>{
-        self.rgb[0]=((self.rgb[0] as usize + 1) % 256) as u8;
-        self.rgb[1]=((self.rgb[1] as usize + 1) % 256) as u8;
-        self.rgb[2]=((self.rgb[2] as usize + 1) % 256) as u8;
-        Some(self.rgb)
-    }
-}
 
 
 macro_rules! f64n {
@@ -96,15 +77,6 @@ pub type F32n=NotNan<f32>;
 pub struct ConvF64;
 impl ConvF64{
 
-    pub fn point_to_inner(a:[F64n;2])->[f64;2]{
-        //TODO safe to use transmute?
-        [a[0].into_inner(),a[1].into_inner()]
-    }
-    pub fn rect_to_inner(rect:Rect<F64n>)->Rect<f64>{
-        let ((a,b),(c,d))=rect.get();
-        Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
-    }
-
     pub fn from_rect(rect:Rect<f64>)->Rect<F64n>{
         let ((a,b),(c,d))=rect.get();
         Rect::new(f64n!(a),f64n!(b),f64n!(c),f64n!(d))
@@ -118,19 +90,7 @@ impl ConvF64{
 pub struct ConvF32;
 impl ConvF32{
 
-    pub fn point_to_inner(a:[F32n;2])->[f32;2]{
-        //TODO safe to use transmute?
-        [a[0].into_inner(),a[1].into_inner()]
-    }
-    pub fn rect_to_inner(rect:Rect<F32n>)->Rect<f32>{
-        let ((a,b),(c,d))=rect.get();
-        Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
-    }
 
-    pub fn from_rect(rect:Rect<f32>)->Rect<F32n>{
-        let ((a,b),(c,d))=rect.get();
-        Rect::new(f32n!(a),f32n!(b),f32n!(c),f32n!(d))
-    }
     pub unsafe fn from_rect_unchecked(rect:Rect<f32>)->Rect<F32n>{
         let ((a,b),(c,d))=rect.get();
         Rect::new(NotNan::unchecked_new(a),NotNan::unchecked_new(b),NotNan::unchecked_new(c),NotNan::unchecked_new(d))

@@ -26,7 +26,7 @@ fn handle1(fb:&FigureBuilder){
         });
 
         let mut num_intersection=0;
-        colfind::query_seq_mut(&mut tree,|a, b| {
+        colfind::query_seq_mut(&mut tree,|_a, _b| {
            num_intersection+=1;
         });
 
@@ -59,7 +59,7 @@ fn handle2(fb:&FigureBuilder){
 
     	let s=dists::spiral::Spiral::new([0.0,0.0],17.0,grow);
 
-	    let mut bots:Vec<[f64;2]>=s.take(num_bots).collect();
+	    let bots:Vec<[f64;2]>=s.take(num_bots).collect();
     	bots
     };
 

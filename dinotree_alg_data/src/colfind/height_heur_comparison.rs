@@ -12,15 +12,17 @@ pub struct Bot{
 
 #[derive(Debug)]
 struct Record {
-    num_bots_per_node: usize,
+    height: usize,
     num_comparison: usize
 }
 
 #[derive(Debug)]
 struct BenchRecord {
-    num_bots_per_node: usize,
+    height: usize,
     bench: f64
 }
+
+
 
 
 
@@ -39,18 +41,22 @@ pub fn handle(fb:&FigureBuilder){
     }).collect();
     
 
+
     struct Heur{
-        num_bots_per_node:usize,
+        //num_bots_per_node:usize,
+        height:usize
     }
 
     impl TreeHeightHeur for Heur{
+        //Always return the height specified. This is meant to be used only for this test.
         fn compute_tree_height_heuristic(&self,num_bots:usize)->usize{
-            compute_tree_height_heuristic_debug(num_bots,self.num_bots_per_node)
+            self.height
+            //compute_tree_height_heuristic_debug(num_bots,self.num_bots_per_node)
         }
     }
 
-    for i in (1..200){
-        let heur=Heur{num_bots_per_node:i};
+    for i in (1..10){
+        let heur=Heur{height:i};
     
         let c1={
             let mut counter=datanum::Counter::new();
@@ -72,11 +78,11 @@ pub fn handle(fb:&FigureBuilder){
             counter.into_inner()
         };
 
-        theory_records.push(Record{num_bots_per_node:i,num_comparison:c1});
+        theory_records.push(Record{height:i,num_comparison:c1});
     }
 
-    for i in (1..200){
-        let heur=Heur{num_bots_per_node:i};
+    for i in (1..10){
+        let heur=Heur{height:i};
     
         let c1={
             
@@ -98,13 +104,13 @@ pub fn handle(fb:&FigureBuilder){
 
         };
 
-        bench_records.push(BenchRecord{num_bots_per_node:i,bench:c1});
+        bench_records.push(BenchRecord{height:i,bench:c1});
     }
 
     {
         let rects=&mut theory_records;
         use gnuplot::*;
-        let x=rects.iter().map(|a|a.num_bots_per_node);
+        let x=rects.iter().map(|a|a.height);
         let y=rects.iter().map(|a|a.num_comparison);
 
         let mut fg = fb.new("colfind_height_heuristic");
@@ -113,21 +119,21 @@ pub fn handle(fb:&FigureBuilder){
             .set_pos_grid(2,1,0)
             .set_title("Number of Comparisons with 10,000 objects in a dinotree with different numbers of objects per node", &[])
             .lines(x, y,  &[Color("blue"), LineWidth(2.0)])
-            .set_x_label("Number of Objects Per Node", &[])
+            .set_x_label("Tree Height", &[])
             .set_y_label("Number of Comparisons", &[]);
 
      
     
     
-        let x=bench_records.iter().map(|a|a.num_bots_per_node);
+        let x=bench_records.iter().map(|a|a.height);
         let y=bench_records.iter().map(|a|a.bench);
 
 
         fg.axes2d()
             .set_pos_grid(2,1,1)
-            .set_title("Bench times with 10,000 objects in a dinotree with different numbers of objects per node", &[])
+            .set_title("Bench times with 10,000 objects in a dinotree with different numbers of objects per node (seq,colfind)", &[])
             .lines(x, y,  &[Color("blue"), LineWidth(2.0)])
-            .set_x_label("Number of Objects Per Node", &[])
+            .set_x_label("Tree Height", &[])
             .set_y_label("Time in seconds", &[]);
 
         fg.show();

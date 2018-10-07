@@ -20,7 +20,7 @@ fn test1(bots:&mut [Bot])->Res{
     });
 
     let mut num_pairs=0;
-    colfind::query_seq_mut(&mut tree,|a, b| {
+    colfind::query_seq_mut(&mut tree,|_a, _b| {
         num_pairs+=1;
     });
 
@@ -40,7 +40,7 @@ fn test2(bots:&mut [Bot])->Res{
     
 
     let mut num_pairs=0;
-    colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a, b| {
+    colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|_a, _b| {
         num_pairs+=1;
     });
     
@@ -66,7 +66,7 @@ fn test3(bots:&mut [Bot])->Res{
     
 
     let mut num_pairs=0;
-    colfind::query_naive_mut(&mut bb,|a, b| {
+    colfind::query_naive_mut(&mut bb,|_a, _b| {
         num_pairs+=1;
     });
     

@@ -56,7 +56,7 @@ impl dinotree_geom::GravityTrait for Bot{
 
 
 fn generate_bot_from_spiral(spiral:&dists::spiral::Spiral,num_bots:usize)->Vec<Bot>{
-    let mut bots:Vec<Bot>=spiral.take(num_bots).map(|pos|{
+    let bots:Vec<Bot>=spiral.take(num_bots).map(|pos|{
                 let pos=[pos[0] ,pos[1] ];
                 let vel=[0.0;2];
                 let force=[0.0;2];
@@ -292,7 +292,7 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
         let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
             b.create_aabb()
         });
-        let a=f64n!(0.0);
+        let _a=f64n!(0.0);
         let mut tree=tree.with_extra(go::NodeMass::new());
 
         
@@ -317,7 +317,7 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
         let mut tree=DynTree::new(axgeom::XAXISS,(),bots,|b|{
             b.create_aabb()
         });
-        let a=f64n!(0.0);
+        let _a=f64n!(0.0);
         let mut tree=tree.with_extra(go::NodeMass::new());
 
         
@@ -361,7 +361,7 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
         let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
             b.create_aabb()
         });
-        let a=f64n!(0.0);
+        let _a=f64n!(0.0);
         let mut tree=tree.with_extra(go::NodeMass::new());
 
         
@@ -387,8 +387,8 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
             let dis_sqr2=b.force[0]*b.force[0]+b.force[1]*b.force[1];
             let dis1=dis_sqr1.sqrt();
             let dis2=dis_sqr2.sqrt();
-            let acc_dis1=dis1;///a.mass;
-            let acc_dis2=dis2;///a.mass;
+            let acc_dis1=dis1;// /a.mass;
+            let acc_dis2=dis2;// /a.mass;
 
             let diff=(acc_dis1-acc_dis2).abs();
             
@@ -420,10 +420,10 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
             let dis_sqr2=b.force[0]*b.force[0]+b.force[1]*b.force[1];
             let dis1=dis_sqr1.sqrt();
             let dis2=dis_sqr2.sqrt();
-            let acc_dis1=dis1;///a.mass;
-            let acc_dis2=dis2;///a.mass;
+            let acc_dis1=dis1;// /a.mass;
+            let acc_dis2=dis2;// /a.mass;
 
-            let diff=(acc_dis1-acc_dis2).abs();
+            let _diff=(acc_dis1-acc_dis2).abs();
             
             
             let error:f64=(acc_dis2-acc_dis1).abs()/acc_dis2;

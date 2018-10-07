@@ -35,7 +35,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
     for num_bots in (0..80000).step_by(200){
         let s2=s.clone();
 
-        let mut bots:Vec<Bot>=s2.take(num_bots).enumerate().map(|(e,pos)|{
+        let mut bots:Vec<Bot>=s2.take(num_bots).enumerate().map(|(_e,pos)|{
             let pos=[pos[0] as isize,pos[1] as isize];
             Bot{num:0,pos}
         }).collect();

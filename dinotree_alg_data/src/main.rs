@@ -13,7 +13,6 @@ mod inner_prelude{
     pub(crate) use FigureBuilder;
     pub use support::*;
     pub use dinotree_alg::colfind;
-    pub(crate) use std;
     pub use dinotree_inner::*;
     pub(crate) use axgeom;
     pub(crate) use datanum;
@@ -41,27 +40,23 @@ pub struct FigureBuilder{
 impl FigureBuilder{
     fn new(&self,filename:&str)->Figure{
         let mut fg=Figure::new();
-        let ss=format!("graphs/{}.png",filename);
+        let ss=format!("target/graphs/{}.png",filename);
         fg.set_terminal("pngcairo size 1024, 768",&ss);
         fg
     }
 }
 fn main() {
-
-
     let fb=FigureBuilder{};
-    spiral::handle(&fb);
-    return;
 
 	let args: Vec<String> = env::args().collect();   
-    let area=[1024u32,768];
+    let _area=[1024u32,768];
 
     if args.len()!=2{
         println!("valid arguments are \"bench-colfind\" \"theory-colfind\" \"theory-colfind-3d\" \"theory-sweep-3d\" ");
         return;
     }
 
-    let mut curr=match args[1].trim(){
+    let _curr=match args[1].trim(){
         "colfind"=>{
             colfind::theory_colfind::handle(&fb);
         },
@@ -81,8 +76,11 @@ fn main() {
         "nbody"=>{
             nbody::theory::handle(&fb);
         }
-
+        "spiral"=>{
+            spiral::handle(&fb);
+        }
         "all"=>{
+            spiral::handle(&fb);
             colfind::float_vs_integer::handle(&fb);
             colfind::theory_colfind::handle(&fb);
             colfind::theory_colfind_3d::handle(&fb);
