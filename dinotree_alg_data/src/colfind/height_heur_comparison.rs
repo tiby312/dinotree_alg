@@ -76,8 +76,8 @@ pub fn create_bots(num_bots:usize)->Vec<Bot>{
 
 
 pub fn handle(fb:&FigureBuilder){
-    //handle2d(fb);
-    //handle3d(fb);
+    handle2d(fb);
+    handle3d(fb);
     handle_lowest(fb);
 }
 
@@ -158,14 +158,14 @@ fn handle_lowest(fb:&FigureBuilder){
     let x=benches.iter().map(|a|a.num_bots);
     let y=benches.iter().map(|a|a.height);
 
-    let mut fg = fb.new("colfind_height_heuristic_3d");
+    let mut fg = fb.new("colfind_optimal_height_vs_heuristic_height");
 
 
 
     let heur={
         let mut vec=Vec::new();
         for num_bots in its.clone(){
-            let height=compute_tree_height_heuristic_debug(num_bots,20);
+            let height=compute_tree_height_heuristic(num_bots);
             vec.push((num_bots,height));
         }
         vec
@@ -175,7 +175,7 @@ fn handle_lowest(fb:&FigureBuilder){
     let heury=heur.iter().map(|a|a.1);
 
     fg.axes2d()
-        .set_title("Dinotree Colfind query bench times", &[])
+        .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height.", &[])
         .set_x_label("Num bots", &[])
         .set_y_label("Best Tree Height", &[])
         .points(x, y,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
@@ -188,7 +188,7 @@ fn handle_lowest(fb:&FigureBuilder){
         for num_bots in its.clone(){
             let mut bots=create_bots(num_bots);
         
-            let b=handle_bench_inner(&mut bots,compute_tree_height_heuristic_debug(num_bots,220));
+            let b=handle_bench_inner(&mut bots,compute_tree_height_heuristic(num_bots));
             vals.push(b);
         }    
 
@@ -196,10 +196,10 @@ fn handle_lowest(fb:&FigureBuilder){
         let y1=benches.iter().map(|a|a.bench);
         let y2=vals.iter();
         
-        let mut fg = fb.new("colfind_heuristic_vs_optimal");
+        let mut fg = fb.new("colfind_heuristic_bench_vs_optimal_bench");
 
         fg.axes2d()
-        .set_title("Dinotree Colfind query bench times", &[])
+        .set_title("Dinotree Colfind Query Bench Times: Optimal vs Heuristic", &[])
         .set_x_label("Num bots", &[])
         .set_y_label("Best Tree Height", &[])
         .points(x.clone(), y1,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])

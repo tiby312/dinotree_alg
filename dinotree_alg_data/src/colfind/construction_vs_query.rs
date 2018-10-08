@@ -215,7 +215,7 @@ fn handle2(fb:&FigureBuilder){
 
     fg.axes2d()
         .set_pos_grid(2,1,1)
-        .set_title("Querying Bench Over Total Bench with a 20000 objects", &[])
+        .set_title("Querying Comparisons Over Total Comparisons with a 20000 objects", &[])
         .lines(x.clone(), y3,  &[Caption("Sequential"), Color("blue"), LineWidth(2.0)])
         .set_x_label("Grow", &[])
         .set_y_label("Query/Total Time", &[]);
