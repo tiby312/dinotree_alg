@@ -188,7 +188,7 @@ fn handle_lowest(fb:&FigureBuilder){
         for num_bots in its.clone(){
             let mut bots=create_bots(num_bots);
         
-            let b=handle_bench_inner(&mut bots,compute_tree_height_heuristic(num_bots));
+            let b=handle_bench_inner(&mut bots,compute_tree_height_heuristic_debug(num_bots,220));
             vals.push(b);
         }    
 
