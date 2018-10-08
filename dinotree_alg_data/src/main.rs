@@ -37,6 +37,7 @@ use std::env;
 use gnuplot::*;
 pub struct FigureBuilder{
 }
+
 impl FigureBuilder{
     fn new(&self,filename:&str)->Figure{
         let mut fg=Figure::new();
@@ -45,6 +46,7 @@ impl FigureBuilder{
         fg
     }
 }
+
 fn main() {
     let fb=FigureBuilder{};
 

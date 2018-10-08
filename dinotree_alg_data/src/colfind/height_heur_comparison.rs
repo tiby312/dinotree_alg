@@ -12,28 +12,13 @@ pub struct Bot{
 
 pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
 
-    struct Heur{
-        //num_bots_per_node:usize,
-        height:usize
-    }
-
-    impl TreeHeightHeur for Heur{
-        //Always return the height specified. This is meant to be used only for this test.
-        fn compute_tree_height_heuristic(&self,num_bots:usize)->usize{
-            self.height
-            //compute_tree_height_heuristic_debug(num_bots,self.num_bots_per_node)
-        }
-    }
-
-    let heur=Heur{height};
-
     let c1={
         
         let instant=Instant::now();
     
         let mut tree=DynTree::with_debug_seq(axgeom::XAXISS,(),bots,|b|{
             aabb_from_point_isize(b.pos,[5,5]) 
-        },heur).0;
+        },height).0;
 
         colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.num+=2;
@@ -53,20 +38,6 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
 
 pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
     
-    struct Heur{
-        //num_bots_per_node:usize,
-        height:usize
-    }
-
-    impl TreeHeightHeur for Heur{
-        //Always return the height specified. This is meant to be used only for this test.
-        fn compute_tree_height_heuristic(&self,num_bots:usize)->usize{
-            self.height
-            //compute_tree_height_heuristic_debug(num_bots,self.num_bots_per_node)
-        }
-    }
-
-    let heur=Heur{height};
     
     let c1={
         let mut counter=datanum::Counter::new();
@@ -74,7 +45,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
 
         let mut tree=DynTree::with_debug_seq(axgeom::XAXISS,(),bots,|b|{
             datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-        },heur).0;
+        },height).0;
 
         colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.num+=2;
@@ -193,6 +164,7 @@ fn handle_lowest(fb:&FigureBuilder){
         let mut vec=Vec::new();
         for num_bots in its{
             let height=compute_tree_height_heuristic_debug(num_bots,220);
+            //let height=compute_tree_height_heuristic_debug(num_bots,20);
             vec.push((num_bots,height));
         }
         vec
