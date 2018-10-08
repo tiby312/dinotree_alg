@@ -117,10 +117,12 @@ fn handle3d(fb:&FigureBuilder){
     fg.show();
 }
 
+
 fn handle_lowest(fb:&FigureBuilder){
 
     struct BenchRecord{
         height:usize,
+        bench:f64,
         num_bots:usize,
     }
     let mut benches:Vec<BenchRecord>=Vec::new();
@@ -146,8 +148,8 @@ fn handle_lowest(fb:&FigureBuilder){
             }
         }
         match minimum{
-            Some((min,height))=>{
-                benches.push(BenchRecord{height,num_bots});
+            Some((bench,height))=>{
+                benches.push(BenchRecord{height,num_bots,bench});
             },
             None=>{}
         }
@@ -162,9 +164,8 @@ fn handle_lowest(fb:&FigureBuilder){
 
     let heur={
         let mut vec=Vec::new();
-        for num_bots in its{
-            let height=compute_tree_height_heuristic_debug(num_bots,220);
-            //let height=compute_tree_height_heuristic_debug(num_bots,20);
+        for num_bots in its.clone(){
+            let height=compute_tree_height_heuristic_debug(num_bots,20);
             vec.push((num_bots,height));
         }
         vec
@@ -180,8 +181,34 @@ fn handle_lowest(fb:&FigureBuilder){
         .points(x, y,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
         .lines(heurx,heury,&[Caption("Heuristic")]);
 
-
     fg.show();
+
+    {
+        let mut vals=Vec::new();
+        for num_bots in its.clone(){
+            let mut bots=create_bots(num_bots);
+        
+            let b=handle_bench_inner(&mut bots,compute_tree_height_heuristic(num_bots));
+            vals.push(b);
+        }    
+
+        let x=benches.iter().map(|a|a.num_bots);
+        let y1=benches.iter().map(|a|a.bench);
+        let y2=vals.iter();
+        
+        let mut fg = fb.new("colfind_heuristic_vs_optimal");
+
+        fg.axes2d()
+        .set_title("Dinotree Colfind query bench times", &[])
+        .set_x_label("Num bots", &[])
+        .set_y_label("Best Tree Height", &[])
+        .points(x.clone(), y1,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
+        .points(x, y2,  &[Caption("Dinotree"),PointSymbol('O'), Color("red"), PointSize(1.0)]); 
+        fg.show();
+    
+    }
+
+
 }
 
 fn handle2d(fb:&FigureBuilder){
