@@ -227,10 +227,11 @@ fn recurse<
                 let a=ta.0.add(tb.0);
                 (a,ta.1, tb.1)
             } else {
-                let (clos,ta) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,ta,);
-                let (clos,tb) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,tb,);
-
-                (clos,ta, tb)
+                let (mut aa,mut bb)=clos.div();
+                let ta = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,aa,ta,);
+                let tb = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,bb,tb,);
+                let a=ta.0.add(tb.0);
+                (a,ta.1, tb.1)
             };
 
             let b=K::combine(ta, tb);
