@@ -25,6 +25,7 @@ use inner_prelude::*;
 use oned;
 use compt::timer::TreeTimer2;
 use compt::timer::TreeTimeResultIterator;
+
 ///Naive algorithm.
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,|a,b|{
@@ -61,16 +62,10 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
     impl<T:HasAabb,F: FnMut(&mut T,&mut T)> ColMulti for Bl<T,F> {
         type T = T;
-
         fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {    
             (self.func)(a, b);
         }
-        fn div(self)->(Self,Self){
-            unreachable!();
-        }
-        fn add(self,_:Self)->Self{
-            unreachable!();
-        }   
+       
     }
 
     let mut s=oned::Sweeper::new();
@@ -178,25 +173,24 @@ fn recurse<
     A: AxisTrait,
     JJ: par::Joiner,
     X: HasAabb + Send ,
-    F: ColMulti<T = X>+Send,
-    K: TreeTimerTrait
+    F: ColMulti<T = X>+Splitter+Send,
+    K:Splitter+Send
 >(
     this_axis: A,
     par: JJ,
     sweeper:&mut oned::Sweeper<F::T>,
     m: LevelIter<NdIterMut<(),X>>,
     mut clos: F,
-    mut timer_log: K
-) -> (F,K::Bag) {
-    timer_log.start();
-
+    splitter:K
+) -> (F,K) {
+    
     let((depth,nn),rest)=m.next();
 
     match rest{
         Some((extra,mut left,mut right))=>{
             let &FullComp{div,cont}=match extra{
                 Some(d)=>d,
-                None=>return (clos,timer_log.leaf_finish())
+                None=>return (clos,splitter) //TODO is this okay?
             };
             
 
@@ -210,47 +204,39 @@ fn recurse<
                 self::go_down(this_axis.next(), sweeper, &mut nn, left, &mut clos,);
                 self::go_down(this_axis.next(), sweeper, &mut nn, right, &mut clos);
             }
-            let (ta, tb) = timer_log.next();
 
-            let (clos,ta, tb) = if !par.should_switch_to_sequential(depth) {
-                let (mut aa,mut bb)=clos.div();
-
+            if !par.should_switch_to_sequential(depth) {
+                let (splitter1,splitter2)=splitter.div(IsParallel::Parallel);
+                let (clos1,clos2)=clos.div(IsParallel::Parallel);
                 let af = || {
-                    self::recurse(this_axis.next(),par,sweeper,left,aa,ta)
+                    self::recurse(this_axis.next(),par,sweeper,left,clos1,splitter1)
                 };
                 let bf = || {
                     let mut sweeper = oned::Sweeper::new();
-                    self::recurse(this_axis.next(),par,&mut sweeper,right,bb,tb)
+                    self::recurse(this_axis.next(),par,&mut sweeper,right,clos2,splitter2)
                 };
-                let (ta, tb) = rayon::join(af, bf);
-
-                let a=ta.0.add(tb.0);
-                (a,ta.1, tb.1)
+                let ((clos1,splitter1), (clos2,splitter2)) = rayon::join(af, bf);
+                let clos=clos1.add(clos2,IsParallel::Parallel);
+                let splitter=splitter1.add(splitter2,IsParallel::Parallel);
+                (clos,splitter)
             } else {
-                let (mut aa,mut bb)=clos.div();
-                let ta = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,aa,ta,);
-                let tb = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,bb,tb,);
-                let a=ta.0.add(tb.0);
-                (a,ta.1, tb.1)
-            };
-
-            let b=K::combine(ta, tb);
-            (clos,b)
-
+                let (splitter1,splitter2)=splitter.div(IsParallel::Sequential);
+                let (clos,splitter1) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,splitter1);
+                let (clos,splitter2) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,splitter2);
+                (clos,splitter1.add(splitter2,IsParallel::Sequential))
+            }
         },
         None=>{
             sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
-            (clos,timer_log.leaf_finish())
+            (clos,splitter) //TODO is this okay?
         }
     }
 }
 
 
-pub(crate) trait ColMulti:Sized {
+pub trait ColMulti:Sized {
     type T: HasAabb;
     fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
-    fn div(self)->(Self,Self);
-    fn add(self,b:Self)->Self;
 }
 
 struct ColMultiWrapper<'a, C: ColMulti + 'a>(pub &'a mut C);
@@ -259,12 +245,6 @@ impl<'a, C: ColMulti + 'a> ColMulti for ColMultiWrapper<'a, C> {
     type T = C::T;
     fn collide(&mut self, a:&mut Self::T, b: &mut Self::T) {
         self.0.collide(a, b);
-    }
-    fn div(self)->(Self,Self){
-        unreachable!();
-    }
-    fn add(self,_:Self)->Self{
-        unreachable!();
     }
 }
 
@@ -282,7 +262,7 @@ mod todo{
     }
 }
 
-
+/*
 ///Debug Sequential
 pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T))->TreeTimeResultIterator{
     let height=tree.get_height();
@@ -293,8 +273,10 @@ pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func
 pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
     let _ = query_seq_mut_inner(tree,func,TreeTimerEmpty);
 }
+*/
 
-fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerTrait>(tree:&mut DynTree<A,(),T>,mut func:F,h:K)->K::Bag{
+/*
+fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T)>(tree:&mut DynTree<A,(),T>,mut func:F,h:K)->K::Bag{
 
     mod wrap{
         //Use this to get rid of Send trait constraint.
@@ -328,12 +310,6 @@ fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerT
             fn collide(&mut self, a: &mut Wrap<T>, b: &mut Wrap<T>) {
                 self.0(&mut a.0,&mut b.0);
             }
-            fn div(self)->(Self,Self){
-                unreachable!();
-            }
-            fn add(self,_b:Self)->Self{
-                unreachable!();
-            }
         }
 
         //Unsafely implement send and Sync
@@ -356,12 +332,12 @@ fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T),K:TreeTimerT
     self::query_par_adv_mut(
         par::Sequential,
         tree,
-        h,
         wrap,
     ).1
     
 }
-
+*/
+/*
 ///Debug Parallel
 pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send)->TreeTimeResultIterator{
     
@@ -393,106 +369,153 @@ pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,fun
         clos,
     ).1.into_iter()
 }
+*/
 
-///Parallel
+
+
+
+///Sequential
+pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
+    struct Bo<T,F>(F,PhantomData<T>);
+    impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for Bo<T,F>{
+        type T=T;
+        fn collide(&mut self,a:&mut T,b:&mut T){
+            self.0(a,b);
+        }   
+    }
+    impl<T,F> Splitter for Bo<T,F>{
+        fn div(self,a:IsParallel)->(Self,Self){
+            unreachable!()
+        }
+        fn add(self,a:Self,b:IsParallel)->Self{
+            unreachable!()
+        }
+    }
+
+    let b=Bo(func,PhantomData);
+
+    query_seq_adv_mut(tree,b,SplitterEmpty);
+}
 pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+    struct Bo<T,F>(F,PhantomData<T>);
+    impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for Bo<T,F>{
+        type T=T;
+        fn collide(&mut self,a:&mut T,b:&mut T){
+            self.0(a,b);
+        }   
+    }
+    impl<T,F:Copy> Splitter for Bo<T,F>{
+        fn div(self,a:IsParallel)->(Self,Self){
+            let b=Bo(self.0,PhantomData);
+            (self,b)
+        }
+        fn add(self,a:Self,b:IsParallel)->Self{
+            self
+        }
+    }
 
-    let c1=move |_:&mut (),a:&mut T,b:&mut T|{
-        func(a,b);
-    };
+    let b=Bo(func,PhantomData);
 
-    let c2=|_:()|((),());
-    let c3=|_:(),_:()|();
-
-    let clos = self::closure_struct::ColMultiStruct{aa
-        :(),a:c1,f2:c2,f3:c3,_p:PhantomData};
-
-
-
-    const DEPTH_SEQ:usize=4;
-
-    let height=tree.get_height();
-    let gg=if height<=DEPTH_SEQ{
-        Depth(0)
-    }else{
-        Depth(height-DEPTH_SEQ)
-    };
-
-    self::query_par_adv_mut(
-        par::Parallel::new(gg),
-        tree,
-        TreeTimerEmpty,
-        clos,
-    );        
+    query_seq_adv_mut(tree,b,SplitterEmpty);
 }
 
-///The user has more control using this version of the query.
-///It also returns time information.
-fn query_par_adv_mut<
+
+pub fn query_seq_adv_mut<
     A: AxisTrait,
-    JJ: par::Joiner,
-    T: HasAabb+Send,
-    F: ColMulti<T = T>+Send,
-    K: TreeTimerTrait,
->(
-    par: JJ,
+    T: HasAabb,
+    F: ColMulti<T = T>,
+    K:Splitter>(    
     kdtree: &mut DynTree<A,(), T>,
-    h:K,
     clos: F,
-) -> (F,K::Bag) {
+    splitter:K
+)->(F,K){
+  
+
+    mod wrap{
+        //Use this to get rid of Send trait constraint.
+        #[repr(transparent)]
+        pub struct Wrap<T:HasAabb>(T);
+        unsafe impl<T:HasAabb> Send for Wrap<T>{}
+        unsafe impl<T:HasAabb> Sync for Wrap<T>{}
+        unsafe impl<T:HasAabb> HasAabb for Wrap<T>{
+            type Num=T::Num;
+            fn get(&self)->&Rect<Self::Num>{
+                self.0.get()
+            }
+        }
+
+
+        use super::*;
+        pub struct Wrapper<T, F>(
+            pub F,
+            pub PhantomData<T>,
+        );
+
+        impl<T: HasAabb, F: ColMulti<T=T>> self::ColMulti for Wrapper<T, F> {
+            type T = Wrap<T>;
+            fn collide(&mut self, a: &mut Wrap<T>, b: &mut Wrap<T>) {
+                self.0.collide(&mut a.0,&mut b.0);
+            }
+
+       
+        }
+        impl<T,F> Splitter for Wrapper<T,F>{
+            fn div(self,p:IsParallel)->(Self,Self){
+                unreachable!()
+            }
+            fn add(self,a:Self,p:IsParallel)->Self{
+                unreachable!()
+            }
+        }
+
+        //Unsafely implement send and Sync
+        //Safe to do since our algorithms first clone this struct before
+        //passing it to another thread. This sadly has to be indiviually
+        //verified.
+        unsafe impl<T, F> Send for Wrapper<T, F>{}
+        unsafe impl<T, F> Sync for Wrapper<T, F>{}
+    }
+
+
+    let clos=wrap::Wrapper(clos,PhantomData);
+    let splitter:wrap::Wrapper<T,K>=wrap::Wrapper(splitter,PhantomData);
+    let kdtree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
+
     let this_axis=kdtree.get_axis();
     let dt = kdtree.get_iter_mut().with_depth(Depth(0));
     let mut sweeper = oned::Sweeper::new();
 
-    let bag = self::recurse(this_axis, par, &mut sweeper, dt, clos, h);
-    bag
+    let (a,b)=self::recurse(this_axis, par::Sequential, &mut sweeper, dt, clos,splitter);
+    (a.0,b.0)
 }
 
+///The user has more control using this version of the query.
+///It also returns time information.
+pub fn query_par_adv_mut<
+    A: AxisTrait,
+    T: HasAabb+Send,
+    F: ColMulti<T = T>+Splitter+Send,
+    K: Splitter+Send
+>(
+    kdtree: &mut DynTree<A,(), T>,
+    clos: F,
+    splitter:K
+) -> (F,K) {
+    let par={
+        const DEPTH_SEQ:usize=4;
 
-mod closure_struct {
-    use super::*;
+        let height=kdtree.get_height();
+        let gg=if height<=DEPTH_SEQ{
+            Depth(0)
+        }else{
+            Depth(height-DEPTH_SEQ)
+        };
+        par::Parallel::new(gg)
+    };
 
-    pub struct ColMultiStruct<
-        A:Send,
-        T: HasAabb,
-        F: Fn(&mut A,&mut T, &mut T) + Send + Copy ,
-        F2:Fn(A)->(A,A)+Copy,
-        F3:Fn(A,A)->A+Copy
-    > {
-        pub a: F,
-        pub f2: F2,
-        pub f3: F3,
-        pub aa:A,
-        pub _p: PhantomData<(T)>,
-    }
+    let this_axis=kdtree.get_axis();
+    let dt = kdtree.get_iter_mut().with_depth(Depth(0));
+    let mut sweeper = oned::Sweeper::new();
 
-
-    impl<
-        A:Send+Sync,
-        T: HasAabb,
-        F: Fn(&mut A,&mut T, &mut T) + Send + Copy,
-        F2:Fn(A)->(A,A)+Copy,
-        F3:Fn(A,A)->A+Copy
-    > ColMulti for ColMultiStruct<A,T,  F,F2,F3>
-    {
-        type T = T;
-    
-        fn collide(&mut self,a: &mut T, b: &mut T) {
-            (self.a)(&mut self.aa,a,b);
-        }
-        fn div(self)->(Self,Self){
-            let (aa1,aa2)=(self.f2)(self.aa);
-            
-            let c1=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa1,_p:PhantomData};
-            let c2=ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa2,_p:PhantomData};
-            (c1,c2)
-        }
-        fn add(self,b:Self)->Self{
-
-            let aa_n=(self.f3)(self.aa,b.aa);
-            
-            ColMultiStruct{a:self.a,f2:self.f2,f3:self.f3,aa:aa_n,_p:PhantomData}
-        }
-    }
+    self::recurse(this_axis, par, &mut sweeper, dt, clos,splitter)
 }
-

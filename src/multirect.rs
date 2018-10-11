@@ -115,12 +115,7 @@ pub fn collide_two_rect_parallel<
         fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
             (self.a)(a,b);
         }
-        fn div(self)->(Self,Self){
-            unreachable!();
-        }
-        fn add(self,_:Self)->Self{
-            unreachable!();
-        }
+
     }
 
     let ff=|a:&mut Wr<T>,b:&mut Wr<T>|{

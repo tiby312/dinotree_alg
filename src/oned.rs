@@ -18,13 +18,6 @@ impl<A: AxisTrait, F: ColMulti> ColMulti for Bl<A, F> {
             self.a.collide(a, b);
         }
     }
-    fn div(self)->(Self,Self){
-        unreachable!();
-    }
-    fn add(self,_:Self)->Self{
-        unreachable!();
-    }
-    
 }
 
 
