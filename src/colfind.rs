@@ -181,16 +181,25 @@ fn recurse<
     sweeper:&mut oned::Sweeper<F::T>,
     m: LevelIter<NdIterMut<(),X>>,
     mut clos: F,
-    splitter:K
+    mut splitter:K
 ) -> (F,K) {
-    
+
+
+    clos.node_start();
+    splitter.node_start();
+
     let((depth,nn),rest)=m.next();
 
+    //std::thread::sleep(std::time::Duration::from_millis(100));
     match rest{
         Some((extra,mut left,mut right))=>{
             let &FullComp{div,cont}=match extra{
                 Some(d)=>d,
-                None=>return (clos,splitter) //TODO is this okay?
+                None=>{
+                    clos.node_end();
+                    splitter.node_end();
+                    return (clos,splitter)
+                } //TODO is this okay?
             };
             
 
@@ -205,9 +214,10 @@ fn recurse<
                 self::go_down(this_axis.next(), sweeper, &mut nn, right, &mut clos);
             }
 
-            if !par.should_switch_to_sequential(depth) {
-                let (splitter1,splitter2)=splitter.div(IsParallel::Parallel);
-                let (clos1,clos2)=clos.div(IsParallel::Parallel);
+            let (splitter1,splitter2)=splitter.div();
+                
+            let (clos,splitter1,splitter2)=if !par.should_switch_to_sequential(depth) {
+                let (clos1,clos2)=clos.div();
                 let af = || {
                     self::recurse(this_axis.next(),par,sweeper,left,clos1,splitter1)
                 };
@@ -216,18 +226,20 @@ fn recurse<
                     self::recurse(this_axis.next(),par,&mut sweeper,right,clos2,splitter2)
                 };
                 let ((clos1,splitter1), (clos2,splitter2)) = rayon::join(af, bf);
-                let clos=clos1.add(clos2,IsParallel::Parallel);
-                let splitter=splitter1.add(splitter2,IsParallel::Parallel);
-                (clos,splitter)
+                let clos=clos1.add(clos2);
+                (clos,splitter1,splitter2)
             } else {
-                let (splitter1,splitter2)=splitter.div(IsParallel::Sequential);
                 let (clos,splitter1) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,splitter1);
                 let (clos,splitter2) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,splitter2);
-                (clos,splitter1.add(splitter2,IsParallel::Sequential))
-            }
+                (clos,splitter1,splitter2)
+            };
+
+            (clos,splitter1.add(splitter2))
         },
         None=>{
             sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
+            clos.node_end();
+            splitter.node_end();
             (clos,splitter) //TODO is this okay?
         }
     }
@@ -384,12 +396,14 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl 
         }   
     }
     impl<T,F> Splitter for Bo<T,F>{
-        fn div(self,a:IsParallel)->(Self,Self){
+        fn div(self)->(Self,Self){
             unreachable!()
         }
-        fn add(self,a:Self,b:IsParallel)->Self{
+        fn add(self,a:Self)->Self{
             unreachable!()
         }
+        fn node_start(&mut self){}
+        fn node_end(&mut self){}
     }
 
     let b=Bo(func,PhantomData);
@@ -405,13 +419,15 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl
         }   
     }
     impl<T,F:Copy> Splitter for Bo<T,F>{
-        fn div(self,a:IsParallel)->(Self,Self){
+        fn div(self)->(Self,Self){
             let b=Bo(self.0,PhantomData);
             (self,b)
         }
-        fn add(self,a:Self,b:IsParallel)->Self{
+        fn add(self,a:Self)->Self{
             self
         }
+        fn node_start(&mut self){}
+        fn node_end(&mut self){}
     }
 
     let b=Bo(func,PhantomData);
@@ -460,12 +476,14 @@ pub fn query_seq_adv_mut<
        
         }
         impl<T,F> Splitter for Wrapper<T,F>{
-            fn div(self,p:IsParallel)->(Self,Self){
+            fn div(self)->(Self,Self){
                 unreachable!()
             }
-            fn add(self,a:Self,p:IsParallel)->Self{
+            fn add(self,a:Self)->Self{
                 unreachable!()
             }
+            fn node_start(&mut self){}
+            fn node_end(&mut self){}
         }
 
         //Unsafely implement send and Sync
@@ -474,11 +492,31 @@ pub fn query_seq_adv_mut<
         //verified.
         unsafe impl<T, F> Send for Wrapper<T, F>{}
         unsafe impl<T, F> Sync for Wrapper<T, F>{}
+
+        pub struct SplitterWrapper<T>(
+            pub T,
+        );
+
+        impl<T:Splitter> Splitter for SplitterWrapper<T>{
+            fn div(self)->(Self,Self){
+                let (a,b)=self.0.div();
+                (SplitterWrapper(a),SplitterWrapper(b))
+            }
+            fn add(self,a:Self)->Self{
+                let a=self.0.add(a.0);
+                SplitterWrapper(a)
+            }
+            fn node_start(&mut self){self.0.node_start()}
+            fn node_end(&mut self){self.0.node_end()}
+        }        
+        unsafe impl<T> Send for SplitterWrapper<T>{}
+        unsafe impl<T> Sync for SplitterWrapper<T>{}
+
     }
 
 
     let clos=wrap::Wrapper(clos,PhantomData);
-    let splitter:wrap::Wrapper<T,K>=wrap::Wrapper(splitter,PhantomData);
+    let splitter=wrap::SplitterWrapper(splitter);
     let kdtree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
 
     let this_axis=kdtree.get_axis();

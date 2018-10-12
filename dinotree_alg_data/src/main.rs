@@ -50,6 +50,9 @@ impl FigureBuilder{
 fn main() {
     let fb=FigureBuilder{};
 
+    colfind::level_analysis::handle(&fb);
+    return;
+
 	let args: Vec<String> = env::args().collect();   
     let _area=[1024u32,768];
 

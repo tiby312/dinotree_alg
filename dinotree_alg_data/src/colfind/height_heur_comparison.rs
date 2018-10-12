@@ -16,9 +16,9 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
         
         let instant=Instant::now();
     
-        let mut tree=DynTree::with_debug_seq(axgeom::XAXISS,(),bots,|b|{
+        let mut tree=DynTree::new_adv_seq(axgeom::XAXISS,(),bots,|b|{
             aabb_from_point_isize(b.pos,[5,5]) 
-        },height).0;
+        },height,SplitterEmpty).0;
 
         colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.num+=2;
@@ -43,9 +43,9 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
         let mut counter=datanum::Counter::new();
 
 
-        let mut tree=DynTree::with_debug_seq(axgeom::XAXISS,(),bots,|b|{
+        let mut tree=DynTree::new_adv_seq(axgeom::XAXISS,(),bots,|b|{
             datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-        },height).0;
+        },height,SplitterEmpty).0;
 
         colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.num+=2;
