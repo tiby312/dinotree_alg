@@ -49,10 +49,7 @@ impl FigureBuilder{
 
 fn main() {
     let fb=FigureBuilder{};
-
-    colfind::level_analysis::handle(&fb);
-    return;
-
+    
 	let args: Vec<String> = env::args().collect();   
     let _area=[1024u32,768];
 
@@ -64,6 +61,7 @@ fn main() {
 
     let _curr=match args[1].trim(){
         "colfind"=>{
+            colfind::level_analysis::handle(&fb);
             colfind::theory_colfind::handle(&fb);
         },
         "colfind-3d"=>{
@@ -86,6 +84,7 @@ fn main() {
             spiral::handle(&fb);
         }
         "all"=>{
+            colfind::level_analysis::handle(&fb);
             spiral::handle(&fb);
             colfind::float_vs_integer::handle(&fb);
             colfind::theory_colfind::handle(&fb);

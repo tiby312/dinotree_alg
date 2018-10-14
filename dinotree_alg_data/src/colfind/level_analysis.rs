@@ -191,7 +191,7 @@ fn handle_bench(fb:&FigureBuilder){
 
     let res1=handle_inner_bench((0..100).map(|a|0.0005+(a as f64)*0.0001));
 	
-	let res2=handle_inner_bench((0..100).map(|a|0.01+(a as f64)*0.0001));
+	let res2=handle_inner_bench((0..100).map(|a|0.01+(a as f64)*0.0002));
 
 
     fn draw_graph(title_name:&str,fg:&mut Figure,res:&Vec<BenchRes>,rebal:bool,pos:usize){
@@ -237,7 +237,7 @@ fn handle_theory(fb:&FigureBuilder){
 
     let res1=handle_inner_theory((0..100).map(|a|0.0005+(a as f64)*0.0001));
 	
-	let res2=handle_inner_theory((0..100).map(|a|0.01+(a as f64)*0.0001));
+	let res2=handle_inner_theory((0..100).map(|a|0.01+(a as f64)*0.0002));
 
 
     use gnuplot::*;

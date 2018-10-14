@@ -432,7 +432,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl
 
     let b=Bo(func,PhantomData);
 
-    query_seq_adv_mut(tree,b,SplitterEmpty);
+    query_adv_mut(tree,b,SplitterEmpty);
 }
 
 
