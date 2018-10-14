@@ -90,6 +90,8 @@ mod oned;
 ///Contains misc tools
 mod tools;
 
+pub mod timer;
+
 
 use compt::timer::TreeTimerTrait;
 use axgeom::Rect;

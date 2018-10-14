@@ -90,18 +90,3 @@ impl<T> PreVecMut<T> {
 }
 
 
-
-/*
-///Returns a combined slice given two slices that are next to each other in memory.
-///Panics if they are not next to each other.
-pub fn join<'a,T>(first: &'a [T],second:&'a [T])->&'a [T]{
-    let f1=first.len();
-    if first[f1..].as_ptr() == second.as_ptr(){
-        unsafe{
-            return std::slice::from_raw_parts(first.as_ptr(),f1+second.len());
-        }
-    }else{
-        panic!("Slices are not next to each other in memory.");
-    }
-}
-*/

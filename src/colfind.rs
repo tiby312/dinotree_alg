@@ -529,7 +529,7 @@ pub fn query_seq_adv_mut<
 
 ///The user has more control using this version of the query.
 ///It also returns time information.
-pub fn query_par_adv_mut<
+pub fn query_adv_mut<
     A: AxisTrait,
     T: HasAabb+Send,
     F: ColMulti<T = T>+Splitter+Send,

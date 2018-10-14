@@ -21,6 +21,9 @@ impl Counter{
     pub fn into_inner(&self)->usize{
         self.0
     }
+    pub fn reset(&mut self){
+        self.0=0;
+    }
     pub fn new_num(&mut self,a:isize)->DataNum{
         DataNum(a,self as *mut Counter)
     }
