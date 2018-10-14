@@ -274,117 +274,6 @@ mod todo{
     }
 }
 
-/*
-///Debug Sequential
-pub fn query_debug_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T))->TreeTimeResultIterator{
-    let height=tree.get_height();
-    query_seq_mut_inner(tree,func,TreeTimer2::new(height)).into_iter()
-}
-
-///Sequential
-pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
-    let _ = query_seq_mut_inner(tree,func,TreeTimerEmpty);
-}
-*/
-
-/*
-fn query_seq_mut_inner<A:AxisTrait,T:HasAabb,F:FnMut(&mut T,&mut T)>(tree:&mut DynTree<A,(),T>,mut func:F,h:K)->K::Bag{
-
-    mod wrap{
-        //Use this to get rid of Send trait constraint.
-        #[repr(transparent)]
-        pub struct Wrap<T:HasAabb>(T);
-        unsafe impl<T:HasAabb> Send for Wrap<T>{}
-        unsafe impl<T:HasAabb> Sync for Wrap<T>{}
-        unsafe impl<T:HasAabb> HasAabb for Wrap<T>{
-            type Num=T::Num;
-            fn get(&self)->&Rect<Self::Num>{
-                self.0.get()
-            }
-        }
-
-
-        use super::*;
-        pub struct Wrapper<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a>(
-            pub &'a mut F,
-            pub PhantomData<T>,
-        );
-
-        impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> Clone for Wrapper<'a, T, F> {
-            fn clone(&self) -> Wrapper<'a, T, F> {
-                unreachable!()
-            }
-        }
-
-        impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> self::ColMulti for Wrapper<'a, T, F> {
-            type T = Wrap<T>;
-
-            fn collide(&mut self, a: &mut Wrap<T>, b: &mut Wrap<T>) {
-                self.0(&mut a.0,&mut b.0);
-            }
-        }
-
-        //Unsafely implement send and Sync
-        //Safe to do since our algorithms first clone this struct before
-        //passing it to another thread. This sadly has to be indiviually
-        //verified.
-        unsafe impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> Send
-            for Wrapper<'a, T, F>
-        {
-        }
-        unsafe impl<'a, T: HasAabb, F: FnMut(&mut T, &mut T) + 'a> Sync
-            for Wrapper<'a, T, F>
-        {
-        }
-    }
-
-    let wrap=wrap::Wrapper(&mut func,PhantomData);
-
-    let tree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(tree)};
-    self::query_par_adv_mut(
-        par::Sequential,
-        tree,
-        wrap,
-    ).1
-    
-}
-*/
-/*
-///Debug Parallel
-pub fn query_debug_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send)->TreeTimeResultIterator{
-    
-    let c1=move |_:&mut (),a:&mut T,b:&mut T|{
-        func(a,b);
-    };
-
-    let c2=|_:()|((),());
-    let c3=|_:(),_:()|();
-
-    let clos = self::closure_struct::ColMultiStruct{aa
-        :(),a:c1,f2:c2,f3:c3,_p:PhantomData};
-
-
-
-    const DEPTH_SEQ:usize=4;
-
-    let height=tree.get_height();
-    let gg=if height<=DEPTH_SEQ{
-        Depth(0)
-    }else{
-        Depth(height-DEPTH_SEQ)
-    };
-
-    self::query_par_adv_mut(
-        par::Parallel::new(gg),
-        tree,
-        TreeTimer2::new(height),
-        clos,
-    ).1.into_iter()
-}
-*/
-
-
-
 
 ///Sequential
 pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
@@ -410,6 +299,11 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl 
 
     query_seq_adv_mut(tree,b,SplitterEmpty);
 }
+
+
+ const DEPTH_SEQ:usize=1;
+
+
 pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for Bo<T,F>{
@@ -432,7 +326,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl
 
     let b=Bo(func,PhantomData);
 
-    query_adv_mut(tree,b,SplitterEmpty);
+    query_adv_mut(tree,b,SplitterEmpty,DEPTH_SEQ);
 }
 
 
@@ -537,16 +431,16 @@ pub fn query_adv_mut<
 >(
     kdtree: &mut DynTree<A,(), T>,
     clos: F,
-    splitter:K
+    splitter:K,
+    height_switch_seq:usize
 ) -> (F,K) {
     let par={
-        const DEPTH_SEQ:usize=4;
-
+       
         let height=kdtree.get_height();
-        let gg=if height<=DEPTH_SEQ{
+        let gg=if height<=height_switch_seq{
             Depth(0)
         }else{
-            Depth(height-DEPTH_SEQ)
+            Depth(height-height_switch_seq)
         };
         par::Parallel::new(gg)
     };

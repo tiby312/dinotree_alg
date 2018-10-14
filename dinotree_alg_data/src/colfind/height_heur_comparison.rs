@@ -235,12 +235,12 @@ fn handle2d(fb:&FigureBuilder){
 
 
 
-    for height in (2..10){
+    for height in (2..13){
         let num_comparison=handle_theory_inner(&mut bots,height);
         theory_records.push(Record{height,num_comparison});
     }
 
-    for height in (2..10).flat_map(|a|std::iter::repeat(a).take(5)){
+    for height in (2..13).flat_map(|a|std::iter::repeat(a).take(20)){
         let bench=handle_bench_inner(&mut bots,height);
         bench_records.push(BenchRecord{height,bench});
     }
@@ -271,7 +271,7 @@ fn handle2d(fb:&FigureBuilder){
     fg.axes2d()
         .set_pos_grid(2,1,1)
         .set_title("Bench times with 10,000 objects in a dinotree with different numbers of objects per node (seq,colfind)", &[])
-        .lines(x,y,&[Color("blue"), LineWidth(2.0)])
+        .points(x,y,&[Color("blue"), LineWidth(2.0)])
         .set_x_label("Tree Height", &[])
         .set_y_label("Time in seconds", &[]);
     fg.show();

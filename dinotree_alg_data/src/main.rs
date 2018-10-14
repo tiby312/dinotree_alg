@@ -50,6 +50,7 @@ impl FigureBuilder{
 fn main() {
     let fb=FigureBuilder{};
     
+
 	let args: Vec<String> = env::args().collect();   
     let _area=[1024u32,768];
 
@@ -84,6 +85,7 @@ fn main() {
             spiral::handle(&fb);
         }
         "all"=>{
+            colfind::parallel_heur_comparison::handle(&fb);
             colfind::level_analysis::handle(&fb);
             spiral::handle(&fb);
             colfind::float_vs_integer::handle(&fb);
