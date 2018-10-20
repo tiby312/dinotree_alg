@@ -130,7 +130,7 @@ pub fn handle(fb:&FigureBuilder){
     let mut fg= fb.new("parallel_height_heuristic");
     
     fg.axes2d()
-        .set_pos_grid(2,1,0)
+        //.set_pos_grid(2,1,0)
         .set_title("Parallel Height heuristic for 20,000 elements with a spiral grow of 0.2", &[])
         .points(x1.clone(), y1,  &[Caption("Rebalance"), Color("brown"), LineWidth(4.0)])
         .points(x2.clone(), y2,  &[Caption("Query"), Color("red"), LineWidth(4.0)])
@@ -143,6 +143,7 @@ pub fn handle(fb:&FigureBuilder){
         .set_y_label("Time in seconds", &[])
         .set_x_grid(true)
         .set_y_grid(true);
+
     fg.show();
 
 }

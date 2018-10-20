@@ -104,7 +104,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
         let c4={
             
-            if num_bots<5000{
+            if num_bots<8000{
                 let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
                     let rect=aabb_from_point_isize(b.pos,[5,5]);
                     BBoxDemo::new(rect,*b)
@@ -167,7 +167,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure){
         num_comparison_sweep:Option<usize>
     }
 
-    let stop_naive_at=600;
+    let stop_naive_at=800;
     let stop_sweep_at=4000;
 
     let mut records=Vec::new();

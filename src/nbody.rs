@@ -565,10 +565,10 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
     buildtree(axis,t1.get_iter_mut(),&mut ncontext,rect);
 
     {
-        let kk=if height<3{
+        let kk=if height<2{
             0
         }else{
-            height-3
+            height-2
         };
         let d=t1.get_iter_mut().with_depth(Depth(0));
         recc(par::Parallel(Depth(kk)),axis,d,&mut ncontext);    

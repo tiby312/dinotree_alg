@@ -42,14 +42,20 @@ impl FigureBuilder{
     fn new(&self,filename:&str)->Figure{
         let mut fg=Figure::new();
         let ss=format!("target/graphs/{}.png",filename);
-        fg.set_terminal("pngcairo size 1024, 768",&ss);
+        println!("Creating {}",ss);
+        fg.set_terminal("pngcairo size 800, 600",&ss);
         fg
     }
 }
 
 fn main() {
     let fb=FigureBuilder{};
-    
+    colfind::theory_colfind::handle(&fb);
+    //colfind::level_analysis::handle(&fb);
+    return;        
+    //colfind::height_heur_comparison::handle(&fb);
+    //colfind::construction_vs_query::handle(&fb);
+    //return;
 
 	let args: Vec<String> = env::args().collect();   
     let _area=[1024u32,768];
@@ -71,6 +77,8 @@ fn main() {
         },
         "colfind-tree-height"=>{
             colfind::height_heur_comparison::handle(&fb);
+            colfind::parallel_heur_comparison::handle(&fb);
+            
         },
         "colfind-construction"=>{
             colfind::construction_vs_query::handle(&fb);

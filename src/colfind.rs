@@ -301,7 +301,7 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl 
 }
 
 
- const DEPTH_SEQ:usize=1;
+ const DEPTH_SEQ:usize=2;
 
 
 pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){

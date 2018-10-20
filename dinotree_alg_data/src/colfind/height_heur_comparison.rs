@@ -118,6 +118,7 @@ fn handle3d(fb:&FigureBuilder){
 }
 
 
+
 fn handle_lowest(fb:&FigureBuilder){
 
     struct BenchRecord{
@@ -125,15 +126,25 @@ fn handle_lowest(fb:&FigureBuilder){
         bench:f64,
         num_bots:usize,
     }
-    let mut benches:Vec<BenchRecord>=Vec::new();
 
-    let its=(1usize..20_000).step_by(1000);
+    struct TheoryRecord{
+        height:usize,
+        theory:usize,
+        num_bots:usize
+    }
+
+    let mut benches:Vec<BenchRecord>=Vec::new();
+    let mut theories:Vec<TheoryRecord>=Vec::new();
+
+    let its=(1usize..80_000).step_by(2000);
     for num_bots in its.clone(){
         let mut minimum=None;//(100000.0,0);
+        let mut minimum_theory=None;
         let max_height=(num_bots as f64).log2() as usize;
 
         let mut bots=create_bots(num_bots);
         for height in (1..max_height){
+            let theory=handle_theory_inner(&mut bots,height);
             let bench=handle_bench_inner(&mut bots,height);
             match minimum{
                 Some((a,b))=>{
@@ -146,43 +157,77 @@ fn handle_lowest(fb:&FigureBuilder){
                     minimum=Some((bench,height));
                 }
             }
+            match minimum_theory{
+                Some((a,b))=>{
+                    if theory<a{
+                        minimum_theory=Some((theory,height));
+                    }
+                },
+                None=>{
+                    minimum_theory=Some((theory,height));
+                }
+            }
         }
+
         match minimum{
             Some((bench,height))=>{
                 benches.push(BenchRecord{height,num_bots,bench});
             },
             None=>{}
         }
+
+        match minimum_theory{
+            Some((theory,height))=>{
+                theories.push(TheoryRecord{height,num_bots,theory})
+            },
+            None=>{}
+        }
     }
 
-    let x=benches.iter().map(|a|a.num_bots);
-    let y=benches.iter().map(|a|a.height);
 
-    let mut fg = fb.new("colfind_optimal_height_vs_heuristic_height");
+    {
+        let mut fg = fb.new("colfind_optimal_height_vs_heuristic_height");
+
+        let xx=theories.iter().map(|a|a.num_bots);
+        let yy=theories.iter().map(|a|a.height);
+        
+        let x=benches.iter().map(|a|a.num_bots);
+        let y=benches.iter().map(|a|a.height);
+
+
+        let heur={
+            let mut vec=Vec::new();
+            for num_bots in its.clone(){
+                let height=compute_tree_height_heuristic(num_bots);
+                vec.push((num_bots,height));
+            }
+            vec
+        };
+
+        let heurx=heur.iter().map(|a|a.0);
+        let heury=heur.iter().map(|a|a.1);
+
+        fg.axes2d()
+            .set_pos_grid(2,1,0)
+            .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height.", &[])
+            .set_x_label("Num bots", &[])
+            .set_y_label("Best Tree Height", &[])
+            .points(xx, yy,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
+            .lines(heurx.clone(),heury.clone(),&[Caption("Heuristic")]);
+
+        fg.axes2d()
+            .set_pos_grid(2,1,1)
+            .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height.", &[])
+            .set_x_label("Num bots", &[])
+            .set_y_label("Best Tree Height", &[])
+            .points(x, y,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
+            .lines(heurx,heury,&[Caption("Heuristic")]);
 
 
 
-    let heur={
-        let mut vec=Vec::new();
-        for num_bots in its.clone(){
-            let height=compute_tree_height_heuristic(num_bots);
-            vec.push((num_bots,height));
-        }
-        vec
-    };
-
-    let heurx=heur.iter().map(|a|a.0);
-    let heury=heur.iter().map(|a|a.1);
-
-    fg.axes2d()
-        .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height.", &[])
-        .set_x_label("Num bots", &[])
-        .set_y_label("Best Tree Height", &[])
-        .points(x, y,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
-        .lines(heurx,heury,&[Caption("Heuristic")]);
-
-    fg.show();
-
+        fg.show();
+        
+    }
     {
         let mut vals=Vec::new();
         for num_bots in its.clone(){
