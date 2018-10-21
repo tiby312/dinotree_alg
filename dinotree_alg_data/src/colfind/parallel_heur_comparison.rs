@@ -63,7 +63,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
 
     let height=compute_tree_height_heuristic(bots.len()); 
         
-    let (mut tree,_)=DynTree::new_adv(axgeom::XAXISS,(),bots,|b|{
+    let (mut tree,_)=dinotree_inner::advanced::new_adv(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     },height,SplitterEmpty,rebal_height);
 
