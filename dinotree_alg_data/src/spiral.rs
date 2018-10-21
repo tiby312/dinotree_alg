@@ -78,7 +78,7 @@ fn handle2(fb:&FigureBuilder){
     	.set_pos_grid(2,2,0)
     	.set_x_range(Fix(-500.0),Fix(500.0))
     	.set_y_range(Fix(-500.0),Fix(500.0))
-        .set_title("Spiral with a Grow of 0.1 of size 10000 and separation of 17.0", &[])
+        .set_title("Grow of 0.1 of size 10000", &[])
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
@@ -94,7 +94,7 @@ fn handle2(fb:&FigureBuilder){
     	.set_pos_grid(2,2,1)
     	.set_x_range(Fix(-500.0),Fix(500.0))
     	.set_y_range(Fix(-500.0),Fix(500.0))
-        .set_title("Spiral with a Grow of 0.3 of size 10000 and separation of 17.0", &[])
+        .set_title("Grow of 0.3 of size 10000", &[])
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]) ;
@@ -110,7 +110,7 @@ fn handle2(fb:&FigureBuilder){
     	.set_pos_grid(2,2,2)
     	.set_x_range(Fix(-500.0),Fix(500.0))
     	.set_y_range(Fix(-500.0),Fix(500.0))
-        .set_title("Spiral with a Grow of 3.0 of size 10000 and separation of 17.0", &[])
+        .set_title("Grow of 3.0 of size 10000", &[])
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
@@ -126,7 +126,7 @@ fn handle2(fb:&FigureBuilder){
     	.set_pos_grid(2,2,3)
     	.set_x_range(Fix(-500.0),Fix(500.0))
     	.set_y_range(Fix(-500.0),Fix(500.0))
-        .set_title("Spiral with a Grow of 6.0 of size 10000 and separation of 17.0", &[])
+        .set_title("Grow of 6.0 of size 10000", &[])
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);

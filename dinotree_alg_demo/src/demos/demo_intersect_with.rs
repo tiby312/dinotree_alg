@@ -40,15 +40,9 @@ impl Bot{
     }
 }
 
-
+#[derive(Copy,Clone)]
 struct Wall(axgeom::Rect<F64n>);
 
-unsafe impl HasAabb for Wall{
-    type Num=F64n;
-    fn get(&self)->&axgeom::Rect<F64n>{
-        &self.0
-    }
-}
 
 pub struct IntersectWithDemo{
     radius:f64,
@@ -110,7 +104,7 @@ impl DemoSys for IntersectWithDemo{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
         }); 
 
-        intersect_with::intersect_with_mut(&mut tree,walls,|bot,wall|{
+        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|bot,wall|{
             let fric=0.8;
 
 
@@ -148,7 +142,7 @@ impl DemoSys for IntersectWithDemo{
         
 
         for wall in walls.iter(){
-            draw_rect_f64n([0.0,0.0,1.0,0.3],wall.get(),c,g);
+            draw_rect_f64n([0.0,0.0,1.0,0.3],&wall.0,c,g);
         }
         for bot in tree.iter_every_bot(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);

@@ -50,13 +50,9 @@ impl FigureBuilder{
 
 fn main() {
     let fb=FigureBuilder{};
-    colfind::theory_colfind::handle(&fb);
-    //colfind::level_analysis::handle(&fb);
-    return;        
-    //colfind::height_heur_comparison::handle(&fb);
-    //colfind::construction_vs_query::handle(&fb);
-    //return;
-
+    spiral::handle(&fb);
+    return;
+    
 	let args: Vec<String> = env::args().collect();   
     let _area=[1024u32,768];
 

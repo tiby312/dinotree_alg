@@ -57,13 +57,18 @@ fn main(){
     
     let area=[1024u32,768];
 
-    let mut window: PistonWindow = WindowSettings::new("dinotree test",area)
+    let mut window = WindowSettings::new("dinotree test",area)
         .exit_on_esc(true)
-        .build()
-        .unwrap();
+        .fullscreen(false)
+        .resizable(false);
+        
 
-
+    println!("window size={:?}",window.get_size());
     
+
+    let mut window:PistonWindow=window.build().unwrap();
+
+
     let mut demo_iter=demo_iter::DemoIter::new();
     
     let mut curr=demo_iter.next(area);
@@ -71,6 +76,9 @@ fn main(){
     
     println!("Press \"N\" to go to the next example");
     println!("Press \"C\" to turn off verification against naive algorithms.");
+    println!("Performance suffers from not batching draw calls (piston's built in rectangle drawing primitives are used instead of vertex buffers). These demos are not meant to showcase the performance of the algorithms. See the dinotree_alg_data project for benches.");
+
+
     let mut cursor=[0.0,0.0];
 
     let mut check_naive=false;
@@ -94,6 +102,7 @@ fn main(){
 
         window.draw_2d(&e, |c, mut g| {
             clear([1.0; 4], g);
+            c.view();//trans(500.0,500.0);
             curr.step(cursor,&c,&mut g,check_naive);
         });
     }

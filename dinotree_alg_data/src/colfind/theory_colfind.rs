@@ -143,7 +143,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
     fg.axes2d()
         .set_pos_grid(2,1,0)
-        .set_title("Comparison of Benching AABB Collision Detection Algorithms", &[])
+        .set_title("Comparison of Benching AABB Collision Detection Algorithms with Grow=1.0", &[])
         .lines(x.clone(), y1,  &[Caption("Naive"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Sweep and Prune"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y3,  &[Caption("Dinotree Sequential"), Color("red"), LineWidth(2.0)])
@@ -261,7 +261,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure){
 
     fg.axes2d()
         .set_pos_grid(2,1,1)
-        .set_title("Comparison of AABB Collision Detection Algorithms", &[])
+        .set_title("Comparison of AABB Collision Detection Algorithms with Grow=1.0", &[])
         .lines(x.clone(), y2,  &[Caption("Naive"), Color("blue"), LineWidth(4.0)])
         .lines(x.clone(), y3,  &[Caption("Sweep and Prune"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y1,  &[Caption("Dinotree"), Color("red"), LineWidth(2.0)])
@@ -272,7 +272,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure){
 
 
 pub fn handle(fb:&FigureBuilder){
-    let s=dists::spiral::Spiral::new([400.0,400.0],12.0,1.5);
+    let s=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
 
     let mut fg=fb.new("colfind_theory");
     handle_theory(&s,&mut fg);
