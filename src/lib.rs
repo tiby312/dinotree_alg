@@ -41,6 +41,7 @@ extern crate is_sorted;
 
 
 mod inner_prelude {
+    pub use dinotree_inner::advanced::*;
     pub use dinotree_inner::*;
     pub use compt::LevelIter;
     pub use compt::Depth;
@@ -90,10 +91,5 @@ mod oned;
 ///Contains misc tools
 mod tools;
 
-pub mod timer;
-
-
-use compt::timer::TreeTimerTrait;
 use axgeom::Rect;
 use smallvec::SmallVec;
-use compt::timer::TreeTimerEmpty;

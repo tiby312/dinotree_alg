@@ -23,8 +23,6 @@
 //! 
 use inner_prelude::*;
 use oned;
-use compt::timer::TreeTimer2;
-use compt::timer::TreeTimeResultIterator;
 
 ///Naive algorithm.
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
@@ -303,7 +301,7 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl 
 
  const DEPTH_SEQ:usize=2;
 
-
+///Parallel
 pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for Bo<T,F>{
@@ -330,6 +328,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl
 }
 
 
+///See query_adv_mut
 pub fn query_seq_adv_mut<
     A: AxisTrait,
     T: HasAabb,
@@ -422,7 +421,9 @@ pub fn query_seq_adv_mut<
 }
 
 ///The user has more control using this version of the query.
-///It also returns time information.
+///The splitter will split and add at every level.
+///The clos will split and add only at levels that are handled in parallel.
+///This can be useful if the use wants to create a list of colliding pair indicies, but still want paralleism.
 pub fn query_adv_mut<
     A: AxisTrait,
     T: HasAabb+Send,
