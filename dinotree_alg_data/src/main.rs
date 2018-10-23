@@ -14,6 +14,7 @@ mod inner_prelude{
     pub use support::*;
     pub use dinotree_alg::colfind;
     pub use dinotree_inner::*;
+    pub use dinotree_inner::advanced::*;
     pub(crate) use axgeom;
     pub(crate) use datanum;
     pub use gnuplot::*;
