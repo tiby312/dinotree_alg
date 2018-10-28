@@ -11,7 +11,7 @@ use rect::*;
 ///No intersecting pairs within each group are looked for, only those between the two groups.
 ///For best performance the group that this tree is built around should be the bigger of the two groups.
 pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb,X:HasAabb<Num=T::Num>>(
-    tree:&mut DynTree<A,(),T>,
+    tree:&mut DinoTree<A,(),T>,
     b: &mut [X],
     mut func: impl FnMut(&mut T, &mut X),
 ) {
@@ -33,7 +33,7 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb,X:HasAabb<Num=T::Num>>(
 ///No intersecting pairs within each group are looked for, only those between the two groups.
 ///For best performance the group that this tree is built around should be the bigger of the two groups.
 ///Since the dividers of the tree are used to divide and conquer the problem.
-///If the other group is bigger, consider building the dyntree around that group instead, and
+///If the other group is bigger, consider building the DinoTree around that group instead, and
 ///leave this group has a list of bots.
 ///
 ///TODO:
@@ -44,7 +44,7 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb,X:HasAabb<Num=T::Num>>(
 ///This would be a bit tricky to implement since the tree heights might be different.
 ///But without changing this api, better performance can be achieved.
 pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb+Send,X:Copy+Send>(
-    tree:&mut DynTree<A,(),T>,
+    tree:&mut DinoTree<A,(),T>,
     b: &mut [X],
     mut aabb_create:impl FnMut(&X)->axgeom::Rect<T::Num>,
     mut func: impl Fn(&mut T, &mut BBox<T::Num,X>)+Copy+Send,

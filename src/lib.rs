@@ -23,7 +23,7 @@ extern crate compt;
 extern crate rayon;
 
 extern crate smallvec;
-extern crate dinotree_inner;
+extern crate dinotree;
 
 #[cfg(test)]
 extern crate num;
@@ -41,13 +41,13 @@ extern crate is_sorted;
 
 
 mod inner_prelude {
-    pub use dinotree_inner::advanced::*;
-    pub use dinotree_inner::*;
+    pub use dinotree::advanced::*;
+    pub use dinotree::*;
     pub use compt::LevelIter;
     pub use compt::Depth;
     pub use axgeom::Range;
     pub use ::*;
-    pub use compt::CTreeIterator;
+    pub use compt::Visitor;
     //pub use par;
     pub use axgeom::AxisTrait;
     pub use std::marker::PhantomData;

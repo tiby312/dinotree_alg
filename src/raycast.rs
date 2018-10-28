@@ -9,7 +9,7 @@
 //!
 //! ```
 //! pub fn raycast_mut<'a,A:AxisTrait,T:HasAabb>(
-//!              tree:&'a mut DynTree<A,(),T>,
+//!              tree:&'a mut DinoTree<A,(),T>,
 //!              rect:Rect<T::Num>,
 //!              mut rtrait:impl RayTrait<T=T,N=T::Num>)
 //!       ->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
@@ -257,7 +257,7 @@ pub use self::mutable::raycast_mut;
 
 mod mutable{
     use super::*;
-    raycast!(NdIterMut<'a,(),T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T);
+    raycast!(VistrMut<'a,(),T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T);
 
     pub fn naive_mut<
         'a,A:AxisTrait,
@@ -276,10 +276,10 @@ mod mutable{
     pub fn raycast_mut<
         'a,A:AxisTrait,
         T:HasAabb,
-        >(tree:&'a mut DynTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(tree:&'a mut DinoTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
         
-        let axis=tree.get_axis();
-        let dt = tree.get_iter_mut().with_depth(Depth(0));
+        let axis=tree.axis();
+        let dt = tree.vistr_mut().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};
@@ -306,14 +306,14 @@ mod cons{
         closest.closest
     }
 
-    raycast!(NdIter<'a,(),T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
+    raycast!(Vistr<'a,(),T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
     pub fn raycast<
         'a,A:AxisTrait,
         T:HasAabb,
-        >(tree:&'a DynTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(tree:&'a DinoTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
         
-        let axis=tree.get_axis();
-        let dt = tree.get_iter().with_depth(Depth(0));
+        let axis=tree.axis();
+        let dt = tree.vistr().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};

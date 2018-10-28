@@ -8,7 +8,7 @@
 //!
 //! ```
 //! pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(
-//!             tree:&mut DynTree<A,(),T>,
+//!             tree:&mut DinoTree<A,(),T>,
 //!             func:impl FnMut(&mut T,&mut T));
 //!
 //! ```
@@ -82,7 +82,7 @@ fn go_down<
     this_axis: A,
     sweeper: &mut oned::Sweeper<X>,
     anchor: &mut DestructuredNode<X,B>,
-    m: NdIterMut<(),X>,
+    m: VistrMut<(),X>,
     func: &mut F,
 ) {
     let anchor_axis=anchor.axis;
@@ -177,7 +177,7 @@ fn recurse<
     this_axis: A,
     par: JJ,
     sweeper:&mut oned::Sweeper<F::T>,
-    m: LevelIter<NdIterMut<(),X>>,
+    m: LevelIter<VistrMut<(),X>>,
     mut clos: F,
     mut splitter:K
 ) -> (F,K) {
@@ -263,18 +263,18 @@ impl<'a, C: ColMulti + 'a> ColMulti for ColMultiWrapper<'a, C> {
 mod todo{
     use super::*;
     #[allow(dead_code)]
-    pub fn query<A:AxisTrait,T:HasAabb>(_tree:&DynTree<A,(),T>,mut _func:impl FnMut(&T,&T)){
+    pub fn query<A:AxisTrait,T:HasAabb>(_tree:&DinoTree<A,(),T>,mut _func:impl FnMut(&T,&T)){
         unimplemented!("Versions that do not borrow the tree mutable are implemented.  Waiting for parametric mutability.")
     }
     #[allow(dead_code)]
-    pub fn query_par<A:AxisTrait,T:HasAabb+Send>(_tree:&DynTree<A,(),T>,_func:impl Fn(&T,&T)+Copy+Send){
+    pub fn query_par<A:AxisTrait,T:HasAabb+Send>(_tree:&DinoTree<A,(),T>,_func:impl Fn(&T,&T)+Copy+Send){
         unimplemented!("Versions that do not borrow the tree mutable are implemented.  Waiting for parametric mutability.")
     }
 }
 
 
 ///Sequential
-pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
+pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,func:impl FnMut(&mut T,&mut T)){
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for Bo<T,F>{
         type T=T;
@@ -302,7 +302,7 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DynTree<A,(),T>,func:impl 
  const DEPTH_SEQ:usize=2;
 
 ///Parallel
-pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DynTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for Bo<T,F>{
         type T=T;
@@ -334,7 +334,7 @@ pub fn query_seq_adv_mut<
     T: HasAabb,
     F: ColMulti<T = T>,
     K:Splitter>(    
-    kdtree: &mut DynTree<A,(), T>,
+    kdtree: &mut DinoTree<A,(), T>,
     clos: F,
     splitter:K
 )->(F,K){
@@ -410,10 +410,10 @@ pub fn query_seq_adv_mut<
 
     let clos=wrap::Wrapper(clos,PhantomData);
     let splitter=wrap::SplitterWrapper(splitter);
-    let kdtree:&mut DynTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
+    let kdtree:&mut DinoTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
 
-    let this_axis=kdtree.get_axis();
-    let dt = kdtree.get_iter_mut().with_depth(Depth(0));
+    let this_axis=kdtree.axis();
+    let dt = kdtree.vistr_mut().with_depth(Depth(0));
     let mut sweeper = oned::Sweeper::new();
 
     let (a,b)=self::recurse(this_axis, par::Sequential, &mut sweeper, dt, clos,splitter);
@@ -430,14 +430,14 @@ pub fn query_adv_mut<
     F: ColMulti<T = T>+Splitter+Send,
     K: Splitter+Send
 >(
-    kdtree: &mut DynTree<A,(), T>,
+    kdtree: &mut DinoTree<A,(), T>,
     clos: F,
     splitter:K,
     height_switch_seq:usize
 ) -> (F,K) {
     let par={
        
-        let height=kdtree.get_height();
+        let height=kdtree.height();
         let gg=if height<=height_switch_seq{
             Depth(0)
         }else{
@@ -446,8 +446,8 @@ pub fn query_adv_mut<
         par::Parallel::new(gg)
     };
 
-    let this_axis=kdtree.get_axis();
-    let dt = kdtree.get_iter_mut().with_depth(Depth(0));
+    let this_axis=kdtree.axis();
+    let dt = kdtree.vistr_mut().with_depth(Depth(0));
     let mut sweeper = oned::Sweeper::new();
 
     self::recurse(this_axis, par, &mut sweeper, dt, clos,splitter)

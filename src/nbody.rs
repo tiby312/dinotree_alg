@@ -7,7 +7,7 @@
 //! A sequential and parallel version are supplied, both with a similar api:
 //! ```
 //! pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(
-//!           t1:&mut DynTree<A,N::No,N::T>,
+//!           t1:&mut DinoTree<A,N::No,N::T>,
 //!           ncontext:&mut N,
 //!           rect:Rect<<N::T as HasAabb>::Num>){
 //! ```
@@ -131,11 +131,11 @@ fn buildtree<'a,
     T:HasAabb+Send+'a,
     N:NodeMassTrait<T=T>
     >
-    (axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
+    (axis:impl AxisTrait,node:VistrMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
 
 
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
-        (axis:impl AxisTrait,stuff:NdIterMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
+        (axis:impl AxisTrait,stuff:VistrMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
         
         let (nn,rest)=stuff.next();
         match rest{
@@ -188,10 +188,10 @@ fn apply_tree<'a,
     T:HasAabb+'a,
     N:NodeMassTrait<T=T>
     >
-    (_axis:impl AxisTrait,node:NdIterMut<N::No,T>,ncontext:&mut N){
+    (_axis:impl AxisTrait,node:VistrMut<N::No,T>,ncontext:&mut N){
 
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
-        (stuff:NdIterMut<N::No,T>,ncontext:&mut N){
+        (stuff:VistrMut<N::No,T>,ncontext:&mut N){
         
         let (nn,rest)=stuff.next();
         match rest{
@@ -236,7 +236,7 @@ fn handle_anchor_with_children<'a,
 	A:AxisTrait,
 	B:AxisTrait,
     N:NodeMassTrait+'a>
-(thisa:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<N::No,N::T>>,right:LevelIter<NdIterMut<N::No,N::T>>,ncontext:&mut N){
+(thisa:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<VistrMut<N::No,N::T>>,right:LevelIter<VistrMut<N::No,N::T>>,ncontext:&mut N){
     
 
     struct BoLeft<'a,B:AxisTrait,N:NodeMassTrait+'a>{
@@ -306,7 +306,7 @@ fn handle_anchor_with_children<'a,
 }
 
 fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
-    (axis:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<NdIterMut<'a,N::No,N::T>>,mut right:LevelIter<NdIterMut<'a,N::No,N::T>>,ncontext:&mut N){
+    (axis:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<VistrMut<'a,N::No,N::T>>,mut right:LevelIter<VistrMut<'a,N::No,N::T>>,ncontext:&mut N){
 
 
 	struct Bo4<'a,B:AxisTrait,N:NodeMassTrait+'a,>{
@@ -358,7 +358,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
 
     struct Bo<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
-        right:&'b mut LevelIter<NdIterMut<'a,N::No,N::T>>,
+        right:&'b mut LevelIter<VistrMut<'a,N::No,N::T>>,
         ncontext:&'b mut N
     }
     
@@ -393,7 +393,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     
 }
 
-fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIter<NdIterMut<N::No,N::T>>,ncontext:&mut N) where N::T:Send,N::No:Send{
+fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIter<VistrMut<N::No,N::T>>,ncontext:&mut N) where N::T:Send,N::No:Send{
     
 
     let ((depth,nn),rest)=it.next();
@@ -470,7 +470,7 @@ trait Bok2{
 
     fn generic_rec2<
         A:AxisTrait,
-        >(&mut self,this_axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,stuff:LevelIter<NdIterMut<Self::No,Self::T>>){
+        >(&mut self,this_axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,stuff:LevelIter<VistrMut<Self::No,Self::T>>){
 
         let ((_depth,nn),rest)=stuff.next();
         
@@ -507,9 +507,9 @@ trait Bok2{
 
 
 ///Parallel version.
-pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&mut DynTree<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
-    let axis=t1.get_axis();
-    let height=t1.get_height();
+pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&mut DinoTree<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
+    let axis=t1.axis();
+    let height=t1.height();
  
     struct Wrapper<'a,N:NodeMassTraitConst+'a>(&'a N);
     impl<'a,N:NodeMassTraitConst+'a> Clone for Wrapper<'a,N>{
@@ -562,7 +562,7 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
 
 
     let mut ncontext=Wrapper(ncontext);
-    buildtree(axis,t1.get_iter_mut(),&mut ncontext,rect);
+    buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
 
     {
         let kk=if height<2{
@@ -570,16 +570,16 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
         }else{
             height-2
         };
-        let d=t1.get_iter_mut().with_depth(Depth(0));
+        let d=t1.vistr_mut().with_depth(Depth(0));
         recc(par::Parallel(Depth(kk)),axis,d,&mut ncontext);    
     }
 
-    apply_tree(axis,t1.get_iter_mut(),&mut ncontext);
+    apply_tree(axis,t1.vistr_mut(),&mut ncontext);
 }
 
 
 ///Sequential version.
-pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DynTree<A,N::No,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
+pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DinoTree<A,N::No,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
     
     #[derive(Copy,Clone)]
     #[repr(transparent)]
@@ -648,19 +648,19 @@ pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DynTree<A,N::No,N::T>,ncont
     }
 
 
-    let axis=t1.get_axis();//A::new();
+    let axis=t1.axis();
     let mut ncontext=Wrapper(ncontext);
-    let t1:&mut DynTree<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
+    let t1:&mut DinoTree<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
 
 
-    buildtree(axis,t1.get_iter_mut(),&mut ncontext,rect);
+    buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
 
     {
-        let d=t1.get_iter_mut().with_depth(Depth(0));
+        let d=t1.vistr_mut().with_depth(Depth(0));
         recc(par::Sequential,axis,d,&mut ncontext);    
     }
 
-    apply_tree(axis,t1.get_iter_mut(),&mut ncontext);
+    apply_tree(axis,t1.vistr_mut(),&mut ncontext);
 
 }
 

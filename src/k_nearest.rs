@@ -7,7 +7,7 @@
 //!
 //! ```
 //! pub fn k_nearest_mut<'b, T: HasAabb, A: AxisTrait, K: Knearest<N = T::Num, T = T>>(
-//!     tree: &'b mut DynTree<A, (), T>, 
+//!     tree: &'b mut DinoTree<A, (), T>, 
 //!     point: [T::Num; 2], 
 //!     num: usize, 
 //!     knear: K
@@ -337,9 +337,9 @@ mod con{
         T:HasAabb,
         A:AxisTrait,
         K:Knearest<T=T,N=T::Num>,
-        >(tree:&'b DynTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<Unit<'b,T,K::D>>{
-        let axis=tree.get_axis();
-        let dt = tree.get_iter().with_depth(Depth(0));
+        >(tree:&'b DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<Unit<'b,T,K::D>>{
+        let axis=tree.axis();
+        let dt = tree.vistr().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 
@@ -349,7 +349,7 @@ mod con{
         c.into_sorted()
     }
 
-    knearest_recc!(NdIter<'a,(),K::T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T,Unit<'a,T,D>,unit_create);
+    knearest_recc!(Vistr<'a,(),K::T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T,Unit<'a,T,D>,unit_create);
 
     pub fn naive<'b,K:Knearest>(bots:impl Iterator<Item=&'b K::T>,point:[K::N;2],num:usize,mut k:K)->Vec<Unit<'b,K::T,K::D>>{
         
@@ -403,15 +403,15 @@ mod mutable{
     }
 
 
-    knearest_recc!(NdIterMut<'a,(),K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T,UnitMut<'a,T,D>,unit_mut_create);
+    knearest_recc!(VistrMut<'a,(),K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T,UnitMut<'a,T,D>,unit_mut_create);
 
     pub fn k_nearest_mut<'b,
         T:HasAabb,
         A:AxisTrait,
         K:Knearest<N=T::Num,T=T>,
-        >(tree:&'b mut DynTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<UnitMut<'b,T,K::D>>{
-        let axis=tree.get_axis();
-        let dt = tree.get_iter_mut().with_depth(Depth(0));
+        >(tree:&'b mut DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<UnitMut<'b,T,K::D>>{
+        let axis=tree.axis();
+        let dt = tree.vistr_mut().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 

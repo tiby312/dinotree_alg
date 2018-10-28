@@ -18,7 +18,7 @@ pub struct RectIntersectErr;
 
 
 pub struct MultiRectMut<'a,A: AxisTrait+'a,T:HasAabb+'a> {
-    tree: &'a mut DynTree<A,(),T>,
+    tree: &'a mut DinoTree<A,(),T>,
     rects: SmallVec<[Rect<T::Num>; 16]>,
 }
 
@@ -42,7 +42,7 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 	}
 }
 
-pub fn multi_rect_mut<'a,A:AxisTrait,T:HasAabb>(tree:&'a mut DynTree<A,(),T>)->MultiRectMut<'a,A,T>{
+pub fn multi_rect_mut<'a,A:AxisTrait,T:HasAabb>(tree:&'a mut DinoTree<A,(),T>)->MultiRectMut<'a,A,T>{
 	MultiRectMut{tree,rects:SmallVec::new()}
 }
 
@@ -72,7 +72,7 @@ pub fn collide_two_rect_parallel<
     F: FnMut(&mut T, &mut T),
 >(
     multi: &mut MultiRectMut<'a,A,T>,
-    axis:impl AxisTrait, //axis to sort under. not neccesarily the same as dyntree axis
+    axis:impl AxisTrait, //axis to sort under. not neccesarily the same as DinoTree axis
     rect1: &Rect<T::Num>,
     rect2: &Rect<T::Num>,
     mut func: F,

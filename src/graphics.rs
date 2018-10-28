@@ -16,12 +16,12 @@ pub trait DividerDrawer{
 ///Calls the user supplied function on each divider.
 ///Since the leaves do not have dividers, it is not called for the leaves.
 pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
-    gentree: &DynTree<A,(),T>,
+    gentree: &DinoTree<A,(),T>,
     dr:&mut D,
     rect:&Rect<T::Num>
 ) {
     fn recc<A:AxisTrait,T:HasAabb,D:DividerDrawer<N=T::Num>>
-        (axis:A,stuff:LevelIter<NdIter<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
+        (axis:A,stuff:LevelIter<Vistr<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
 
         let ((depth,_nn),rest)=stuff.next();
 
@@ -48,6 +48,6 @@ pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
         }
     }
 
-    recc(gentree.get_axis(),gentree.get_iter().with_depth(Depth(0)),dr,rect);
+    recc(gentree.axis(),gentree.vistr().with_depth(Depth(0)),dr,rect);
     
 }

@@ -2,7 +2,7 @@
 //!
 //! ```
 //! pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
-//!        tree: &mut DynTree<A,(),T>,
+//!        tree: &mut DinoTree<A,(),T>,
 //!        rect: &Rect<T::Num>,
 //!        mut closure: impl FnMut(&mut T),
 //! );
@@ -97,9 +97,9 @@ mod mutable{
     use oned::get_section_mut;
     use super::*;
 
-    rect!(NdIterMut<(),T>,&mut T,get_section_mut,get_range_mut);
+    rect!(VistrMut<(),T>,&mut T,get_section_mut,get_range_mut);
     pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
-        tree: &mut DynTree<A,(),T>,
+        tree: &mut DinoTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
@@ -109,8 +109,8 @@ mod mutable{
             }
         };
 
-        let axis=tree.get_axis();
-        let ta = tree.get_iter_mut();
+        let axis=tree.axis();
+        let ta = tree.vistr_mut();
 
         self::rect_recurse(axis, ta, rect, &mut f);
     }
@@ -141,7 +141,7 @@ mod mutable{
 
     }
     pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
-        tree: &mut DynTree<A,(),T>,
+        tree: &mut DinoTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
@@ -150,8 +150,8 @@ mod mutable{
                 closure(a);
             }
         };
-        let axis=tree.get_axis();
-        let ta = tree.get_iter_mut();
+        let axis=tree.axis();
+        let ta = tree.vistr_mut();
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
@@ -160,11 +160,11 @@ mod constant{
 
     use oned::get_section;
     use super::*;
-    rect!(NdIter<(),T>,&T,get_section,get_range);
-    //rect!(NdIter<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
+    rect!(Vistr<(),T>,&T,get_section,get_range);
+    //rect!(Vistr<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
     pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(
-        tree: &DynTree<A,(),T>,
+        tree: &DinoTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
@@ -174,13 +174,13 @@ mod constant{
                 closure(a);
             }
         };
-        let axis=tree.get_axis();
-        let ta = tree.get_iter();
+        let axis=tree.axis();
+        let ta = tree.vistr();
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
     pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
-        tree: &DynTree<A,(),T>,
+        tree: &DinoTree<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
@@ -191,8 +191,8 @@ mod constant{
             }
         };
 
-        let axis=tree.get_axis();
-        let ta = tree.get_iter();
+        let axis=tree.axis();
+        let ta = tree.vistr();
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
