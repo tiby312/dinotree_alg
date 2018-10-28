@@ -12,7 +12,7 @@ struct Bot{
 
 pub struct KnearestDemo{
     _bots:Vec<Bot>,
-    tree:DynTree<axgeom::XAXISS,(),BBox<F64n,Bot>>,
+    tree:DinoTree<axgeom::XAXISS,(),BBox<F64n,Bot>>,
     _dim:[f64;2]
 }
 impl KnearestDemo{
@@ -25,7 +25,7 @@ impl KnearestDemo{
             Bot{id,pos:ret.pos,radius:ret.radius}
         }).collect();
 
-        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))});
+        let tree = DinoTree::new(axgeom::XAXISS,(),&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))});
         KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }
@@ -34,7 +34,7 @@ impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&mut self.tree;
 
-        for bot in tree.iter_every_bot(){
+        for bot in tree.iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
@@ -158,7 +158,7 @@ impl DemoSys for KnearestDemo{
             let vv2={
                 let kn=Kn2{};
                 let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                k_nearest::naive(tree.iter_every_bot(),point,3,kn).into_iter()
+                k_nearest::naive(tree.iter(),point,3,kn).into_iter()
             };
             
 

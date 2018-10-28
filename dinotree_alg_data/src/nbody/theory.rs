@@ -289,7 +289,7 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
     let bench={
         let instant=Instant::now();
 
-        let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+        let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
             b.create_aabb()
         });
         let _a=f64n!(0.0);
@@ -303,7 +303,7 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
         
         nbody::nbody(&mut tree,&mut bla,border);
 
-        tree.apply_orig_order(bots,|a,b|{
+        tree.apply(bots,|a,b|{
             b.force=a.inner.force;
         });
 
@@ -314,7 +314,7 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
     let bench_par={
         let instant=Instant::now();
 
-        let mut tree=DynTree::new(axgeom::XAXISS,(),bots,|b|{
+        let mut tree=DinoTree::new(axgeom::XAXISS,(),bots,|b|{
             b.create_aabb()
         });
         let _a=f64n!(0.0);
@@ -328,7 +328,7 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
         
         nbody::nbody_par(&mut tree,&mut bla,border);
 
-        tree.apply_orig_order(bots,|a,b|{
+        tree.apply(bots,|a,b|{
             b.force=a.inner.force;
         });
 
@@ -358,7 +358,7 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
     };
 
     let calls_to_gravitate={
-        let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+        let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
             b.create_aabb()
         });
         let _a=f64n!(0.0);
@@ -372,7 +372,7 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
         
         nbody::nbody(&mut tree,&mut bla,border);
 
-        tree.apply_orig_order(bots,|a,b|{
+        tree.apply(bots,|a,b|{
             b.force=a.inner.force;
         });
 

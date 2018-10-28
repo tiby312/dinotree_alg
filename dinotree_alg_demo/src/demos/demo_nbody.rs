@@ -3,7 +3,6 @@ use dinotree_alg::nbody;
 use dinotree_alg::colfind;
 use dinotree_geom;
 use dinotree_geom::GravityTrait;
-use dinotree_inner::HasAabb;
 use dinotree_alg;
 
 #[derive(Copy,Clone)]
@@ -190,7 +189,7 @@ impl DemoSys for DemoNbody{
         let mut tree={
             let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2],rect:axgeom::Rect::new(f64n!(0.0),f64n!(0.0),f64n!(0.0),f64n!(0.0))};
 
-            DynTree::new(axgeom::XAXISS,n,&bots,|b|{b.create_aabb()})
+            DinoTree::new(axgeom::XAXISS,n,&bots,|b|{b.create_aabb()})
         };
         //println!("tree height={:?}",tree.get_height());
 
@@ -209,10 +208,9 @@ impl DemoSys for DemoNbody{
             let mut bla=Bla{num_pairs_checked:0};
             nbody::nbody(&mut tree,&mut bla,border);
             let num_pair_alg=bla.num_pairs_checked;
-            //assert_eq!(bla.num_pairs_checked,n_choose_2(tree.get_num_bots()));
             
             let (bots2,num_pair_naive)={
-                let mut bots2:Vec<BBoxDemo<F64n,Bot>>=bots.iter().map(|bot|BBoxDemo::new(bot.create_aabb(),*bot)).collect();
+                let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|unsafe{BBox::new(bot.create_aabb(),*bot)}).collect();
                 let mut num_pairs_checked=0;
                 nbody::naive_mut(&mut bots2,|a,b|{
                     let _ = dinotree_geom::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004,|a|a.sqrt());
@@ -228,7 +226,7 @@ impl DemoSys for DemoNbody{
                 b.force[0]=0.0;
                 b.force[1]=0.0;
             }
-            tree.apply_orig_order(&mut bots3,|b,t|*t=b.inner);
+            tree.apply(&mut bots3,|b,t|*t=b.inner);
 
             {
                 let mut max_diff=None;
@@ -363,12 +361,12 @@ impl DemoSys for DemoNbody{
         }
 
         //Draw bots.
-        for bot in tree.iter_every_bot(){
+        for bot in tree.iter(){
             draw_rect_f64n([0.0,0.5,0.0,1.0],bot.get(),c,g);
         }
 
 
-        tree.apply_orig_order(bots,|b,t|*t=b.inner);
+        tree.apply(bots,|b,t|*t=b.inner);
         
         {
             let mut new_bots=Vec::new();

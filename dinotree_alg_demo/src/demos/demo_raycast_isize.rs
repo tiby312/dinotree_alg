@@ -119,7 +119,7 @@ pub struct Bot{
 }
 
 pub struct RaycastDemo{
-    tree:DynTree<axgeom::XAXISS,(),BBox<isize,Bot>>,
+    tree:DinoTree<axgeom::XAXISS,(),BBox<isize,Bot>>,
     counter:f64,
     dim:[isize;2]
 }
@@ -132,7 +132,7 @@ impl RaycastDemo{
 
         let bots:Vec<Bot>=(0..500).map(|id|Bot{id}).collect();
 
-        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|_a|{
+        let tree = DinoTree::new(axgeom::XAXISS,(),&bots,|_a|{
             let ret=bots_fake.next().unwrap();
             let ret=ret.into_isize();
             let p=ret.pos;
@@ -160,19 +160,19 @@ impl DemoSys for RaycastDemo{
             dinotree_geom::Ray{point,dir,tlen:500}
         };
 
-        for bot in tree.iter_every_bot(){
+        for bot in tree.iter(){
             draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }   
 
         let k={
-            let height=tree.get_height();
+            let height=tree.height();
             let mut res1=raycast::raycast(&tree,axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height});
             match res1{
                 Some((mut bots,dis))=>{
                     bots.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
  
                     if check_naive{
-                        let (mut bots2,dis2)  = raycast::naive(tree.iter_every_bot(),ray_isize::RayNoDraw{ray}).unwrap();
+                        let (mut bots2,dis2)  = raycast::naive(tree.iter(),ray_isize::RayNoDraw{ray}).unwrap();
                         assert_eq!(dis,dis2);
                         bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 

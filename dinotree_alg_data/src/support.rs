@@ -11,7 +11,7 @@ pub fn instant_to_sec(elapsed:Duration)->f64{
 }
 
 
-use dinotree_inner::*;
+use dinotree::*;
 
 ///Like dinotree_inner::BBox, but with a public constructor
 #[derive(Copy,Clone)]

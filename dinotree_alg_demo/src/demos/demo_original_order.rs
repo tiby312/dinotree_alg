@@ -79,7 +79,7 @@ impl DemoSys for OrigOrderDemo{
         }
 
 
-        let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|bot|{
+        let mut tree=DinoTree::new(axgeom::XAXISS,(),&bots,|bot|{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
         }); 
 
@@ -152,7 +152,7 @@ impl DemoSys for OrigOrderDemo{
 
 
             let mut res2=Vec::new();
-            let mut bots2:Vec<BBoxDemo<F64n,Bot>>=bots.iter().map(|bot|BBoxDemo::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)).collect();
+            let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|unsafe{BBox::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)}).collect();
             colfind::query_naive_mut(&mut bots2,|a,b|{
                 let (a,b)=if a.inner.id<b.inner.id{
                     (a,b)
@@ -197,7 +197,8 @@ impl DemoSys for OrigOrderDemo{
             }
 
         }
-        tree.apply_orig_order(bots,|b,t|*t=b.inner);
+        
+        tree.apply(bots,|b,t|*t=b.inner);
 
         /*
         //If you dont care about the order, you can do this instead.

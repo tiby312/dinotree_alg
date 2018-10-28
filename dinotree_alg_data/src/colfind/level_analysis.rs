@@ -3,7 +3,6 @@
 use inner_prelude::*;
 use std::time::Instant;
 use dinotree_alg::colfind;
-use dinotree_inner::advanced::LevelTimer;
 
 
 
@@ -26,7 +25,7 @@ enum RebalOrQuery{
 
 mod level_counter{
 	use datanum;
-	use dinotree_inner::advanced::Splitter;
+	use dinotree::advanced::Splitter;
 
 	pub struct LevelCounter{
 		counter:*mut datanum::Counter,
@@ -108,7 +107,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 		    let height=compute_tree_height_heuristic(num_bots);
 			let levelc=level_counter::LevelCounter::new(&mut counter);
 
-			let (mut tree,levelc)=dinotree_inner::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
+			let (mut tree,levelc)=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
 			        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
 		    },height,levelc);
 
@@ -129,7 +128,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 		    counter.into_inner();
 
 
-		    tree.apply_orig_order(&mut bots,|a,b|{
+		    tree.apply(&mut bots,|a,b|{
 		        *b=a.inner;
 		    });
 
@@ -166,7 +165,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 	    let height=compute_tree_height_heuristic(num_bots);
 		let leveltimer1=LevelTimer::new();
 
-		let (mut tree,times1)=dinotree_inner::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
+		let (mut tree,times1)=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
 			        aabb_from_point_isize(b.pos,[5,5])  
 			    },height,leveltimer1);
 
@@ -184,7 +183,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 		let leveltimer2=LevelTimer::new();
 		let times2=colfind::query_seq_adv_mut(&mut tree,Bo{},leveltimer2);
 
-	    tree.apply_orig_order(&mut bots,|a,b|{
+	    tree.apply(&mut bots,|a,b|{
 	        *b=a.inner;
 	    });
 

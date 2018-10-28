@@ -35,7 +35,7 @@ fn test1(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     });
 
@@ -48,7 +48,7 @@ fn test1(bots:&mut [Bot])->(f64,f64){
         b.inner.num+=2;
     });
 
-    tree.apply_orig_order(bots,|a,b|{
+    tree.apply(bots,|a,b|{
         b.num=a.inner.num;
     });
 
@@ -63,7 +63,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
 
     let height=compute_tree_height_heuristic(bots.len()); 
         
-    let (mut tree,_)=dinotree_inner::advanced::new_adv(axgeom::XAXISS,(),bots,|b|{
+    let (mut tree,_)=dinotree::advanced::new_adv(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     },height,SplitterEmpty,rebal_height);
 
@@ -73,7 +73,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
 
     let _ =colfind::query_adv_mut(&mut tree,Bo{},SplitterEmpty,query_height);
 
-    tree.apply_orig_order(bots,|a,b|{
+    tree.apply(bots,|a,b|{
         b.num=a.inner.num;
     });
 

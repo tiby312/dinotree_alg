@@ -68,7 +68,7 @@ mod ray_f64{
 
 
 pub struct RaycastF64Demo{
-    tree:DynTree<axgeom::XAXISS,(),BBox<F64n,()>>,
+    tree:DinoTree<axgeom::XAXISS,(),BBox<F64n,()>>,
     dim:[f64;2]
 }
 impl RaycastF64Demo{
@@ -81,7 +81,7 @@ impl RaycastF64Demo{
 
         let bots=vec![();500];
 
-        let tree = DynTree::new(axgeom::XAXISS,(),&bots,|_|{
+        let tree = DinoTree::new(axgeom::XAXISS,(),&bots,|_|{
             let ret=bot_iter.next().unwrap();
             let p=ret.pos;
             let r=ret.radius;
@@ -96,7 +96,7 @@ impl DemoSys for RaycastF64Demo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let tree=&self.tree;
         //Draw bots
-        for bot in tree.iter_every_bot(){
+        for bot in tree.iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
     

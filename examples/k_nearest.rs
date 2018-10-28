@@ -1,6 +1,6 @@
 extern crate dinotree;
+extern crate dinotree_alg;
 use dinotree::*;
-use dinotree::support::BBox;
 extern crate num;
 
 
@@ -23,7 +23,7 @@ fn make_bot(id: usize, x: (isize, isize), y: (isize, isize)) -> BBox<isize, Bot>
 }
 
 fn main() {
-    let mut bots: Vec<BBox<isize, Bot>> = Vec::new();
+    let mut bots: Vec<Bot> = Vec::new();
 
 
     //    |--------------|

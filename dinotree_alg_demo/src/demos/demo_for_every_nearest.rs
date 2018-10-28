@@ -1,10 +1,11 @@
 use support::prelude::*;
 use dinotree_alg::k_nearest;
 use dinotree_alg::for_every_nearest;
-
-use dinotree_inner::IsPoint;
-
+use dinotree_alg::for_every_nearest::IsPoint;
 use dinotree_geom;
+
+
+
 
 
 
@@ -93,18 +94,18 @@ impl DemoSys for KnearestEveryDemo{
                 }
             }
 
-            let mut tree=DynTree::new(axgeom::YAXISS,(),&bots,|b|{
+            let mut tree=DinoTree::new(axgeom::YAXISS,(),&bots,|b|{
                 Conv::from_rect(aabb_from_pointf64(b.pos,[0.0;2]))
             });
 
 
-            for a in tree.iter_every_bot(){
+            for a in tree.iter(){
                 let p=Conv::point_to_inner(a.inner.get_center());
                 let r=5.0;
                 let r=Conv::from_rect(aabb_from_pointf64(p,[r;2]));
                 draw_rect_f64n([0.0,1.0,0.0,0.5],&r,c,g);
             } 
-
+            /*
             for_every_nearest::for_every_nearest_mut(&mut tree,|a,b,_dis|{
                 let a=&mut a.inner;
                 let b=&mut b.inner;
@@ -130,12 +131,12 @@ impl DemoSys for KnearestEveryDemo{
                      c.transform,
                      g);
             },Kn);
-
+            */
             //We didnt actualy modify anything in the tree so we dont need to inject
             //changes back into the bots.
             
 
-            tree.apply_orig_order(bots,|b,t|{
+            tree.apply(bots,|b,t|{
                 t.acc[0]+=b.inner.acc[0];
                 t.acc[1]+=b.inner.acc[1];
             })

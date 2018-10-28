@@ -100,7 +100,7 @@ impl DemoSys for IntersectWithDemo{
         bots[0].pos=cursor;
 
 
-        let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|bot|{
+        let mut tree=DinoTree::new(axgeom::XAXISS,(),&bots,|bot|{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
         }); 
 
@@ -144,7 +144,7 @@ impl DemoSys for IntersectWithDemo{
         for wall in walls.iter(){
             draw_rect_f64n([0.0,0.0,1.0,0.3],&wall.0,c,g);
         }
-        for bot in tree.iter_every_bot(){
+        for bot in tree.iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
  
@@ -154,7 +154,7 @@ impl DemoSys for IntersectWithDemo{
     
         
 
-        tree.apply_orig_order(bots,|b,t|*t=b.inner);
+        tree.apply(bots,|b,t|*t=b.inner);
         
      }
 }

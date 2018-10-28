@@ -21,7 +21,7 @@ fn handle1(fb:&FigureBuilder){
 	    let mut bots:Vec<[f64;2]>=s.take(num_bots).collect();
     	
 
-        let mut tree=DynTree::new(axgeom::XAXISS,(),&bots,|b|{   
+        let mut tree=DinoTree::new(axgeom::XAXISS,(),&bots,|b|{   
             ConvF64::from_rect(aabb_from_pointf64(*b,[5.0,5.0]))
         });
 

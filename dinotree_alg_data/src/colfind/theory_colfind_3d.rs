@@ -15,7 +15,7 @@ struct Res{
 fn test1(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
         datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
     });
 
@@ -24,7 +24,7 @@ fn test1(bots:&mut [Bot])->Res{
         num_pairs+=1;
     });
 
-    tree.apply_orig_order(bots,|a,b|{
+    tree.apply(bots,|a,b|{
         b.num=a.inner.num;
     });
 

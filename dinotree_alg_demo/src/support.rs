@@ -4,12 +4,9 @@ use rand::{SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};
 use std;
 
+use dinotree::*;
 
-
-
-
-use dinotree_inner::*;
-
+/*
 ///Like dinotree_inner::BBox, but with a public constructor
 #[derive(Copy,Clone)]
 pub struct BBoxDemo<N:NumTrait,T>{
@@ -37,7 +34,7 @@ unsafe impl<N:NumTrait,T> HasAabb for BBoxDemo<N,T>{
         &self.rect
     }
 }
-
+*/
 
 
 
@@ -49,14 +46,11 @@ pub mod prelude{
     pub(crate) use piston_window;
     pub use ordered_float::NotNan;
     pub use piston_window::*;
-    pub use dinotree_inner::DynTree;
-    pub use dinotree_inner::HasAabb;
+    pub use dinotree::DinoTree;
+    pub use dinotree::HasAabb;
     pub(crate) use axgeom;
     pub(crate) use support::*;
-
-    pub use dinotree_inner::BBox;
-
-    //pub(crate) use ColorGenerator;
+    pub use dinotree::BBox;
 }
 use ordered_float::NotNan;
 

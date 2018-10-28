@@ -15,7 +15,7 @@ fn test1(bots:&mut [Bot])->(usize,usize){
     
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
         datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
     });
 
@@ -26,7 +26,7 @@ fn test1(bots:&mut [Bot])->(usize,usize){
         b.inner.num+=2;
     });
 
-    tree.apply_orig_order(bots,|a,b|{
+    tree.apply(bots,|a,b|{
         b.num=a.inner.num;
     });
 
@@ -41,7 +41,7 @@ fn test2(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DynTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     });
 
@@ -54,7 +54,7 @@ fn test2(bots:&mut [Bot])->(f64,f64){
         b.inner.num+=2;
     });
 
-    tree.apply_orig_order(bots,|a,b|{
+    tree.apply(bots,|a,b|{
         b.num=a.inner.num;
     });
 
@@ -67,7 +67,7 @@ fn test3(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DynTree::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTree::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     });
 
@@ -80,7 +80,7 @@ fn test3(bots:&mut [Bot])->(f64,f64){
         b.inner.num+=2;
     });
 
-    tree.apply_orig_order(bots,|a,b|{
+    tree.apply(bots,|a,b|{
         b.num=a.inner.num;
     });
 
