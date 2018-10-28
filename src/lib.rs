@@ -14,7 +14,6 @@
 //! More rigorous automated + visual testing and benchmarking is to be desired. Once the design stabalizes, this will be a priority.
 //! 
 
-#![feature(iterator_step_by)]
 #![feature(test)]
 #![feature(trusted_len)]
 

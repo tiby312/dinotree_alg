@@ -47,7 +47,7 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb+Send,X:Copy+Send>(
     tree:&mut DinoTree<A,(),T>,
     b: &mut [X],
     mut aabb_create:impl FnMut(&X)->axgeom::Rect<T::Num>,
-    mut func: impl Fn(&mut T, &mut BBox<T::Num,X>)+Copy+Send,
+    func: impl Fn(&mut T, &mut BBox<T::Num,X>)+Copy+Send,
 ) {
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.

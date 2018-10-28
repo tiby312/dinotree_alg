@@ -286,7 +286,7 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,func:impl
         fn div(self)->(Self,Self){
             unreachable!()
         }
-        fn add(self,a:Self)->Self{
+        fn add(self,_:Self)->Self{
             unreachable!()
         }
         fn node_start(&mut self){}
@@ -315,7 +315,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:imp
             let b=Bo(self.0,PhantomData);
             (self,b)
         }
-        fn add(self,a:Self)->Self{
+        fn add(self,_:Self)->Self{
             self
         }
         fn node_start(&mut self){}
@@ -372,7 +372,7 @@ pub fn query_seq_adv_mut<
             fn div(self)->(Self,Self){
                 unreachable!()
             }
-            fn add(self,a:Self)->Self{
+            fn add(self,_:Self)->Self{
                 unreachable!()
             }
             fn node_start(&mut self){}

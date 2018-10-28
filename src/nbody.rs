@@ -161,8 +161,8 @@ fn buildtree<'a,
                             let right=right.create_wrap_mut();
 
                             
-                            let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
-                            let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
+                            let i1=left.dfs_inorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
+                            let i2=right.dfs_inorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
                             let i3=nn.range.iter().chain(i1.chain(i2));
                             ncontext.new(i3,rect)
                         };
