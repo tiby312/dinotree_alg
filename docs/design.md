@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 In this document, we'll go over the high level design of some of the algorithms provided by this crate.
 As a user of this crate, you don't really need to know any of these. All you need to concern yourself about is the users guide.
 
