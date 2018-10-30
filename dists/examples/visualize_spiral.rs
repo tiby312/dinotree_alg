@@ -4,13 +4,13 @@ extern crate axgeom;
 extern crate rand;
 extern crate dinotree_alg;
 extern crate ordered_float;
-extern crate dinotree_inner;
+extern crate dinotree;
 extern crate rayon;
 extern crate dinotree_geom;
 extern crate dists;
 extern crate find_folder;
 
-use dinotree_inner::*;
+use dinotree::*;
 use axgeom::*;
 use dinotree_alg::*;
 
@@ -103,7 +103,7 @@ fn main() {
         }).collect();
 
 
-        let mut tree=DynTree::new_seq(axgeom::XAXISS,(),&bots,|b|{
+        let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),&bots,|b|{
             aabb_from_point_isize(b.pos,[5,5])
         });
 
@@ -111,7 +111,7 @@ fn main() {
             clear([1.0; 4], g);
 
             
-            for bot in tree.iter_every_bot(){
+            for bot in tree.iter(){
                 let a=bot.get();
                 draw_rect_isize([0.0,0.0,0.0,0.3],a,&c,g);
             }

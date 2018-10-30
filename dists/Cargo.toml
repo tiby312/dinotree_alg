@@ -8,10 +8,11 @@ authors = ["Ken Reed <kenakioreed@gmail.com>"]
 [dev-dependencies]
 find_folder = "*"
 rayon="1.0.2"
-compt = "1.0.0"
-axgeom = "1.0.0"
 smallvec = "0.6.1"
-dinotree_inner = {path="../../dinotree_inner"}
+
+compt = "1.2.2"
+axgeom = "1.0.1"
+dinotree = "0.1.0"
 dinotree_geom={path="../../dinotree_geom"}
 dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"
