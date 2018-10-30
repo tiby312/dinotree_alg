@@ -15,8 +15,7 @@ piston_window = "*"
 [dependencies]
 is_sorted = "0.1.0"
 rayon = "1.0.2"
-#compt = "1.1.0"
-compt = {path="../compt"}
-axgeom = "1.0.0"
 smallvec = "0.6.1"
-dinotree = {path="../dinotree"}
+compt = "1.2.2"
+axgeom = "1.0.1"
+dinotree = "0.1.0"

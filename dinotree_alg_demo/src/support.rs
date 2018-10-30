@@ -41,7 +41,7 @@ unsafe impl<N:NumTrait,T> HasAabb for BBoxDemo<N,T>{
 
 
 pub mod prelude{
-    pub use compt::*;
+    //pub use compt::*;
     pub use DemoSys;
     pub(crate) use piston_window;
     pub use ordered_float::NotNan;

@@ -7,10 +7,10 @@ authors = ["Ken Reed <kenakioreed@gmail.com>"]
 dists = {path="../dists"}
 gnuplot = "0.0.26"
 rayon="1.0.2"
-compt = {path="../../compt"}
-axgeom = "1.0.0"
+compt = "1.2.2"
+axgeom = "1.0.1"
+dinotree = "0.1.0"
 smallvec = "0.6.1"
-dinotree = {path="../../dinotree"}
 dinotree_geom={path="../../dinotree_geom"}
 dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"
