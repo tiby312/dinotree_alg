@@ -5,7 +5,7 @@
 //! The algorithm works similar to a Barnes–Hut simulation, but uses a kdtree instead of a quad tree.
 //! 
 //! A sequential and parallel version are supplied, both with a similar api:
-//! ```
+//! ```ignore
 //! pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(
 //!           t1:&mut DinoTree<A,N::No,N::T>,
 //!           ncontext:&mut N,

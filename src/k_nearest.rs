@@ -5,7 +5,7 @@
 //! There is a naive version, and there is a version that uses the tree, and there are mutable versions of those 
 //! that return mutable references.
 //!
-//! ```
+//! ```ignore
 //! pub fn k_nearest_mut<'b, T: HasAabb, A: AxisTrait, K: Knearest<N = T::Num, T = T>>(
 //!     tree: &'b mut DinoTree<A, (), T>, 
 //!     point: [T::Num; 2], 

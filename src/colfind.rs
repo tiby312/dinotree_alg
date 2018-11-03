@@ -6,7 +6,7 @@
 //! There a multiple versions of the same fundamental query algorithm. There are parallel/sequential and 
 //! advanced versions. 
 //!
-//! ```
+//! ```ignore
 //! pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(
 //!             tree:&mut DinoTree<A,(),T>,
 //!             func:impl FnMut(&mut T,&mut T));

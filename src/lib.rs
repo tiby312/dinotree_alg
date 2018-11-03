@@ -32,14 +32,6 @@ extern crate smallvec;
 extern crate dinotree;
 
 #[cfg(test)]
-extern crate num;
-#[cfg(test)]
-extern crate cgmath;
-#[cfg(test)]
-extern crate collision;
-#[cfg(test)]
-extern crate rand;
-#[cfg(test)]
 extern crate test;
 
 extern crate is_sorted;

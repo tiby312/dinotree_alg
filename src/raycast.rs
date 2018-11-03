@@ -7,7 +7,7 @@
 //!
 //! They all look something like this:
 //!
-//! ```
+//! ```ignore
 //! pub fn raycast_mut<'a,A:AxisTrait,T:HasAabb>(
 //!              tree:&'a mut DinoTree<A,(),T>,
 //!              rect:Rect<T::Num>,

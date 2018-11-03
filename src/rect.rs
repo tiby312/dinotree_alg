@@ -1,6 +1,6 @@
 //! Provides two basic functions: for_all_in_rect, for_all_intersect_rect that both have similar api like this:
 //!
-//! ```
+//! ```ignore
 //! pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
 //!        tree: &mut DinoTree<A,(),T>,
 //!        rect: &Rect<T::Num>,
