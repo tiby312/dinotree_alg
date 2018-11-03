@@ -111,18 +111,12 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 			        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
 		    },height,levelc);
 
-			struct Bo{}
-			impl colfind::ColMulti for Bo{
-				type T=BBox<datanum::DataNum,Bot>;
-				fn collide(&mut self,a:&mut Self::T,b:&mut Self::T){
-					a.inner.num+=1;
-					b.inner.num+=1;
-				}
-			}
-
 			counter.reset();
 			let levelc2=level_counter::LevelCounter::new(&mut counter);
-			let levelc2=colfind::query_seq_adv_mut(&mut tree,Bo{},levelc2);
+			let levelc2=colfind::query_seq_adv_mut(&mut tree,|a,b|{
+				a.inner.num+=1;
+				b.inner.num+=1;
+			},levelc2);
 
 
 		    counter.into_inner();
@@ -133,7 +127,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 		    });
 
 
-		    let mut t=TheoryRes{grow,rebal:levelc.into_inner(),query:levelc2.1.into_inner()};
+		    let mut t=TheoryRes{grow,rebal:levelc.into_inner(),query:levelc2.into_inner()};
 		    grow_to_fit(&mut t.rebal,height);
 			grow_to_fit(&mut t.query,height);
 
@@ -181,14 +175,14 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 
 
 		let leveltimer2=LevelTimer::new();
-		let times2=colfind::query_seq_adv_mut(&mut tree,Bo{},leveltimer2);
+		let times2=colfind::query_seq_adv_mut(&mut tree,|a,b|{a.inner.num+=1;b.inner.num+=1},leveltimer2);
 
 	    tree.apply(&mut bots,|a,b|{
 	        *b=a.inner;
 	    });
 
 
-	    let mut t=BenchRes{grow,rebal:times1.into_inner(),query:times2.1.into_inner()};
+	    let mut t=BenchRes{grow,rebal:times1.into_inner(),query:times2.into_inner()};
 	    grow_to_fit(&mut t.rebal,height);
 		grow_to_fit(&mut t.query,height);
 

@@ -28,7 +28,6 @@
 extern crate axgeom;
 extern crate compt;
 extern crate rayon;
-
 extern crate smallvec;
 extern crate dinotree;
 
@@ -57,7 +56,6 @@ mod inner_prelude {
     pub use compt::Visitor;
     pub use axgeom::AxisTrait;
     pub use std::marker::PhantomData;
-    
     pub use ::*;
 }
 
