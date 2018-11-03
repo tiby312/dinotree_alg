@@ -11,17 +11,17 @@
 //!     point: [T::Num; 2], 
 //!     num: usize, 
 //!     knear: K
-//! ) -> Vec<UnitMut<'b, T, K::D>>
+//! ) -> NearestResultMut<'b,T,K::D>
 //! ```
 //! Along with a reference to the tree, the user provides the needed geometric functions by passing an implementation of Knearest.
-//! The user provides a point, and a number. Then a Vec containing up to that number of units is returned. 
+//! The user provides a point, and the number of nearest objects to return. Then an iterator containing up to that number of units is returned. 
 //! A unit is a distance plus one or bots. This is to handle solutions where there is a tie. There may be multiple nearest elements.
 //! The first element returned is the closest, and the last the furtheset.
 //! It is possible for the vec to be empty if the tree does not contain any bots. 
 //! All bots are returned for ties since it is hard to define exactly which bot would be returned by this algorithm otherwise.
 //! This also means that the orderding of the bots inside of a Unit has no meaning and could be returned in any order.
 //! For trees that use floating point bounding boxes, ties will be extremely rare in a lot of cases, so each Unit
-//! will have only bot inside of it.
+//! will likely only have one bot inside of it.
 //!
 //! # Safety
 //!
@@ -78,12 +78,12 @@ macro_rules! get_mut_range_iter{
 }
 
 /// Returned by k_nearest
-pub struct Unit<'a,T:HasAabb+'a,D:Ord+Copy>{
+pub struct Unit<'a,T:'a,D>{ //:Ord+Copy
     pub bots:SmallVec<[&'a T;2]>,
     pub dis:D
 }
 /// Returned by k_nearest_mut
-pub struct UnitMut<'a,T:HasAabb+'a,D:Ord+Copy>{
+pub struct UnitMut<'a,T:'a,D>{
     pub bots:SmallVec<[&'a mut T;2]>,
     pub dis:D
 }
@@ -337,7 +337,7 @@ mod con{
         T:HasAabb,
         A:AxisTrait,
         K:Knearest<T=T,N=T::Num>,
-        >(tree:&'b DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<Unit<'b,T,K::D>>{
+        >(tree:&'b DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
         let axis=tree.axis();
         let dt = tree.vistr().with_depth(Depth(0));
 
@@ -346,7 +346,7 @@ mod con{
 
         recc(axis,dt,&mut knear,point,&mut c);
      
-        c.into_sorted()
+        NearestResult{inner:c.into_sorted().into_iter()}
     }
 
     knearest_recc!(Vistr<'a,(),K::T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T,Unit<'a,T,D>,unit_create);
@@ -409,7 +409,7 @@ mod mutable{
         T:HasAabb,
         A:AxisTrait,
         K:Knearest<N=T::Num,T=T>,
-        >(tree:&'b mut DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->Vec<UnitMut<'b,T,K::D>>{
+        >(tree:&'b mut DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
 
@@ -417,7 +417,46 @@ mod mutable{
 
         recc(axis,dt,&mut knear,point,&mut c);
      
-        c.into_sorted()
+        NearestResultMut{inner:c.into_sorted().into_iter()}
+    }
+
+}
+
+
+
+///Returns the closest to the furthest unit found.
+pub struct NearestResult<'a,T,D>{
+    inner:std::vec::IntoIter<Unit<'a,T,D>>
+}
+impl<'a,T,D> Iterator for NearestResult<'a,T,D>{
+    type Item=Unit<'a,T,D>;
+    fn next(&mut self)->Option<Self::Item>{
+        self.inner.next()
+    }
+    fn size_hint(&self)->(usize,Option<usize>){
+        self.inner.size_hint()
     }
 }
 
+impl<'a,T,D> std::iter::FusedIterator for NearestResult<'a,T,D>{}
+impl<'a,T,D> std::iter::ExactSizeIterator for NearestResult<'a,T,D>{}
+unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResult<'a,T,D>{}
+
+
+///Returns the closest to the furthest unit found.
+pub struct NearestResultMut<'a,T,D>{
+    inner:std::vec::IntoIter<UnitMut<'a,T,D>>
+}
+impl<'a,T,D> Iterator for NearestResultMut<'a,T,D>{
+    type Item=UnitMut<'a,T,D>;
+    fn next(&mut self)->Option<Self::Item>{
+        self.inner.next()
+    }
+
+    fn size_hint(&self)->(usize,Option<usize>){
+        self.inner.size_hint()
+    }
+}
+impl<'a,T,D> std::iter::FusedIterator for NearestResultMut<'a,T,D>{}
+impl<'a,T,D> std::iter::ExactSizeIterator for NearestResultMut<'a,T,D>{}
+unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResultMut<'a,T,D>{}

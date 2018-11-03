@@ -1,18 +1,26 @@
 //! ## Goal
-//! To provide provide useful algorithms that you can perform on a dinotree.
+//! To provide useful algorithms that you can perform on a dinotree.
 //!
 //! ## Notes                      
 //!
-//! Checkout the demo project to see how all these algorithms can be used.
+//! Checkout the inner demo project to see how all these algorithms can be used.
 //!
 //! ## Testing
 //!
 //! A quick way to verify to a good level a lot of these algorithms is visually, so the demo inner project is used
-//! to verify correctness of a lot of these algorithms. Some of the more complicated algorithm demos additionally have an option to
+//! to verify correctness of a lot of these algorithms. Some of the algorithms demos additionally have an option to
 //! verify the algorithm against the naive algorithm. This is to catch more subtle corner case bugs.
 //! The demo projects are not deterministic. Its up to the user to try and trigger corner cases by moving their mouse around.
-//! More rigorous automated + visual testing and benchmarking is to be desired. Once the design stabalizes, this will be a priority.
+//! More rigorous automated + visual testing and benchmarking is needed.
 //! 
+//! Simply testing for correctness doesnt mean the algorithms are working as expected. 
+//! The dinotree_alg_data inner project measures a lot of these algorithms to give an even better feel that they are working
+//! as anticipated. 
+//!
+//!# Analysis
+//! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
+//!
+
 
 #![feature(test)]
 #![feature(trusted_len)]
@@ -47,7 +55,6 @@ mod inner_prelude {
     pub use axgeom::Range;
     pub use ::*;
     pub use compt::Visitor;
-    //pub use par;
     pub use axgeom::AxisTrait;
     pub use std::marker::PhantomData;
     
@@ -66,8 +73,10 @@ pub mod intersect_with;
 ///Contains all k_nearest code.
 pub mod k_nearest;
 
+/*
 ///Contains all for_every_nearest code. *Experimental*
 pub mod for_every_nearest;
+*/
 
 ///Contains all nbody code.
 pub mod nbody;

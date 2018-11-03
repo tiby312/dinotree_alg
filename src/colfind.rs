@@ -4,7 +4,7 @@
 //! Provides broadphase collision detection.
 //!
 //! There a multiple versions of the same fundamental query algorithm. There are parallel/sequential and 
-//! debug/non debug versions. 
+//! advanced versions. 
 //!
 //! ```
 //! pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(
@@ -244,6 +244,10 @@ fn recurse<
 }
 
 
+///Used for the advanced algorithms.
+///Trait that user implements to handling aabb collisions.
+///The user supplies a struct that implements this trait instead of just a closure
+///so that the user may also have the struct implement Splitter.
 pub trait ColMulti:Sized {
     type T: HasAabb;
     fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
@@ -295,7 +299,7 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,func:impl
 
     let b=Bo(func,PhantomData);
 
-    query_seq_adv_mut(tree,b,SplitterEmpty);
+    inner_query_seq_adv_mut(tree,b,SplitterEmpty);
 }
 
 
@@ -328,8 +332,39 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:imp
 }
 
 
+///Advanced sequential version.
+pub fn query_seq_adv_mut<A: AxisTrait,
+    T: HasAabb,
+    K:Splitter>(    
+    tree: &mut DinoTree<A,(), T>,
+    func:impl FnMut(&mut T,&mut T),
+    splitter:K
+)->K{
+    struct Bo<T,F>(F,PhantomData<T>);
+    impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for Bo<T,F>{
+        type T=T;
+        fn collide(&mut self,a:&mut T,b:&mut T){
+            self.0(a,b);
+        }   
+    }
+    impl<T,F> Splitter for Bo<T,F>{
+        fn div(self)->(Self,Self){
+            unreachable!()
+        }
+        fn add(self,_:Self)->Self{
+            unreachable!()
+        }
+        fn node_start(&mut self){}
+        fn node_end(&mut self){}
+    }
+
+    let b=Bo(func,PhantomData);
+
+    inner_query_seq_adv_mut(tree,b,splitter).1
+}
+
 ///See query_adv_mut
-pub fn query_seq_adv_mut<
+fn inner_query_seq_adv_mut<
     A: AxisTrait,
     T: HasAabb,
     F: ColMulti<T = T>,
@@ -423,7 +458,7 @@ pub fn query_seq_adv_mut<
 ///The user has more control using this version of the query.
 ///The splitter will split and add at every level.
 ///The clos will split and add only at levels that are handled in parallel.
-///This can be useful if the use wants to create a list of colliding pair indicies, but still want paralleism.
+///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
 pub fn query_adv_mut<
     A: AxisTrait,
     T: HasAabb+Send,

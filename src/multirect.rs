@@ -13,10 +13,14 @@
 use inner_prelude::*;
 
 
+///Indicates that the user supplied a rectangle
+///that intersects with a another one previously queries
+///in the session.
 #[derive(Debug)]
 pub struct RectIntersectErr;
 
-
+///Handles a multi rect mut "sessions" within which
+///the user can query multiple non intersecting rectangles.
 pub struct MultiRectMut<'a,A: AxisTrait+'a,T:HasAabb+'a> {
     tree: &'a mut DinoTree<A,(),T>,
     rects: SmallVec<[Rect<T::Num>; 16]>,
@@ -42,6 +46,8 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 	}
 }
 
+
+///Starts a multi rect mut sessions.
 pub fn multi_rect_mut<'a,A:AxisTrait,T:HasAabb>(tree:&'a mut DinoTree<A,(),T>)->MultiRectMut<'a,A,T>{
 	MultiRectMut{tree,rects:SmallVec::new()}
 }

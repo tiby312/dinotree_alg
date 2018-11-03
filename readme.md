@@ -9,32 +9,9 @@ Create a fast and simple to use broad-phase collision system whose running time 
 in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
 
 
-# Graphs
+# Analysis Report
 
-
-
-![chart](./docs/assets/theory.png)
-
-This shows the number of comparisions of each algorithm. The naive pair finding algorithm grows so fast that I stopped computing it early on. The sweep and prune algorithm does much better than the naive. The dinotree version does even better. The sporadic jumps in the dinotree algorithm correspond to the points where the height of the tree increased by one.
-
-
-![chart](./docs/assets/bench.png)
-
-Unlike the previous graph, this one measure computation time. So this data is very hardware dependent. This data was captured on a dual core dell xps 13 laptop. The same trends as those in the comparison graph are present.
-
-
-The slight increase in the number of comparisons for the naive algorithm is explaned by the fact the checking of whether two aabbs intersects, short circuits. If the x components of the two aabbs do not intersect, then the y components are never checked. Therefore, when the objects are more clumped up, there are more comparisons. 
-
-
-
-
-
-![chart](./docs/assets/tree3d.png)
-
-The above graph shows how
-
-
-![chart](./docs/assets/sweep3d.png)
+Please see the ![dinotree_report])https://github.com/tiby312/dinotree_report) github project, for write ups of the design and anylisys of the algorithms in this project.
 
 
 ## License
