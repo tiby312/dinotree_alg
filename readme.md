@@ -9,9 +9,9 @@ Create a fast and simple to use broad-phase collision system whose running time 
 in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
 
 
-# Analysis Report
+# Analysis
 
-Please see the ![dinotree_report])https://github.com/tiby312/dinotree_report) github project, for write ups of the design and anylisys of the algorithms in this project.
+Please see the ![dinotree_report](https://github.com/tiby312/dinotree_report) github project for a writeup of the design and analysis of the algorithms in this project.
 
 
 ## License
