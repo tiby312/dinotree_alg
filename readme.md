@@ -11,7 +11,7 @@ in which the collision finding functionality was being provided. Does not suffer
 
 # Analysis
 
-Please see the ![dinotree_report](https://github.com/tiby312/dinotree_report) github project for a writeup of the design and analysis of the algorithms in this project.
+Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project for a writeup of the design and analysis of the algorithms in this project.
 
 
 ## License
