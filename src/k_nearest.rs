@@ -36,7 +36,7 @@ pub trait Knearest{
     type N:NumTrait;
 
     ///The type of number of minimize based off on.
-    ///It would be distance or distance squared.
+    ///For example it can be distance or distance squared.
     type D:Ord+Copy+std::fmt::Debug;
 
 
@@ -80,23 +80,23 @@ macro_rules! get_mut_range_iter{
 /// Returned by k_nearest
 pub struct Unit<'a,T:'a,D>{ //:Ord+Copy
     pub bots:SmallVec<[&'a T;2]>,
-    pub dis:D
+    pub mag:D
 }
 /// Returned by k_nearest_mut
 pub struct UnitMut<'a,T:'a,D>{
     pub bots:SmallVec<[&'a mut T;2]>,
-    pub dis:D
+    pub mag:D
 }
 macro_rules! unit_create{
     ($a:expr,$b:expr)=>{{
-        Unit{bots:$a,dis:$b}
+        Unit{bots:$a,mag:$b}
     }}
 }
 
 
 macro_rules! unit_mut_create{
     ($a:expr,$b:expr)=>{{
-        UnitMut{bots:$a,dis:$b}
+        UnitMut{bots:$a,mag:$b}
     }}
 }
 
@@ -131,11 +131,11 @@ macro_rules! knearest_recc{
                     let arr=&mut self.a;
                     
                     for i in 0..arr.len(){
-                        if curr_dis<arr[i].dis{
+                        if curr_dis<arr[i].mag{
                             let unit=$unit_create!(new_smallvec(curr_bot),curr_dis);// Unit{bots:new_smallvec(curr_bot),dis:curr_dis};
                             arr.insert(i,unit);
                             return true;
-                        }else if curr_dis==arr[i].dis{
+                        }else if curr_dis==arr[i].mag{
                             arr[i].bots.push(curr_bot);
                             return true;
                         }
@@ -148,16 +148,16 @@ macro_rules! knearest_recc{
                 }else{
                     let arr=&mut self.a;
                     for i in 0..arr.len(){
-                        if curr_dis<arr[i].dis{
+                        if curr_dis<arr[i].mag{
                             let v=arr.pop().unwrap();
                             let unit=$unit_create!(new_smallvec(curr_bot),curr_dis);//Unit{bots:new_smallvec(curr_bot),dis:curr_dis};
                             arr.insert(i,unit);
                         
 
-                            let max=arr.iter().map(|a|a.dis).max().unwrap();
-                            assert!(max<v.dis);
+                            let max=arr.iter().map(|a|a.mag).max().unwrap();
+                            assert!(max<v.mag);
                             return true;
-                        }else if curr_dis==arr[i].dis{
+                        }else if curr_dis==arr[i].mag{
                             arr[i].bots.push(curr_bot);
                             return true;
                         }
@@ -168,11 +168,11 @@ macro_rules! knearest_recc{
             }
             fn full_and_max_distance(&self)->Option<D>{
                 use is_sorted::IsSorted;
-                assert!(self.a.iter().map(|a|a.dis).is_sorted());
+                assert!(self.a.iter().map(|a|a.mag).is_sorted());
                 match self.a.get(self.num-1){
                     Some(x)=>
                     {
-                        Some(x.dis)
+                        Some(x.mag)
                     },
                     None=>{
                         None

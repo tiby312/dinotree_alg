@@ -172,7 +172,7 @@ impl DemoSys for KnearestDemo{
                     }    
                 }
 
-                if a.dis!=b.dis{
+                if a.mag!=b.mag{
                     println!("Fail");
                 }
                 

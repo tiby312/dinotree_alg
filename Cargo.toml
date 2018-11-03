@@ -5,12 +5,8 @@ authors = ["Ken Reed <kenakioreed@gmail.com>"]
 
 
 [dev-dependencies]
-rand = "0.3"
 rustc-test = "0.3.0"
-collision = "0.15.0"
-cgmath = "0.16.0"
-num = "0.1.42"
-piston_window = "*"
+dists = {path="dists"}
 
 [dependencies]
 is_sorted = "0.1.0"

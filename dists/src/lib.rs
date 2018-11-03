@@ -91,45 +91,6 @@ pub mod clump{
 pub mod spiral{
     use super::*;
 
-    /*
-    pub struct SpiralDist{
-        circular_grow:f64,
-        outward_grow:f64,
-        grow_rate:f64,
-        point:[f64;2]
-    }
-    impl SpiralDist{
-        pub fn new(point:[f64;2],circular_grow:f64,outward_grow:f64,grow_rate:f64)->SpiralDist{
-            SpiralDist{point,circular_grow,outward_grow,grow_rate}
-        }
-    }
-    impl ObjectDistributionGenerator for SpiralDist{
-        type T=Spiral;
-        type I=SpiralGenerator;
-        fn create(&self)->SpiralGenerator{
-            SpiralGenerator{circular_grow:self.circular_grow,outward_grow:self.outward_grow,grow_rate:self.grow_rate,point:self.point}
-        }
-    }
-
-
-    #[derive(Copy,Clone)]
-    pub struct SpiralGenerator{
-        circular_grow:f64,
-        outward_grow:f64,
-        grow_rate:f64,
-        point:[f64;2]
-    }
-    impl std::iter::FusedIterator for SpiralGenerator{}
-    impl Iterator for SpiralGenerator{
-        type Item=Spiral;
-        fn next(&mut self)->Option<Self::Item>{
-            let s=Spiral::new(self.point,self.circular_grow,self.outward_grow);
-            self.outward_grow+=self.grow_rate;
-            Some(s)
-        }
-    }
-    */
-
 
     #[derive(Copy,Clone)]
     pub struct Spiral{
@@ -151,15 +112,7 @@ pub mod spiral{
             self.rate
         }
     }
-    /*
-    impl ObjectDistribution for Spiral{
-        type I=Self;
-        fn create(&self)->Spiral{
-            self.clone()
-        }
-    }
-    */
-
+    
     impl std::iter::FusedIterator for Spiral{}
 
     impl Iterator for Spiral{
