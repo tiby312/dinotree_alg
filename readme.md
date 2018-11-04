@@ -31,3 +31,9 @@ See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
         
       
 ![chart](https://github.com/tiby312/dinotree_report/blob/master/pictures/pic1.png)
+![chart](https://github.com/tiby312/dinotree_report/blob/master/pictures/pic2.png)
+![chart](https://github.com/tiby312/dinotree_report/blob/master/pictures/pic3.png)
+![chart](https://github.com/tiby312/dinotree_report/blob/master/pictures/pic4.png)
+![chart](https://github.com/tiby312/dinotree_report/blob/master/pictures/pic5.png)
+![chart](https://github.com/tiby312/dinotree_report/blob/master/pictures/pic6.png)
+![chart](https://github.com/tiby312/dinotree_report/blob/master/pictures/pic7.png)
