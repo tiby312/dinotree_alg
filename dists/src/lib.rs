@@ -1,6 +1,55 @@
 
 
 
+pub mod spiral{
+    use super::*;
+
+
+    #[derive(Copy,Clone)]
+    pub struct Spiral{
+        point:[f64;2],
+        rad:f64,
+        start:f64,
+        rate:f64,
+        width:f64
+    }
+
+    impl Spiral{
+        pub fn new(point:[f64;2],circular_grow:f64,outward_grow:f64)->Spiral{
+            Spiral{point,rad:0.0,start:1.0,rate:outward_grow,width:circular_grow}
+        }
+        pub fn get_circular_grow(&self)->f64{
+            self.width
+        }
+        pub fn get_outward_grow(&self)->f64{
+            self.rate
+        }
+    }
+    
+    impl std::iter::FusedIterator for Spiral{}
+
+    impl Iterator for Spiral{
+        type Item=[f64;2];
+        fn next(&mut self)->Option<[f64;2]>{
+            
+            let length=self.start+self.rate*self.rad;
+
+            let x=self.point[0]+self.rad.cos()*length;
+            let y=self.point[1]+self.rad.sin()*length;
+
+            self.rad+=self.width/length;
+
+            Some([x,y])
+
+        }
+    }
+
+}
+
+
+
+//TODO add more distributions.
+
 /*
 
 
@@ -323,51 +372,4 @@ pub mod lattice{
     */
 }
 
-
-
-
-pub mod spiral{
-    use super::*;
-
-
-    #[derive(Copy,Clone)]
-    pub struct Spiral{
-        point:[f64;2],
-        rad:f64,
-        start:f64,
-        rate:f64,
-        width:f64
-    }
-
-    impl Spiral{
-        pub fn new(point:[f64;2],circular_grow:f64,outward_grow:f64)->Spiral{
-            Spiral{point,rad:0.0,start:1.0,rate:outward_grow,width:circular_grow}
-        }
-        pub fn get_circular_grow(&self)->f64{
-            self.width
-        }
-        pub fn get_outward_grow(&self)->f64{
-            self.rate
-        }
-    }
-    
-    impl std::iter::FusedIterator for Spiral{}
-
-    impl Iterator for Spiral{
-        type Item=[f64;2];
-        fn next(&mut self)->Option<[f64;2]>{
-            
-            let length=self.start+self.rate*self.rad;
-
-            let x=self.point[0]+self.rad.cos()*length;
-            let y=self.point[1]+self.rad.sin()*length;
-
-            self.rad+=self.width/length;
-
-            Some([x,y])
-
-        }
-    }
-
-}
 
