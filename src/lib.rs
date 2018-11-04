@@ -54,7 +54,7 @@ mod inner_prelude {
 ///Provides functionality to draw the dividers of a dinotree.
 pub mod graphics;
 
-///Contains query code
+///Contains aabb broadphase query code
 pub mod colfind;
 
 ///Allows user to intersect the tree with a seperate group of bots.
