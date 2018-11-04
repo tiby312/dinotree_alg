@@ -30,4 +30,4 @@ See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
         
       
-![chart](https://github.com/tiby312/dinotree_report/pictures/Screenshot from 2018-11-04 17-39-33.png)
+![chart](https://github.com/tiby312/dinotree_report/pictures/pic1.png)
