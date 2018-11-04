@@ -303,7 +303,6 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,func:impl
 }
 
 
- const DEPTH_SEQ:usize=2;
 
 ///Parallel
 pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
@@ -328,7 +327,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:imp
 
     let b=Bo(func,PhantomData);
 
-    query_adv_mut(tree,b,SplitterEmpty,DEPTH_SEQ);
+    query_adv_mut(tree,b,SplitterEmpty,dinotree::advanced::compute_default_level_switch_sequential());
 }
 
 

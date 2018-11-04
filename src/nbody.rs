@@ -565,10 +565,10 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
     buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
 
     {
-        let kk=if height<2{
+        let kk=if height<dinotree::advanced::compute_default_level_switch_sequential(){
             0
         }else{
-            height-2
+            height-dinotree::advanced::compute_default_level_switch_sequential()
         };
         let d=t1.vistr_mut().with_depth(Depth(0));
         recc(par::Parallel(Depth(kk)),axis,d,&mut ncontext);    
