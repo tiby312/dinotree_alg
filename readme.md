@@ -24,3 +24,10 @@ Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) git
 Licensed under the terms of MIT license and the Apache License (Version 2.0).
 
 See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
+
+
+### Pictures
+
+        
+      
+![chart](https://github.com/tiby312/dinotree_report/pictures/Screenshot from 2018-11-04 17-39-33.png)
