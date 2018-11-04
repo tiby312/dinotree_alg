@@ -4,7 +4,7 @@ use duckduckgeo;
 #[derive(Copy,Clone)]
 pub struct Bot{
     pos:[f64;2],
-    vel:[f64;2],
+    //vel:[f64;2],
     force:[f64;2],
     mass:f64
 }
@@ -13,6 +13,7 @@ impl Bot{
         self.force[0]+=a[0];
         self.force[1]+=a[1];
     }
+    /*
     fn handle(&mut self){
         
         let b=self;
@@ -33,6 +34,7 @@ impl Bot{
 
         b.force=[0.0;2];
     }
+    */
     fn create_aabb(&self)->axgeom::Rect<F64n>{
         let r=5.0f64.min(self.mass.sqrt()/10.0);
         ConvF64::from_rect(aabb_from_pointf64(self.pos,[r;2]))             
@@ -58,10 +60,10 @@ impl duckduckgeo::GravityTrait for Bot{
 fn generate_bot_from_spiral(spiral:&dists::spiral::Spiral,num_bots:usize)->Vec<Bot>{
     let bots:Vec<Bot>=spiral.take(num_bots).map(|pos|{
                 let pos=[pos[0] ,pos[1] ];
-                let vel=[0.0;2];
+                //let vel=[0.0;2];
                 let force=[0.0;2];
                 let mass=1.0;
-                Bot{pos,vel,force,mass}
+                Bot{pos,force,mass}
             }).collect();
     bots
 }
@@ -332,8 +334,9 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
             b.force=a.inner.force;
         });
 
-
         instant_to_sec(instant.elapsed())
+        
+
     };
 
     //black_box(bots_copy);
@@ -445,7 +448,7 @@ pub fn handle(fb:&FigureBuilder){
 
 fn handle_spiral1(fb:&FigureBuilder){
     struct Record{
-        num_bots:usize,
+        _num_bots:usize,
         dis:f64,
         res:BenchRes
     }
@@ -459,7 +462,7 @@ fn handle_spiral1(fb:&FigureBuilder){
         let mut bots=generate_bot_from_spiral(&s,num_bots);
 
         let res=bench1(&mut bots,dis);
-        rects.push(Record{num_bots,dis,res});
+        rects.push(Record{_num_bots:num_bots,dis,res});
     }
 //}
 
@@ -504,7 +507,7 @@ fn handle_spiral1(fb:&FigureBuilder){
 }
 fn handle_spiral2(fb:&FigureBuilder){
     struct Record{
-        num_bots:usize,
+        _num_bots:usize,
         dis:f64,
         res:Res
     }
@@ -519,7 +522,7 @@ fn handle_spiral2(fb:&FigureBuilder){
 
             let res=test1(&mut bots,dis);
             
-            rects.push(Record{num_bots,dis,res});
+            rects.push(Record{_num_bots:num_bots,dis,res});
         }
     //}
 

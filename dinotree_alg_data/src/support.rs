@@ -1,7 +1,4 @@
 use axgeom::*;
-use rand;
-use rand::{SeedableRng, StdRng};
-use rand::distributions::{IndependentSample, Range};
 use std;
 use std::time::Duration;
 
@@ -62,14 +59,6 @@ macro_rules! f64n {
 
 
 
-macro_rules! f32n {
-    ( $x:expr  ) => {
-        {
-            NotNan::new($x).unwrap()
-        }
-    };
-}
-
 
 pub type F64n=NotNan<f64>;
 pub type F32n=NotNan<f32>;
@@ -112,7 +101,7 @@ pub fn aabb_from_point_isize(p:[isize;2],r:[isize;2])->Rect<isize>{
     Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
 }
 
-
+/*
 pub struct RangeGenIterf64{
     max:usize,
     counter:usize,
@@ -137,6 +126,7 @@ pub struct RetInteger{
     pub vel:[isize;2],
     pub radius:[isize;2],
 }
+
 impl Retf64{
     pub fn into_isize(self)->RetInteger{
         let id=self.id;
@@ -213,3 +203,4 @@ impl UniformRangeGenerator{
         self.range.ind_sample(rng)
     }
 }
+*/

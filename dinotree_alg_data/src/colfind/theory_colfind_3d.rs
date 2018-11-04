@@ -87,16 +87,7 @@ struct Record {
     z3: Option<usize>
 }
 
-pub struct DataColFind3d{
-    num_bots:usize,
-}
 
-
-impl DataColFind3d{
-    pub fn new(_dim:[f64;2])->DataColFind3d{    
-        DataColFind3d{num_bots:0}
-    }
-}
 
 
 

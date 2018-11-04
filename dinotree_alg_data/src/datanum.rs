@@ -9,10 +9,6 @@ pub fn from_rect(counter:&mut Counter,rect:Rect<isize>)->Rect<DataNum>{
     Rect::new(counter.new_num(a),counter.new_num(b),counter.new_num(c),counter.new_num(d))
 }
 
-pub fn into_rect(rect:Rect<DataNum>)->Rect<isize>{
-    let ((a,b),(c,d))=rect.get();
-    Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())
-}
 
 impl Counter{
     pub fn new()->Counter{
@@ -37,16 +33,6 @@ pub struct DataNum(pub isize,*mut Counter);
 unsafe impl Send for DataNum{}
 unsafe impl Sync for DataNum{}
 
-impl DataNum{
-    /*
-    pub fn new(&self,a:isize)->DataNum{
-        DataNum(a,self.1)
-    }
-    */
-    pub fn into_inner(&self)->isize{
-        self.0
-    }
-}
 
 impl PartialOrd for DataNum {
     fn partial_cmp(&self, other: &DataNum) -> Option<Ordering> {

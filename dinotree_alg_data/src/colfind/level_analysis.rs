@@ -1,12 +1,11 @@
 
 
 use inner_prelude::*;
-use std::time::Instant;
 use dinotree_alg::colfind;
 
 
 
-const cols:&'static [&'static str]=&["blue","green","red","violet","orange","pink","gray","brown","black"];
+const COLS:&'static [&'static str]=&["blue","green","red","violet","orange","pink","gray","brown","black"];
 	
 
 
@@ -17,11 +16,13 @@ pub struct Bot{
     num:usize
 }
 
+/*
 #[derive(Copy,Clone)]
 enum RebalOrQuery{
 	Rebal,
 	Query
 }
+*/
 
 mod level_counter{
 	use datanum;
@@ -57,7 +58,7 @@ mod level_counter{
 	        let counter=self.counter;
 	        (self,LevelCounter{counter,levels:std::iter::repeat(0).take(length).collect(),cursor:None})
 	    }
-	    fn add(mut self,a:Self)->Self{
+	    fn add(self,a:Self)->Self{
 	        let (smaller,mut larger)=if self.levels.len()<a.levels.len(){
 	            (self,a)
 	        }else{
@@ -164,6 +165,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 			    },height,leveltimer1);
 
 
+		/*
 		struct Bo{}
 		impl colfind::ColMulti for Bo{
 			type T=BBox<isize,Bot>;
@@ -172,6 +174,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 				b.inner.num+=1;
 			}
 		}
+		*/
 
 
 		let leveltimer2=LevelTimer::new();
@@ -229,14 +232,14 @@ fn handle_bench(num_bots:usize,fb:&FigureBuilder){
     	if rebal{
 	  		let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.rebal[ii])});
 
-		  	for (i,(col,y)) in cols.iter().cycle().zip( cc   ).enumerate(){
+		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
 		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
 		  	}
 		}else{
 			let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.query[ii])});
 			
-		  	for (i,(col,y)) in cols.iter().cycle().zip( cc   ).enumerate(){
+		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
 		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
 		  	}
@@ -279,14 +282,14 @@ fn handle_theory(num_bots:usize,fb:&FigureBuilder){
     	if rebal{
 	  		let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.rebal[ii])});
 
-		  	for (i,(col,y)) in cols.iter().cycle().zip( cc   ).enumerate(){
+		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
 		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
 		  	}
 		}else{
 			let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.query[ii])});
 			
-		  	for (i,(col,y)) in cols.iter().cycle().zip( cc   ).enumerate(){
+		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
 		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
 		  	}

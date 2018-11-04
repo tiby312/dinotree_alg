@@ -93,7 +93,7 @@ fn handle3d(fb:&FigureBuilder){
         let max_height=(num_bots as f64).log2() as usize;
 
         let mut bots=create_bots(num_bots);
-        for height in (3..max_height-2){
+        for height in 3..(max_height-2){
             let bench=handle_bench_inner(&mut bots,height);
             benches.push(BenchRecord{height,num_bots,bench});
         }
@@ -129,7 +129,7 @@ fn handle_lowest(fb:&FigureBuilder){
 
     struct TheoryRecord{
         height:usize,
-        theory:usize,
+        _theory:usize,
         num_bots:usize
     }
 
@@ -143,11 +143,11 @@ fn handle_lowest(fb:&FigureBuilder){
         let max_height=(num_bots as f64).log2() as usize;
 
         let mut bots=create_bots(num_bots);
-        for height in (1..max_height){
+        for height in 1..max_height{
             let theory=handle_theory_inner(&mut bots,height);
             let bench=handle_bench_inner(&mut bots,height);
             match minimum{
-                Some((a,b))=>{
+                Some((a,_b))=>{
                     if bench<a{
                         minimum=Some((bench,height));
                         //(bench,height)
@@ -158,7 +158,7 @@ fn handle_lowest(fb:&FigureBuilder){
                 }
             }
             match minimum_theory{
-                Some((a,b))=>{
+                Some((a,_b))=>{
                     if theory<a{
                         minimum_theory=Some((theory,height));
                     }
@@ -178,7 +178,7 @@ fn handle_lowest(fb:&FigureBuilder){
 
         match minimum_theory{
             Some((theory,height))=>{
-                theories.push(TheoryRecord{height,num_bots,theory})
+                theories.push(TheoryRecord{height,num_bots,_theory:theory})
             },
             None=>{}
         }
@@ -280,7 +280,7 @@ fn handle2d(fb:&FigureBuilder){
 
 
 
-    for height in (2..13){
+    for height in 2..13{
         let num_comparison=handle_theory_inner(&mut bots,height);
         theory_records.push(Record{height,num_comparison});
     }

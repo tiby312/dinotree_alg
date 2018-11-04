@@ -19,7 +19,7 @@ impl Splitter for Bo{
     fn div(self)->(Self,Self){
         (Bo{},Bo{})
     }
-    fn add(self,a:Self)->Self{
+    fn add(self,_:Self)->Self{
         self
     }
     fn node_start(&mut self){}
@@ -101,13 +101,13 @@ pub fn handle(fb:&FigureBuilder){
     
     let mut rebals=Vec::new();
     for rebal_height in (0..height).flat_map(|a|std::iter::repeat(a).take(16)){
-        let (a,b)=test3(&mut bots,rebal_height,4);
+        let (a,_b)=test3(&mut bots,rebal_height,4);
         rebals.push((rebal_height,a));    
     }
 
     let mut queries=Vec::new();
     for query_height in (0..height).flat_map(|a|std::iter::repeat(a).take(16)){
-        let (a,b)=test3(&mut bots,4,query_height);
+        let (_a,b)=test3(&mut bots,4,query_height);
         queries.push((query_height,b));    
     }
 
