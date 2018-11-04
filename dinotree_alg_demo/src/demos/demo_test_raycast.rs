@@ -2,7 +2,7 @@ use support::prelude::*;
 use dinotree::raycast;
 use dinotree;
 use std;
-use dinotree_geom;
+use duckduckgeo;
 #[derive(Debug,Copy,Clone)]
 struct Ray<N>{
     pub point:[N;2],
@@ -31,7 +31,7 @@ impl DemoSys for TestRaycastDemo{
             let dir=[counter.cos()*10.0,counter.sin()*10.0];
             //let dir=[1,1];
             let dir=[dir[0] as isize,dir[1] as isize];
-            dinotree_geom::Ray{point,dir,tlen:50}
+            duckduckgeo::Ray{point,dir,tlen:50}
         };
 
         let rect=axgeom::Rect::new(100,140,200,300);
@@ -39,11 +39,11 @@ impl DemoSys for TestRaycastDemo{
         draw_rect_isize([0.0,0.0,0.0,0.3],&rect,c,g);
            
 
-        let res= dinotree_geom::intersects_box(ray.point,ray.dir,ray.tlen,&rect);
+        let res= duckduckgeo::intersects_box(ray.point,ray.dir,ray.tlen,&rect);
         println!("{:?}",res);
     
         let k=match res{
-            dinotree_geom::IntersectsBotResult::Hit(val)=>{
+            duckduckgeo::IntersectsBotResult::Hit(val)=>{
                 Some(val)
             },
             _=>{

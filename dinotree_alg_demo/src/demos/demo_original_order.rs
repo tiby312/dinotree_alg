@@ -1,7 +1,7 @@
 use support::prelude::*;
 use dinotree_alg::colfind;
 use dinotree_alg::rect;
-use dinotree_geom;
+use duckduckgeo;
 use dinotree_alg;
 
 
@@ -19,7 +19,7 @@ pub struct Bot{
     vel:[f64;2],
     force:[f64;2],
 }
-impl dinotree_geom::RepelTrait for Bot{
+impl duckduckgeo::RepelTrait for Bot{
     type N=f64;
     fn pos(&self)->[f64;2]{
         self.pos
@@ -75,7 +75,7 @@ impl DemoSys for OrigOrderDemo{
 
         for b in bots.iter_mut(){
             b.update();
-            dinotree_geom::wrap_position(&mut b.pos,self.dim);
+            duckduckgeo::wrap_position(&mut b.pos,self.dim);
         }
 
 
@@ -85,7 +85,7 @@ impl DemoSys for OrigOrderDemo{
 
         
         rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
-            let _ =dinotree_geom::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
+            let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
         
 
@@ -136,12 +136,12 @@ impl DemoSys for OrigOrderDemo{
 
         if !check_naive{
             colfind::query_mut(&mut tree,|a, b| {
-                let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+                let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
             });
         }else{
             let mut res=Vec::new();
             colfind::query_seq_mut(&mut tree,|a, b| {
-                let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+                let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
                 let (a,b)=if a.inner.id<b.inner.id{
                     (a,b)
                 }else{

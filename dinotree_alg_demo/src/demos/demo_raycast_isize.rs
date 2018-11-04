@@ -2,18 +2,18 @@ use support::prelude::*;
 use dinotree_alg::raycast;
 use dinotree_alg;
 use std;
-use dinotree_geom;
+use duckduckgeo;
 
 //isize implementation of a ray.
 mod ray_isize{
     use super::*;
     use self::raycast::RayTrait;
-    use dinotree_geom;
+    use duckduckgeo;
 
 
 
     pub struct RayT<'a,'c:'a>{
-        pub ray:dinotree_geom::Ray<isize>,
+        pub ray:duckduckgeo::Ray<isize>,
         pub c:&'a Context,
         pub g:&'a mut G2d<'c>,
         pub height:usize
@@ -26,8 +26,8 @@ mod ray_isize{
  
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            use dinotree_geom::IntersectsBotResult;
-            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,rect){
+            use duckduckgeo::IntersectsBotResult;
+            match self.ray.intersects_box(rect){
                 IntersectsBotResult::Hit(_)=>{
                     true
                 },
@@ -48,15 +48,14 @@ mod ray_isize{
         }
   
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
-            let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};
-            dinotree_geom::compute_intersection_tvalue(axis,&ray,line)
+            self.ray.compute_intersection_tvalue(axis,line)
         }
 
 
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
             draw_rect_isize([1.0,0.0,0.0,0.8],a.get(),self.c,self.g);
-            use dinotree_geom::IntersectsBotResult;
-            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get()){
+            use duckduckgeo::IntersectsBotResult;
+            match self.ray.intersects_box(a.get()){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
                 },
@@ -75,7 +74,7 @@ mod ray_isize{
 
     #[derive(Copy,Clone,Debug)]
     pub struct RayNoDraw{
-        pub ray:dinotree_geom::Ray<isize>
+        pub ray:duckduckgeo::Ray<isize>
     }
 
     impl RayTrait for RayNoDraw{
@@ -90,13 +89,13 @@ mod ray_isize{
         }
   
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
-            let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};
-            dinotree_geom::compute_intersection_tvalue(axis,&ray,line)
+            //let ray=duckduckgeo::Ray{point:self.ray.point,dir:self.ray.dir};
+            self.ray.compute_intersection_tvalue(axis,line)
         }
 
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
-            use dinotree_geom::IntersectsBotResult;
-            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get()){
+            use duckduckgeo::IntersectsBotResult;
+            match self.ray.intersects_box(a.get()){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
                 },
@@ -157,7 +156,7 @@ impl DemoSys for RaycastDemo{
             let dir=[counter.cos()*10.0,counter.sin()*10.0];
             //let dir=[1,0];
             let dir=[dir[0] as isize,dir[1] as isize];
-            dinotree_geom::Ray{point,dir,tlen:500}
+            duckduckgeo::Ray{point,dir}
         };
 
         for bot in tree.iter(){

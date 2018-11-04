@@ -1,15 +1,15 @@
 use support::prelude::*;
 use dinotree_alg::raycast;
 use std;
-use dinotree_geom;
+use duckduckgeo;
 mod ray_f64{
     use super::*;
 
     use self::raycast::RayTrait;
-    use dinotree_geom;
+    use duckduckgeo;
 
     pub struct RayT<'a,'c:'a>{
-        pub ray:dinotree_geom::Ray<F64n>,
+        pub ray:duckduckgeo::Ray<F64n>,
         pub c:&'a Context,
         pub g:&'a mut G2d<'c>
     }
@@ -20,8 +20,8 @@ mod ray_f64{
 
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            use dinotree_geom::IntersectsBotResult;
-            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,rect){
+            use duckduckgeo::IntersectsBotResult;
+            match self.ray.intersects_box(rect){
                 IntersectsBotResult::Hit(_)=>{
                     true
                 },
@@ -43,13 +43,13 @@ mod ray_f64{
         
         
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
-            let ray=dinotree_geom::Ray{point:self.ray.point,dir:self.ray.dir,tlen:self.ray.tlen};
-            dinotree_geom::compute_intersection_tvalue(axis,&ray,line)
+            //let ray=duckduckgeo::Ray{point:self.ray.point,dir:self.ray.dir};
+            self.ray.compute_intersection_tvalue(axis,line)
         }
 
         fn compute_distance_bot(&mut self,a:&BBox<F64n,()>)->Option<Self::N>{
-            use dinotree_geom::IntersectsBotResult;
-            match dinotree_geom::intersects_box(self.ray.point,self.ray.dir,self.ray.tlen,a.get()){
+            use duckduckgeo::IntersectsBotResult;
+            match self.ray.intersects_box(a.get()){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
                 },
@@ -109,7 +109,7 @@ impl DemoSys for RaycastF64Demo{
                 let ray={
                     let dir=[f64n!(x),f64n!(y)];
                     let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                    dinotree_geom::Ray{point,dir,tlen:f64n!(300.0)}
+                    duckduckgeo::Ray{point,dir}
                 };
 
                 

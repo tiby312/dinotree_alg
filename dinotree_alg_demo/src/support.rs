@@ -4,44 +4,8 @@ use rand::{SeedableRng, StdRng};
 use rand::distributions::{IndependentSample, Range};
 use std;
 
-use dinotree::*;
-
-/*
-///Like dinotree_inner::BBox, but with a public constructor
-#[derive(Copy,Clone)]
-pub struct BBoxDemo<N:NumTrait,T>{
-    rect:Rect<N>,
-    pub inner:T
-}
-impl<N:NumTrait,T> BBoxDemo<N,T>{
-    pub fn new(rect:Rect<N>,inner:T)->BBoxDemo<N,T>{
-        BBoxDemo{rect,inner}
-    }
-}
-
-use std::fmt::Formatter;
-use std::fmt::Debug;
-impl<N:NumTrait+Debug,T:Debug> Debug for BBoxDemo<N,T>{
-    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result{
-        self.rect.fmt(f)?;
-        self.inner.fmt(f)
-    }
-}
-
-unsafe impl<N:NumTrait,T> HasAabb for BBoxDemo<N,T>{
-    type Num=N;
-    fn get(&self)->&Rect<Self::Num>{
-        &self.rect
-    }
-}
-*/
-
-
-
-
 
 pub mod prelude{
-    //pub use compt::*;
     pub use DemoSys;
     pub(crate) use piston_window;
     pub use ordered_float::NotNan;

@@ -1,4 +1,3 @@
-//extern crate compt;
 extern crate piston_window;
 extern crate axgeom;
 extern crate rand;
@@ -6,7 +5,7 @@ extern crate dinotree_alg;
 extern crate ordered_float;
 extern crate dinotree;
 extern crate rayon;
-extern crate dinotree_geom;
+extern crate duckduckgeo;
 
 
 use piston_window::*;
@@ -34,7 +33,7 @@ mod demo_iter{
             self.0+=1;
 
 
-            if self.0==8{
+            if self.0==7{
                 self.0=0
             }
             match curr{
@@ -56,7 +55,7 @@ fn main(){
     
     let area=[1024u32,768];
 
-    let mut window = WindowSettings::new("dinotree test",area)
+    let window = WindowSettings::new("dinotree test",area)
         .exit_on_esc(true)
         .fullscreen(false)
         .resizable(false);

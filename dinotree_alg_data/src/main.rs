@@ -5,7 +5,7 @@ extern crate dinotree_alg;
 extern crate ordered_float;
 extern crate dinotree;
 extern crate rayon;
-extern crate dinotree_geom;
+extern crate duckduckgeo;
 extern crate dists;
 extern crate gnuplot;
 
@@ -50,6 +50,9 @@ impl FigureBuilder{
 }
 
 fn main() {
+    use std::fs;
+    fs::create_dir_all("target/graphs").unwrap();
+    
     let fb=FigureBuilder{};
     
     
@@ -57,7 +60,6 @@ fn main() {
     let _area=[1024u32,768];
 
     if args.len()!=2{
-        println!("Make sure there is a \"graphs\" folder inside of target.");
         println!("valid arguments are \"bench-colfind\" \"theory-colfind\" \"theory-colfind-3d\" \"theory-sweep-3d\" ");
         return;
     }

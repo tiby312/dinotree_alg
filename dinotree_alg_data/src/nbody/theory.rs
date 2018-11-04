@@ -1,6 +1,6 @@
 use inner_prelude::*;
 use dinotree_alg::nbody;
-use dinotree_geom;
+use duckduckgeo;
 #[derive(Copy,Clone)]
 pub struct Bot{
     pos:[f64;2],
@@ -39,7 +39,7 @@ impl Bot{
     }
 }
 
-impl dinotree_geom::GravityTrait for Bot{
+impl duckduckgeo::GravityTrait for Bot{
     type N=f64;
     fn pos(&self)->[f64;2]{
         self.pos
@@ -89,7 +89,7 @@ mod go{
         }
     }
 
-    impl dinotree_geom::GravityTrait for NodeMass{
+    impl duckduckgeo::GravityTrait for NodeMass{
         type N=f64;
         fn pos(&self)->[f64;2]{
             self.center
@@ -121,19 +121,19 @@ mod go{
         //gravitate this nodemass with another node mass
         fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No){
             self.calls_to_gravitate+=1;
-            let _ = dinotree_geom::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
         }
 
         //gravitate a bot with a bot
         fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T){
             self.calls_to_gravitate+=1;
-            let _ = dinotree_geom::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
         }
 
         //gravitate a nodemass with a bot
         fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T){
             self.calls_to_gravitate+=1;
-            let _ = dinotree_geom::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
         }
 
 
@@ -194,18 +194,18 @@ mod go{
         //gravitate this nodemass with another node mass
         fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
             
-            let _ = dinotree_geom::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
         }
 
         //gravitate a bot with a bot
         fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
-            let _ = dinotree_geom::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
         }
 
         //gravitate a nodemass with a bot
         fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
             
-            let _ = dinotree_geom::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
         }
 
 
@@ -278,7 +278,7 @@ fn bench1(bots:&mut [Bot],diff:f64)->BenchRes{
         let mut calls_to_gravitate=0;
         nbody::naive_mut(&mut bots_copy,|a,b|{
             calls_to_gravitate+=1;
-            let _ = dinotree_geom::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
         });
 
         let bench_naive=instant_to_sec(instant.elapsed());
@@ -351,7 +351,7 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
         let mut calls_to_gravitate=0;
         nbody::naive_mut(&mut bots_copy,|a,b|{
             calls_to_gravitate+=1;
-            let _ = dinotree_geom::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
+            let _ = duckduckgeo::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
         });
 
         (bots_copy,calls_to_gravitate)

@@ -11,7 +11,7 @@ compt = "1.2.2"
 axgeom = "1.0.1"
 dinotree = "0.1.0"
 smallvec = "0.6.1"
-dinotree_geom={path="../../dinotree_geom"}
+duckduckgeo = "0.1.0"
 dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"
 rand = "0.3"

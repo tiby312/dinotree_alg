@@ -2,7 +2,7 @@ use support::prelude::*;
 use dinotree_alg::colfind;
 use dinotree_alg::rect;
 use dinotree_alg::intersect_with;
-use dinotree_geom;
+use duckduckgeo;
 
 
 #[derive(Copy,Clone)]
@@ -12,7 +12,7 @@ pub struct Bot{
     force:[f64;2],
     wall_move:[Option<(F64n,f64)>;2]
 }
-impl dinotree_geom::RepelTrait for Bot{
+impl duckduckgeo::RepelTrait for Bot{
     type N=f64;
     fn pos(&self)->[f64;2]{
         self.pos
@@ -95,7 +95,7 @@ impl DemoSys for IntersectWithDemo{
             b.wall_move[0]=None;
             b.wall_move[1]=None;
             
-            dinotree_geom::wrap_position(&mut b.pos,self.dim);
+            duckduckgeo::wrap_position(&mut b.pos,self.dim);
         }
         bots[0].pos=cursor;
 
@@ -112,17 +112,17 @@ impl DemoSys for IntersectWithDemo{
             let wally=wall.get().get_range(axgeom::YAXISS);
             let vel=bot.inner.vel;
 
-            let ret=match dinotree_geom::collide_with_rect(bot.get(),wall.get()){
-                dinotree_geom::WallSide::Above=>{
+            let ret=match duckduckgeo::collide_with_rect(bot.get(),wall.get()){
+                duckduckgeo::WallSide::Above=>{
                     [None,Some((wally.left-radius,-vel[1]*fric))]
                 },
-                dinotree_geom::WallSide::Below=>{
+                duckduckgeo::WallSide::Below=>{
                     [None,Some((wally.right+radius,-vel[1]*fric))]
                 },
-                dinotree_geom::WallSide::LeftOf=>{
+                duckduckgeo::WallSide::LeftOf=>{
                     [Some((wallx.left-radius,-vel[0]*fric)),None]
                 },
-                dinotree_geom::WallSide::RightOf=>{
+                duckduckgeo::WallSide::RightOf=>{
                     [Some((wallx.right+radius,-vel[0]*fric)),None]
                 }
             };
@@ -137,7 +137,7 @@ impl DemoSys for IntersectWithDemo{
         
         rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             //b.inner.repel_mouse(cursor);
-            let _ =dinotree_geom::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
+            let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
         
 
@@ -149,7 +149,7 @@ impl DemoSys for IntersectWithDemo{
         }
  
         colfind::query_mut(&mut tree,|a, b| {
-            let _ = dinotree_geom::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+            let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
         });
     
         

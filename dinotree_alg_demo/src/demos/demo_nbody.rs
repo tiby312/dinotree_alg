@@ -1,8 +1,8 @@
 use support::prelude::*;
 use dinotree_alg::nbody;
 use dinotree_alg::colfind;
-use dinotree_geom;
-use dinotree_geom::GravityTrait;
+use duckduckgeo;
+use duckduckgeo::GravityTrait;
 use dinotree_alg;
 
 #[derive(Copy,Clone)]
@@ -13,7 +13,7 @@ struct NodeMass{
     force:[f64;2]
 }
 
-impl dinotree_geom::GravityTrait for NodeMass{
+impl duckduckgeo::GravityTrait for NodeMass{
     type N=f64;
     fn pos(&self)->[f64;2]{
         self.center
@@ -43,19 +43,19 @@ impl nbody::NodeMassTraitMut for Bla{
     //gravitate this nodemass with another node mass
     fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No){
         
-        let _ = dinotree_geom::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
+        let _ = duckduckgeo::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
     }
 
     //gravitate a bot with a bot
     fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T){
         self.num_pairs_checked+=1;
-        let _ = dinotree_geom::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+        let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
     }
 
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T){
         
-        let _ = dinotree_geom::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+        let _ = duckduckgeo::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
     }
 
 
@@ -141,7 +141,7 @@ impl Bot{
         Conv::from_rect(aabb_from_pointf64(self.pos,[r;2]))             
     }
 }
-impl dinotree_geom::GravityTrait for Bot{
+impl duckduckgeo::GravityTrait for Bot{
     type N=f64;
     fn pos(&self)->[f64;2]{
         self.pos
@@ -213,7 +213,7 @@ impl DemoSys for DemoNbody{
                 let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|unsafe{BBox::new(bot.create_aabb(),*bot)}).collect();
                 let mut num_pairs_checked=0;
                 nbody::naive_mut(&mut bots2,|a,b|{
-                    let _ = dinotree_geom::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004,|a|a.sqrt());
+                    let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004,|a|a.sqrt());
                     num_pairs_checked+=1;
                 });
                 //assert_eq!(num_pairs_checked,n_choose_2(bots2.len()));
@@ -385,7 +385,7 @@ impl DemoSys for DemoNbody{
         //Update bot locations.
         for bot in bots.iter_mut(){
             Bot::handle(bot);  
-            dinotree_geom::wrap_position(&mut bot.pos,self.dim);  
+            duckduckgeo::wrap_position(&mut bot.pos,self.dim);  
         }
 
 

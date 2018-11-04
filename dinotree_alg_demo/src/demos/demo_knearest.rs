@@ -1,6 +1,6 @@
 use support::prelude::*;
 use dinotree_alg::k_nearest;
-use dinotree_geom;
+use duckduckgeo;
 
 
 #[derive(Copy,Clone)]
@@ -53,7 +53,7 @@ impl DemoSys for KnearestDemo{
                 
                 draw_rect_f64n([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
                 
-                let dis=dinotree_geom::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()));
+                let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()));
                 let dis=match dis{
                     Some(dis)=>{
                         dis
@@ -77,7 +77,7 @@ impl DemoSys for KnearestDemo{
 
                         
                         let point=Conv::point_to_inner(point);
-                        -dinotree_geom::distance_squred_point(bot.inner.pos,point)
+                        -duckduckgeo::distance_squred_point(bot.inner.pos,point)
                     }
                 };
                 DisSqr(f64n!(dis))
@@ -123,7 +123,7 @@ impl DemoSys for KnearestDemo{
                 type N=F64n;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                    let dis=dinotree_geom::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()));
+                    let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()));
                     let dis=match dis{
                         Some(dis)=>{
                             dis
@@ -131,7 +131,7 @@ impl DemoSys for KnearestDemo{
                         None=>{
                             //IMPORTANT THAT THIS NEGATIVE
                             let point=Conv::point_to_inner(point);
-                            -dinotree_geom::distance_squred_point(bot.inner.pos,point)
+                            -duckduckgeo::distance_squred_point(bot.inner.pos,point)
                         }
                     };
                     DisSqr(f64n!(dis))    
