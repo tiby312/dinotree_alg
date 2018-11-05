@@ -4,7 +4,6 @@ extern crate rand;
 extern crate dinotree_alg;
 extern crate ordered_float;
 extern crate dinotree;
-extern crate rayon;
 extern crate duckduckgeo;
 
 

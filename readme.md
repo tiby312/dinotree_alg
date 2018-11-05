@@ -1,11 +1,6 @@
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/tiby312/collie)
 
-Provides various query aabb broad phase algorithms such as collision pair finding, raycast, or k_nearest, on the ![dinotree](https://crates.io/crates/dinotree) data structure. 
-
-### Goal
-
-Create a fast and simple to use broad-phase collision system whose running time did not depend on the size of the 2d space
-in which the collision finding functionality was being provided. Does not suffer from "teapot in a stadium" problem.
+Provides various query aabb broad phase algorithms such as collision pair finding, raycast, or k_nearest, on the [dinotree](https://crates.io/crates/dinotree) data structure. 
 
 ### Inner projects
 

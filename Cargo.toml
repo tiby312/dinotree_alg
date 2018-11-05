@@ -1,6 +1,6 @@
 [package]
 name = "dinotree_alg"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 description = "Dinotree algorithms"
 license = "MIT/Apache-2.0"
@@ -15,8 +15,8 @@ dists = "0.1.0"
 
 [dependencies]
 is_sorted = "0.1.0"
-rayon = "1.0.2"
-smallvec = "0.6.1"
+rayon = "1.0.3"
+smallvec = "0.6.5"
 compt = "1.2.2"
 axgeom = "1.0.1"
-dinotree = "0.1.1"
+dinotree = "0.1.2"

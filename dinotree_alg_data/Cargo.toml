@@ -6,11 +6,11 @@ authors = ["Ken Reed <kenakioreed@gmail.com>"]
 [dependencies]
 dists = "0.1.0"
 gnuplot = "0.0.26"
-rayon="1.0.2"
+rayon="1.0.3"
 compt = "1.2.2"
 axgeom = "1.0.1"
 dinotree = "0.1.1"
-smallvec = "0.6.1"
+smallvec = "0.6.5"
 duckduckgeo = "0.1.0"
 dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"

@@ -4,11 +4,9 @@ version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 
 [dependencies]
-rayon="1.0.2"
 compt = "1.2.2"
 axgeom = "1.0.1"
 dinotree = "0.1.1"
-smallvec = "0.6.1"
 duckduckgeo = "0.1.0"
 dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"
