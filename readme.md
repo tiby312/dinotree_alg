@@ -1,7 +1,6 @@
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/tiby312/collie)
 
-An iterative mulithreaded hybrid kdtree/mark and sweep algorithm used for broadphase detection.
-
+Provides various query aabb broad phase algorithms such as collision pair finding, raycast, or k_nearest, on the ![dinotree](https://crates.io/crates/dinotree) data structure. 
 
 ### Goal
 
@@ -18,6 +17,13 @@ The dinotree_alg_data project generates some graphs using RustGnuPlot. These gra
 
 Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project for a writeup of the design and analysis of the algorithms in this project.
 
+### Rust Version
+
+Requires rust nightly for the following features:
+~~~~text
+#![feature(test)]
+#![feature(trusted_len)]
+~~~~
 
 ### License
 
