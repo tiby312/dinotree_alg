@@ -81,6 +81,47 @@ macro_rules! rect{
 }
 
 
+pub fn for_all_not_in_rect_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,rect:&Rect<T::Num>,closure:impl FnMut(&mut T)){
+    fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(&mut T)>(axis:A,it:VistrMut<(),T>,rect:&Rect<T::Num>,mut closure:F)->F{
+        let (nn,rest)=it.next();
+        
+        //TODO exploit sorted property.
+        for a in nn.range.iter_mut(){
+            if !rect.contains_rect(a.get()){
+                closure(a);
+            }
+        }
+        
+        match rest{
+            Some((extra,left,right))=>{
+                let &FullComp{div,cont:_}=match extra{
+                    Some(b)=>b,
+                    None=>return closure,
+                };
+
+                match rect.get_range(axis).left_or_right_or_contain(&div){
+                    std::cmp::Ordering::Less=>{
+                        rect_recurse(axis.next(),left,rect,closure)
+                    },
+                    std::cmp::Ordering::Greater=>{
+                        rect_recurse(axis.next(),right,rect,closure)
+                    },
+                    std::cmp::Ordering::Equal=>{
+                        let closure=rect_recurse(axis.next(),left,rect,closure);
+                        rect_recurse(axis.next(),right,rect,closure)
+                    }
+                }
+            },
+            None=>{closure}
+        }
+        
+    }
+    rect_recurse(tree.axis(),tree.vistr_mut(),rect,closure);
+}
+
+
+
+
 
 //TODO test the intersect ones
 pub use self::mutable::for_all_intersect_rect_mut;
