@@ -21,7 +21,7 @@
 //! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
 //!
 
-
+#![feature(ptr_internals)]
 #![feature(test)]
 #![feature(trusted_len)]
 
@@ -30,6 +30,7 @@ extern crate compt;
 extern crate rayon;
 extern crate smallvec;
 extern crate dinotree;
+extern crate itertools;
 
 #[cfg(test)]
 extern crate test;
@@ -48,6 +49,8 @@ mod inner_prelude {
     pub use compt::Visitor;
     pub use axgeom::AxisTrait;
     pub use std::marker::PhantomData;
+    pub use itertools::Itertools;
+
     pub use ::*;
 }
 

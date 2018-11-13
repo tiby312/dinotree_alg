@@ -18,39 +18,6 @@ pub fn for_every_pair<T>(mut arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
 }
 
 
-pub use self::undo_iterator::UndoIterator;
-mod undo_iterator{
-    use smallvec::SmallVec;
-    pub struct UndoIterator<I:Iterator>{
-        it:I,
-        item:SmallVec<[I::Item;1]>
-    }
-
-    impl<I:Iterator> UndoIterator<I>{
-        pub fn new(it:I)->UndoIterator<I>{
-            UndoIterator{it,item:SmallVec::new()}
-        }
-        pub fn add_back(&mut self,item:I::Item){
-            self.item.push(item);
-        }
-
-        //We deliberately do not implement Iterator
-        //since this violates the model of an Iterator
-        //being able to 'put things back' into it.
-        pub fn next(&mut self)->Option<I::Item>{
-            match self.item.pop(){
-                Some(x)=>{
-                    Some(x)
-                },
-                None=>{
-                    self.it.next()
-                }
-            }
-        }
-    }
-}
-
-
 ///A phantom data type that unsafely implements send,sync.
 pub(crate) struct PhantomSendSync<T>(pub PhantomData<T>);
 unsafe impl<T> Send for PhantomSendSync<T> {}
@@ -68,9 +35,13 @@ use smallvec;
 unsafe impl<T: Send> std::marker::Send for PreVecMut<T> {}
 unsafe impl<T: Sync> std::marker::Sync for PreVecMut<T> {}
 
+
+use std::ptr::Unique;
+
+
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
 pub struct PreVecMut<T> {
-    vec: smallvec::SmallVec<[*mut T; 64]>,
+    vec: smallvec::SmallVec<[Unique<T>; 64]>,
 }
 impl<T> PreVecMut<T> {
     #[inline(always)]
@@ -84,7 +55,7 @@ impl<T> PreVecMut<T> {
     #[inline(always)]
     pub fn get_empty_vec_mut<'a>(&'a mut self) -> &mut smallvec::SmallVec<[&'a mut T; 64]> {
         self.vec.clear();
-        let v: &mut smallvec::SmallVec<[*mut T; 64]> = &mut self.vec;
+        let v: &mut smallvec::SmallVec<[Unique<T>; 64]> = &mut self.vec;
         unsafe { std::mem::transmute(v) }
     }
 }

@@ -143,38 +143,26 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
 
+
+
+
     fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
         cols: (&mut [I], &mut [I]),
         mut func: F,
     ) {
-    
-        //let mut xs = cols.0.iter_mut().peekable();
-        let mut xs= tools::UndoIterator::new(cols.0.iter_mut());
+        let mut xs=cols.0.iter_mut().peekable();
         let ys = cols.1.iter_mut();
 
         let active_x = self.helper.get_empty_vec_mut();
 
         for y in ys {
-
             //Add all the x's that are touching the y to the active x.
-            loop{
-                match xs.next(){
-                    Some(x)=>{
-                        if x.get().get_range(axis).left > y.get().get_range(axis).right{
-                            xs.add_back(x);
-                            break;
-                        }else{
-                            active_x.push(x);
-                        }
-                    },
-                    None=>{
-                        break;
-                    }
-                }
+            for x in xs.peeking_take_while(|x|x.get().get_range(axis).left<=y.get().get_range(axis).right){
+                active_x.push(x);
             }
-
+            
             //Prune all the x's that are no longer touching the y.
             active_x.retain(|x: &mut &mut I| {
                 if x.get().get_range(axis).right
@@ -190,7 +178,6 @@ impl<I: HasAabb> Sweeper<I> {
             //These are the x's that are to the complete right of y.
             //So to handle collisions, we want to make sure to not hit these.
             //That is why we have that condition to break out of the below loop
-
             for x in active_x.iter_mut() {
                 if x.get().get_range(axis).left>y.get().get_range(axis).right{
                     break;
@@ -201,6 +188,76 @@ impl<I: HasAabb> Sweeper<I> {
             }
         }
     }
+
+}
+
+#[test]
+fn test_parallel(){
+    use std::collections::BTreeSet;
+
+
+
+    #[derive(Copy,Clone,Debug)]
+    struct Bot{
+        id:usize
+    }
+
+    struct Test{
+        set:BTreeSet<[usize;2]>
+    };
+    impl ColMulti for &mut Test{
+        type T=BBox<isize,Bot>;
+        fn collide(&mut self,a:&mut Self::T,b:&mut Self::T){
+            let [a,b]=[a.inner.id,b.inner.id];
+
+            let fin=if a<b{
+                [a,b]
+            }else{
+                [b,a]
+            };
+            self.set.insert(fin);
+        }
+    }
+
+    struct Counter{
+        counter:usize
+    }
+    impl Counter{
+        fn make(&mut self,x1:isize,x2:isize)->BBox<isize,Bot>{
+            let b=unsafe{BBox::new(axgeom::Rect::new(x1,x2,0,10),Bot{id:self.counter})};
+            self.counter+=1;
+            b
+        }
+    }
+
+    let mut b=Counter{counter:0};
+    
+    //let mut left=[b.make(0,10)];
+    //let mut right=[b.make(-5,5),b.make(5,15),b.make(-5,15),b.make(2,8),b.make(-5,-6),b.make(12,13)];
+
+    let mut left=[b.make(0,10),b.make(5,20),b.make(10,40)];
+    let mut right=[b.make(1,2),b.make(-5,-4),b.make(2,3),b.make(-5,-4),b.make(3,4),b.make(-5,-4),b.make(4,5),b.make(-5,-4),b.make(5,6),b.make(-5,-4),b.make(6,7)];
+    
+
+    let mut left=[b.make(0,10),b.make(5,20)];
+    let mut right=[b.make(16,20)];
+
+    let mut sweeper=Sweeper::new();
+    
+
+
+    let mut test1=Test{set:BTreeSet::new()};
+    sweeper.find_bijective_parallel(axgeom::XAXISS,(&mut left,&mut right),&mut test1);
+
+
+
+    let mut test2=Test{set:BTreeSet::new()};
+    sweeper.find_bijective_parallel(axgeom::XAXISS,(&mut right,&mut left),&mut test2);
+
+    let num=test1.set.symmetric_difference(&test2.set).count();
+
+    assert_eq!(num,0);
+
 
 }
 

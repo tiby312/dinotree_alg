@@ -71,6 +71,64 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 }
 
 
+/*
+trait NodeHandler{
+    fn handle_node(axis:impl AxisTrait);
+
+    fn handle_children(anchor_axis:impl AxisTrait,axis:impl AxisTrait);
+}
+struct Sweeper;
+impl NodeHandler for Sweeper{
+    fn handle_node(axis:impl AxisTrait){
+        
+        {
+            let func=ColMultiWrapper(func);
+            if !this_axis.is_equal_to(anchor_axis) {
+
+                let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
+
+                let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
+
+                let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
+
+                sweeper.find_perp_2d(r1,r2,func);
+
+            } else {
+                if cont.intersects(&anchor.cont){
+                    sweeper.find_parallel_2d(
+                        this_axis.next(),
+                        &mut nn.range,
+                        anchor.range,
+                        func,
+                    );
+                }
+            }
+        }
+    }
+
+    fn handle_children(anchor_axis:impl AxisTrait,axis:impl AxisTrait){
+        let func=ColMultiWrapper(func);
+        if !this_axis.is_equal_to(anchor_axis) {
+
+            let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
+
+            let r1 =oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
+            let r2= anchor_bots;
+
+            sweeper.find_perp_2d(r1,r2,func);
+
+        } else {
+            sweeper.find_parallel_2d(
+                this_axis.next(),
+                &mut nn.range,
+                anchor.range,
+                func,
+            );
+        }
+    }
+}
+*/
+
 
 
 fn go_down<
@@ -87,26 +145,35 @@ fn go_down<
 ) {
     let anchor_axis=anchor.axis;
     let (nn,rest)=m.next();
+
+        /*
+        for a in anchor.range.iter_mut(){
+            for b in nn.range.iter_mut(){
+                if a.get().get_intersect_rect(b.get()).is_some(){
+                    func.collide(a,b);
+                }
+            }
+        }*/
+            
+       
+
     match rest{
         Some((extra,left,right))=>{
             let &FullComp{div,cont}=match extra{
                 Some(d)=>d,
                 None=>return
             };
-
-
-            
             {
                 let func=ColMultiWrapper(func);
                 if !this_axis.is_equal_to(anchor_axis) {
 
-                    let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
+                        let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
 
-                    let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
+                        let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
 
-                    let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
+                        let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
 
-                    sweeper.find_perp_2d(r1,r2,func);
+                        sweeper.find_perp_2d(r1,r2,func);
 
                 } else {
                     if cont.intersects(&anchor.cont){
@@ -119,9 +186,7 @@ fn go_down<
                     }
                 }
             }
-                                      
-            
-
+        
             //This can be evaluated at compile time!
             if this_axis.is_equal_to(anchor_axis) {
                 if !(div < anchor.cont.left) {
@@ -136,6 +201,7 @@ fn go_down<
             }
         },
         None=>{
+            
             let func=ColMultiWrapper(func);
             if !this_axis.is_equal_to(anchor_axis) {
 
@@ -154,6 +220,7 @@ fn go_down<
                     func,
                 );
             }
+            
         }
     }
 }

@@ -66,7 +66,7 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb+Send,X:Copy+Send>(
     }
 
 
-    for (i,j) in b2.iter().zip(b.iter_mut()){
+    for (i,j) in b2.iter().zip_eq(b.iter_mut()){
         *j=i.inner;
     }
 }

@@ -19,4 +19,6 @@ rayon = "1.0.3"
 smallvec = "0.6.5"
 compt = "1.2.2"
 axgeom = "1.0.1"
-dinotree = "0.1.2"
+#dinotree = "0.1.2"
+dinotree={path="../dinotree"}
+itertools = "0.7.8"
