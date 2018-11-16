@@ -23,6 +23,7 @@
 //! 
 use inner_prelude::*;
 use oned;
+use node_handle::*;
 
 ///Naive algorithm.
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
@@ -67,95 +68,25 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
     }
 
     let mut s=oned::Sweeper::new();
-    s.find_2d(axis,bots,Bl{func,_p:PhantomData});
+    s.find_2d(axis,bots,&mut Bl{func,_p:PhantomData});
 }
 
 
-/*
-trait NodeHandler{
-    fn handle_node(axis:impl AxisTrait);
-
-    fn handle_children(anchor_axis:impl AxisTrait,axis:impl AxisTrait);
-}
-struct Sweeper;
-impl NodeHandler for Sweeper{
-    fn handle_node(axis:impl AxisTrait){
-        
-        {
-            let func=ColMultiWrapper(func);
-            if !this_axis.is_equal_to(anchor_axis) {
-
-                let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
-
-                let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
-
-                let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
-
-                sweeper.find_perp_2d(r1,r2,func);
-
-            } else {
-                if cont.intersects(&anchor.cont){
-                    sweeper.find_parallel_2d(
-                        this_axis.next(),
-                        &mut nn.range,
-                        anchor.range,
-                        func,
-                    );
-                }
-            }
-        }
-    }
-
-    fn handle_children(anchor_axis:impl AxisTrait,axis:impl AxisTrait){
-        let func=ColMultiWrapper(func);
-        if !this_axis.is_equal_to(anchor_axis) {
-
-            let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
-
-            let r1 =oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
-            let r2= anchor_bots;
-
-            sweeper.find_perp_2d(r1,r2,func);
-
-        } else {
-            sweeper.find_parallel_2d(
-                this_axis.next(),
-                &mut nn.range,
-                anchor.range,
-                func,
-            );
-        }
-    }
-}
-*/
 
 
 
 fn go_down<
     A: AxisTrait, //this axis
     B: AxisTrait, //anchor axis
-    X: HasAabb ,
-    F: ColMulti<T = X>
+    X: HasAabb
 >(
     this_axis: A,
-    sweeper: &mut oned::Sweeper<X>,
+    sweeper: &mut impl NodeHandler<T=X>,
     anchor: &mut DestructuredNode<X,B>,
     m: VistrMut<(),X>,
-    func: &mut F,
 ) {
     let anchor_axis=anchor.axis;
     let (nn,rest)=m.next();
-
-        /*
-        for a in anchor.range.iter_mut(){
-            for b in nn.range.iter_mut(){
-                if a.get().get_intersect_rect(b.get()).is_some(){
-                    func.collide(a,b);
-                }
-            }
-        }*/
-            
-       
 
     match rest{
         Some((extra,left,right))=>{
@@ -163,64 +94,24 @@ fn go_down<
                 Some(d)=>d,
                 None=>return
             };
-            {
-                let func=ColMultiWrapper(func);
-                if !this_axis.is_equal_to(anchor_axis) {
-
-                        let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
-
-                        let r1 = oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
-
-                        let r2= oned::get_section_mut(this_axis,anchor_bots,&cont);     
-
-                        sweeper.find_perp_2d(r1,r2,func);
-
-                } else {
-                    if cont.intersects(&anchor.cont){
-                        sweeper.find_parallel_2d(
-                            this_axis.next(),
-                            &mut nn.range,
-                            anchor.range,
-                            func,
-                        );
-                    }
-                }
-            }
-        
+            
+            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,&mut nn.range,Some(&cont)));
+            
             //This can be evaluated at compile time!
             if this_axis.is_equal_to(anchor_axis) {
                 if !(div < anchor.cont.left) {
-                    self::go_down(this_axis.next(), sweeper, anchor, left, func);
+                    self::go_down(this_axis.next(), sweeper, anchor, left);
                 };
                 if !(div > anchor.cont.right) {
-                    self::go_down(this_axis.next(), sweeper, anchor, right, func);
+                    self::go_down(this_axis.next(), sweeper, anchor, right);
                 };
             } else {
-                self::go_down(this_axis.next(), sweeper, anchor, left, func);
-                self::go_down(this_axis.next(), sweeper, anchor,right, func);
+                self::go_down(this_axis.next(), sweeper, anchor, left);
+                self::go_down(this_axis.next(), sweeper, anchor,right);
             }
         },
         None=>{
-            
-            let func=ColMultiWrapper(func);
-            if !this_axis.is_equal_to(anchor_axis) {
-
-                let (anchor_box,anchor_bots)=(&anchor.cont,&mut anchor.range);
-
-                let r1 =oned::get_section_mut(anchor_axis,&mut nn.range, anchor_box);
-                let r2= anchor_bots;
-
-                sweeper.find_perp_2d(r1,r2,func);
-
-            } else {
-                sweeper.find_parallel_2d(
-                    this_axis.next(),
-                    &mut nn.range,
-                    anchor.range,
-                    func,
-                );
-            }
-            
+            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,&mut nn.range,None));
         }
     }
 }
@@ -238,74 +129,75 @@ fn recurse<
     A: AxisTrait,
     JJ: par::Joiner,
     X: HasAabb + Send ,
-    F: ColMulti<T = X>+Splitter+Send,
-    K:Splitter+Send
+    K:Splitter+Send,
+    S:NodeHandler<T=X>+Splitter+Send+Sync
 >(
     this_axis: A,
     par: JJ,
-    sweeper:&mut oned::Sweeper<F::T>,
+    sweeper:&mut S,
     m: LevelIter<VistrMut<(),X>>,
-    mut clos: F,
-    mut splitter:K
-) -> (F,K) {
+    splitter:&mut K
+){
 
 
-    clos.node_start();
+    sweeper.node_start();
     splitter.node_start();
 
     let((depth,nn),rest)=m.next();
 
-    //std::thread::sleep(std::time::Duration::from_millis(100));
+    sweeper.handle_node(this_axis.next(),&mut nn.range);
+                
     match rest{
         Some((extra,mut left,mut right))=>{
             let &FullComp{div,cont}=match extra{
                 Some(d)=>d,
                 None=>{
-                    clos.node_end();
+                    sweeper.node_end();
                     splitter.node_end();
-                    return (clos,splitter)
-                } //TODO is this okay?
+                    return;
+                }
             };
             
 
             let mut nn=DestructuredNode{range:&mut nn.range,cont,_div:div,axis:this_axis};
             {
-                sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
-
                 let left=left.inner.create_wrap_mut();
                 let right=right.inner.create_wrap_mut();
-
-                self::go_down(this_axis.next(), sweeper, &mut nn, left, &mut clos,);
-                self::go_down(this_axis.next(), sweeper, &mut nn, right, &mut clos);
+                self::go_down(this_axis.next(), sweeper, &mut nn, left);
+                self::go_down(this_axis.next(), sweeper, &mut nn, right);
             }
 
-            let (splitter1,splitter2)=splitter.div();
+            let mut splitter2=splitter.div();
                 
-            let (clos,splitter1,splitter2)=if !par.should_switch_to_sequential(depth) {
-                let (clos1,clos2)=clos.div();
-                let af = || {
-                    self::recurse(this_axis.next(),par,sweeper,left,clos1,splitter1)
-                };
-                let bf = || {
-                    let mut sweeper = oned::Sweeper::new();
-                    self::recurse(this_axis.next(),par,&mut sweeper,right,clos2,splitter2)
-                };
-                let ((clos1,splitter1), (clos2,splitter2)) = rayon::join(af, bf);
-                let clos=clos1.add(clos2);
-                (clos,splitter1,splitter2)
-            } else {
-                let (clos,splitter1) = self::recurse(this_axis.next(),par.into_seq(),sweeper,left,clos,splitter1);
-                let (clos,splitter2) = self::recurse(this_axis.next(),par.into_seq(),sweeper,right,clos,splitter2);
-                (clos,splitter1,splitter2)
+            let splitter={
+                let splitter2=&mut splitter2;
+                if !par.should_switch_to_sequential(depth) {
+                    let mut sweeper2=sweeper.div();
+                    
+                    let (sweeper,splitter)={
+                        let sweeper2=&mut sweeper2;
+                        let af = move || {
+                            self::recurse(this_axis.next(),par,sweeper,left,splitter);(sweeper,splitter)
+                        };
+                        let bf = move || {
+                            self::recurse(this_axis.next(),par,sweeper2,right,splitter2)
+                        };
+                        rayon::join(af, bf).0
+                    };
+                    sweeper.add(sweeper2);
+                    splitter
+                } else {
+                    self::recurse(this_axis.next(),par.into_seq(),sweeper,left,splitter);
+                    self::recurse(this_axis.next(),par.into_seq(),sweeper,right,splitter2);
+                    splitter
+                }
             };
 
-            (clos,splitter1.add(splitter2))
+            splitter.add(splitter2);
         },
         None=>{
-            sweeper.find_2d(this_axis.next(),&mut nn.range, ColMultiWrapper(&mut clos));
-            clos.node_end();
+            sweeper.node_end();
             splitter.node_end();
-            (clos,splitter) //TODO is this okay?
         }
     }
 }
@@ -315,33 +207,14 @@ fn recurse<
 ///Trait that user implements to handling aabb collisions.
 ///The user supplies a struct that implements this trait instead of just a closure
 ///so that the user may also have the struct implement Splitter.
-pub trait ColMulti:Sized {
+pub trait ColMulti{
     type T: HasAabb;
     fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
 }
 
-struct ColMultiWrapper<'a, C: ColMulti + 'a>(pub &'a mut C);
-
-impl<'a, C: ColMulti + 'a> ColMulti for ColMultiWrapper<'a, C> {
-    type T = C::T;
-    fn collide(&mut self, a:&mut Self::T, b: &mut Self::T) {
-        self.0.collide(a, b);
-    }
-}
 
 
-//TODO implement
-mod todo{
-    use super::*;
-    #[allow(dead_code)]
-    pub fn query<A:AxisTrait,T:HasAabb>(_tree:&DinoTree<A,(),T>,mut _func:impl FnMut(&T,&T)){
-        unimplemented!("Versions that do not borrow the tree mutable are implemented.  Waiting for parametric mutability.")
-    }
-    #[allow(dead_code)]
-    pub fn query_par<A:AxisTrait,T:HasAabb+Send>(_tree:&DinoTree<A,(),T>,_func:impl Fn(&T,&T)+Copy+Send){
-        unimplemented!("Versions that do not borrow the tree mutable are implemented.  Waiting for parametric mutability.")
-    }
-}
+
 
 
 ///Sequential
@@ -354,19 +227,26 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,func:impl
         }   
     }
     impl<T,F> Splitter for Bo<T,F>{
-        fn div(self)->(Self,Self){
+        fn div(&mut self)->Self{
             unreachable!()
         }
-        fn add(self,_:Self)->Self{
+        fn add(&mut self,_:Self){
             unreachable!()
         }
         fn node_start(&mut self){}
         fn node_end(&mut self){}
     }
 
-    let b=Bo(func,PhantomData);
 
-    inner_query_seq_adv_mut(tree,b,SplitterEmpty);
+
+    let b=Bo(func,PhantomData);
+    
+    let sweeper=HandleSorted::new(b);
+    let splitter=SplitterEmpty;
+    let (splitter,sweeper)=inner_query_seq_adv_mut(tree,splitter,sweeper);
+   
+    //unimplemented!();
+    //inner_query_seq_adv_mut(tree,b,SplitterEmpty,HandleSorted::<T,Bo<T,_>>::new());
 }
 
 
@@ -381,20 +261,19 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:imp
         }   
     }
     impl<T,F:Copy> Splitter for Bo<T,F>{
-        fn div(self)->(Self,Self){
-            let b=Bo(self.0,PhantomData);
-            (self,b)
+        fn div(&mut self)->Self{
+            Bo(self.0,PhantomData)
         }
-        fn add(self,_:Self)->Self{
-            self
+        fn add(&mut self,_:Self){
+            
         }
         fn node_start(&mut self){}
         fn node_end(&mut self){}
     }
-
+    unsafe impl<T,F> Sync for Bo<T,F>{}
     let b=Bo(func,PhantomData);
 
-    query_adv_mut(tree,b,SplitterEmpty,dinotree::advanced::compute_default_level_switch_sequential());
+    query_adv_mut(tree,b,&mut SplitterEmpty,dinotree::advanced::compute_default_level_switch_sequential());
 }
 
 
@@ -414,10 +293,10 @@ pub fn query_seq_adv_mut<A: AxisTrait,
         }   
     }
     impl<T,F> Splitter for Bo<T,F>{
-        fn div(self)->(Self,Self){
+        fn div(&mut self)->Self{
             unreachable!()
         }
-        fn add(self,_:Self)->Self{
+        fn add(&mut self,_:Self){
             unreachable!()
         }
         fn node_start(&mut self){}
@@ -425,20 +304,24 @@ pub fn query_seq_adv_mut<A: AxisTrait,
     }
 
     let b=Bo(func,PhantomData);
+    
+    let sweeper=HandleSorted::new(b);
 
-    inner_query_seq_adv_mut(tree,b,splitter).1
+    let (splitter,sweeper)=inner_query_seq_adv_mut(tree,splitter,sweeper);
+    splitter
 }
+
 
 ///See query_adv_mut
 fn inner_query_seq_adv_mut<
     A: AxisTrait,
     T: HasAabb,
-    F: ColMulti<T = T>,
-    K:Splitter>(    
+    K:Splitter,
+    S: NodeHandler<T=T>+Splitter>(    
     kdtree: &mut DinoTree<A,(), T>,
-    clos: F,
-    splitter:K
-)->(F,K){
+    splitter:K,
+    sweeper:S
+)->(K,S){
   
 
     mod wrap{
@@ -470,10 +353,10 @@ fn inner_query_seq_adv_mut<
        
         }
         impl<T,F> Splitter for Wrapper<T,F>{
-            fn div(self)->(Self,Self){
+            fn div(&mut self)->Self{
                 unreachable!()
             }
-            fn add(self,_:Self)->Self{
+            fn add(&mut self,_:Self){
                 unreachable!()
             }
             fn node_start(&mut self){}
@@ -492,13 +375,11 @@ fn inner_query_seq_adv_mut<
         );
 
         impl<T:Splitter> Splitter for SplitterWrapper<T>{
-            fn div(self)->(Self,Self){
-                let (a,b)=self.0.div();
-                (SplitterWrapper(a),SplitterWrapper(b))
+            fn div(&mut self)->Self{
+                SplitterWrapper(self.0.div())
             }
-            fn add(self,a:Self)->Self{
-                let a=self.0.add(a.0);
-                SplitterWrapper(a)
+            fn add(&mut self,a:Self){
+                self.0.add(a.0)
             }
             fn node_start(&mut self){self.0.node_start()}
             fn node_end(&mut self){self.0.node_end()}
@@ -506,20 +387,67 @@ fn inner_query_seq_adv_mut<
         unsafe impl<T> Send for SplitterWrapper<T>{}
         unsafe impl<T> Sync for SplitterWrapper<T>{}
 
+
+        
+        pub struct NodeHandlerWrapper<T>(pub T);
+        
+
+        impl<T:NodeHandler> NodeHandler for NodeHandlerWrapper<T>{
+            type T=Wrap<T::T>;
+            fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut [Self::T])
+            {
+                let bots:&mut [T::T]=unsafe{std::mem::transmute(bots)};
+                self.0.handle_node(axis,bots);
+            }
+            fn handle_children(&mut self,
+                anchor:(impl AxisTrait,&mut [Self::T],&Range<<Self::T as HasAabb>::Num>),
+                current:(impl AxisTrait,&mut [Self::T],Option<&Range<<Self::T as HasAabb>::Num>>)){
+                let (a,b,c)=anchor;
+                let (d,e,f)=current;
+
+                let anchor:&mut [T::T]=unsafe{std::mem::transmute(b)};
+                let current:&mut [T::T]=unsafe{std::mem::transmute(e)};
+
+                self.0.handle_children((a,anchor,c),(d,current,f));
+            }
+        }
+        impl<T:NodeHandler+Splitter> Splitter for NodeHandlerWrapper<T>{
+            fn div(&mut self)->Self{
+                NodeHandlerWrapper(self.0.div())
+            }
+            fn add(&mut self,a:Self){
+                self.0.add(a.0)
+            }
+            fn node_start(&mut self){
+                self.0.node_start();
+            }
+            fn node_end(&mut self){
+                self.0.node_end();
+            }
+        }
+        unsafe impl<T> Send for NodeHandlerWrapper<T>{}
+        unsafe impl<T> Sync for NodeHandlerWrapper<T>{}
+        
+
+
     }
 
-
-    let clos=wrap::Wrapper(clos,PhantomData);
-    let splitter=wrap::SplitterWrapper(splitter);
+    
+    //let clos=wrap::Wrapper(clos,PhantomData);
+    let mut splitter=wrap::SplitterWrapper(splitter);
     let kdtree:&mut DinoTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
+    let mut sweeper:wrap::NodeHandlerWrapper<S>=wrap::NodeHandlerWrapper(sweeper);
 
     let this_axis=kdtree.axis();
     let dt = kdtree.vistr_mut().with_depth(Depth(0));
-    let mut sweeper = oned::Sweeper::new();
-
-    let (a,b)=self::recurse(this_axis, par::Sequential, &mut sweeper, dt, clos,splitter);
-    (a.0,b.0)
+    //let mut sweeper = oned::Sweeper::new();
+    
+    
+    self::recurse(this_axis, par::Sequential, &mut sweeper, dt,&mut splitter);
+    
+    (splitter.0,sweeper.0)
 }
+
 
 ///The user has more control using this version of the query.
 ///The splitter will split and add at every level.
@@ -528,14 +456,15 @@ fn inner_query_seq_adv_mut<
 pub fn query_adv_mut<
     A: AxisTrait,
     T: HasAabb+Send,
-    F: ColMulti<T = T>+Splitter+Send,
-    K: Splitter+Send
+    F: ColMulti<T = T>+Splitter+Send+Sync,
+    K: Splitter+Send,
+    
 >(
     kdtree: &mut DinoTree<A,(), T>,
     clos: F,
-    splitter:K,
-    height_switch_seq:usize
-) -> (F,K) {
+    splitter:&mut K,
+    height_switch_seq:usize,
+) -> F {
     let par={
        
         let height=kdtree.height();
@@ -549,7 +478,8 @@ pub fn query_adv_mut<
 
     let this_axis=kdtree.axis();
     let dt = kdtree.vistr_mut().with_depth(Depth(0));
-    let mut sweeper = oned::Sweeper::new();
-
-    self::recurse(this_axis, par, &mut sweeper, dt, clos,splitter)
+    //let mut sweeper = oned::Sweeper::new();
+    let mut sweeper=HandleSorted::new(clos);
+    self::recurse(this_axis, par, &mut sweeper, dt,splitter);
+    sweeper.func
 }

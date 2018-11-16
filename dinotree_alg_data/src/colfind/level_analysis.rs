@@ -51,14 +51,22 @@ mod level_counter{
 	    }
 	}
 	impl Splitter for LevelCounter{
-	    fn div(mut self)->(Self,Self){
+	    fn div(&mut self)->Self{
 	        self.node_end_common();
 
 	        let length=self.levels.len();
 	        let counter=self.counter;
-	        (self,LevelCounter{counter,levels:std::iter::repeat(0).take(length).collect(),cursor:None})
+	        LevelCounter{counter,levels:std::iter::repeat(0).take(length).collect(),cursor:None}
 	    }
-	    fn add(self,a:Self)->Self{
+	    fn add(&mut self,a:Self){
+	    	let len=self.levels.len();
+	        for (a,b) in self.levels.iter_mut().zip(a.levels.iter()){
+	            *a+=*b;
+	        }
+	        if len<a.levels.len(){
+	            self.levels.extend_from_slice(&a.levels[len..]);
+	        }
+	    	/*
 	        let (smaller,mut larger)=if self.levels.len()<a.levels.len(){
 	            (self,a)
 	        }else{
@@ -70,6 +78,7 @@ mod level_counter{
 	            *a+=*b;
 	        }
 	        larger
+	        */
 	    }
 	    fn node_start(&mut self){
 	    	let counter=unsafe{&mut *self.counter};
@@ -106,11 +115,11 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 	    	let mut counter=datanum::Counter::new();
 
 		    let height=compute_tree_height_heuristic(num_bots);
-			let levelc=level_counter::LevelCounter::new(&mut counter);
+			let mut levelc=level_counter::LevelCounter::new(&mut counter);
 
-			let (mut tree,levelc)=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
+			let mut tree=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
 			        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-		    },height,levelc);
+		    },height,&mut levelc);
 
 			counter.reset();
 			let levelc2=level_counter::LevelCounter::new(&mut counter);
@@ -158,11 +167,11 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 	    }).collect();
 	    
 	    let height=compute_tree_height_heuristic(num_bots);
-		let leveltimer1=LevelTimer::new();
+		let mut times1=LevelTimer::new();
 
-		let (mut tree,times1)=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
+		let mut tree=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
 			        aabb_from_point_isize(b.pos,[5,5])  
-			    },height,leveltimer1);
+			    },height,&mut times1);
 
 
 		/*

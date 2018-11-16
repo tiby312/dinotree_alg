@@ -1,12 +1,12 @@
 use inner_prelude::*;
 use colfind::ColMulti;
 
-struct Bl<A: AxisTrait, F: ColMulti> {
-    a: F,
+struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
+    a: &'a mut F,
     axis:A,
 }
 
-impl<A: AxisTrait, F: ColMulti> ColMulti for Bl<A, F> {
+impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
     type T = F::T;
 
     fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
@@ -41,13 +41,13 @@ impl<I: HasAabb> Sweeper<I> {
         &mut self,
         axis:A,
         bots: &mut [F::T],
-        clos2: F,
+        clos2: &mut F,
     ) {
-        let b: Bl<A, _> = Bl {
+        let mut b: Bl<A, _> = Bl {
             a: clos2,
             axis
         };
-        self.find(axis,bots, b);
+        self.find(axis,bots, &mut b);
     }
 
 
@@ -56,14 +56,14 @@ impl<I: HasAabb> Sweeper<I> {
         axis:A,
         bots1: &mut [F::T],
         bots2: &mut [F::T],
-        clos2: F,
+        clos2: &mut F,
     ) {
-        let b: Bl<A, _> = Bl {
+        let mut b: Bl<A, _> = Bl {
             a: clos2,
             axis
         };
 
-        self.find_bijective_parallel(axis,(bots1, bots2), b);
+        self.find_bijective_parallel(axis,(bots1, bots2), &mut b);
     }
 
 
@@ -72,7 +72,7 @@ impl<I: HasAabb> Sweeper<I> {
         axis:A,
         bots1: &mut [F::T],
         bots2: &mut [F::T],
-        clos2: F,
+        clos2: &mut F,
     ) {
         self.find_bijective_parallel(axis,(bots1, bots2), clos2);
     }
@@ -80,7 +80,7 @@ impl<I: HasAabb> Sweeper<I> {
     pub(crate) fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
         r1: &mut [F::T],
         r2: &mut [F::T],
-        mut clos2: F){
+        mut clos2: &mut F){
 
        
         for inda in r1.iter_mut() {
@@ -97,7 +97,7 @@ impl<I: HasAabb> Sweeper<I> {
         &mut self,
         axis:A,
         collision_botids: &'a mut [I],
-        mut func: F,
+        func: &mut F,
     ) {
         //    Create a new temporary list called “activeList”.
         //    You begin on the left of your axisList, adding the first item to the activeList.
@@ -150,7 +150,7 @@ impl<I: HasAabb> Sweeper<I> {
         &mut self,
         axis:A,
         cols: (&mut [I], &mut [I]),
-        mut func: F,
+        func: &mut F,
     ) {
         let mut xs=cols.0.iter_mut().peekable();
         let ys = cols.1.iter_mut();

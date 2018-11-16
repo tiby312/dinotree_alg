@@ -18,7 +18,7 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
     
         let mut tree=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),bots,|b|{
             aabb_from_point_isize(b.pos,[5,5]) 
-        },height,SplitterEmpty).0;
+        },height,&mut SplitterEmpty);
 
         colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.num+=2;
@@ -45,7 +45,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
 
         let mut tree=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),bots,|b|{
             datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-        },height,SplitterEmpty).0;
+        },height,&mut SplitterEmpty);
 
         colfind::query_seq_mut(&mut tree,|a, b| {
             a.inner.num+=2;

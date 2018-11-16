@@ -16,11 +16,11 @@ impl colfind::ColMulti for Bo{
     }
 }
 impl Splitter for Bo{
-    fn div(self)->(Self,Self){
-        (Bo{},Bo{})
+    fn div(&mut self)->Self{
+        Bo{}
     }
-    fn add(self,_:Self)->Self{
-        self
+    fn add(&mut self,a:Self){
+        
     }
     fn node_start(&mut self){}
     fn node_end(&mut self){}
@@ -63,15 +63,15 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
 
     let height=compute_tree_height_heuristic(bots.len()); 
         
-    let (mut tree,_)=dinotree::advanced::new_adv(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::advanced::new_adv(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    },height,SplitterEmpty,rebal_height);
+    },height,&mut SplitterEmpty,rebal_height);
 
 
     let a=instant_to_sec(instant.elapsed());
     
 
-    let _ =colfind::query_adv_mut(&mut tree,Bo{},SplitterEmpty,query_height);
+    let _ =colfind::query_adv_mut(&mut tree,Bo{},&mut SplitterEmpty,query_height);
 
     tree.apply(bots,|a,b|{
         b.num=a.inner.num;

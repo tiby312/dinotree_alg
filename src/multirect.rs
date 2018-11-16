@@ -127,7 +127,7 @@ pub fn collide_two_rect_parallel<
     let ff=|a:&mut Wr<T>,b:&mut Wr<T>|{
         func(a.0,b.0)
     };
-    sweeper.find_parallel_2d_no_check(axis,&mut b1, &mut b2, Bl{a:ff,_p:PhantomData});
+    sweeper.find_parallel_2d_no_check(axis,&mut b1, &mut b2, &mut Bl{a:ff,_p:PhantomData});
     Ok(())
 }
 
