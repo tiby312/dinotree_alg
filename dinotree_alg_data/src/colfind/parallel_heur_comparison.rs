@@ -83,7 +83,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
 }
 
 
-pub fn handle(fb:&FigureBuilder){
+pub fn handle(fb:&mut FigureBuilder){
 
     let num_bots=20_000;
     let grow=0.2;
@@ -144,6 +144,6 @@ pub fn handle(fb:&FigureBuilder){
         .set_x_grid(true)
         .set_y_grid(true);
 
-    fg.show();
+    fb.finish(fg);
 
 }

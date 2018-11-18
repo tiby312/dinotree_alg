@@ -90,7 +90,7 @@ fn test3(bots:&mut [Bot])->(f64,f64){
 }
 
 
-pub fn handle(fb:&FigureBuilder){
+pub fn handle(fb:&mut FigureBuilder){
     handle_num_bots(fb,0.2);
     handle_num_bots(fb,2.0);
     handle_grow(fb);
@@ -98,7 +98,7 @@ pub fn handle(fb:&FigureBuilder){
 
 
 
-fn handle_num_bots(fb:&FigureBuilder,grow:f64){
+fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     #[derive(Debug)]
     struct Record {
         num_bots:usize,
@@ -159,14 +159,14 @@ fn handle_num_bots(fb:&FigureBuilder,grow:f64){
         .set_x_label("Grow", &[])
         .set_y_label("Time in seconds", &[]);
 
-    fg.show();
+    fb.finish(fg);
 
 
 }
 
 
 
-fn handle_grow(fb:&FigureBuilder){
+fn handle_grow(fb:&mut FigureBuilder){
     let num_bots=80_000;
 
     #[derive(Debug)]
@@ -228,7 +228,7 @@ fn handle_grow(fb:&FigureBuilder){
         .set_x_label("Grow", &[])
         .set_y_label("Time in seconds", &[]);
 
-    fg.show();
+    fb.finish(fg);
     
     
 

@@ -440,13 +440,13 @@ fn test1(bots:&mut [Bot],diff:f64)->Res{
 
 
 
-pub fn handle(fb:&FigureBuilder){
+pub fn handle(fb:&mut FigureBuilder){
     handle_spiral1(fb);
     handle_spiral2(fb);
 }
 
 
-fn handle_spiral1(fb:&FigureBuilder){
+fn handle_spiral1(fb:&mut FigureBuilder){
     struct Record{
         _num_bots:usize,
         dis:f64,
@@ -480,8 +480,7 @@ fn handle_spiral1(fb:&FigureBuilder){
         .lines(x.clone(), y3,  &[Caption("Nbody parallell"), Color("red"), LineWidth(2.0)])
         .set_x_label("Number of Objects", &[])
         .set_y_label("Time taken in seconds", &[]);
-
-    fg.show();
+    fb.finish(fg);
 
     /*
     let x=rects.iter().map(|a|a.num_bots as f64);
@@ -505,7 +504,7 @@ fn handle_spiral1(fb:&FigureBuilder){
     fg.show(); 
     */
 }
-fn handle_spiral2(fb:&FigureBuilder){
+fn handle_spiral2(fb:&mut FigureBuilder){
     struct Record{
         _num_bots:usize,
         dis:f64,
@@ -561,8 +560,7 @@ fn handle_spiral2(fb:&FigureBuilder){
         .lines(x.clone(), y4,  &[Caption("Nbody sequential"), Color("green"), LineWidth(2.0)])
         .set_x_label("Number of Objects", &[])
         .set_y_label("Time taken in seconds", &[]);
-
-    fg.show();
+    fb.finish(fg);
     /*
     let x=rects.iter().map(|a|a.num_bots as f64);
     let y=rects.iter().map(|a|a.dis);

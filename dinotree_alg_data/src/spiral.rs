@@ -3,12 +3,12 @@ use inner_prelude::*;
 
 
 
-pub fn handle(fb:&FigureBuilder){
+pub fn handle(fb:&mut FigureBuilder){
 	handle1(fb);
 	handle2(fb);
 }
 
-fn handle1(fb:&FigureBuilder){
+fn handle1(fb:&mut FigureBuilder){
 
 
 	let mut fg=fb.new("spiral_data");	
@@ -50,7 +50,7 @@ fn handle1(fb:&FigureBuilder){
     fg.show();
 }
 
-fn handle2(fb:&FigureBuilder){
+fn handle2(fb:&mut FigureBuilder){
 
 
 

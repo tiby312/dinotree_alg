@@ -91,7 +91,7 @@ struct Record {
 
 
 
-fn handle_spiral(fb:&FigureBuilder){
+fn handle_spiral(fb:&mut FigureBuilder){
     let mut rects=Vec::new();
 
     for num_bots in (0..10000).step_by(1000){
@@ -130,7 +130,7 @@ fn handle_spiral(fb:&FigureBuilder){
     }
     draw_rects(&mut rects,fb,"colfind_num_pairs_detailed","colfind_num_comparisons_detailed");       
 }
-fn handle_spiral_two(fb:&FigureBuilder){
+fn handle_spiral_two(fb:&mut FigureBuilder){
     let mut rects=Vec::new();
 
     for num_bots in (0..10000).step_by(1000){
@@ -173,7 +173,7 @@ fn handle_spiral_two(fb:&FigureBuilder){
 
 
 
-fn draw_rects(rects:&mut [Record],fb:&FigureBuilder,name1:&str,name2:&str){
+fn draw_rects(rects:&mut [Record],fb:&mut FigureBuilder,name1:&str,name2:&str){
     {
         let x=rects.iter().map(|a|a.num_bots as f64);
         let y=rects.iter().map(|a|a.grow);
@@ -203,8 +203,7 @@ fn draw_rects(rects:&mut [Record],fb:&FigureBuilder,name1:&str,name2:&str){
             .points(x.clone(), y.clone(), z2.clone(), &[Caption("Sweep and Prune"),PointSymbol('o'), Color("red"), PointSize(1.0)])
             .points(x2.clone(), y2.clone(), z3.clone(), &[Caption("Naive"),PointSymbol('o'), Color("green"), PointSize(0.5)]);
 
-
-        fg.show();
+        fb.finish(fg);
     }
 
     {
@@ -221,12 +220,11 @@ fn draw_rects(rects:&mut [Record],fb:&FigureBuilder,name1:&str,name2:&str){
             .set_y_label("Spareness of Objects", &[])
             .set_z_label("Number of Intersections", &[Rotate(90.0),TextOffset(-3.0,0.0)])
             .points(x, y, z, &[PointSymbol('O'), Color("violet"), PointSize(1.0)]);
-            
-        fg.show();
+        fb.finish(fg);
     }
 }
 
-pub fn handle(fb:&FigureBuilder){
+pub fn handle(fb:&mut FigureBuilder){
     handle_spiral(fb);
     handle_spiral_two(fb);    
 }

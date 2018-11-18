@@ -75,13 +75,13 @@ pub fn create_bots(num_bots:usize)->Vec<Bot>{
 }
 
 
-pub fn handle(fb:&FigureBuilder){
+pub fn handle(fb:&mut FigureBuilder){
     handle2d(fb);
     handle3d(fb);
     handle_lowest(fb);
 }
 
-fn handle3d(fb:&FigureBuilder){
+fn handle3d(fb:&mut FigureBuilder){
 
     struct BenchRecord{
         height:usize,
@@ -113,13 +113,12 @@ fn handle3d(fb:&FigureBuilder){
         .points(x.clone(), y.clone(), z.clone(), &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(0.4)]);
 
 
-
-    fg.show();
+    fb.finish(fg);
 }
 
 
 
-fn handle_lowest(fb:&FigureBuilder){
+fn handle_lowest(fb:&mut FigureBuilder){
 
     struct BenchRecord{
         height:usize,
@@ -224,8 +223,7 @@ fn handle_lowest(fb:&FigureBuilder){
             .lines(heurx,heury,&[Caption("Heuristic")]);
 
 
-
-        fg.show();
+        fb.finish(fg);
         
     }
     {
@@ -249,14 +247,14 @@ fn handle_lowest(fb:&FigureBuilder){
         .set_y_label("Best Tree Height", &[])
         .points(x.clone(), y1,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
         .points(x, y2,  &[Caption("Dinotree"),PointSymbol('O'), Color("red"), PointSize(1.0)]); 
-        fg.show();
+        fb.finish(fg);
     
     }
 
 
 }
 
-fn handle2d(fb:&FigureBuilder){
+fn handle2d(fb:&mut FigureBuilder){
 
 
 
@@ -319,7 +317,8 @@ fn handle2d(fb:&FigureBuilder){
         .points(x,y,&[Color("blue"), LineWidth(2.0)])
         .set_x_label("Tree Height", &[])
         .set_y_label("Time in seconds", &[]);
-    fg.show();
+    
+    fb.finish(fg);
 
 
 }

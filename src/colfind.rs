@@ -241,9 +241,9 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,func:impl
 
     let b=Bo(func,PhantomData);
     
-    let sweeper=HandleSorted::new(b);
-    let splitter=SplitterEmpty;
-    let (splitter,sweeper)=inner_query_seq_adv_mut(tree,splitter,sweeper);
+    let mut sweeper=HandleSorted::new(b);
+    let mut splitter=SplitterEmpty;
+    inner_query_seq_adv_mut(tree,&mut splitter,&mut sweeper);
    
     //unimplemented!();
     //inner_query_seq_adv_mut(tree,b,SplitterEmpty,HandleSorted::<T,Bo<T,_>>::new());
@@ -277,14 +277,46 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:imp
 }
 
 
+///Parallel
+pub fn query_nosort_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut NotSorted<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+    struct Bo<T,F>(F,PhantomData<T>);
+    impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for Bo<T,F>{
+        type T=T;
+        fn collide(&mut self,a:&mut T,b:&mut T){
+            self.0(a,b);
+        }   
+    }
+    impl<T,F:Copy> Splitter for Bo<T,F>{
+        fn div(&mut self)->Self{
+            Bo(self.0,PhantomData)
+        }
+        fn add(&mut self,_:Self){
+            
+        }
+        fn node_start(&mut self){}
+        fn node_end(&mut self){}
+    }
+    unsafe impl<T,F> Sync for Bo<T,F>{}
+    let b=Bo(func,PhantomData);
+
+
+    let mut sweeper=HandleNoSorted::new(b);
+
+    let l=dinotree::advanced::compute_default_level_switch_sequential();
+    inner_query_adv_mut(&mut tree.0,&mut SplitterEmpty,&mut sweeper,l);
+
+
+}
+
+
 ///Advanced sequential version.
 pub fn query_seq_adv_mut<A: AxisTrait,
     T: HasAabb,
     K:Splitter>(    
     tree: &mut DinoTree<A,(), T>,
     func:impl FnMut(&mut T,&mut T),
-    splitter:K
-)->K{
+    splitter:&mut K
+){
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for Bo<T,F>{
         type T=T;
@@ -305,13 +337,108 @@ pub fn query_seq_adv_mut<A: AxisTrait,
 
     let b=Bo(func,PhantomData);
     
-    let sweeper=HandleSorted::new(b);
+    let mut sweeper=HandleSorted::new(b);
 
-    let (splitter,sweeper)=inner_query_seq_adv_mut(tree,splitter,sweeper);
-    splitter
+
+    inner_query_seq_adv_mut(tree,splitter,&mut sweeper);
 }
 
 
+///Advanced sequential version.
+pub fn query_nosort_seq_mut<A: AxisTrait,
+    T: HasAabb>(    
+    tree: &mut NotSorted<A,(), T>,
+    func:impl FnMut(&mut T,&mut T),
+){
+    struct Bo<T,F>(F,PhantomData<T>);
+    impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for Bo<T,F>{
+        type T=T;
+        fn collide(&mut self,a:&mut T,b:&mut T){
+            self.0(a,b);
+        }   
+    }
+    impl<T,F> Splitter for Bo<T,F>{
+        fn div(&mut self)->Self{
+            unreachable!()
+        }
+        fn add(&mut self,_:Self){
+            unreachable!()
+        }
+        fn node_start(&mut self){}
+        fn node_end(&mut self){}
+    }
+
+    let b=Bo(func,PhantomData);
+    
+    let mut sweeper=HandleNoSorted::new(b);
+
+    inner_query_seq_adv_mut(&mut tree.0,&mut SplitterEmpty,&mut sweeper);
+   
+}
+
+///Advanced sequential version.
+pub fn query_nosort_seq_adv_mut<A: AxisTrait,
+    T: HasAabb,
+    K:Splitter>(    
+    tree: &mut NotSorted<A,(), T>,
+    func:impl FnMut(&mut T,&mut T),
+    splitter:&mut K
+){
+    struct Bo<T,F>(F,PhantomData<T>);
+    impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for Bo<T,F>{
+        type T=T;
+        fn collide(&mut self,a:&mut T,b:&mut T){
+            self.0(a,b);
+        }   
+    }
+    impl<T,F> Splitter for Bo<T,F>{
+        fn div(&mut self)->Self{
+            unreachable!()
+        }
+        fn add(&mut self,_:Self){
+            unreachable!()
+        }
+        fn node_start(&mut self){}
+        fn node_end(&mut self){}
+    }
+
+    let b=Bo(func,PhantomData);
+    
+    let mut sweeper=HandleNoSorted::new(b);
+
+    inner_query_seq_adv_mut(&mut tree.0,splitter,&mut sweeper);
+    
+}
+
+
+
+///See query_adv_mut
+fn inner_query_adv_mut<
+    A: AxisTrait,
+    T: HasAabb+Send,
+    K:Splitter+Send,
+    S: NodeHandler<T=T>+Splitter+Send+Sync>(    
+    kdtree: &mut DinoTree<A,(), T>,
+    splitter:&mut K,
+    sweeper:&mut S, 
+    height_switch_seq:usize
+){
+    let par={
+       
+        let height=kdtree.height();
+        let gg=if height<=height_switch_seq{
+            Depth(0)
+        }else{
+            Depth(height-height_switch_seq)
+        };
+        par::Parallel::new(gg)
+    };
+
+    let this_axis=kdtree.axis();
+    let dt = kdtree.vistr_mut().with_depth(Depth(0));
+    self::recurse(this_axis, par, sweeper, dt,splitter);
+    
+}
 ///See query_adv_mut
 fn inner_query_seq_adv_mut<
     A: AxisTrait,
@@ -319,9 +446,9 @@ fn inner_query_seq_adv_mut<
     K:Splitter,
     S: NodeHandler<T=T>+Splitter>(    
     kdtree: &mut DinoTree<A,(), T>,
-    splitter:K,
-    sweeper:S
-)->(K,S){
+    splitter:&mut K,
+    sweeper:&mut S
+){
   
 
     mod wrap{
@@ -337,39 +464,9 @@ fn inner_query_seq_adv_mut<
             }
         }
 
-
         use super::*;
-        pub struct Wrapper<T, F>(
-            pub F,
-            pub PhantomData<T>,
-        );
-
-        impl<T: HasAabb, F: ColMulti<T=T>> self::ColMulti for Wrapper<T, F> {
-            type T = Wrap<T>;
-            fn collide(&mut self, a: &mut Wrap<T>, b: &mut Wrap<T>) {
-                self.0.collide(&mut a.0,&mut b.0);
-            }
-
-       
-        }
-        impl<T,F> Splitter for Wrapper<T,F>{
-            fn div(&mut self)->Self{
-                unreachable!()
-            }
-            fn add(&mut self,_:Self){
-                unreachable!()
-            }
-            fn node_start(&mut self){}
-            fn node_end(&mut self){}
-        }
-
-        //Unsafely implement send and Sync
-        //Safe to do since our algorithms first clone this struct before
-        //passing it to another thread. This sadly has to be indiviually
-        //verified.
-        unsafe impl<T, F> Send for Wrapper<T, F>{}
-        unsafe impl<T, F> Sync for Wrapper<T, F>{}
-
+    
+        #[repr(transparent)]
         pub struct SplitterWrapper<T>(
             pub T,
         );
@@ -388,7 +485,7 @@ fn inner_query_seq_adv_mut<
         unsafe impl<T> Sync for SplitterWrapper<T>{}
 
 
-        
+        #[repr(transparent)]
         pub struct NodeHandlerWrapper<T>(pub T);
         
 
@@ -433,19 +530,17 @@ fn inner_query_seq_adv_mut<
     }
 
     
-    //let clos=wrap::Wrapper(clos,PhantomData);
-    let mut splitter=wrap::SplitterWrapper(splitter);
+    let mut splitter:&mut wrap::SplitterWrapper<K>=unsafe{std::mem::transmute(splitter)};//wrap::SplitterWrapper(splitter);
     let kdtree:&mut DinoTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
-    let mut sweeper:wrap::NodeHandlerWrapper<S>=wrap::NodeHandlerWrapper(sweeper);
+    let mut sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
 
     let this_axis=kdtree.axis();
     let dt = kdtree.vistr_mut().with_depth(Depth(0));
     //let mut sweeper = oned::Sweeper::new();
     
     
-    self::recurse(this_axis, par::Sequential, &mut sweeper, dt,&mut splitter);
+    self::recurse(this_axis, par::Sequential, sweeper, dt,splitter);
     
-    (splitter.0,sweeper.0)
 }
 
 

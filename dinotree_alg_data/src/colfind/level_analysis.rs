@@ -122,11 +122,11 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 		    },height,&mut levelc);
 
 			counter.reset();
-			let levelc2=level_counter::LevelCounter::new(&mut counter);
-			let levelc2=colfind::query_seq_adv_mut(&mut tree,|a,b|{
+			let mut levelc2=level_counter::LevelCounter::new(&mut counter);
+			colfind::query_seq_adv_mut(&mut tree,|a,b|{
 				a.inner.num+=1;
 				b.inner.num+=1;
-			},levelc2);
+			},&mut levelc2);
 
 
 		    counter.into_inner();
@@ -186,8 +186,8 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 		*/
 
 
-		let leveltimer2=LevelTimer::new();
-		let times2=colfind::query_seq_adv_mut(&mut tree,|a,b|{a.inner.num+=1;b.inner.num+=1},leveltimer2);
+		let mut times2=LevelTimer::new();
+		colfind::query_seq_adv_mut(&mut tree,|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
 
 	    tree.apply(&mut bots,|a,b|{
 	        *b=a.inner;
@@ -213,13 +213,13 @@ fn grow_to_fit<T:Default>(a:&mut Vec<T>,b:usize){
 
 
 
-pub fn handle(fb:&FigureBuilder){
+pub fn handle(fb:&mut FigureBuilder){
 	handle_bench(3000,fb);
 	handle_theory(3000,fb);
 }
 
 
-fn handle_bench(num_bots:usize,fb:&FigureBuilder){
+fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 
     let res1=handle_inner_bench(num_bots,(0..100).map(|a|0.0005+(a as f64)*0.0001));
 	
@@ -265,7 +265,7 @@ fn handle_bench(num_bots:usize,fb:&FigureBuilder){
     fg.show();
 }
 
-fn handle_theory(num_bots:usize,fb:&FigureBuilder){
+fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
 	
 
     let res1=handle_inner_theory(num_bots,(0..100).map(|a|0.0005+(a as f64)*0.0001));
@@ -308,11 +308,11 @@ fn handle_theory(num_bots:usize,fb:&FigureBuilder){
 	let mut fg=fb.new("level_analysis_theory_rebal");
 	draw_graph(&format!("Rebal Level Comparisons with {} Objects",num_bots),&mut fg,&res1,true,0);
 	draw_graph(&format!("Rebal Level Comparisons with {} Objects",num_bots),&mut fg,&res2,true,1);
-    fg.show();	
+    fb.finish(fg);
 
 	let mut fg=fb.new("level_analysis_theory_query");
 	draw_graph(&format!("Query Level Comparisons with {} Objects",num_bots),&mut fg,&res1,false,0);
 	draw_graph(&format!("Query Level Comparisons with {} Objects",num_bots),&mut fg,&res2,false,1);
-    fg.show();	
+    fb.finish(fg);
 
 }

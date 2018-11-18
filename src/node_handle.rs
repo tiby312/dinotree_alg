@@ -4,12 +4,27 @@ use colfind::ColMulti;
 
 pub trait NodeHandler{
     type T:HasAabb;
-    fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut [Self::T]);
-    fn handle_children(&mut self,anchor:(impl AxisTrait,&mut [Self::T],&Range<<Self::T as HasAabb>::Num>),current:(impl AxisTrait,&mut [Self::T],Option<&Range<<Self::T as HasAabb>::Num>>));
+    
+    fn handle_node(
+        &mut self,
+        axis:impl AxisTrait,
+        bots:&mut [Self::T]
+    );
+
+    fn handle_children(
+        &mut self,
+        anchor:(impl AxisTrait,&mut [Self::T],&Range<<Self::T as HasAabb>::Num>),
+        current:(impl AxisTrait,&mut [Self::T],Option<&Range<<Self::T as HasAabb>::Num>>)
+    );
 }
 
 pub struct HandleNoSorted<K:ColMulti+Splitter>{
     pub func:K
+}
+impl<K:ColMulti+Splitter>  HandleNoSorted<K>{
+    pub fn new(func:K)->Self{
+        HandleNoSorted{func}
+    }
 }
 
 impl<K:ColMulti+Splitter> Splitter for HandleNoSorted<K>{
