@@ -25,7 +25,7 @@ impl Counter{
     }
 }
 
-#[derive(Copy,Clone)]
+#[derive(Copy,Clone,Debug)]
 pub struct DataNum(pub isize,*mut Counter);
 
 //unsafe implement send and sync.

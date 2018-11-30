@@ -5,3 +5,4 @@ pub mod construction_vs_query;
 pub mod float_vs_integer;
 pub mod level_analysis;
 pub mod parallel_heur_comparison;
+pub mod rebal_strat;

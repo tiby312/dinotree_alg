@@ -117,9 +117,10 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 		    let height=compute_tree_height_heuristic(num_bots);
 			let mut levelc=level_counter::LevelCounter::new(&mut counter);
 
-			let mut tree=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
+
+			let mut tree=dinotree::advanced::new_adv_seq(RebalStrat1,axgeom::XAXISS,(),&bots,|b|{
 			        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-		    },height,&mut levelc);
+		    },Some(height),&mut levelc);
 
 			counter.reset();
 			let mut levelc2=level_counter::LevelCounter::new(&mut counter);
@@ -169,25 +170,21 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 	    let height=compute_tree_height_heuristic(num_bots);
 		let mut times1=LevelTimer::new();
 
-		let mut tree=dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
+		
+		let mut tree=dinotree::advanced::new_adv_seq(RebalStrat1,axgeom::XAXISS,(),&bots,|b|{
+			        aabb_from_point_isize(b.pos,[5,5])  
+			    },Some(height),&mut times1);
+		
+		/*
+		let mut tree=dinotree::advanced::NotSorted::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
 			        aabb_from_point_isize(b.pos,[5,5])  
 			    },height,&mut times1);
-
-
-		/*
-		struct Bo{}
-		impl colfind::ColMulti for Bo{
-			type T=BBox<isize,Bot>;
-			fn collide(&mut self,a:&mut Self::T,b:&mut Self::T){
-				a.inner.num+=1;
-				b.inner.num+=1;
-			}
-		}
 		*/
 
 
 		let mut times2=LevelTimer::new();
 		colfind::query_seq_adv_mut(&mut tree,|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
+		//colfind::query_nosort_seq_adv_mut(&mut tree,|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
 
 	    tree.apply(&mut bots,|a,b|{
 	        *b=a.inner;
@@ -215,15 +212,15 @@ fn grow_to_fit<T:Default>(a:&mut Vec<T>,b:usize){
 
 pub fn handle(fb:&mut FigureBuilder){
 	handle_bench(3000,fb);
-	handle_theory(3000,fb);
+	//handle_theory(3000,fb);
 }
 
 
 fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 
-    let res1=handle_inner_bench(num_bots,(0..100).map(|a|0.0005+(a as f64)*0.0001));
+    let res1=handle_inner_bench(num_bots,(0..1000).map(|a|0.0005+(a as f64)*0.00001));
 	
-	let res2=handle_inner_bench(num_bots,(0..100).map(|a|0.01+(a as f64)*0.0002));
+	let res2=handle_inner_bench(num_bots,(0..1000).map(|a|0.01+(a as f64)*0.00002));
 
 
     fn draw_graph(title_name:&str,fg:&mut Figure,res:&Vec<BenchRes>,rebal:bool,pos:usize){
@@ -243,26 +240,26 @@ fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 
 		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
-		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
+		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(1.0)]);
 		  	}
 		}else{
 			let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.query[ii])});
 			
 		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
-		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
+		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(1.0)]);
 		  	}
 		}
 	}
 	let mut fg=fb.new("level_analysis_bench_rebal");
 	draw_graph(&format!("Rebal Level Bench with {} objects",num_bots),&mut fg,&res1,true,0);
 	draw_graph(&format!("Rebal Level Bench with {} objects",num_bots),&mut fg,&res2,true,1);
-    fg.show();	
-
+    fb.finish(fg);
+    
 	let mut fg=fb.new("level_analysis_bench_query");
 	draw_graph(&format!("Query Level Bench with {} objects",num_bots),&mut fg,&res1,false,0);
 	draw_graph(&format!("Query Level Bench with {} objects",num_bots),&mut fg,&res2,false,1);
-    fg.show();
+    fb.finish(fg);
 }
 
 fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
@@ -293,14 +290,14 @@ fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
 
 		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
-		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
+		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(1.0)]);
 		  	}
 		}else{
 			let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.query[ii])});
 			
 		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
 		  		let s=format!("Level {}",i);
-		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(2.0)]);
+		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(1.0)]);
 		  	}
 		}
 	}

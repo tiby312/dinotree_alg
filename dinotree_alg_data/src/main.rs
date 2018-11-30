@@ -47,8 +47,8 @@ impl FigureBuilder{
         fg
     }
     fn finish(&mut self,mut figure:Figure){
-        figure.echo(&mut std::io::stdout());
-        //figure.show();
+        //figure.echo(&mut std::io::stdout());
+        figure.show();
     }
 }
 
@@ -57,8 +57,11 @@ fn main() {
     //fs::create_dir_all("target/graphs").unwrap();
     
     let mut fb=FigureBuilder{};
+    //colfind::construction_vs_query::handle(&mut fb);
+    colfind::rebal_strat::handle(&mut fb);
+    return;
     
-    
+
 	let args: Vec<String> = env::args().collect();   
     let _area=[1024u32,768];
 
