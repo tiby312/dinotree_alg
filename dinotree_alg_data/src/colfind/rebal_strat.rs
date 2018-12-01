@@ -78,6 +78,20 @@ fn test4(bots:&mut [Bot])->f64{
 
 
 
+fn test5(bots:&mut [Bot])->f64{
+    
+    let instant=Instant::now();
+
+    let mut tree=advanced::DinoTree2::new(axgeom::XAXISS,(),bots,|b|{aabb_from_point_isize(b.pos,[5,5])},&mut SplitterEmpty,None);
+
+    //black_box(tree);
+
+    let a=instant_to_sec(instant.elapsed());
+    a
+}
+
+
+
 
 pub fn handle(fb:&mut FigureBuilder){
     
@@ -90,7 +104,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     #[derive(Debug)]
     struct Record {
         num_bots:usize,
-        arr:[f64;4]    
+        arr:[f64;5]    
     }
 
     //let grow=0.2;
@@ -110,8 +124,9 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
         let b=test2(&mut bots);
         let c=test3(&mut bots);
         let d=test4(&mut bots);
+        let e=test5(&mut bots);
 
-        let r=Record{num_bots,arr:[a,b,c,d]};
+        let r=Record{num_bots,arr:[a,b,c,d,e]};
         rects.push(r);      
     }
 
@@ -121,16 +136,17 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     let y2=rects.iter().map(|a|a.arr[1]);
     let y3=rects.iter().map(|a|a.arr[2]);
     let y4=rects.iter().map(|a|a.arr[3]);
-    
+    let y5=rects.iter().map(|a|a.arr[4]);
+
     let mut fg= fb.new(&format!("colfind_rebal_vs_query_num_bots_grow_of_{}",grow));
     
     fg.axes2d()
-        .set_pos_grid(2,1,0)
         .set_title(&format!("Rebal vs Query Comparisons with a spiral grow of {}",grow), &[])
         .lines(x.clone(), y1,  &[Caption("test1"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("test2"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y3,  &[Caption("test3"), Color("red"), LineWidth(2.0)])
         .lines(x.clone(), y4,  &[Caption("test4"), Color("brown"), LineWidth(2.0)])
+        .lines(x.clone(), y5,  &[Caption("test5"), Color("purple"), LineWidth(2.0)])
         .set_x_label("Number of Elements", &[])
         .set_y_label("Number of Comparisons", &[]);
 
