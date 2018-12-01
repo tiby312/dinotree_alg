@@ -530,9 +530,9 @@ fn inner_query_seq_adv_mut<
     }
 
     
-    let mut splitter:&mut wrap::SplitterWrapper<K>=unsafe{std::mem::transmute(splitter)};//wrap::SplitterWrapper(splitter);
+    let splitter:&mut wrap::SplitterWrapper<K>=unsafe{std::mem::transmute(splitter)};//wrap::SplitterWrapper(splitter);
     let kdtree:&mut DinoTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
-    let mut sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
+    let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
 
     let this_axis=kdtree.axis();
     let dt = kdtree.vistr_mut().with_depth(Depth(0));

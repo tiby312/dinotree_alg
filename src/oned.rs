@@ -80,9 +80,8 @@ impl<I: HasAabb> Sweeper<I> {
     pub(crate) fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
         r1: &mut [F::T],
         r2: &mut [F::T],
-        mut clos2: &mut F){
+        clos2: &mut F){
 
-       
         for inda in r1.iter_mut() {
             for indb in r2.iter_mut() {
                 if inda.get().get_intersect_rect(indb.get()).is_some() {

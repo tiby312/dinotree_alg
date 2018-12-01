@@ -196,6 +196,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
     fg.axes2d()
         .set_pos_grid(2,1,1)
         .set_title(title, &[])
+        .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
         .lines(x.clone(), y1,  &[Caption("Naive"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Sweep and Prune"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y3,  &[Caption("Dinotree Sequential"), Color("red"), LineWidth(2.0)])
@@ -338,6 +339,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
     fg.axes2d()
         .set_pos_grid(2,1,0)
         .set_title(title, &[])
+        .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
         .lines(x.clone(), y2,  &[Caption("Naive"), Color("blue"), LineWidth(4.0)])
         .lines(x.clone(), y3,  &[Caption("Sweep and Prune"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y1,  &[Caption("Dinotree"), Color("red"), LineWidth(2.0)])
@@ -357,7 +359,7 @@ pub fn handle(fb:&mut FigureBuilder){
         //fg.echo(&mut std::io::stdout());
         fb.finish(fg);
     }
-    /*
+    
     {
         let s=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
         let mut fg=fb.new("colfind_theory_0.05");
@@ -365,15 +367,6 @@ pub fn handle(fb:&mut FigureBuilder){
         handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05");
         fb.finish(fg)   
     }
-    */
+    
+    
 }
-
-/*
-#[test]
-fn test1(){
-    let mut fb=FigureBuilder{};
-    handle(&mut fb);
-
-    assert!(false);
-}
-*/

@@ -44,7 +44,7 @@ impl<K:ColMulti+Splitter> Splitter for HandleNoSorted<K>{
 
 impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
     type T=K::T;
-    fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut [Self::T]){
+    fn handle_node(&mut self,_axis:impl AxisTrait,bots:&mut [Self::T]){
         let func=&mut self.func;
         
         tools::for_every_pair(bots,|a,b|{
