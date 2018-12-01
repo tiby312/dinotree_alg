@@ -3,6 +3,12 @@ use std;
 use std::time::Duration;
 
 
+
+pub const COLS:&'static [&'static str]=&["blue","green","red","violet","orange","pink","gray","brown","black"];
+
+
+
+
 pub fn instant_to_sec(elapsed:Duration)->f64{
      (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0)           
 }

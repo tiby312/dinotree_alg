@@ -1,3 +1,5 @@
+#![feature(trusted_len)]
+#![feature(test)]
 extern crate compt;
 extern crate axgeom;
 extern crate dinotree_alg;
@@ -7,6 +9,7 @@ extern crate rayon;
 extern crate duckduckgeo;
 extern crate dists;
 extern crate gnuplot;
+extern crate test;
 
 mod inner_prelude{
     pub(crate) use FigureBuilder;
@@ -21,6 +24,7 @@ mod inner_prelude{
     pub use std::time::Instant;
     pub use std::time::Duration;
     pub(crate) use ordered_float::NotNan;
+    pub(crate) use test::*;
 
 }
 #[macro_use]

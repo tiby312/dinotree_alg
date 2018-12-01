@@ -4,8 +4,6 @@ use inner_prelude::*;
 use dinotree_alg::colfind;
 
 
-
-const COLS:&'static [&'static str]=&["blue","green","red","violet","orange","pink","gray","brown","black"];
 	
 
 
