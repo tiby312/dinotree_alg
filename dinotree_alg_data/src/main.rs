@@ -62,18 +62,19 @@ fn main() {
 
     let mut fb=FigureBuilder{};
     
-    
     colfind::rebal_strat::handle(&mut fb);
-    //colfind::parallel_heur_comparison::handle(&mut fb);
-    //colfind::level_analysis::handle(&mut fb);
-    //spiral::handle(&mut fb);
-    //colfind::float_vs_integer::handle(&mut fb);
-    //colfind::theory_colfind::handle(&mut fb);
-    //colfind::theory_colfind_3d::handle(&mut fb);
-    //colfind::height_heur_comparison::handle(&mut fb);
-    //colfind::construction_vs_query::handle(&mut fb);
-    //nbody::theory::handle(&mut fb);
     
+    /*
+    colfind::parallel_heur_comparison::handle(&mut fb);
+    colfind::level_analysis::handle(&mut fb);
+    spiral::handle(&mut fb);
+    colfind::float_vs_integer::handle(&mut fb);
+    colfind::theory_colfind::handle(&mut fb);
+    colfind::theory_colfind_3d::handle(&mut fb);
+    colfind::height_heur_comparison::handle(&mut fb);
+    colfind::construction_vs_query::handle(&mut fb);
+    nbody::theory::handle(&mut fb);
+    */
 
     /*
     return;

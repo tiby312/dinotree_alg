@@ -107,6 +107,7 @@ impl Record{
         {
             let k=fg.axes2d()
                 .set_title(&format!("Rebal vs Query Comparisons with a spiral grow of 1"), &[])
+                .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
                 .set_x_label("Number of Elements", &[])
                 .set_y_label("Number of Comparisons", &[]);
 
