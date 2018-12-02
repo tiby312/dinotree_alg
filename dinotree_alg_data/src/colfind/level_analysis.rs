@@ -116,7 +116,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 			let mut levelc=level_counter::LevelCounter::new(&mut counter);
 
 
-			let mut tree=dinotree::advanced::new_adv_seq(RebalStrat1,axgeom::XAXISS,(),&bots,|b|{
+			let mut tree=dinotree::advanced::new_adv_seq(None,axgeom::XAXISS,(),&bots,|b|{
 			        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
 		    },Some(height),&mut levelc);
 
@@ -169,7 +169,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 		let mut times1=LevelTimer::new();
 
 		
-		let mut tree=dinotree::advanced::new_adv_seq(RebalStrat1,axgeom::XAXISS,(),&bots,|b|{
+		let mut tree=dinotree::advanced::new_adv_seq(None,axgeom::XAXISS,(),&bots,|b|{
 			        aabb_from_point_isize(b.pos,[5,5])  
 			    },Some(height),&mut times1);
 		

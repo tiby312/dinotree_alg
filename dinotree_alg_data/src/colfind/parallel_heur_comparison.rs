@@ -61,7 +61,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=dinotree::advanced::new_adv(RebalStrat1,axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::advanced::new_adv(None,axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     },None,&mut SplitterEmpty,Some(rebal_height));
 
