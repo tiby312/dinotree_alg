@@ -78,7 +78,8 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
         if res{
             for a in this_range.iter_mut(){
                 for b in anchor_range.iter_mut(){
-                    if a.get().get_intersect_rect(b.get()).is_some(){
+                    //if a.get().get_intersect_rect(b.get()).is_some(){
+                    if a.get().intersects_rect(b.get()){
                         func.collide(a,b);
                     }
                 }

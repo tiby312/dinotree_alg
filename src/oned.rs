@@ -84,7 +84,8 @@ impl<I: HasAabb> Sweeper<I> {
 
         for inda in r1.iter_mut() {
             for indb in r2.iter_mut() {
-                if inda.get().get_intersect_rect(indb.get()).is_some() {
+                if inda.get().intersects_rect(indb.get()){
+                //if inda.get().get_intersect_rect(indb.get()).is_some() {
                     clos2.collide(inda, indb);
                 }
             }
@@ -163,7 +164,7 @@ impl<I: HasAabb> Sweeper<I> {
             }
             
             //Prune all the x's that are no longer touching the y.
-            active_x.retain(|x: &mut &mut I| {
+            active_x.retain(|x| {
                 if x.get().get_range(axis).right
                     < y.get().get_range(axis).left
                 {

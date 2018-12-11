@@ -44,21 +44,23 @@ use std::ptr::Unique;
 
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
 pub struct PreVecMut<T> {
-    vec: smallvec::SmallVec<[Unique<T>; 64]>,
+    //vec: smallvec::SmallVec<[Unique<T>; 64]>,
+    vec:Vec<Unique<T>>
 }
 impl<T> PreVecMut<T> {
     #[inline(always)]
     pub fn new() -> PreVecMut<T> {
         PreVecMut {
-            vec: smallvec::SmallVec::new(),
+            //vec: smallvec::SmallVec::new(),
+            vec:Vec::new()
         }
     }
 
     ///Clears the vec and returns a mutable reference to a vec.
     #[inline(always)]
-    pub fn get_empty_vec_mut<'a>(&'a mut self) -> &mut smallvec::SmallVec<[&'a mut T; 64]> {
+    pub fn get_empty_vec_mut<'a,'b:'a>(&'a mut self) -> &'a mut Vec<&'b mut T> {
         self.vec.clear();
-        let v: &mut smallvec::SmallVec<[Unique<T>; 64]> = &mut self.vec;
+        let v: &mut Vec<Unique<T>> = &mut self.vec;
         unsafe { std::mem::transmute(v) }
     }
 }
