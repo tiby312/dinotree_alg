@@ -48,7 +48,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
         let func=&mut self.func;
         
         tools::for_every_pair(bots,|a,b|{
-            if a.get().get_intersect_rect(b.get()).is_some(){
+            if a.get().intersects_rect(b.get()){
                 func.collide(a,b);
             }
         });
@@ -117,6 +117,39 @@ impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
     }
 }
 
+
+pub fn compare_bots<T:HasAabb>(axis:impl AxisTrait,a:&T,b:&T)->std::cmp::Ordering{
+    let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
+    if p1 > p2 {
+        return std::cmp::Ordering::Greater;
+    }
+    std::cmp::Ordering::Less
+}
+
+///Sorts the bots.
+pub fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
+
+    let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
+        compare_bots(axis,a,b)
+    };
+ 
+    collision_botids.sort_unstable_by(sclosure);
+}
+
+
+
+pub struct WrapT<'a,T:HasAabb+'a>{
+    pub inner:&'a mut T
+}
+
+unsafe impl<'a,T:HasAabb> HasAabb for WrapT<'a,T>{
+    type Num=T::Num;
+    fn get(&self)->&axgeom::Rect<T::Num>{
+        self.inner.get()
+    }
+}
+
+
 impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
     type T=K::T;
     fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut [Self::T]){
@@ -131,11 +164,20 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
             Some(cont)=>{
                 if !this_axis.is_equal_to(anchor_axis) {
                         let r1 = oned::get_section_mut(anchor_axis,this_range, anchor_box);
-                        let r2= oned::get_section_mut(this_axis,anchor_range,cont);     
-                        self.sweeper.find_perp_2d(r1,r2,func);
+                        let r2= oned::get_section_mut(this_axis,anchor_range,cont);   
+
+                        //TODO document this!!!!!!!!!!!!!
+                        if r1.len()*r2.len()>64{
+                            let mut bots2:Vec<_>=r2.iter_mut().map(|a|WrapT{inner:a}).collect();
+                            sweeper_update(anchor_axis,&mut bots2);
+                            self.sweeper.find_parallel_2d_ptr(this_axis.next(),r1,&mut bots2,func);
+
+                        }else{
+                            self.sweeper.find_perp_2d1(r1,r2,func);
+                        }
                 } else {
                     if cont.intersects(anchor_box){
-                        self.sweeper.find_parallel_2d(
+                        self.sweeper.find_parallel_2d1(
                             this_axis.next(),
                             this_range,
                             anchor_range,
@@ -150,10 +192,10 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                     let r1 =oned::get_section_mut(anchor_axis,this_range, anchor_box);
                     let r2= anchor_range;
 
-                    self.sweeper.find_perp_2d(r1,r2,func);
+                    self.sweeper.find_perp_2d2(r1,r2,func);
 
                 } else {
-                    self.sweeper.find_parallel_2d(
+                    self.sweeper.find_parallel_2d2(
                         this_axis.next(),
                         this_range,
                         anchor_range,

@@ -1,6 +1,9 @@
 use inner_prelude::*;
 use colfind::ColMulti;
 
+
+use node_handle::WrapT;
+
 struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
     a: &'a mut F,
     axis:A,
@@ -51,6 +54,23 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
 
+
+    pub(crate) fn find_parallel_2d_ptr<A: AxisTrait, F: ColMulti<T=I>>(
+        &mut self,
+        axis:A,
+        bots1: &mut [F::T],
+        bots2: &mut [WrapT<F::T>],
+        clos2: &mut F,
+    ) {
+        let mut b: Bl<A, _> = Bl {
+            a: clos2,
+            axis
+        };
+
+        self.find_bijective_parallel_ptr(axis,(bots1, bots2), &mut b);
+    }
+
+
     pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
@@ -65,6 +85,7 @@ impl<I: HasAabb> Sweeper<I> {
 
         self.find_bijective_parallel(axis,(bots1, bots2), &mut b);
     }
+    
 
 
     pub(crate) fn find_parallel_2d_no_check<A: AxisTrait, F: ColMulti<T=I>>(
@@ -77,7 +98,7 @@ impl<I: HasAabb> Sweeper<I> {
         self.find_bijective_parallel(axis,(bots1, bots2), clos2);
     }
 
-    pub(crate) fn find_perp_2d<F: ColMulti<T=I>>(&mut self,
+    pub(crate) fn find_perp_2d1<F: ColMulti<T=I>>(&mut self,
         r1: &mut [F::T],
         r2: &mut [F::T],
         clos2: &mut F){
@@ -91,6 +112,22 @@ impl<I: HasAabb> Sweeper<I> {
             }
         }
     }
+    pub(crate) fn find_perp_2d2<F: ColMulti<T=I>>(&mut self,
+        r1: &mut [F::T],
+        r2: &mut [F::T],
+        clos2: &mut F){
+
+        for inda in r1.iter_mut() {
+            for indb in r2.iter_mut() {
+                if inda.get().intersects_rect(indb.get()){
+                //if inda.get().get_intersect_rect(indb.get()).is_some() {
+                    clos2.collide(inda, indb);
+                }
+            }
+        }
+    }
+
+
 
     ///Find colliding pairs using the mark and sweep algorithm.
     fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
@@ -185,6 +222,50 @@ impl<I: HasAabb> Sweeper<I> {
 
                 debug_assert!(x.get().get_range(axis).intersects(y.get().get_range(axis)));
                 func.collide(x, y);
+            }
+        }
+    }
+
+
+    fn find_bijective_parallel_ptr<A: AxisTrait, F: ColMulti<T = I>>(
+        &mut self,
+        axis:A,
+        cols: (&mut [I], &mut [WrapT<I>]),
+        func: &mut F,
+    ) {
+        let mut xs=cols.0.iter_mut().peekable();
+        let ys = cols.1.iter_mut();
+
+        let active_x = self.helper.get_empty_vec_mut();
+
+        for y in ys {
+            //Add all the x's that are touching the y to the active x.
+            for x in xs.peeking_take_while(|x|x.get().get_range(axis).left<=y.get().get_range(axis).right){
+                active_x.push(x);
+            }
+            
+            //Prune all the x's that are no longer touching the y.
+            active_x.retain(|x| {
+                if x.get().get_range(axis).right
+                    < y.get().get_range(axis).left
+                {
+                    false
+                } else {
+                    true
+                }
+            });
+
+            //So at this point some of the x's could actualy not intersect y.
+            //These are the x's that are to the complete right of y.
+            //So to handle collisions, we want to make sure to not hit these.
+            //That is why we have that condition to break out of the below loop
+            for x in active_x.iter_mut() {
+                if x.get().get_range(axis).left>y.get().get_range(axis).right{
+                    break;
+                }
+
+                debug_assert!(x.get().get_range(axis).intersects(y.get().get_range(axis)));
+                func.collide(x, y.inner);
             }
         }
     }
@@ -308,5 +389,7 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut [I], rang
     }
 
     
-    return &mut arr[start..end];
+    let a=&mut arr[start..end];
+    
+    return a;
 }
