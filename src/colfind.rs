@@ -95,7 +95,7 @@ fn go_down<
                 None=>return
             };
             
-            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,&mut nn.range,Some(&cont)));
+            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,nn.range,Some(&cont)));
             
             //This can be evaluated at compile time!
             if this_axis.is_equal_to(anchor_axis) {
@@ -111,10 +111,14 @@ fn go_down<
             }
         },
         None=>{
-            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,&mut nn.range,None));
+            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,nn.range,None));
         }
     }
 }
+
+
+
+
 
 
 
@@ -145,7 +149,7 @@ fn recurse<
 
     let((depth,nn),rest)=m.next();
 
-    sweeper.handle_node(this_axis.next(),&mut nn.range);
+    sweeper.handle_node(this_axis.next(),nn.range);
                 
     match rest{
         Some((extra,mut left,mut right))=>{
@@ -159,7 +163,7 @@ fn recurse<
             };
             
 
-            let mut nn=DestructuredNode{range:&mut nn.range,cont,_div:div,axis:this_axis};
+            let mut nn=DestructuredNode{range:nn.range,cont,_div:div,axis:this_axis};
             {
                 let left=left.inner.create_wrap_mut();
                 let right=right.inner.create_wrap_mut();
@@ -273,7 +277,7 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut DinoTree<A,(),T>,func:imp
     unsafe impl<T,F> Sync for Bo<T,F>{}
     let b=Bo(func,PhantomData);
 
-    query_adv_mut(tree,b,&mut SplitterEmpty,dinotree::advanced::compute_default_level_switch_sequential());
+    query_adv_mut(tree,b,&mut SplitterEmpty,None);
 }
 
 
@@ -302,8 +306,7 @@ pub fn query_nosort_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut NotSorted<A,(),T>,
 
     let mut sweeper=HandleNoSorted::new(b);
 
-    let l=dinotree::advanced::compute_default_level_switch_sequential();
-    inner_query_adv_mut(&mut tree.0,&mut SplitterEmpty,&mut sweeper,l);
+    inner_query_adv_mut(&mut tree.0,&mut SplitterEmpty,&mut sweeper,None);
 
 
 }
@@ -421,18 +424,9 @@ fn inner_query_adv_mut<
     kdtree: &mut DinoTree<A,(), T>,
     splitter:&mut K,
     sweeper:&mut S, 
-    height_switch_seq:usize
+    height_switch_seq:Option<usize>
 ){
-    let par={
-       
-        let height=kdtree.height();
-        let gg=if height<=height_switch_seq{
-            Depth(0)
-        }else{
-            Depth(height-height_switch_seq)
-        };
-        par::Parallel::new(gg)
-    };
+    let par=dinotree::advanced::compute_default_level_switch_sequential(height_switch_seq,kdtree.height());
 
     let this_axis=kdtree.axis();
     let dt = kdtree.vistr_mut().with_depth(Depth(0));
@@ -558,18 +552,11 @@ pub fn query_adv_mut<
     kdtree: &mut DinoTree<A,(), T>,
     clos: F,
     splitter:&mut K,
-    height_switch_seq:usize,
+    height_switch_seq:Option<usize>,
 ) -> F {
-    let par={
-       
-        let height=kdtree.height();
-        let gg=if height<=height_switch_seq{
-            Depth(0)
-        }else{
-            Depth(height-height_switch_seq)
-        };
-        par::Parallel::new(gg)
-    };
+
+    let par=dinotree::advanced::compute_default_level_switch_sequential(height_switch_seq,kdtree.height());
+
 
     let this_axis=kdtree.axis();
     let dt = kdtree.vistr_mut().with_depth(Depth(0));

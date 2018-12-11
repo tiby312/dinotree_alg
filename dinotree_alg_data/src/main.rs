@@ -30,7 +30,7 @@ mod inner_prelude{
 #[macro_use]
 mod support;
 mod colfind;
-mod nbody;
+//mod nbody;
 mod spiral;
 pub(crate) mod datanum;
 
@@ -62,9 +62,15 @@ fn main() {
 
     let mut fb=FigureBuilder{};
     
-    colfind::rebal_strat::handle(&mut fb);
+    //colfind::theory_colfind::handle(&mut fb);
     
+    //colfind::copy_vs_nocopy::handle(&mut fb);
+    
+    colfind::rebal_strat::handle(&mut fb);
     /*
+
+    
+    
     colfind::parallel_heur_comparison::handle(&mut fb);
     colfind::level_analysis::handle(&mut fb);
     spiral::handle(&mut fb);
@@ -73,64 +79,7 @@ fn main() {
     colfind::theory_colfind_3d::handle(&mut fb);
     colfind::height_heur_comparison::handle(&mut fb);
     colfind::construction_vs_query::handle(&mut fb);
-    nbody::theory::handle(&mut fb);
+    //nbody::theory::handle(&mut fb);
     */
 
-    /*
-    return;
-    
-
-	let args: Vec<String> = env::args().collect();   
-    let _area=[1024u32,768];
-
-    if args.len()!=2{
-        println!("valid arguments are \"bench-colfind\" \"theory-colfind\" \"theory-colfind-3d\" \"theory-sweep-3d\" ");
-        return;
-    }
-
-    let _curr=match args[1].trim(){
-        "colfind"=>{
-            //colfind::level_analysis::handle(&fb);
-            colfind::theory_colfind::handle(&mut fb);
-        },
-        "colfind-3d"=>{
-            colfind::theory_colfind_3d::handle(&mut fb);
-            
-        },
-        "colfind-tree-height"=>{
-            colfind::height_heur_comparison::handle(&mut fb);
-            colfind::parallel_heur_comparison::handle(&mut fb);
-            
-        },
-        "colfind-construction"=>{
-            colfind::construction_vs_query::handle(&mut fb);
-        }
-        "colfind-float-integer"=>{
-            colfind::float_vs_integer::handle(&mut fb);
-        }
-        "nbody"=>{
-            nbody::theory::handle(&mut fb);
-        }
-        "spiral"=>{
-            spiral::handle(&mut fb);
-        }
-        "all"=>{
-            colfind::rebal_strat::handle(&mut fb);
-            colfind::parallel_heur_comparison::handle(&mut fb);
-            colfind::level_analysis::handle(&mut fb);
-            spiral::handle(&mut fb);
-            colfind::float_vs_integer::handle(&mut fb);
-            colfind::theory_colfind::handle(&mut fb);
-            colfind::theory_colfind_3d::handle(&mut fb);
-            colfind::height_heur_comparison::handle(&mut fb);
-            colfind::construction_vs_query::handle(&mut fb);
-            nbody::theory::handle(&mut fb);
-        }
-        _=>{
-            panic!("unknown arg");
-        }
-    };
-
-    println!();
-    */
 }

@@ -146,7 +146,7 @@ fn buildtree<'a,
                         let empty:&[T]=&[];
                         let mut nodeb=ncontext.new(empty.iter(),rect);
                         
-                        nn.misc=nodeb;
+                        *nn.misc=nodeb;
                         //let n2=ncontext.clone();
                         //recurse anyway even though there is no divider.
                         //we want to populate this tree entirely.
@@ -167,7 +167,7 @@ fn buildtree<'a,
                             ncontext.new(i3,rect)
                         };
 
-                        nn.misc=nodeb;
+                        *nn.misc=nodeb;
 
                         //let n2=ncontext.clone();
                         recc(axis.next(),left,ncontext,l);
@@ -177,7 +177,7 @@ fn buildtree<'a,
             },
             None=>{
                 let mut nodeb=ncontext.new(nn.range.iter(),rect);
-                nn.misc=nodeb;
+                *nn.misc=nodeb;
             }
         }
     }
@@ -206,7 +206,7 @@ fn apply_tree<'a,
                             let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
                             let i3=nn.range.iter_mut().chain(i1.chain(i2));
                             
-                            ncontext.apply_to_bots(&mut nn.misc,i3);
+                            ncontext.apply_to_bots(nn.misc,i3);
                         }
                     },
                     None=>{}
@@ -216,7 +216,7 @@ fn apply_tree<'a,
                 recc(right,ncontext);
             },
             None=>{
-                ncontext.apply_to_bots(&nn.misc,nn.range.iter_mut());
+                ncontext.apply_to_bots(nn.misc,nn.range.iter_mut());
             }
         }
     }
@@ -405,12 +405,12 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
             };
 
             //handle bots in itself
-            tools::for_every_pair(&mut nn.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
+            tools::for_every_pair(nn.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
             {
                 let depth=left.depth;
                 let l1=left.inner.create_wrap_mut().with_depth(depth);
                 let l2=right.inner.create_wrap_mut().with_depth(depth);
-                let mut anchor=Anchor{axis:axis,range:&mut nn.range,div};
+                let mut anchor=Anchor{axis:axis,range:nn.range,div};
 
                 handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,ncontext);
             }
@@ -429,7 +429,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
                     
                 let l1=left.inner.create_wrap_mut().with_depth(depth);
                 let l2=right.inner.create_wrap_mut().with_depth(depth);
-                let mut anchor=Anchor{axis:axis,range:&mut nn.range,div};
+                let mut anchor=Anchor{axis:axis,range:nn.range,div};
 
                 handle_left_with_right(axis.next(),&mut anchor,l1,l2,ncontext);
             }
@@ -450,7 +450,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
         },
         None=>{
             //handle bots in itself
-            tools::for_every_pair(&mut nn.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
+            tools::for_every_pair(nn.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
         }
     }
 }
@@ -476,7 +476,7 @@ trait Bok2{
         
         if this_axis.is_equal_to(anchor.axis){
             if self.is_far_enough(this_axis,anchor,&nn.misc){
-                self.handle_node_far_enough(this_axis,&mut nn.misc,anchor);
+                self.handle_node_far_enough(this_axis,nn.misc,anchor);
                 return;
             }        
         }
@@ -509,7 +509,6 @@ trait Bok2{
 ///Parallel version.
 pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&mut DinoTree<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
     let axis=t1.axis();
-    let height=t1.height();
  
     struct Wrapper<'a,N:NodeMassTraitConst+'a>(&'a N);
     impl<'a,N:NodeMassTraitConst+'a> Clone for Wrapper<'a,N>{
@@ -565,13 +564,10 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
     buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
 
     {
-        let kk=if height<dinotree::advanced::compute_default_level_switch_sequential(){
-            0
-        }else{
-            height-dinotree::advanced::compute_default_level_switch_sequential()
-        };
+        let par=dinotree::advanced::compute_default_level_switch_sequential(None,t1.height());
+
         let d=t1.vistr_mut().with_depth(Depth(0));
-        recc(par::Parallel(Depth(kk)),axis,d,&mut ncontext);    
+        recc(par,axis,d,&mut ncontext);    
     }
 
     apply_tree(axis,t1.vistr_mut(),&mut ncontext);

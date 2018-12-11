@@ -19,22 +19,9 @@
 use inner_prelude::*;
 
 
-macro_rules! get_range{
-    ($range:expr)=>{{
-        &$range
-    }}
-}
-
-
-macro_rules! get_range_mut{
-    ($range:expr)=>{{
-        &mut $range
-    }}
-}
-
 
 macro_rules! rect{
-    ($iterator:ty,$colsingle:ty,$get_section:ident,$get_ref:ident)=>{     
+    ($iterator:ty,$colsingle:ty,$get_section:ident)=>{     
         fn rect_recurse<
             A: AxisTrait,
             T: HasAabb,
@@ -54,7 +41,7 @@ macro_rules! rect{
                         Some(b)=>b,
                         None=>return
                     };
-                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.get_range(this_axis.next()));
+                    let sl = $get_section(this_axis.next(),nn.range, rect.get_range(this_axis.next()));
 
                     for i in sl {
                         func(i);
@@ -69,7 +56,7 @@ macro_rules! rect{
                     }
                 },
                 None=>{
-                    let sl = $get_section(this_axis.next(),$get_ref!(nn.range), rect.get_range(this_axis.next()));
+                    let sl = $get_section(this_axis.next(),nn.range, rect.get_range(this_axis.next()));
 
                     for i in sl {
                         func(i);
@@ -138,7 +125,7 @@ mod mutable{
     use oned::get_section_mut;
     use super::*;
 
-    rect!(VistrMut<(),T>,&mut T,get_section_mut,get_range_mut);
+    rect!(VistrMut<(),T>,&mut T,get_section_mut);
     pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
         tree: &mut DinoTree<A,(),T>,
         rect: &Rect<T::Num>,
@@ -201,7 +188,7 @@ mod constant{
 
     use oned::get_section;
     use super::*;
-    rect!(Vistr<(),T>,&T,get_section,get_range);
+    rect!(Vistr<(),T>,&T,get_section);
     //rect!(Vistr<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
     pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(

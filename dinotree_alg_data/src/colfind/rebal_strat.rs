@@ -116,18 +116,6 @@ fn test6(bots:&mut [Bot])->f64{
 
 
 
-fn test7(bots:&mut [Bot])->f64{
-    
-    let instant=Instant::now();
-
-    let mut tree=advanced::DinoTree2::new(axgeom::XAXISS,(),bots,|b|{aabb_from_point_isize(b.pos,[5,5])},&mut SplitterEmpty,None);
-
-    black_box(tree);
-
-    let a=instant_to_sec(instant.elapsed());
-    a
-}
-
 
 pub fn handle(fb:&mut FigureBuilder){ 
     handle_num_bots(fb,1.0);
@@ -137,11 +125,11 @@ pub fn handle(fb:&mut FigureBuilder){
 #[derive(Debug)]
 struct Record {
     num_bots:usize,
-    arr:[f64;7]    
+    arr:[f64;6]    
 }
 impl Record{
     fn draw(records:&[Record],fg:&mut Figure){
-        const NAMES:[&'static str;7]=["RebalStrat1","RebalStrat2","RebalStrat1 Seq","RebalStrat2 Seq","RebalStrat3","RebalStrat3 Seq","DinoTree2"];
+        const NAMES:[&'static str;6]=["RebalStrat1","RebalStrat2","RebalStrat1 Seq","RebalStrat2 Seq","RebalStrat3","RebalStrat3 Seq"];
         {
             let k=fg.axes2d()
                 .set_title(&format!("Rebal vs Query Comparisons with a spiral grow of 1"), &[])
@@ -150,7 +138,7 @@ impl Record{
                 .set_y_label("Number of Comparisons", &[]);
 
             let x=records.iter().map(|a|a.num_bots);
-            for index in 0..7{
+            for index in 0..6{
                 let y=records.iter().map(|a|a.arr[index]);
                 k.lines(x.clone(),y,&[Caption(NAMES[index]),Color(COLS[index]),LineWidth(2.0)]);
             }
@@ -163,7 +151,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
-    for num_bots in (1..1000_000).step_by(5000){
+    for num_bots in (0..2000_000).step_by(20000){
 
         let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
@@ -176,9 +164,8 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
         let d=test4(&mut bots);
         let e=test5(&mut bots);
         let f=test6(&mut bots);
-        let g=test7(&mut bots);
 
-        let r=Record{num_bots,arr:[a,b,c,d,e,f,g]};
+        let r=Record{num_bots,arr:[a,b,c,d,e,f]};
         rects.push(r);      
     }
 
