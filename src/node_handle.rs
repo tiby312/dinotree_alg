@@ -177,7 +177,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                         }
                 } else {
                     if cont.intersects(anchor_box){
-                        self.sweeper.find_parallel_2d1(
+                        self.sweeper.find_parallel_2d(
                             this_axis.next(),
                             this_range,
                             anchor_range,
@@ -195,7 +195,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                     self.sweeper.find_perp_2d2(r1,r2,func);
 
                 } else {
-                    self.sweeper.find_parallel_2d2(
+                    self.sweeper.find_parallel_2d(
                         this_axis.next(),
                         this_range,
                         anchor_range,
