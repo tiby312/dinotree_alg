@@ -118,25 +118,6 @@ impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
 }
 
 
-pub fn compare_bots<T:HasAabb>(axis:impl AxisTrait,a:&T,b:&T)->std::cmp::Ordering{
-    let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
-    if p1 > p2 {
-        return std::cmp::Ordering::Greater;
-    }
-    std::cmp::Ordering::Less
-}
-
-///Sorts the bots.
-pub fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
-
-    let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
-        compare_bots(axis,a,b)
-    };
- 
-    collision_botids.sort_unstable_by(sclosure);
-}
-
-
 
 pub struct WrapT<'a,T:HasAabb+'a>{
     pub inner:&'a mut T
@@ -169,7 +150,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                         //TODO document this!!!!!!!!!!!!!
                         if r1.len()*r2.len()>64{
                             let mut bots2:Vec<_>=r2.iter_mut().map(|a|WrapT{inner:a}).collect();
-                            sweeper_update(anchor_axis,&mut bots2);
+                            dinotree::advanced::sweeper_update(anchor_axis,&mut bots2);
                             self.sweeper.find_parallel_2d_ptr(this_axis.next(),r1,&mut bots2,func);
 
                         }else{

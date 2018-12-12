@@ -29,15 +29,12 @@ impl<T> Clone for PhantomSendSync<T> {
     }
 }
 
-use smallvec;
-
 
 
 //They are always send and sync because the only time the vec is used
 //is when it is borrowed for the lifetime.
 unsafe impl<T> std::marker::Send for PreVecMut<T> {}
 unsafe impl<T> std::marker::Sync for PreVecMut<T> {}
-
 
 use std::ptr::Unique;
 
