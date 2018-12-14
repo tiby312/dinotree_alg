@@ -21,7 +21,7 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
             aabb_from_point_isize(b.pos,[5,5]) 
         },Some(height),&mut SplitterEmpty);
 
-        colfind::query_seq_mut(&mut tree,|a, b| {
+        colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
             a.inner.num+=2;
             b.inner.num+=2;            
         });
@@ -48,7 +48,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
             datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
         },Some(height),&mut SplitterEmpty);
 
-        colfind::query_seq_mut(&mut tree,|a, b| {
+        colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
             a.inner.num+=2;
             b.inner.num+=2;            
         });

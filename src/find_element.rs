@@ -17,8 +17,8 @@ pub enum Dir{
 ///Used for debugging.
 ///Returns the debugging information of the first bot found that satisfies the predicate.
 ///Returns the depth, as well as the path down the tree taken to get to the node.
-pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(tree:&DinoTree<A,(),T>,mut func:F) -> Option<(usize,Vec<Dir>)>{
-   fn recc<'a,A:AxisTrait,T:HasAabb+'a,F:FnMut(&T)->bool,C:Visitor<Item=(Depth,NodeRef<'a,(),T>)>>(axis:A,func:&mut F,stuff:C,trail:Vec<Dir>)->Option<(usize,Vec<Dir>)>{
+pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(vistr:AxisWrap<A,Vistr<(),T>>,mut func:F) -> Option<(usize,Vec<Dir>)>{
+   fn recc<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(axis:A,func:&mut F,stuff:LevelIter<Vistr<(),T>>,trail:Vec<Dir>)->Option<(usize,Vec<Dir>)>{
         let ((depth,nn),rest)=stuff.next();
 
         for b in nn.range.iter(){
@@ -49,5 +49,5 @@ pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(tree:&DinoTree<A,()
             }
         }
    }
-   recc(tree.axis(),&mut func,tree.vistr().with_depth(Depth(0)),Vec::new())
+   recc(vistr.axis(),&mut func,vistr.into_inner().with_depth(Depth(0)),Vec::new())
 }

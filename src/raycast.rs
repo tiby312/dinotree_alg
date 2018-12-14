@@ -276,10 +276,10 @@ mod mutable{
     pub fn raycast_mut<
         'a,A:AxisTrait,
         T:HasAabb,
-        >(tree:&'a mut DinoTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(vistr:AxisWrap<A,VistrMut<'a,(),T>>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
         
-        let axis=tree.axis();
-        let dt = tree.vistr_mut().with_depth(Depth(0));
+        let axis=vistr.axis();
+        let dt = vistr.into_inner().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};
@@ -310,10 +310,11 @@ mod cons{
     pub fn raycast<
         'a,A:AxisTrait,
         T:HasAabb,
-        >(tree:&'a DinoTree<A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(vistr:AxisWrap<A,Vistr<'a,(),T>>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
         
-        let axis=tree.axis();
-        let dt = tree.vistr().with_depth(Depth(0));
+
+        let axis=vistr.axis();
+        let dt = vistr.into_inner().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};

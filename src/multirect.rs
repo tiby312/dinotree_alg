@@ -22,7 +22,7 @@ pub struct RectIntersectErr;
 ///Handles a multi rect mut "sessions" within which
 ///the user can query multiple non intersecting rectangles.
 pub struct MultiRectMut<'a,A: AxisTrait+'a,T:HasAabb+'a> {
-    tree: &'a mut DinoTree<A,(),T>,
+    tree: DinoTreeRefMut<'a,A,(),T>,
     rects: SmallVec<[Rect<T::Num>; 16]>,
 }
 
@@ -36,7 +36,7 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 
 		self.rects.push(rect);
 
-		rect::for_all_in_rect_mut(self.tree,&rect,|bbox:&mut T|{
+		rect::for_all_in_rect_mut(self.tree.as_ref_mut(),&rect,|bbox:&mut T|{
 			//This is only safe to do because the user is unable to mutate the bounding box.
 			let bbox:&'a mut T=unsafe {std::mem::transmute(bbox)};
 			func(bbox);
@@ -48,7 +48,7 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 
 
 ///Starts a multi rect mut sessions.
-pub fn multi_rect_mut<'a,A:AxisTrait,T:HasAabb>(tree:&'a mut DinoTree<A,(),T>)->MultiRectMut<'a,A,T>{
+pub fn multi_rect_mut<'a,A:AxisTrait,T:HasAabb>(tree:DinoTreeRefMut<'a,A,(),T>)->MultiRectMut<'a,A,T>{
 	MultiRectMut{tree,rects:SmallVec::new()}
 }
 

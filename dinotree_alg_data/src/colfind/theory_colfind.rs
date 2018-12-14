@@ -48,7 +48,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
                 aabb_from_point_isize(b.pos,[5,5])
             });
 
-            colfind::query_mut(&mut tree,|a, b| {
+            colfind::query_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
         
@@ -68,7 +68,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
                 aabb_from_point_isize(b.pos,[5,5])
             });
 
-            colfind::query_seq_mut(&mut tree,|a, b| {
+            colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -243,7 +243,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
                 datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
             });
 
-            colfind::query_seq_mut(&mut tree,|a, b| {
+            colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=2;
                 b.inner.num+=2;
             });

@@ -48,7 +48,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 aabb_from_point_isize(b.pos,[5,5])
             });
 
-            colfind::query_seq_mut(&mut tree,|a, b| {
+            colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -67,7 +67,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
             });
 
-            colfind::query_seq_mut(&mut tree,|a, b| {
+            colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -86,7 +86,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
             });
 
-            colfind::query_mut(&mut tree,|a, b| {
+            colfind::query_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -105,7 +105,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 aabb_from_point_isize(b.pos,[5,5])
             });
 
-            colfind::query_mut(&mut tree,|a, b| {
+            colfind::query_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -124,7 +124,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
             });
 
-            colfind::query_seq_mut(&mut tree,|a, b| {
+            colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -143,7 +143,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
             });
 
-            colfind::query_mut(&mut tree,|a, b| {
+            colfind::query_mut(tree.as_ref_mut(),|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });

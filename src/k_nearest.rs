@@ -337,9 +337,9 @@ mod con{
         T:HasAabb,
         A:AxisTrait,
         K:Knearest<T=T,N=T::Num>,
-        >(tree:&'b DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
-        let axis=tree.axis();
-        let dt = tree.vistr().with_depth(Depth(0));
+        >(vistr:AxisWrap<A,Vistr<'b,(),T>>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
+        let axis=vistr.axis();
+        let dt = vistr.into_inner().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 
@@ -409,9 +409,9 @@ mod mutable{
         T:HasAabb,
         A:AxisTrait,
         K:Knearest<N=T::Num,T=T>,
-        >(tree:&'b mut DinoTree<A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
-        let axis=tree.axis();
-        let dt = tree.vistr_mut().with_depth(Depth(0));
+        >(vistr:AxisWrap<A,VistrMut<'b,(),T>>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
+        let axis=vistr.axis();
+        let dt = vistr.into_inner().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 

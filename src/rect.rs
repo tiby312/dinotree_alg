@@ -68,7 +68,7 @@ macro_rules! rect{
 }
 
 
-pub fn for_all_not_in_rect_mut<A:AxisTrait,T:HasAabb>(tree:&mut DinoTree<A,(),T>,rect:&Rect<T::Num>,closure:impl FnMut(&mut T)){
+pub fn for_all_not_in_rect_mut<A:AxisTrait,T:HasAabb>(mut tree:DinoTreeRefMut<A,(),T>,rect:&Rect<T::Num>,closure:impl FnMut(&mut T)){
     fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(&mut T)>(axis:A,it:VistrMut<(),T>,rect:&Rect<T::Num>,mut closure:F)->F{
         let (nn,rest)=it.next();
         
@@ -127,7 +127,7 @@ mod mutable{
 
     rect!(VistrMut<(),T>,&mut T,get_section_mut);
     pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
-        tree: &mut DinoTree<A,(),T>,
+        mut tree:DinoTreeRefMut<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
@@ -169,7 +169,7 @@ mod mutable{
 
     }
     pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
-        tree: &mut DinoTree<A,(),T>,
+        mut tree:DinoTreeRefMut<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
@@ -192,7 +192,7 @@ mod constant{
     //rect!(Vistr<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
     pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(
-        tree: &DinoTree<A,(),T>,
+        tree:DinoTreeRef<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
@@ -208,7 +208,7 @@ mod constant{
     }
 
     pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
-        tree: &DinoTree<A,(),T>,
+        tree:DinoTreeRef<A,(),T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {

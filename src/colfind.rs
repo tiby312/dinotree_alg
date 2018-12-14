@@ -78,12 +78,13 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 fn go_down<
     A: AxisTrait, //this axis
     B: AxisTrait, //anchor axis
-    X: HasAabb
+    X: HasAabb,
+    N
 >(
     this_axis: A,
     sweeper: &mut impl NodeHandler<T=X>,
     anchor: &mut DestructuredNode<X,B>,
-    m: VistrMut<(),X>,
+    m: VistrMut<N,X>,
 ) {
     let anchor_axis=anchor.axis;
     let (nn,rest)=m.next();
@@ -134,15 +135,15 @@ fn recurse<
     JJ: par::Joiner,
     X: HasAabb + Send ,
     K:Splitter+Send,
-    S:NodeHandler<T=X>+Splitter+Send+Sync
+    S:NodeHandler<T=X>+Splitter+Send+Sync,
+    N:Send
 >(
     this_axis: A,
     par: JJ,
     sweeper:&mut S,
-    m: LevelIter<VistrMut<(),X>>,
+    m: LevelIter<VistrMut<N,X>>,
     splitter:&mut K
 ){
-
 
     sweeper.node_start();
     splitter.node_start();
@@ -222,7 +223,8 @@ pub trait ColMulti{
 
 
 ///Sequential
-pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(axis:A,vistr_mut:VistrMut<(),T>,func:impl FnMut(&mut T,&mut T)){
+pub fn query_seq_mut<A:AxisTrait,T:HasAabb,N>(tree:DinoTreeRefMut<A,N,T>,func:impl FnMut(&mut T,&mut T)){
+
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for Bo<T,F>{
         type T=T;
@@ -247,7 +249,7 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(axis:A,vistr_mut:VistrMut<(),T>,func
     
     let mut sweeper=HandleSorted::new(b);
     let mut splitter=SplitterEmpty;
-    inner_query_seq_adv_mut(axis,vistr_mut,&mut splitter,&mut sweeper);
+    inner_query_seq_adv_mut(tree,&mut splitter,&mut sweeper);
    
     //unimplemented!();
     //inner_query_seq_adv_mut(tree,b,SplitterEmpty,HandleSorted::<T,Bo<T,_>>::new());
@@ -256,7 +258,7 @@ pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(axis:A,vistr_mut:VistrMut<(),T>,func
 
 
 ///Parallel
-pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(axis:A,vistr_mut:VistrMut<(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+pub fn query_mut<A:AxisTrait,T:HasAabb+Send,N:Send>(tree:DinoTreeRefMut<A,N,T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for Bo<T,F>{
         type T=T;
@@ -277,12 +279,12 @@ pub fn query_mut<A:AxisTrait,T:HasAabb+Send>(axis:A,vistr_mut:VistrMut<(),T>,fun
     unsafe impl<T,F> Sync for Bo<T,F>{}
     let b=Bo(func,PhantomData);
 
-    query_adv_mut(axis,vistr_mut,b,&mut SplitterEmpty,None);
+    query_adv_mut(tree,b,&mut SplitterEmpty,None);
 }
 
 
 ///Parallel
-pub fn query_nosort_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut NotSorted<A,(),T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
+pub fn query_nosort_mut<A:AxisTrait,T:HasAabb+Send,N:Send>(tree:&mut NotSorted<A,N,T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
     struct Bo<T,F>(F,PhantomData<T>);
     impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for Bo<T,F>{
         type T=T;
@@ -306,7 +308,7 @@ pub fn query_nosort_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut NotSorted<A,(),T>,
 
     let mut sweeper=HandleNoSorted::new(b);
 
-    inner_query_adv_mut(tree.0.axis(),tree.0.vistr_mut(),&mut SplitterEmpty,&mut sweeper,None);
+    inner_query_adv_mut(tree.0.as_ref_mut(),&mut SplitterEmpty,&mut sweeper,None);
 
 
 }
@@ -315,9 +317,9 @@ pub fn query_nosort_mut<A:AxisTrait,T:HasAabb+Send>(tree:&mut NotSorted<A,(),T>,
 ///Advanced sequential version.
 pub fn query_seq_adv_mut<A: AxisTrait,
     T: HasAabb,
-    K:Splitter>(    
-    axis:A,
-    vistr_mut:VistrMut<(),T>,
+    K:Splitter,
+    N>(    
+    tree:DinoTreeRefMut<A,N,T>,
     func:impl FnMut(&mut T,&mut T),
     splitter:&mut K
 ){
@@ -344,14 +346,14 @@ pub fn query_seq_adv_mut<A: AxisTrait,
     let mut sweeper=HandleSorted::new(b);
 
 
-    inner_query_seq_adv_mut(axis,vistr_mut,splitter,&mut sweeper);
+    inner_query_seq_adv_mut(tree,splitter,&mut sweeper);
 }
 
 
 ///Advanced sequential version.
 pub fn query_nosort_seq_mut<A: AxisTrait,
-    T: HasAabb>(    
-    tree: &mut NotSorted<A,(), T>,
+    T: HasAabb,N>(    
+    tree: &mut NotSorted<A,N, T>,
     func:impl FnMut(&mut T,&mut T),
 ){
     struct Bo<T,F>(F,PhantomData<T>);
@@ -376,15 +378,16 @@ pub fn query_nosort_seq_mut<A: AxisTrait,
     
     let mut sweeper=HandleNoSorted::new(b);
 
-    inner_query_seq_adv_mut(tree.0.axis(),tree.0.vistr_mut(),&mut SplitterEmpty,&mut sweeper);
+    inner_query_seq_adv_mut(tree.0.as_ref_mut(),&mut SplitterEmpty,&mut sweeper);
    
 }
 
 ///Advanced sequential version.
 pub fn query_nosort_seq_adv_mut<A: AxisTrait,
     T: HasAabb,
-    K:Splitter>(    
-    tree: &mut NotSorted<A,(), T>,
+    K:Splitter,
+    N>(    
+    tree: &mut NotSorted<A,N, T>,
     func:impl FnMut(&mut T,&mut T),
     splitter:&mut K
 ){
@@ -410,7 +413,7 @@ pub fn query_nosort_seq_adv_mut<A: AxisTrait,
     
     let mut sweeper=HandleNoSorted::new(b);
 
-    inner_query_seq_adv_mut(tree.0.axis(),tree.0.vistr_mut(),splitter,&mut sweeper);
+    inner_query_seq_adv_mut(tree.0.as_ref_mut(),splitter,&mut sweeper);
     
 }
 
@@ -421,17 +424,19 @@ fn inner_query_adv_mut<
     A: AxisTrait,
     T: HasAabb+Send,
     K:Splitter+Send,
-    S: NodeHandler<T=T>+Splitter+Send+Sync>(  
-    axis:A,
-    vistr_mut:VistrMut<(),T>,
+    S: NodeHandler<T=T>+Splitter+Send+Sync,
+    N:Send>(  
+    mut tree:DinoTreeRefMut<A,N,T>,
     splitter:&mut K,
     sweeper:&mut S, 
     height_switch_seq:Option<usize>
 ){
-    let par=dinotree::advanced::compute_default_level_switch_sequential(height_switch_seq,vistr_mut.height());
+    let axis=tree.axis();
+    let oo=tree.vistr_mut();
+    let par=dinotree::advanced::compute_default_level_switch_sequential(height_switch_seq,oo.height());
 
-    let dt = vistr_mut.with_depth(Depth(0));
-    self::recurse(axis, par, sweeper, dt,splitter);
+    let oo = oo.with_depth(Depth(0));
+    self::recurse(axis, par, sweeper, oo,splitter);
     
 }
 ///See query_adv_mut
@@ -439,10 +444,9 @@ fn inner_query_seq_adv_mut<
     A: AxisTrait,
     T: HasAabb,
     K:Splitter,
-    S: NodeHandler<T=T>+Splitter>(    
-    //kdtree: &mut DinoTree<A,(), T>,
-    axis:A,
-    vistr_mut:VistrMut<(),T>,
+    S: NodeHandler<T=T>+Splitter,
+    N>(   
+    mut tree:DinoTreeRefMut<A,N,T>,
     splitter:&mut K,
     sweeper:&mut S
 ){
@@ -451,9 +455,9 @@ fn inner_query_seq_adv_mut<
     mod wrap{
         //Use this to get rid of Send trait constraint.
         #[repr(transparent)]
-        pub struct Wrap<T:HasAabb>(T);
-        unsafe impl<T:HasAabb> Send for Wrap<T>{}
-        unsafe impl<T:HasAabb> Sync for Wrap<T>{}
+        pub struct Wrap<T>(T);
+        unsafe impl<T> Send for Wrap<T>{}
+        unsafe impl<T> Sync for Wrap<T>{}
         unsafe impl<T:HasAabb> HasAabb for Wrap<T>{
             type Num=T::Num;
             fn get(&self)->&Rect<Self::Num>{
@@ -521,19 +525,20 @@ fn inner_query_seq_adv_mut<
         }
         unsafe impl<T> Send for NodeHandlerWrapper<T>{}
         unsafe impl<T> Sync for NodeHandlerWrapper<T>{}
-        
-
-
     }
 
     
-    let splitter:&mut wrap::SplitterWrapper<K>=unsafe{std::mem::transmute(splitter)};//wrap::SplitterWrapper(splitter);
-    //let kdtree:&mut DinoTree<A,(),wrap::Wrap<T>>=unsafe{std::mem::transmute(kdtree)};
-    let vistr_mut:VistrMut<(),wrap::Wrap<T>>=unsafe{std::mem::transmute(vistr_mut)};
+    let splitter:&mut wrap::SplitterWrapper<K>=unsafe{std::mem::transmute(splitter)};
+
+    let axis=tree.axis();
+
+    let dt=tree.vistr_mut();    
+    let vistr_mut:VistrMut<wrap::Wrap<N>,wrap::Wrap<T>>=unsafe{std::mem::transmute(dt)};
+    
     let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
 
+
     let dt = vistr_mut.with_depth(Depth(0));
-    //let mut sweeper = oned::Sweeper::new();
     
     
     self::recurse(axis, par::Sequential, sweeper, dt,splitter);
@@ -550,15 +555,15 @@ pub fn query_adv_mut<
     T: HasAabb+Send,
     F: ColMulti<T = T>+Splitter+Send+Sync,
     K: Splitter+Send,
-    
+    N:Send
 >(
-    axis:A,
-    vistr_mut:VistrMut<(),T>,
-    //kdtree: &mut DinoTree<A,(), T>,
+    mut tree:DinoTreeRefMut<A,N,T>,
     clos: F,
     splitter:&mut K,
     height_switch_seq:Option<usize>,
 ) -> F {
+    let axis=tree.axis();
+    let vistr_mut=tree.vistr_mut();
 
     let par=dinotree::advanced::compute_default_level_switch_sequential(height_switch_seq,vistr_mut.height());
 

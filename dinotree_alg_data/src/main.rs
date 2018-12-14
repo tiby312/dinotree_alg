@@ -64,9 +64,9 @@ fn main() {
     
     colfind::theory_colfind::handle(&mut fb);
     
-    //colfind::copy_vs_nocopy::handle(&mut fb);
+    colfind::copy_vs_nocopy::handle(&mut fb);
     
-    //colfind::rebal_strat::handle(&mut fb);
+    colfind::rebal_strat::handle(&mut fb);
     /*
 
     

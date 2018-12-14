@@ -50,8 +50,6 @@ mod inner_prelude {
     pub use axgeom::AxisTrait;
     pub use std::marker::PhantomData;
     pub use itertools::Itertools;
-
-    pub use ::*;
 }
 
 ///Provides functionality to draw the dividers of a dinotree.

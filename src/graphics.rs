@@ -16,7 +16,7 @@ pub trait DividerDrawer{
 ///Calls the user supplied function on each divider.
 ///Since the leaves do not have dividers, it is not called for the leaves.
 pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
-    gentree: &DinoTree<A,(),T>,
+    gentree: DinoTreeRef<A,(),T>,
     dr:&mut D,
     rect:&Rect<T::Num>
 ) {

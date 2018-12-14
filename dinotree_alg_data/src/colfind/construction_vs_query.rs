@@ -21,7 +21,7 @@ fn test1(bots:&mut [Bot])->(usize,usize){
 
     let a=counter.into_inner();
 
-    colfind::query_seq_mut(&mut tree,|a, b| {
+    colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -74,7 +74,7 @@ fn test2(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::query_seq_mut(&mut tree,|a, b| {
+    colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -100,7 +100,7 @@ fn test3(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::query_mut(&mut tree,|a, b| {
+    colfind::query_mut(tree.as_ref_mut(),|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });

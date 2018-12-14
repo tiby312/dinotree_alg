@@ -507,7 +507,7 @@ trait Bok2{
 
 
 ///Parallel version.
-pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&mut DinoTree<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
+pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(mut t1:DinoTreeRefMut<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
     let axis=t1.axis();
  
     struct Wrapper<'a,N:NodeMassTraitConst+'a>(&'a N);
@@ -575,7 +575,7 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(t1:&
 
 
 ///Sequential version.
-pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DinoTree<A,N::No,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
+pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(mut t1:DinoTreeRefMut<A,N::No,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
     
     #[derive(Copy,Clone)]
     #[repr(transparent)]
@@ -646,7 +646,9 @@ pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(t1:&mut DinoTree<A,N::No,N::T>,ncon
 
     let axis=t1.axis();
     let mut ncontext=Wrapper(ncontext);
-    let t1:&mut DinoTree<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
+
+    let t1:&mut DinoTreeRefMut<A,N::No,N::T>=&mut t1;
+    let t1:&mut DinoTreeRefMut<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
 
 
     buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
