@@ -424,6 +424,44 @@ pub fn query_nosort_seq_adv_mut<A: AxisTrait,
 
 
 
+pub struct ColFindRunner<A:AxisTrait,T:HasAabb,N>{
+    switch_height:usize,
+    _p:PhantomData<std::sync::Mutex<(A,T,N)>>
+}
+
+
+impl<A:AxisTrait,T:HasAabb+Send,N+Send> ColFindRunner<A,T,N>{
+    pub fn run_par(){
+
+    }
+    pub fn run_with_no_sort_par(tree:&mut NotSorted<A,N,T>,func:impl FnMut(&mut T,&mut T)){
+
+    }
+    pub fn run_colmulti(){
+        
+    }
+}
+impl<A:AxisTrait,T:HasAabb,N> ColFindRunner<A,T,N>{
+    pub fn new()->ColFindRunner<A,T,N>{
+        let switch_height=dinotree::advanced::default_level_switch_sequential();
+        ColFindRunner{switch_height,_p:PhantomData}
+    }
+    pub fn with_switch_height(&mut self,height:usize){
+        self.switch_height=height;
+    }
+    pub fn run_with_no_sort_seq(tree:&mut NotSorted<A,N,T>,func:impl FnMut(&mut T,&mut T)){
+
+    }
+    
+    pub fn run_seq(tree:DinoTreeRefMut<A,N,T>){
+
+    }
+    pub fn run_with_splitter_seq(){
+
+    }     
+}
+
+
 ///See query_adv_mut
 fn inner_query_adv_mut<
     A: AxisTrait,
