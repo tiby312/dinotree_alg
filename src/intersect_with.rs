@@ -3,8 +3,8 @@
 //!
 //! There is no unsafe code in this module.
 //!
-use inner_prelude::*;
-use rect::*;
+use crate::inner_prelude::*;
+use crate::rect::*;
 
 /*
 ///Find all intersecting pairs between the elements in this dinotree, and the specified elements.

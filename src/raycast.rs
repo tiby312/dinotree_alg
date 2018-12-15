@@ -48,7 +48,7 @@
 //!
 //!
 
-use inner_prelude::*;
+use crate::inner_prelude::*;
 use smallvec::SmallVec;
 
 
@@ -70,12 +70,12 @@ pub trait RayTrait{
     ///The expensive collision detection
     ///This is where the user can do expensive collision detection on the shape
     ///contains within it's bounding box.
-    fn compute_distance_bot(&mut self,&Self::T)->Option<Self::N>;
+    fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>;
 
 
     ///Returns true if the ray intersects with this rectangle.
     ///This function allows as to prune which nodes to visit.
-    fn intersects_rect(&self,&Rect<Self::N>)->bool;
+    fn intersects_rect(&self,a:&Rect<Self::N>)->bool;
 
     ///Return the ordering of the divider relative to the ray's origin point.
     ///So if, for the particular axis, the point is less than the divider,
@@ -274,12 +274,12 @@ mod mutable{
     }
     //RaycastResultMut<'a,T,T::Num>
     pub fn raycast_mut<
-        'a,A:AxisTrait,
+        'a,A:AxisTrait+'a,
         T:HasAabb,
-        >(vistr:AxisWrap<A,VistrMut<'a,(),T>>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(tree:DinoTreeRefMut<'a,A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
         
-        let axis=vistr.axis();
-        let dt = vistr.into_inner().with_depth(Depth(0));
+        let axis=tree.axis();
+        let dt = tree.into_vistr_mut().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};
@@ -308,13 +308,13 @@ mod cons{
 
     raycast!(Vistr<'a,(),T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
     pub fn raycast<
-        'a,A:AxisTrait,
+        'a,A:AxisTrait+'a,
         T:HasAabb,
-        >(vistr:AxisWrap<A,Vistr<'a,(),T>>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(tree:DinoTreeRef<'a,A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
         
 
-        let axis=vistr.axis();
-        let dt = vistr.into_inner().with_depth(Depth(0));
+        let axis=tree.axis();
+        let dt = tree.into_vistr().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};

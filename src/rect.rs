@@ -16,7 +16,7 @@
 //!
 //! There is no unsafe code in this module.
 //!
-use inner_prelude::*;
+use crate::inner_prelude::*;
 
 
 
@@ -122,7 +122,7 @@ pub use self::constant::for_all_in_rect;
 
 
 mod mutable{
-    use oned::get_section_mut;
+    use crate::oned::get_section_mut;
     use super::*;
 
     rect!(VistrMut<(),T>,&mut T,get_section_mut);
@@ -186,7 +186,7 @@ mod mutable{
 }
 mod constant{
 
-    use oned::get_section;
+    use crate::oned::get_section;
     use super::*;
     rect!(Vistr<(),T>,&T,get_section);
     //rect!(Vistr<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);

@@ -5,7 +5,7 @@
 //! 
 //! There is no unsafe code.
 //!
-use inner_prelude::*;
+use crate::inner_prelude::*;
 
 ///Trait user must implement.
 pub trait DividerDrawer{

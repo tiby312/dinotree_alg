@@ -27,7 +27,7 @@
 //!
 //! There is no unsafe code in this module
 
-use inner_prelude::*;
+use crate::inner_prelude::*;
 
 
 ///The geometric functions that the user must provide.
@@ -335,11 +335,11 @@ mod con{
     use super::*;
     pub fn k_nearest<'b,
         T:HasAabb,
-        A:AxisTrait,
+        A:AxisTrait+'b,
         K:Knearest<T=T,N=T::Num>,
-        >(vistr:AxisWrap<A,Vistr<'b,(),T>>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
-        let axis=vistr.axis();
-        let dt = vistr.into_inner().with_depth(Depth(0));
+        >(tree:DinoTreeRef<'b,A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
+        let axis=tree.axis();
+        let dt = tree.into_vistr().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 
@@ -407,11 +407,11 @@ mod mutable{
 
     pub fn k_nearest_mut<'b,
         T:HasAabb,
-        A:AxisTrait,
+        A:AxisTrait+'b,
         K:Knearest<N=T::Num,T=T>,
-        >(vistr:AxisWrap<A,VistrMut<'b,(),T>>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
-        let axis=vistr.axis();
-        let dt = vistr.into_inner().with_depth(Depth(0));
+        >(tree:DinoTreeRefMut<'b,A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
+        let axis=tree.axis();
+        let dt = tree.into_vistr_mut().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 

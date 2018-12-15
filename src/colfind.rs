@@ -21,9 +21,9 @@
 //! There is unsafe code to reuse code between the sequential and parallel versions.
 //!
 //! 
-use inner_prelude::*;
-use oned;
-use node_handle::*;
+use crate::inner_prelude::*;
+use crate::oned;
+use crate::node_handle::*;
 
 ///Naive algorithm.
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){

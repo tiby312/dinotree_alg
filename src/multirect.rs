@@ -10,7 +10,7 @@
 //! This allows the user to store mutable references of non intersecting rectangles at the same time. 
 //! If two requested rectangles intersect, an error is returned.
 //!
-use inner_prelude::*;
+use crate::inner_prelude::*;
 
 
 ///Indicates that the user supplied a rectangle

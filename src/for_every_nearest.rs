@@ -5,8 +5,8 @@
 //! and the current bot we are iterating upon are distinct bots. Therefore it is safe to return them
 //! to the user as mutable references. 
 
-use inner_prelude::*;
-use k_nearest::Knearest;
+use crate::inner_prelude::*;
+use crate::k_nearest::Knearest;
 
 
 

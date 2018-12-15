@@ -7,6 +7,7 @@ license = "MIT/Apache-2.0"
 repository = "https://github.com/tiby312/dinotree_alg"
 keywords = ["tree", "kdtree","dinotree","space-partitioning"]
 readme = "readme.md"
+edition = "2018"
 
 
 [dev-dependencies]
@@ -18,7 +19,7 @@ is_sorted = "0.1.0"
 rayon = "1.0.3"
 smallvec = "0.6.5"
 itertools = "0.7.8"
-compt = "1.2.5"
+compt = "1.3.0"
 axgeom = "1.0.4"
 #dinotree = "0.1.3"
 dinotree = {path="../dinotree"}

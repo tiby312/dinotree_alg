@@ -19,7 +19,7 @@
 //!
 //! There is unsafe code to reuse code between sequential and parallel versions.
 //!
-use inner_prelude::*;
+use crate::inner_prelude::*;
 
 ///A mutable version that the user can take advantage of for debugging purposes.
 ///For example, the user can count how many node/node gravitations happened version bot/bot gravitations.
@@ -32,13 +32,13 @@ pub trait NodeMassTraitMut{
     fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
 
     ///Gravitate this node mass with another node mass
-    fn handle_node_with_node(&mut self,&mut Self::No,b:&mut Self::No);
+    fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No);
 
     ///Gravitate a bot with a bot
-    fn handle_bot_with_bot(&mut self,&mut Self::T,&mut Self::T);
+    fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T);
 
     ///Gravitate a nodemass with a bot
-    fn handle_node_with_bot(&mut self,&mut Self::No,b:&mut Self::T);
+    fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T);
 
     ///Return true if this distance if far away enough to use the node mass as an approximation.
     fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
@@ -47,7 +47,7 @@ pub trait NodeMassTraitMut{
     fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     ///This unloads the force accumulated by this node to the bots.
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,&'a Self::No,it:I);
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,a:&'a Self::No,it:I);
 
     ///Create a new node mass.
     fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a mut self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
@@ -66,13 +66,13 @@ pub trait NodeMassTraitConst{
     fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
 
     ///Gravitate this node mass with another node mass
-    fn handle_node_with_node(&self,&mut Self::No,b:&mut Self::No);
+    fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No);
 
     ///Gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,&mut Self::T,&mut Self::T);
+    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T);
 
     ///Gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,&mut Self::No,b:&mut Self::T);
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T);
 
     ///Return true if this distance if far away enough to use the node mass as an approximation.
     fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
@@ -81,7 +81,7 @@ pub trait NodeMassTraitConst{
     fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,&'a Self::No,it:I);
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I);
 
     ///Create a new node mass.
     fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
@@ -99,20 +99,20 @@ trait NodeMassTrait:Clone{
     fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
 
     //gravitate this node mass with another node mass
-    fn handle_node_with_node(&mut self,&mut Self::No,b:&mut Self::No);
+    fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No);
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&mut self,&mut Self::T,&mut Self::T);
+    fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T);
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&mut self,&mut Self::No,b:&mut Self::T);
+    fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T);
 
     fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,&'a Self::No,it:I);
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,a:&'a Self::No,it:I);
 
     fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a mut self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
 }
@@ -144,7 +144,7 @@ fn buildtree<'a,
                 match extra{
                     None=>{
                         let empty:&[T]=&[];
-                        let mut nodeb=ncontext.new(empty.iter(),rect);
+                        let nodeb=ncontext.new(empty.iter(),rect);
                         
                         *nn.misc=nodeb;
                         //let n2=ncontext.clone();
@@ -176,7 +176,7 @@ fn buildtree<'a,
                 }
             },
             None=>{
-                let mut nodeb=ncontext.new(nn.range.iter(),rect);
+                let nodeb=ncontext.new(nn.range.iter(),rect);
                 *nn.misc=nodeb;
             }
         }

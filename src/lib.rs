@@ -45,7 +45,7 @@ mod inner_prelude {
     pub use compt::LevelIter;
     pub use compt::Depth;
     pub use axgeom::Range;
-    pub use ::*;
+    pub use crate::*;
     pub use compt::Visitor;
     pub use axgeom::AxisTrait;
     pub use std::marker::PhantomData;
