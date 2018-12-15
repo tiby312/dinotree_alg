@@ -12,19 +12,19 @@ extern crate gnuplot;
 extern crate test;
 
 mod inner_prelude{
-    pub(crate) use FigureBuilder;
-    pub use support::*;
+    pub(crate) use crate::FigureBuilder;
+    pub use crate::support::*;
     pub use dinotree_alg::colfind;
     pub use dinotree::*;
     pub use dinotree::advanced::*;
     pub(crate) use axgeom;
-    pub(crate) use datanum;
+    pub(crate) use crate::datanum;
     pub use gnuplot::*;
     pub(crate) use dists;
     pub use std::time::Instant;
     pub use std::time::Duration;
     pub(crate) use ordered_float::NotNan;
-    pub(crate) use test::*;
+    pub(crate) use crate::test::*;
 
 }
 #[macro_use]
@@ -62,11 +62,11 @@ fn main() {
 
     let mut fb=FigureBuilder{};
     
-    colfind::theory_colfind::handle(&mut fb);
+    //colfind::theory_colfind::handle(&mut fb);
     
     colfind::copy_vs_nocopy::handle(&mut fb);
     
-    colfind::rebal_strat::handle(&mut fb);
+    //colfind::rebal_strat::handle(&mut fb);
     /*
 
     

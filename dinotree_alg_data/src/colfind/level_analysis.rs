@@ -1,6 +1,6 @@
 
 
-use inner_prelude::*;
+use crate::inner_prelude::*;
 use dinotree_alg::colfind;
 
 
@@ -23,7 +23,7 @@ enum RebalOrQuery{
 */
 
 mod level_counter{
-	use datanum;
+	use crate::datanum;
 	use dinotree::advanced::Splitter;
 
 	pub struct LevelCounter{

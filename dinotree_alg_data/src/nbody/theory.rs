@@ -1,6 +1,7 @@
-use inner_prelude::*;
+use crate::inner_prelude::*;
 use dinotree_alg::nbody;
 use duckduckgeo;
+
 #[derive(Copy,Clone)]
 pub struct Bot{
     pos:[f64;2],

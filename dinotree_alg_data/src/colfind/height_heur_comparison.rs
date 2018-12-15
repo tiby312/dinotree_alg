@@ -1,5 +1,4 @@
-use inner_prelude::*;
-
+use crate::inner_prelude::*;
 use dinotree::advanced::RebalStrat;
 
 #[derive(Copy,Clone)]
