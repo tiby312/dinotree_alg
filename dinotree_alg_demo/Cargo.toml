@@ -2,14 +2,16 @@
 name = "dinotree_alg_demo"
 version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
+edition = "2018"
+
 
 [dependencies]
-compt = "1.2.2"
-axgeom = "1.0.1"
-dinotree = "0.1.1"
+compt = "1.3.0"
+axgeom = "1.0.2"
+dinotree = {path="../../dinotree"}
 duckduckgeo = "0.1.0"
 dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"
 rand = "0.3"
 rustc-test = "0.3.0"
-piston_window = "0.82.0"
+piston_window = "0.84.0"

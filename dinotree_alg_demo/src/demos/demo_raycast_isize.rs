@@ -1,9 +1,11 @@
-use support::prelude::*;
+use crate::support::prelude::*;
 use dinotree_alg::raycast;
 use dinotree_alg;
 use std;
 use duckduckgeo;
 
+
+//TODO problem with lines are straight up?
 //isize implementation of a ray.
 mod ray_isize{
     use super::*;
@@ -159,23 +161,23 @@ impl DemoSys for RaycastDemo{
             duckduckgeo::Ray{point,dir}
         };
 
-        for bot in tree.iter(){
+        for bot in tree.as_ref().iter(){
             draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }   
 
         let k={
-            let height=tree.height();
-            let mut res1=raycast::raycast(&tree,axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height});
+            let height=tree.as_ref().height();
+            let res1=raycast::raycast(tree.as_ref(),axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height});
             match res1{
                 Some((mut bots,dis))=>{
                     bots.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
  
                     if check_naive{
-                        let (mut bots2,dis2)  = raycast::naive(tree.iter(),ray_isize::RayNoDraw{ray}).unwrap();
+                        let tree_ref=tree.as_ref();
+                        let (mut bots2,dis2)  = raycast::naive(tree_ref.iter(),ray_isize::RayNoDraw{ray}).unwrap();
                         assert_eq!(dis,dis2);
                         bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
-                        //println!("len={:?}",bots.len());
                         if bots.len()!=bots2.len(){
                             println!("lengths dont match raycast:{:?} naive:{:?}",bots.len(),bots2.len());
                         }else{
@@ -250,7 +252,7 @@ impl DemoSys for RaycastDemo{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(0,self.dim[0],0,self.dim[1]));
+            dinotree_alg::graphics::draw(tree.as_ref(),&mut dd,&axgeom::Rect::new(0,self.dim[0],0,self.dim[1]));
         }
 
 

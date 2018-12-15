@@ -1,4 +1,4 @@
-use support::prelude::*;
+use crate::support::prelude::*;
 use dinotree_alg::k_nearest;
 use duckduckgeo;
 
@@ -34,7 +34,7 @@ impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&mut self.tree;
 
-        for bot in tree.iter(){
+        for bot in tree.as_ref().iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
@@ -112,7 +112,7 @@ impl DemoSys for KnearestDemo{
         let vv={
             let kn=Kn{c:&c,g};
             let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-            k_nearest::k_nearest(tree,point,3,kn).into_iter()
+            k_nearest::k_nearest(tree.as_ref(),point,3,kn).into_iter()
         };
 
         if check_naive{
@@ -158,7 +158,9 @@ impl DemoSys for KnearestDemo{
             let vv2={
                 let kn=Kn2{};
                 let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                k_nearest::naive(tree.iter(),point,3,kn).into_iter()
+                
+                let vv2=k_nearest::naive(tree.as_ref().into_iter(),point,3,kn).into_iter();
+                vv2
             };
             
 

@@ -18,8 +18,8 @@ pub trait DemoSys{
 }
 
 mod demo_iter{
-    use super::*;
-    use demos::*;
+    use crate::*;
+    use crate::demos::*;
     pub struct DemoIter(usize);
 
     impl DemoIter{

@@ -6,14 +6,14 @@ use std;
 
 
 pub mod prelude{
-    pub use DemoSys;
+    pub use crate::DemoSys;
     pub(crate) use piston_window;
     pub use ordered_float::NotNan;
     pub use piston_window::*;
     pub use dinotree::DinoTree;
     pub use dinotree::HasAabb;
     pub(crate) use axgeom;
-    pub(crate) use support::*;
+    pub(crate) use crate::support::*;
     pub use dinotree::BBox;
 }
 use ordered_float::NotNan;

@@ -1,4 +1,4 @@
-use support::prelude::*;
+use crate::support::prelude::*;
 use dinotree_alg::raycast;
 use std;
 use duckduckgeo;
@@ -96,7 +96,7 @@ impl DemoSys for RaycastF64Demo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let tree=&self.tree;
         //Draw bots
-        for bot in tree.iter(){
+        for bot in tree.as_ref().iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
     
@@ -113,7 +113,7 @@ impl DemoSys for RaycastF64Demo{
                 };
 
                 
-                let k=raycast::raycast(&tree,axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
+                let k=raycast::raycast(tree.as_ref(),axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=k{
                     let ppx=ray.point[0]+ray.dir[0]*k.1;

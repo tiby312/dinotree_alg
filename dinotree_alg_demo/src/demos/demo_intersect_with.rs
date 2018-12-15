@@ -1,4 +1,4 @@
-use support::prelude::*;
+use crate::support::prelude::*;
 use dinotree_alg::colfind;
 use dinotree_alg::rect;
 use dinotree_alg::intersect_with;
@@ -104,7 +104,7 @@ impl DemoSys for IntersectWithDemo{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
         }); 
 
-        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|bot,wall|{
+        intersect_with::intersect_with_mut(tree.as_ref_mut(),walls,|wall|{wall.0},|bot,wall|{
             let fric=0.8;
 
 
@@ -135,7 +135,7 @@ impl DemoSys for IntersectWithDemo{
         println!("tree health={:?} sum={:?}",cont,sum);
         */
         
-        rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
+        rect::for_all_in_rect_mut(tree.as_ref_mut(),&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             //b.inner.repel_mouse(cursor);
             let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
@@ -144,11 +144,11 @@ impl DemoSys for IntersectWithDemo{
         for wall in walls.iter(){
             draw_rect_f64n([0.0,0.0,1.0,0.3],&wall.0,c,g);
         }
-        for bot in tree.iter(){
+        for bot in tree.as_ref().iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
  
-        colfind::query_mut(&mut tree,|a, b| {
+        colfind::query_mut(tree.as_ref_mut(),|a, b| {
             let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
         });
     
