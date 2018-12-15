@@ -74,47 +74,56 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 
+struct GoDownRecurser<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait>{
+    _p:PhantomData<std::sync::Mutex<(N,NN)>>,
+    anchor:DestructuredNode<'a,T,B>,
+    sweeper:&'a mut NN
+}
+impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>{
 
-fn go_down<
-    A: AxisTrait, //this axis
-    B: AxisTrait, //anchor axis
-    X: HasAabb,
-    N
->(
-    this_axis: A,
-    sweeper: &mut impl NodeHandler<T=X>,
-    anchor: &mut DestructuredNode<X,B>,
-    m: VistrMut<N,X>,
-) {
-    let anchor_axis=anchor.axis;
-    let (nn,rest)=m.next();
+    fn new(anchor:DestructuredNode<'a,T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,T,N,NN,B>{
+        GoDownRecurser{_p:PhantomData,anchor,sweeper}
+    }
 
-    match rest{
-        Some((extra,left,right))=>{
-            let &FullComp{div,cont}=match extra{
-                Some(d)=>d,
-                None=>return
-            };
-            
-            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,nn.range,Some(&cont)));
-            
-            //This can be evaluated at compile time!
-            if this_axis.is_equal_to(anchor_axis) {
-                if !(div < anchor.cont.left) {
-                    self::go_down(this_axis.next(), sweeper, anchor, left);
+    fn go_down<
+        A: AxisTrait, //this axis
+    >(
+        &mut self,
+        this_axis: A,
+        m: VistrMut<N,T>,
+    ) {
+        let anchor_axis=self.anchor.axis;
+        let (nn,rest)=m.next();
+
+        match rest{
+            Some((extra,left,right))=>{
+                let &FullComp{div,cont}=match extra{
+                    Some(d)=>d,
+                    None=>return
                 };
-                if !(div > anchor.cont.right) {
-                    self::go_down(this_axis.next(), sweeper, anchor, right);
-                };
-            } else {
-                self::go_down(this_axis.next(), sweeper, anchor, left);
-                self::go_down(this_axis.next(), sweeper, anchor,right);
+                
+                self.sweeper.handle_children((anchor_axis,&mut self.anchor.range,&self.anchor.cont),(this_axis,nn.range,Some(&cont)));
+                
+                //This can be evaluated at compile time!
+                if this_axis.is_equal_to(anchor_axis) {
+                    if !(div < self.anchor.cont.left) {
+                        self.go_down(this_axis.next(), left);
+                    };
+                    if !(div > self.anchor.cont.right) {
+                        self.go_down(this_axis.next(), right);
+                    };
+                } else {
+                    self.go_down(this_axis.next(), left);
+                    self.go_down(this_axis.next(),right);
+                }
+            },
+            None=>{
+                self.sweeper.handle_children((anchor_axis,&mut self.anchor.range,&self.anchor.cont),(this_axis,nn.range,None));
             }
-        },
-        None=>{
-            sweeper.handle_children((anchor_axis,&mut anchor.range,&anchor.cont),(this_axis,nn.range,None));
         }
     }
+
+
 }
 
 
@@ -130,82 +139,81 @@ struct DestructuredNode<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a>{
     axis:AnchorAxis
 }
 
-fn recurse<
-    A: AxisTrait,
-    JJ: par::Joiner,
-    X: HasAabb + Send ,
-    K:Splitter+Send,
-    S:NodeHandler<T=X>+Splitter+Send+Sync,
-    N:Send
->(
-    this_axis: A,
-    par: JJ,
-    sweeper:&mut S,
-    m: LevelIter<VistrMut<N,X>>,
-    splitter:&mut K
-){
 
-    sweeper.node_start();
-    splitter.node_start();
+struct ColFindRecurser<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send+Sync,N:Send>{
+    _p:PhantomData<std::sync::Mutex<(T,K,S,N)>>
+}
+impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send+Sync,N:Send> ColFindRecurser<T,K,S,N>{
+    fn new()->ColFindRecurser<T,K,S,N>{
+        ColFindRecurser{_p:PhantomData}
+    }
+    fn recurse<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<N,T>>,splitter:&mut K){
 
-    let((depth,nn),rest)=m.next();
+        sweeper.node_start();
+        splitter.node_start();
 
-    sweeper.handle_node(this_axis.next(),nn.range);
-                
-    match rest{
-        Some((extra,mut left,mut right))=>{
-            let &FullComp{div,cont}=match extra{
-                Some(d)=>d,
-                None=>{
-                    sweeper.node_end();
-                    splitter.node_end();
-                    return;
-                }
-            };
-            
+        let((depth,nn),rest)=m.next();
 
-            let mut nn=DestructuredNode{range:nn.range,cont,_div:div,axis:this_axis};
-            {
-                let left=left.inner.create_wrap_mut();
-                let right=right.inner.create_wrap_mut();
-                self::go_down(this_axis.next(), sweeper, &mut nn, left);
-                self::go_down(this_axis.next(), sweeper, &mut nn, right);
-            }
-
-            let mut splitter2=splitter.div();
-                
-            let splitter={
-                let splitter2=&mut splitter2;
-                if !par.should_switch_to_sequential(depth) {
-                    let mut sweeper2=sweeper.div();
+        sweeper.handle_node(this_axis.next(),nn.range);
                     
-                    let (sweeper,splitter)={
-                        let sweeper2=&mut sweeper2;
-                        let af = move || {
-                            self::recurse(this_axis.next(),par,sweeper,left,splitter);(sweeper,splitter)
-                        };
-                        let bf = move || {
-                            self::recurse(this_axis.next(),par,sweeper2,right,splitter2)
-                        };
-                        rayon::join(af, bf).0
-                    };
-                    sweeper.add(sweeper2);
-                    splitter
-                } else {
-                    self::recurse(this_axis.next(),par.into_seq(),sweeper,left,splitter);
-                    self::recurse(this_axis.next(),par.into_seq(),sweeper,right,splitter2);
-                    splitter
-                }
-            };
+        match rest{
+            Some((extra,mut left,mut right))=>{
+                let &FullComp{div,cont}=match extra{
+                    Some(d)=>d,
+                    None=>{
+                        sweeper.node_end();
+                        splitter.node_end();
+                        return;
+                    }
+                };
+                
 
-            splitter.add(splitter2);
-        },
-        None=>{
-            sweeper.node_end();
-            splitter.node_end();
+                let mut nn=DestructuredNode{range:nn.range,cont,_div:div,axis:this_axis};
+                {
+                    let left=left.inner.create_wrap_mut();
+                    let right=right.inner.create_wrap_mut();
+                    let mut g=GoDownRecurser::new(nn,sweeper);
+                    g.go_down(this_axis.next(), left);
+                    g.go_down(this_axis.next(), right);
+                }
+
+                let mut splitter2=splitter.div();
+                    
+                let splitter={
+                    let splitter2=&mut splitter2;
+                    if !par.should_switch_to_sequential(depth) {
+                        let mut sweeper2=sweeper.div();
+                        
+                        let (sweeper,splitter)={
+                            let sweeper2=&mut sweeper2;
+                            let af = move || {
+                                self.recurse(this_axis.next(),par,sweeper,left,splitter);(sweeper,splitter)
+                            };
+                            let bf = move || {
+                                self.recurse(this_axis.next(),par,sweeper2,right,splitter2)
+                            };
+                            rayon::join(af, bf).0
+                        };
+                        sweeper.add(sweeper2);
+                        splitter
+                    } else {
+                        self.recurse(this_axis.next(),par.into_seq(),sweeper,left,splitter);
+                        self.recurse(this_axis.next(),par.into_seq(),sweeper,right,splitter2);
+                        splitter
+                    }
+                };
+
+                splitter.add(splitter2);
+            },
+            None=>{
+                sweeper.node_end();
+                splitter.node_end();
+            }
         }
     }
 }
+
+
 
 
 ///Used for the advanced algorithms.
@@ -216,9 +224,6 @@ pub trait ColMulti{
     type T: HasAabb;
     fn collide(&mut self, a: &mut Self::T, b: &mut Self::T);
 }
-
-
-
 
 
 
@@ -436,7 +441,7 @@ fn inner_query_adv_mut<
     let par=dinotree::advanced::compute_default_level_switch_sequential(height_switch_seq,oo.height());
 
     let oo = oo.with_depth(Depth(0));
-    self::recurse(axis, par, sweeper, oo,splitter);
+    ColFindRecurser::new().recurse(axis, par, sweeper, oo,splitter);
     
 }
 ///See query_adv_mut
@@ -541,7 +546,7 @@ fn inner_query_seq_adv_mut<
     let dt = vistr_mut.with_depth(Depth(0));
     
     
-    self::recurse(axis, par::Sequential, sweeper, dt,splitter);
+    ColFindRecurser::new().recurse(axis, par::Sequential, sweeper, dt,splitter);
     
 }
 
@@ -571,6 +576,6 @@ pub fn query_adv_mut<
     let dt = vistr_mut.with_depth(Depth(0));
     //let mut sweeper = oned::Sweeper::new();
     let mut sweeper=HandleSorted::new(clos);
-    self::recurse(axis, par, &mut sweeper, dt,splitter);
+    ColFindRecurser::new().recurse(axis, par, &mut sweeper, dt,splitter);
     sweeper.func
 }
