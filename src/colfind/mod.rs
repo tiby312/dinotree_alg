@@ -165,7 +165,7 @@ impl<'a,A:AxisTrait,T:HasAabb,N> QueryBuilder<'a,A,T,N>{
         let switch_height=dinotree::advanced::default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
     }
-    pub fn with_switch_height(&mut self,height:usize)->&mut Self{
+    pub fn with_switch_height(mut self,height:usize)->Self{
         self.switch_height=height;
         self
     }
