@@ -21,12 +21,12 @@ fn handle1(fb:&mut FigureBuilder){
 	    let mut bots:Vec<[f64;2]>=s.take(num_bots).collect();
     	
 
-        let mut tree=DinoTree::new(axgeom::XAXISS,(),&bots,|b|{   
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
             ConvF64::from_rect(aabb_from_pointf64(*b,[5.0,5.0]))
-        });
+        }).build_par();
 
         let mut num_intersection=0;
-        colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|_a, _b| {
+        colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_a, _b| {
            num_intersection+=1;
         });
 

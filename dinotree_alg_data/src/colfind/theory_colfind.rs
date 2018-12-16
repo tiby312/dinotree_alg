@@ -44,11 +44,11 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
         let c0={
             let instant=Instant::now();
             
-            let mut tree=DinoTree::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
-            });
+            }).build_par();
 
-            colfind::QueryBuilder::new().query_par(tree.as_ref_mut(),|a, b| {
+            colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
         
@@ -64,11 +64,11 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
         let c1={
             let instant=Instant::now();
 
-            let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
-            });
+            }).build_seq();
 
-            colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
+            colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -135,11 +135,11 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             if num_bots<120000{
                 let instant=Instant::now();
 
-                let mut tree=advanced::NotSorted::new(axgeom::XAXISS,(),&bots,|b|{   
+                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
                     aabb_from_point_isize(b.pos,[5,5])
-                });
+                }).build_not_sorted_par();
 
-                colfind::QueryBuilder::new().query_nosort_par(&mut tree,|a, b| {
+                colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
                     a.inner.num+=1;
                     b.inner.num+=1;
                 });
@@ -159,11 +159,12 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             if num_bots<120000{
                 let instant=Instant::now();
 
-                let mut tree=advanced::NotSorted::new_seq(axgeom::XAXISS,(),&bots,|b|{   
+                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
                     aabb_from_point_isize(b.pos,[5,5])
-                });
+                }).build_not_sorted_seq();
 
-                colfind::QueryBuilder::new().query_nosort_seq(&mut tree,|a, b| {
+
+                colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
                     a.inner.num+=1;
                     b.inner.num+=1;
                 });
@@ -239,12 +240,12 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
         let c1={
             let mut counter=datanum::Counter::new();
 
-            let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),&bots,|b|{
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
                 datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-            });
+            }).build_seq();
 
 
-            colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
+            colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
                 a.inner.num+=2;
                 b.inner.num+=2;
             });
@@ -306,11 +307,11 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
         let c4={
             let mut counter=datanum::Counter::new();
 
-            let mut tree=NotSorted::new_seq(axgeom::XAXISS,(),&bots,|b|{
+            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
                 datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-            });
+            }).build_not_sorted_seq();
 
-            colfind::QueryBuilder::new().query_nosort_seq(&mut tree,|a, b| {
+            colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
                 a.inner.num+=2;
                 b.inner.num+=2;
             });

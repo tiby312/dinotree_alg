@@ -36,15 +36,15 @@ fn test1(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    });
+    }).build_seq();
 
 
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
+    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -64,14 +64,14 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
 
     let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    }).with_switch_seq(rebal_height);
+    }).with_height_switch_seq(rebal_height).build_par();
     
 
 
     let a=instant_to_sec(instant.elapsed());
     
 
-    let _ =colfind::QueryBuilder::new().with_height(query_height).query_par(tree.as_ref_mut(),|a,b|{
+    let _ =colfind::QueryBuilder::new(tree.as_ref_mut()).with_switch_height(query_height).query_par(|a,b|{
         a.inner.num+=1;
         b.inner.num+=1;
     });

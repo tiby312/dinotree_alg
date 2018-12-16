@@ -15,13 +15,13 @@ struct Res{
 fn test1(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-    });
+    }).build_seq();
 
     let mut num_pairs=0;
 
-    colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|_a, _b| {
+    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_a, _b| {
         num_pairs+=1;
     });
 
