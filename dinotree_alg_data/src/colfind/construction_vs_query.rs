@@ -15,13 +15,12 @@ fn test1(bots:&mut [Bot])->(usize,usize){
     
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTree::new_seq(axgeom::XAXISS,(),bots,|b|{
-        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-    });
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))).build_seq();
+
 
     let a=counter.into_inner();
 
-    colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
+    colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -46,7 +45,7 @@ fn test11(bots:&mut [Bot])->(usize,usize){
 
     let a=counter.into_inner();
 
-    colfind::query_nosort_seq_mut(&mut tree,|a, b| {
+    colfind::QueryBuilder::new().query_nosort_seq(&mut tree,|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -74,7 +73,7 @@ fn test2(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
+    colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -100,7 +99,7 @@ fn test3(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::query_mut(tree.as_ref_mut(),|a, b| {
+    colfind::QueryBuilder::new().query_par(tree.as_ref_mut(),|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -127,7 +126,7 @@ fn test4(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::query_nosort_seq_mut(&mut tree,|a, b| {
+    colfind::QueryBuilder::new().query_nosort_seq(&mut tree,|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -153,7 +152,7 @@ fn test5(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::query_nosort_mut(&mut tree,|a, b| {
+    colfind::QueryBuilder::new().query_nosort_par(&mut tree,|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });

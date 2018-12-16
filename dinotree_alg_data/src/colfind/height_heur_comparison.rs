@@ -16,11 +16,10 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
         
         let instant=Instant::now();
     
-        let mut tree=dinotree::advanced::new_adv_seq(None,axgeom::XAXISS,(),bots,|b|{
-            aabb_from_point_isize(b.pos,[5,5]) 
-        },Some(height),&mut SplitterEmpty);
+        let func=|b|{aabb_from_point_isize(b.pos,[5,5])};
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,func).with_height(height).build_seq();
 
-        colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
+        colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
             a.inner.num+=2;
             b.inner.num+=2;            
         });
@@ -43,11 +42,11 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
         let mut counter=datanum::Counter::new();
 
 
-        let mut tree=dinotree::advanced::new_adv_seq(None,axgeom::XAXISS,(),bots,|b|{
-            datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-        },Some(height),&mut SplitterEmpty);
 
-        colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
+        let func=|b|{datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))};
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,func).with_height(height).build_seq();
+
+        colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
             a.inner.num+=2;
             b.inner.num+=2;            
         });

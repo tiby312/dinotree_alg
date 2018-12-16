@@ -7,6 +7,7 @@ pub struct Bot{
 }
 
 
+/*
 struct Bo{}
 impl colfind::ColMulti for Bo{
     type T=BBox<isize,Bot>;
@@ -25,7 +26,7 @@ impl Splitter for Bo{
     fn node_start(&mut self){}
     fn node_end(&mut self){}
 }
-
+*/
 
 
 
@@ -43,7 +44,7 @@ fn test1(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
+    colfind::QueryBuilder::new().query_seq(tree.as_ref_mut(),|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -61,15 +62,19 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=dinotree::advanced::new_adv(None,axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    },None,&mut SplitterEmpty,Some(rebal_height));
+    }).with_switch_seq(rebal_height);
+    
 
 
     let a=instant_to_sec(instant.elapsed());
     
 
-    let _ =colfind::query_adv_mut(tree.as_ref_mut(),Bo{},&mut SplitterEmpty,Some(query_height));
+    let _ =colfind::QueryBuilder::new().with_height(query_height).query_par(tree.as_ref_mut(),|a,b|{
+        a.inner.num+=1;
+        b.inner.num+=1;
+    });
 
     tree.apply(bots,|a,b|{
         b.num=a.inner.num;

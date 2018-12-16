@@ -15,10 +15,11 @@ fn test1(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-   
-    let mut tree=advanced::new_adv(Some(RebalStrat::First),axgeom::XAXISS,(),bots,|b|{
+    
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    },None,&mut SplitterEmpty,None);
+    }).with_rebal_strat(RebalStrat::First).build_par();
+    
 
     black_box(tree);
 
@@ -32,10 +33,11 @@ fn test2(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=advanced::new_adv(Some(RebalStrat::Second),axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    },None,&mut SplitterEmpty,None);
-
+    }).with_rebal_strat(RebalStrat::Second).build_par();
+    
+    
     black_box(tree);
 
     let a=instant_to_sec(instant.elapsed());
@@ -49,10 +51,11 @@ fn test3(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=advanced::new_adv_seq(Some(RebalStrat::First),axgeom::XAXISS,(),bots,|b|{
-       aabb_from_point_isize(b.pos,[5,5])  
-    },None,&mut SplitterEmpty);
-
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+        aabb_from_point_isize(b.pos,[5,5])  
+    }).with_rebal_strat(RebalStrat::First).build_seq();
+    
+    
     black_box(tree);
 
     let a=instant_to_sec(instant.elapsed());
@@ -66,9 +69,11 @@ fn test4(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=advanced::new_adv_seq(Some(RebalStrat::Second),axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    },None,&mut SplitterEmpty);
+    }).with_rebal_strat(RebalStrat::Second).build_seq();
+    
+    
 
     black_box(tree);
 
@@ -82,10 +87,11 @@ fn test5(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-   
-    let mut tree=advanced::new_adv(Some(RebalStrat::Third),axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    },None,&mut SplitterEmpty,None);
+    }).with_rebal_strat(RebalStrat::Third).build_par();
+    
+    
 
     black_box(tree);
 
@@ -101,10 +107,11 @@ fn test6(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-   
-    let mut tree=advanced::new_adv_seq(Some(RebalStrat::Third),axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    },None,&mut SplitterEmpty);
+    }).with_rebal_strat(RebalStrat::Third).build_seq();
+    
+    
 
     black_box(tree);
 
