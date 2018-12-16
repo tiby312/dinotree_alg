@@ -39,13 +39,13 @@ pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(tree:DinoTreeRef<A,
                     None=>{}
                 }
                 match recc(axis.next(),func,right,tr){
-                    Some(ans)=>return Some(ans),
-                    None=>return None
+                    Some(ans)=>Some(ans),
+                    None=>None
                 }
                 
             },
             None=>{
-                return None
+                None
             }
         }
    }

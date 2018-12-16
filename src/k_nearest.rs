@@ -186,11 +186,7 @@ macro_rules! knearest_recc{
         fn traverse_other<K:Knearest>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::N,div:K::N)->bool{
             match res.full_and_max_distance(){
                 Some(max)=>{
-                    if k.oned_check(pp,div)<max{
-                        true
-                    }else{
-                        false
-                    }
+                    k.oned_check(pp,div)<max
                 },
                 None=>{
                     true
@@ -212,7 +208,7 @@ macro_rules! knearest_recc{
 
             match rest{
                 Some((extra,left,right))=>{
-                    let &FullComp{div,cont:_}=match extra{
+                    let &FullComp{div,..}=match extra{
                         Some(b)=>b,
                         None=>return
                     };
@@ -358,13 +354,10 @@ mod con{
         for b in bots{
             let d=k.twod_check(point,b);
 
-            match closest.full_and_max_distance(){
-                Some(dis)=>{
-                    if d>dis{
-                        continue;
-                    }
-                },
-                None=>{}
+            if let Some(dis)=closest.full_and_max_distance(){    
+                if d>dis{
+                    continue;
+                }
             }
 
             closest.consider((b,d));
@@ -386,13 +379,10 @@ mod mutable{
         for b in bots{
             let d=k.twod_check(point,b);
 
-            match closest.full_and_max_distance(){
-                Some(dis)=>{
-                    if d>dis{
-                        continue;
-                    }
-                },
-                None=>{}
+            if let Some(dis)= closest.full_and_max_distance(){
+                if d>dis{
+                    continue;
+                }
             }
 
             closest.consider((b,d));

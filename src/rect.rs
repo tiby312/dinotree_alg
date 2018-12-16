@@ -37,7 +37,7 @@ macro_rules! rect{
             let (nn,rest)=m.next();
             match rest{
                 Some((extra,left,right))=>{
-                    let &FullComp{div,cont:_}=match extra{
+                    let &FullComp{div,..}=match extra{
                         Some(b)=>b,
                         None=>return
                     };
@@ -81,7 +81,7 @@ pub fn for_all_not_in_rect_mut<A:AxisTrait,T:HasAabb>(mut tree:DinoTreeRefMut<A,
         
         match rest{
             Some((extra,left,right))=>{
-                let &FullComp{div,cont:_}=match extra{
+                let &FullComp{div,..}=match extra{
                     Some(b)=>b,
                     None=>return closure,
                 };

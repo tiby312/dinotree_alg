@@ -101,7 +101,7 @@ impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> NotSortedQueryBuilder<'a,A,T,N>{
         let switch_height=default_level_switch_sequential();
         NotSortedQueryBuilder{switch_height,tree}
     }
-    pub fn query_par(mut self,func:impl Fn(&mut T,&mut T)+Copy+Send){
+    pub fn query_par(self,func:impl Fn(&mut T,&mut T)+Copy+Send){
         let mut tree=self.tree.0.as_ref_mut();
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleNoSorted::new(b);
@@ -113,7 +113,7 @@ impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> NotSortedQueryBuilder<'a,A,T,N>{
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
     }
 
-    pub fn query_seq(mut self,func:impl FnMut(&mut T,&mut T)){
+    pub fn query_seq(self,func:impl FnMut(&mut T,&mut T)){
         let b=inner::QueryFnMut::new(func);
     
         let mut sweeper=HandleNoSorted::new(b);
@@ -170,14 +170,14 @@ impl<'a,A:AxisTrait,T:HasAabb,N> QueryBuilder<'a,A,T,N>{
         self
     }
     
-    pub fn query_seq(mut self,func:impl FnMut(&mut T,&mut T)){
+    pub fn query_seq(self,func:impl FnMut(&mut T,&mut T)){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleSorted::new(b);
         let mut splitter=SplitterEmpty;
         inner_query_seq_adv_mut(self.tree,&mut splitter,&mut sweeper);
     }
 
-    pub fn query_with_splitter_seq(mut self,func:impl FnMut(&mut T,&mut T),splitter:&mut impl Splitter){
+    pub fn query_with_splitter_seq(self,func:impl FnMut(&mut T,&mut T),splitter:&mut impl Splitter){
 
         let b=inner::QueryFnMut::new(func);
         
@@ -245,11 +245,12 @@ fn inner_query_seq_adv_mut<
             type T=Wrap<T::T>;
             fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut [Self::T])
             {
-                let bots:&mut [T::T]=unsafe{std::mem::transmute(bots)};
+                //let bots:&mut [T::T]=unsafe{std::mem::transmute(bots)};
+                let bots:&mut [T::T]=unsafe{&mut *(bots as *mut [Wrap<T::T>] as *mut [T::T])};
                 self.0.handle_node(axis,bots);
             }
             fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,
-                mut anchor:&mut DestructuredNode<Self::T,A>,
+                anchor:&mut DestructuredNode<Self::T,A>,
                 current:&mut DestructuredNodeLeaf<Self::T,B>){
 
                 let anchor:&mut DestructuredNode<T::T,A>=unsafe{&mut *((anchor as *mut DestructuredNode<Self::T,A>) as *mut DestructuredNode<T::T,A>)};
@@ -277,15 +278,16 @@ fn inner_query_seq_adv_mut<
     }
 
     
-    let splitter:&mut wrap::SplitterWrapper<K>=unsafe{std::mem::transmute(splitter)};
+    //let splitter:&mut wrap::SplitterWrapper<K>=unsafe{std::mem::transmute(splitter)};
+    let splitter:&mut wrap::SplitterWrapper<K>=unsafe{&mut *(splitter as *mut K as *mut wrap::SplitterWrapper<K>)};
 
     let axis=tree.axis();
 
     let dt=tree.vistr_mut();    
     let vistr_mut:VistrMut<wrap::Wrap<N>,wrap::Wrap<T>>=unsafe{std::mem::transmute(dt)};
     
-    let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
-
+    //let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
+    let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{&mut *(sweeper as *mut S as *mut wrap::NodeHandlerWrapper<S>)};
 
     let dt = vistr_mut.with_depth(Depth(0));
     

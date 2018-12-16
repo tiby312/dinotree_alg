@@ -29,6 +29,11 @@ pub struct Sweeper<T: HasAabb> {
     helper: tools::PreVecMut<T>,
 }
 
+impl<T:HasAabb> std::default::Default for Sweeper<T>{
+    fn default()->Sweeper<T>{
+        Sweeper::new()
+    }
+}
 impl<I: HasAabb> Sweeper<I> {
     pub fn new() -> Sweeper<I> {
         Sweeper {
@@ -158,11 +163,14 @@ impl<I: HasAabb> Sweeper<I> {
                     active.retain(|that_bot| {
                         let brr = that_bot.get().get_range(axis);
 
+                        brr.right >= crr.left
+                        /*
                         if brr.right < crr.left {
                             false
                         } else {
                             true
                         }
+                        */
                     });
                 }
 
@@ -200,6 +208,8 @@ impl<I: HasAabb> Sweeper<I> {
             
             //Prune all the x's that are no longer touching the y.
             active_x.retain(|x| {
+                x.get().get_range(axis).right >= y.get().get_range(axis).left
+                /*
                 if x.get().get_range(axis).right
                     < y.get().get_range(axis).left
                 {
@@ -207,6 +217,7 @@ impl<I: HasAabb> Sweeper<I> {
                 } else {
                     true
                 }
+                */
             });
 
             //So at this point some of the x's could actualy not intersect y.
@@ -244,6 +255,8 @@ impl<I: HasAabb> Sweeper<I> {
             
             //Prune all the x's that are no longer touching the y.
             active_x.retain(|x| {
+                x.get().get_range(axis).right >= y.get().get_range(axis).left
+                /*
                 if x.get().get_range(axis).right
                     < y.get().get_range(axis).left
                 {
@@ -251,6 +264,7 @@ impl<I: HasAabb> Sweeper<I> {
                 } else {
                     true
                 }
+                */
             });
 
             //So at this point some of the x's could actualy not intersect y.
@@ -362,7 +376,7 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Rang
         }
     }
 
-    return &arr[start..end];
+    &arr[start..end]
 }
 
 //this can have some false positives.
@@ -386,8 +400,5 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut [I], rang
         }
     }
 
-    
-    let a=&mut arr[start..end];
-    
-    return a;
+    &mut arr[start..end]
 }

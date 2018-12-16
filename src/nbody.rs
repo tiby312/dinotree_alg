@@ -153,7 +153,7 @@ fn buildtree<'a,
                         recc(axis.next(),left,ncontext,rect);    
                         recc(axis.next(),right,ncontext,rect);
                     },
-                    Some(FullComp{div,cont:_})=>{
+                    Some(FullComp{div,..})=>{
                         let (l,r)=rect.subdivide(axis,*div);
 
                         let nodeb={
@@ -196,21 +196,16 @@ fn apply_tree<'a,
         let (nn,rest)=stuff.next();
         match rest{
             Some((extra,mut left,mut right))=>{
-                match extra{
-                    Some(_)=>{
-                        {
-                            let left=left.create_wrap_mut();
-                            let right=right.create_wrap_mut();
-                                                    
-                            let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
-                            let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
-                            let i3=nn.range.iter_mut().chain(i1.chain(i2));
-                            
-                            ncontext.apply_to_bots(nn.misc,i3);
-                        }
-                    },
-                    None=>{}
-                };
+                if extra.is_some(){        
+                    let left=left.create_wrap_mut();
+                    let right=right.create_wrap_mut();
+                                            
+                    let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
+                    let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
+                    let i3=nn.range.iter_mut().chain(i1.chain(i2));
+                    
+                    ncontext.apply_to_bots(nn.misc,i3);
+                }
 
                 recc(left,ncontext);
                 recc(right,ncontext);
@@ -296,11 +291,11 @@ fn handle_anchor_with_children<'a,
         }
     }
     {
-        let mut bo= BoLeft{_anchor_axis:anchor.axis,_p:PhantomData,ncontext:ncontext};
+        let mut bo= BoLeft{_anchor_axis:anchor.axis,_p:PhantomData,ncontext};
         bo.generic_rec2(thisa,anchor,left);  
     }
     {
-        let mut bo= BoRight{_anchor_axis:anchor.axis,_p:PhantomData,ncontext:ncontext};
+        let mut bo= BoRight{_anchor_axis:anchor.axis,_p:PhantomData,ncontext};
         bo.generic_rec2(thisa,anchor,right);  
     }
 }
@@ -399,7 +394,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
     let ((depth,nn),rest)=it.next();
     match rest{
         Some((extra,mut left,mut right))=>{
-            let &FullComp{div,cont:_}=match extra{
+            let &FullComp{div,..}=match extra{
                 Some(b)=>b,
                 None=>return
             };
@@ -410,7 +405,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
                 let depth=left.depth;
                 let l1=left.inner.create_wrap_mut().with_depth(depth);
                 let l2=right.inner.create_wrap_mut().with_depth(depth);
-                let mut anchor=Anchor{axis:axis,range:nn.range,div};
+                let mut anchor=Anchor{axis,range:nn.range,div};
 
                 handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,ncontext);
             }
@@ -429,7 +424,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
                     
                 let l1=left.inner.create_wrap_mut().with_depth(depth);
                 let l2=right.inner.create_wrap_mut().with_depth(depth);
-                let mut anchor=Anchor{axis:axis,range:nn.range,div};
+                let mut anchor=Anchor{axis,range:nn.range,div};
 
                 handle_left_with_right(axis.next(),&mut anchor,l1,l2,ncontext);
             }
@@ -474,16 +469,14 @@ trait Bok2{
 
         let ((_depth,nn),rest)=stuff.next();
         
-        if this_axis.is_equal_to(anchor.axis){
-            if self.is_far_enough(this_axis,anchor,&nn.misc){
-                self.handle_node_far_enough(this_axis,nn.misc,anchor);
-                return;
-            }        
+        if this_axis.is_equal_to(anchor.axis) && self.is_far_enough(this_axis,anchor,&nn.misc){
+            self.handle_node_far_enough(this_axis,nn.misc,anchor);
+            return;
         }
 
         match rest{
             Some((extra,left,right))=>{
-                let &FullComp{div:_,cont:_}=match extra{
+                let &FullComp{..}=match extra{
                     Some(b)=>b,
                     None=>return
                 };

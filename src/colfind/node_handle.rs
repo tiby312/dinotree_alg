@@ -83,13 +83,9 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
             Some(current_fullcomp)=>{
                 if !current.axis.is_equal_to(anchor.axis) {
                     true
-                } else {
-                    if current_fullcomp.cont.intersects(&anchor.fullcomp.cont){
-                        true
-                    }else{
-                        false
-                    }
-                }
+                } else{
+                    current_fullcomp.cont.intersects(&anchor.fullcomp.cont)
+                } 
             },
             None=>{
                 true
@@ -179,16 +175,15 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                         }else{
                             self.sweeper.find_perp_2d1(r1,r2,func);
                         }
-                } else {
-                    if current_fullcomp.cont.intersects(&anchor.fullcomp.cont){
-                        self.sweeper.find_parallel_2d(
-                            current.axis.next(),
-                            current.range,
-                            anchor.range,
-                            func,
-                        );
-                    }
+                } else if current_fullcomp.cont.intersects(&anchor.fullcomp.cont){
+                    self.sweeper.find_parallel_2d(
+                        current.axis.next(),
+                        current.range,
+                        anchor.range,
+                        func,
+                    );
                 }
+            
             },
             None=>{
                 if !current.axis.is_equal_to(anchor.axis) {

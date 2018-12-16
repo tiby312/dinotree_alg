@@ -39,10 +39,10 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
                 
                 //This can be evaluated at compile time!
                 if this_axis.is_equal_to(anchor_axis) {
-                    if !(fullcomp.div < self.anchor.fullcomp.cont.left) {
+                    if fullcomp.div >= self.anchor.fullcomp.cont.left {
                         self.go_down(this_axis.next(), left);
-                    };
-                    if !(fullcomp.div > self.anchor.fullcomp.cont.right) {
+                    };//TODO can be else if?
+                    if fullcomp.div <= self.anchor.fullcomp.cont.right {
                         self.go_down(this_axis.next(), right);
                     };
                 } else {
