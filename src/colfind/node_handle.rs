@@ -3,6 +3,24 @@ use crate::inner_prelude::*;
 use crate::colfind::ColMulti;
 use crate::colfind::oned;
 
+
+
+
+pub struct DestructuredNode<'a,T:HasAabb,AnchorAxis:AxisTrait>{
+    pub fullcomp:&'a FullComp<T::Num>,
+    pub range:&'a mut [T],
+    pub axis:AnchorAxis
+}
+
+pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:AxisTrait>{
+    pub fullcomp:Option<&'a FullComp<T::Num>>,
+    pub range:&'a mut [T],
+    pub axis:A
+}
+
+
+
+
 pub trait NodeHandler{
     type T:HasAabb;
     
@@ -12,10 +30,10 @@ pub trait NodeHandler{
         bots:&mut [Self::T]
     );
 
-    fn handle_children(
+    fn handle_children<A:AxisTrait,B:AxisTrait>(
         &mut self,
-        anchor:(impl AxisTrait,&mut [Self::T],&Range<<Self::T as HasAabb>::Num>),
-        current:(impl AxisTrait,&mut [Self::T],Option<&Range<<Self::T as HasAabb>::Num>>)
+        anchor:&mut DestructuredNode<Self::T,A>,
+        current:&mut DestructuredNodeLeaf<Self::T,B>
     );
 }
 
@@ -54,17 +72,19 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
             }
         });
     }
-    fn handle_children(&mut self,anchor:(impl AxisTrait,&mut [Self::T],&Range<<K::T as HasAabb>::Num>),current:(impl AxisTrait,&mut [Self::T],Option<&Range<<K::T as HasAabb>::Num>>)){
-        let (this_axis,this_range,cont)=current;
-        let (anchor_axis,anchor_range,anchor_box)=anchor;
+    fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
+        //let &mut DestructuredNode{fullcomp,range:anchor_range,axis:anchor_axis,}=anchor;
+
+        //let (this_axis,this_range,cont)=current;
+        //let (anchor_axis,anchor_range,anchor_box)=anchor;
         let func=&mut self.func;
         
-        let res=match cont{
-            Some(cont)=>{
-                if !this_axis.is_equal_to(anchor_axis) {
+        let res=match current.fullcomp{
+            Some(current_fullcomp)=>{
+                if !current.axis.is_equal_to(anchor.axis) {
                     true
                 } else {
-                    if cont.intersects(anchor_box){
+                    if current_fullcomp.cont.intersects(&anchor.fullcomp.cont){
                         true
                     }else{
                         false
@@ -77,8 +97,8 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
         };
 
         if res{
-            for a in this_range.iter_mut(){
-                for b in anchor_range.iter_mut(){
+            for a in current.range.iter_mut(){
+                for b in anchor.range.iter_mut(){
                     //if a.get().get_intersect_rect(b.get()).is_some(){
                     if a.get().intersects_rect(b.get()){
                         func.collide(a,b);
@@ -138,49 +158,51 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
         let func=&mut self.func;
         self.sweeper.find_2d(axis,bots,func);
     }
-    fn handle_children(&mut self,anchor:(impl AxisTrait,&mut [Self::T],&Range<<K::T as HasAabb>::Num>),current:(impl AxisTrait,&mut [Self::T],Option<&Range<<K::T as HasAabb>::Num>>)){
-        let (this_axis,this_range,cont)=current;
-        let (anchor_axis,anchor_range,anchor_box)=anchor;
+    fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
+        //let (this_axis,this_range,cont)=current;
+        //let &mut DestructuredNode{fullcomp,range:anchor_range,axis:anchor_axis,}=anchor;
+
+        //let (anchor_axis,anchor_range,anchor_box)=anchor;
         let func=&mut self.func;
-        match cont{
-            Some(cont)=>{
-                if !this_axis.is_equal_to(anchor_axis) {
-                        let r1 = oned::get_section_mut(anchor_axis,this_range, anchor_box);
-                        let r2= oned::get_section_mut(this_axis,anchor_range,cont);   
+        match current.fullcomp{
+            Some(current_fullcomp)=>{
+                if !current.axis.is_equal_to(anchor.axis) {
+                        let r1 = oned::get_section_mut(anchor.axis,current.range, &anchor.fullcomp.cont);
+                        let r2= oned::get_section_mut(current.axis,anchor.range,&current_fullcomp.cont);   
 
                         //TODO document this!!!!!!!!!!!!!
                         if r1.len()*r2.len()>64{
                             let mut bots2:Vec<_>=r2.iter_mut().map(|a|WrapT{inner:a}).collect();
-                            dinotree::advanced::sweeper_update(anchor_axis,&mut bots2);
-                            self.sweeper.find_parallel_2d_ptr(this_axis.next(),r1,&mut bots2,func);
+                            dinotree::advanced::sweeper_update(anchor.axis,&mut bots2);
+                            self.sweeper.find_parallel_2d_ptr(current.axis.next(),r1,&mut bots2,func);
 
                         }else{
                             self.sweeper.find_perp_2d1(r1,r2,func);
                         }
                 } else {
-                    if cont.intersects(anchor_box){
+                    if current_fullcomp.cont.intersects(&anchor.fullcomp.cont){
                         self.sweeper.find_parallel_2d(
-                            this_axis.next(),
-                            this_range,
-                            anchor_range,
+                            current.axis.next(),
+                            current.range,
+                            anchor.range,
                             func,
                         );
                     }
                 }
             },
             None=>{
-                if !this_axis.is_equal_to(anchor_axis) {
+                if !current.axis.is_equal_to(anchor.axis) {
 
-                    let r1 =oned::get_section_mut(anchor_axis,this_range, anchor_box);
-                    let r2= anchor_range;
+                    let r1 =oned::get_section_mut(anchor.axis,current.range, &anchor.fullcomp.cont);
+                    
 
-                    self.sweeper.find_perp_2d2(r1,r2,func);
+                    self.sweeper.find_perp_2d2(r1,anchor.range,func);
 
                 } else {
                     self.sweeper.find_parallel_2d(
-                        this_axis.next(),
-                        this_range,
-                        anchor_range,
+                        current.axis.next(),
+                        current.range,
+                        anchor.range,
                         func,
                     );
                 }

@@ -29,19 +29,20 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
 
         match rest{
             Some((extra,left,right))=>{
-                let &FullComp{div,cont}=match extra{
+                let fullcomp=match extra{
                     Some(d)=>d,
                     None=>return
                 };
                 
-                self.sweeper.handle_children((anchor_axis,&mut self.anchor.range,&self.anchor.cont),(this_axis,nn.range,Some(&cont)));
+                let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.range,fullcomp:Some(fullcomp)};
+                self.sweeper.handle_children(&mut self.anchor,&mut current);
                 
                 //This can be evaluated at compile time!
                 if this_axis.is_equal_to(anchor_axis) {
-                    if !(div < self.anchor.cont.left) {
+                    if !(fullcomp.div < self.anchor.fullcomp.cont.left) {
                         self.go_down(this_axis.next(), left);
                     };
-                    if !(div > self.anchor.cont.right) {
+                    if !(fullcomp.div > self.anchor.fullcomp.cont.right) {
                         self.go_down(this_axis.next(), right);
                     };
                 } else {
@@ -50,7 +51,9 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
                 }
             },
             None=>{
-                self.sweeper.handle_children((anchor_axis,&mut self.anchor.range,&self.anchor.cont),(this_axis,nn.range,None));
+                let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.range,fullcomp:None};
+                self.sweeper.handle_children(&mut self.anchor,&mut current);
+            
             }
         }
     }
@@ -61,15 +64,6 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
 
 
 
-
-
-
-struct DestructuredNode<'a,T:HasAabb+'a,AnchorAxis:AxisTrait+'a>{
-    cont:Range<T::Num>,
-    _div:T::Num,
-    range:&'a mut [T],
-    axis:AnchorAxis
-}
 
 
 pub struct ColFindRecurser<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send,N:Send>{
@@ -90,7 +84,7 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send,N:Send> Col
                     
         match rest{
             Some((extra,mut left,mut right))=>{
-                let &FullComp{div,cont}=match extra{
+                let fullcomp=match extra{
                     Some(d)=>d,
                     None=>{
                         sweeper.node_end();
@@ -100,7 +94,7 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send,N:Send> Col
                 };
                 
 
-                let nn=DestructuredNode{range:nn.range,cont,_div:div,axis:this_axis};
+                let nn=DestructuredNode{range:nn.range,fullcomp,axis:this_axis};
                 {
                     let left=left.inner.create_wrap_mut();
                     let right=right.inner.create_wrap_mut();

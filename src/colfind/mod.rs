@@ -248,16 +248,14 @@ fn inner_query_seq_adv_mut<
                 let bots:&mut [T::T]=unsafe{std::mem::transmute(bots)};
                 self.0.handle_node(axis,bots);
             }
-            fn handle_children(&mut self,
-                anchor:(impl AxisTrait,&mut [Self::T],&Range<<Self::T as HasAabb>::Num>),
-                current:(impl AxisTrait,&mut [Self::T],Option<&Range<<Self::T as HasAabb>::Num>>)){
-                let (a,b,c)=anchor;
-                let (d,e,f)=current;
+            fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,
+                mut anchor:&mut DestructuredNode<Self::T,A>,
+                current:&mut DestructuredNodeLeaf<Self::T,B>){
 
-                let anchor:&mut [T::T]=unsafe{std::mem::transmute(b)};
-                let current:&mut [T::T]=unsafe{std::mem::transmute(e)};
+                let anchor:&mut DestructuredNode<T::T,A>=unsafe{&mut *((anchor as *mut DestructuredNode<Self::T,A>) as *mut DestructuredNode<T::T,A>)};
+                let current:&mut DestructuredNodeLeaf<T::T,B>=unsafe{&mut *((current as *mut DestructuredNodeLeaf<Self::T,B>) as *mut DestructuredNodeLeaf<T::T,B>)};
 
-                self.0.handle_children((a,anchor,c),(d,current,f));
+                self.0.handle_children(anchor,current);
             }
         }
         impl<T:NodeHandler+Splitter> Splitter for NodeHandlerWrapper<T>{
