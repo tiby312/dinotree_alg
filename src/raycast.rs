@@ -191,17 +191,14 @@ macro_rules! raycast{
                         
                         match closest.get_dis(){
                             Some(dis)=>{
-                                match rtrait.compute_distance_to_line(axis,div){
-                                    Some(dis2)=>{
-                                        if dis2<=dis{
-                                            recc(axis_next,second.0,rtrait,second.1,closest);
-                                        }else{
-                                            //We get to skip here
-                                        }
-                                    },
-                                    None=>{
-                                        //Ray doesnt intersect other side??
+                                if let Some(dis2)=rtrait.compute_distance_to_line(axis,div){
+                                    if dis2<=dis{
+                                        recc(axis_next,second.0,rtrait,second.1,closest);
+                                    }else{
+                                        //We get to skip here
                                     }
+                                }else{
+                                    //ray doesnt intersect?
                                 }
                             },
                             None=>{

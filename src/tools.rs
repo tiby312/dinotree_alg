@@ -58,7 +58,7 @@ impl<T> PreVecMut<T> {
     pub fn get_empty_vec_mut<'a,'b:'a>(&'a mut self) -> &'a mut Vec<&'b mut T> {
         self.vec.clear();
         let v: &mut Vec<Unique<T>> = &mut self.vec;
-        unsafe { std::mem::transmute(v) }
+        unsafe{&mut *(v as *mut Vec<Unique<T>> as *mut Vec<&'b mut T>)}
     }
 }
 

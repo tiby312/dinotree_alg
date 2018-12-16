@@ -34,13 +34,13 @@ pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(tree:DinoTreeRef<A,
                 tl.push(Dir::Left);
                 tr.push(Dir::Right);
                 
-                match recc(axis.next(),func,left,tl){
-                    Some(ans)=>return Some(ans),
-                    None=>{}
+                if let Some(ans)= recc(axis.next(),func,left,tl){
+                    return Some(ans);
                 }
-                match recc(axis.next(),func,right,tr){
-                    Some(ans)=>Some(ans),
-                    None=>None
+                if let Some(ans) = recc(axis.next(),func,right,tr){
+                    Some(ans)
+                }else{
+                    None
                 }
                 
             },

@@ -48,7 +48,7 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 
 
 ///Starts a multi rect mut sessions.
-pub fn multi_rect_mut<'a,A:AxisTrait,T:HasAabb>(tree:DinoTreeRefMut<'a,A,(),T>)->MultiRectMut<'a,A,T>{
+pub fn multi_rect_mut<A:AxisTrait,T:HasAabb>(tree:DinoTreeRefMut<A,(),T>)->MultiRectMut<A,T>{
 	MultiRectMut{tree,rects:SmallVec::new()}
 }
 

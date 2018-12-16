@@ -642,7 +642,7 @@ pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(mut t1:DinoTreeRefMut<A,N::No,N::T>
     let mut ncontext=Wrapper(ncontext);
 
     let t1:&mut DinoTreeRefMut<A,N::No,N::T>=&mut t1;
-    let t1:&mut DinoTreeRefMut<A,Wrap<N::No>,Wrap<N::T>>=unsafe{std::mem::transmute(t1)};
+    let t1:&mut DinoTreeRefMut<A,Wrap<N::No>,Wrap<N::T>>=unsafe{&mut *(t1 as *mut DinoTreeRefMut<A,N::No,N::T> as *mut DinoTreeRefMut<A,Wrap<N::No>,Wrap<N::T>>)};
 
 
     buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
