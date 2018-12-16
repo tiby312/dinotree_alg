@@ -122,7 +122,7 @@ pub use self::constant::for_all_in_rect;
 
 
 mod mutable{
-    use crate::oned::get_section_mut;
+    use crate::colfind::oned::get_section_mut;
     use super::*;
 
     rect!(VistrMut<(),T>,&mut T,get_section_mut);
@@ -186,7 +186,7 @@ mod mutable{
 }
 mod constant{
 
-    use crate::oned::get_section;
+    use crate::colfind::oned::get_section;
     use super::*;
     rect!(Vistr<(),T>,&T,get_section);
     //rect!(Vistr<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);

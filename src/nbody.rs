@@ -564,7 +564,8 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(mut 
     buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
 
     {
-        let par=dinotree::advanced::compute_default_level_switch_sequential(None,t1.height());
+        let k=dinotree::advanced::default_level_switch_sequential();
+        let par=dinotree::advanced::compute_default_level_switch_sequential(k,t1.height());
 
         let d=t1.vistr_mut().with_depth(Depth(0));
         recc(par,axis,d,&mut ncontext);    

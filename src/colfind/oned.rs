@@ -1,6 +1,6 @@
 use crate::inner_prelude::*;
 use crate::colfind::ColMulti;
-use crate::node_handle::WrapT;
+use crate::colfind::node_handle::WrapT;
 
 struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
     a: &'a mut F,

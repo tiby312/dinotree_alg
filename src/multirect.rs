@@ -11,7 +11,7 @@
 //! If two requested rectangles intersect, an error is returned.
 //!
 use crate::inner_prelude::*;
-
+use crate::colfind::oned;
 
 ///Indicates that the user supplied a rectangle
 ///that intersects with a another one previously queries

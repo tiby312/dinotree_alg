@@ -57,7 +57,6 @@ pub mod graphics;
 
 ///Contains aabb broadphase query code
 pub mod colfind;
-mod node_handle;
 
 ///Allows user to intersect the tree with a seperate group of bots.
 pub mod intersect_with;
@@ -84,9 +83,6 @@ pub mod rect;
 
 ///Contains multirect code.
 pub mod multirect;
-
-///A collection of 1d functions that operate on lists of 2d objects.
-mod oned;
 
 ///Contains misc tools
 mod tools;
