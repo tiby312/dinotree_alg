@@ -91,29 +91,18 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 
-
-
-
-pub struct QueryBuilder<A:AxisTrait,T:HasAabb,N>{
+pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb,N>{
     switch_height:usize,
-    _p:PhantomData<std::sync::Mutex<(A,T,N)>>
+    tree:&'a mut NotSorted<A,N,T>
 }
+impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> NotSortedQueryBuilder<'a,A,T,N>{
 
-
-impl<A:AxisTrait,T:HasAabb+Send,N:Send> QueryBuilder<A,T,N>{
-    pub fn run_par(self,mut tree:DinoTreeRefMut<A,N,T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
-        let b=inner::QueryFn::new(func);
-        let mut sweeper=HandleSorted::new(b);
-
-        let switch_height=self.switch_height;
-        let axis=tree.axis();
-        let oo=tree.vistr_mut();
-        let par=dinotree::advanced::compute_default_level_switch_sequential(switch_height,oo.height());
-        ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
-
+    pub fn new(tree:&'a mut NotSorted<A,N,T>)->NotSortedQueryBuilder<'a,A,T,N>{
+        let switch_height=default_level_switch_sequential();
+        NotSortedQueryBuilder{switch_height,tree}
     }
-    pub fn run_with_no_sort_par(self,tree:&mut NotSorted<A,N,T>,func:impl Fn(&mut T,&mut T)+Copy+Send){
-        let mut tree=tree.0.as_ref_mut();
+    pub fn query_par(mut self,func:impl Fn(&mut T,&mut T)+Copy+Send){
+        let mut tree=self.tree.0.as_ref_mut();
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -124,13 +113,44 @@ impl<A:AxisTrait,T:HasAabb+Send,N:Send> QueryBuilder<A,T,N>{
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
     }
 
+    pub fn query_seq(mut self,func:impl FnMut(&mut T,&mut T)){
+        let b=inner::QueryFnMut::new(func);
+    
+        let mut sweeper=HandleNoSorted::new(b);
+
+        inner_query_seq_adv_mut(self.tree.0.as_ref_mut(),&mut SplitterEmpty,&mut sweeper);
+   
+
+    }
+}
+
+pub struct QueryBuilder<'a,A:AxisTrait,T:HasAabb,N>{
+    switch_height:usize,
+    tree:DinoTreeRefMut<'a,A,N,T>
+    //_p:PhantomData<std::sync::Mutex<(A,T,N)>>
+}
+
+
+impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> QueryBuilder<'a,A,T,N>{
+    pub fn query_par(mut self,func:impl Fn(&mut T,&mut T)+Copy+Send){
+        let b=inner::QueryFn::new(func);
+        let mut sweeper=HandleSorted::new(b);
+
+        let switch_height=self.switch_height;
+        let axis=self.tree.axis();
+        let oo=self.tree.vistr_mut();
+        let par=dinotree::advanced::compute_default_level_switch_sequential(switch_height,oo.height());
+        ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
+
+    }
+
     ///The user has more control using this version of the query.
     ///The splitter will split and add at every level.
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
-    pub fn run_colmulti<C:ColMulti<T=T>+Splitter+Send+Copy>(self,mut tree:DinoTreeRefMut<A,N,T>,clos:C){
-        let axis=tree.axis();
-        let vistr_mut=tree.vistr_mut();
+    pub fn query_splitter<C:ColMulti<T=T>+Splitter+Send+Copy>(mut self,clos:C){
+        let axis=self.tree.axis();
+        let vistr_mut=self.tree.vistr_mut();
 
         let par=dinotree::advanced::compute_default_level_switch_sequential(self.switch_height,vistr_mut.height());
 
@@ -140,39 +160,31 @@ impl<A:AxisTrait,T:HasAabb+Send,N:Send> QueryBuilder<A,T,N>{
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, dt,&mut SplitterEmpty);
     }
 }
-impl<A:AxisTrait,T:HasAabb,N> QueryBuilder<A,T,N>{
-    pub fn new()->QueryBuilder<A,T,N>{
+impl<'a,A:AxisTrait,T:HasAabb,N> QueryBuilder<'a,A,T,N>{
+    pub fn new(tree:DinoTreeRefMut<'a,A,N,T>)->QueryBuilder<'a,A,T,N>{
         let switch_height=dinotree::advanced::default_level_switch_sequential();
-        QueryBuilder{switch_height,_p:PhantomData}
+        QueryBuilder{switch_height,tree}
     }
-    pub fn with_switch_height(&mut self,height:usize){
+    pub fn with_switch_height(&mut self,height:usize)->&mut Self{
         self.switch_height=height;
-    }
-    pub fn run_with_no_sort_seq(self,tree:&mut NotSorted<A,N,T>,func:impl FnMut(&mut T,&mut T)){
-        let b=inner::QueryFnMut::new(func);
-    
-        let mut sweeper=HandleNoSorted::new(b);
-
-        inner_query_seq_adv_mut(tree.0.as_ref_mut(),&mut SplitterEmpty,&mut sweeper);
-   
-
+        self
     }
     
-    pub fn run_seq(self,tree:DinoTreeRefMut<A,N,T>,func:impl FnMut(&mut T,&mut T)){
+    pub fn query_seq(mut self,func:impl FnMut(&mut T,&mut T)){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleSorted::new(b);
         let mut splitter=SplitterEmpty;
-        inner_query_seq_adv_mut(tree,&mut splitter,&mut sweeper);
+        inner_query_seq_adv_mut(self.tree,&mut splitter,&mut sweeper);
     }
 
-    pub fn run_with_splitter_seq(self,tree:DinoTreeRefMut<A,N,T>,func:impl FnMut(&mut T,&mut T),splitter:&mut impl Splitter){
+    pub fn query_with_splitter_seq(mut self,func:impl FnMut(&mut T,&mut T),splitter:&mut impl Splitter){
 
         let b=inner::QueryFnMut::new(func);
         
         let mut sweeper=HandleSorted::new(b);
 
 
-        inner_query_seq_adv_mut(tree,splitter,&mut sweeper);
+        inner_query_seq_adv_mut(self.tree,splitter,&mut sweeper);
     }     
 }
 
