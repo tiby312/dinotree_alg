@@ -1,6 +1,5 @@
 use crate::inner_prelude::*;
 use crate::colfind::ColMulti;
-use crate::colfind::node_handle::WrapT;
 
 struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
     a: &'a mut F,
@@ -22,11 +21,23 @@ impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
 }
 
 
+#[repr(transparent)]
+pub struct WrapT<'a,T:HasAabb+'a>{
+    pub inner:&'a mut T
+}
+
+unsafe impl<'a,T:HasAabb> HasAabb for WrapT<'a,T>{
+    type Num=T::Num;
+    fn get(&self)->&axgeom::Rect<T::Num>{
+        self.inner.get()
+    }
+}
 
 
 ///Provides 1d collision detection.
 pub struct Sweeper<T: HasAabb> {
     helper: tools::PreVecMut<T>,
+    helper2: tools::PreVecMut<T>,
 }
 
 impl<T:HasAabb> std::default::Default for Sweeper<T>{
@@ -38,6 +49,7 @@ impl<I: HasAabb> Sweeper<I> {
     pub fn new() -> Sweeper<I> {
         Sweeper {
             helper: tools::PreVecMut::new(),
+            helper2: tools::PreVecMut::new()
         }
     }
 
@@ -101,11 +113,21 @@ impl<I: HasAabb> Sweeper<I> {
         self.find_bijective_parallel(axis,(bots1, bots2), clos2);
     }
 
-    pub(crate) fn find_perp_2d1<F: ColMulti<T=I>>(&mut self,
+    pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
+        axis:A,
         r1: &mut [F::T],
         r2: &mut [F::T],
         clos2: &mut F){
 
+        let mut bots2:&mut Vec<WrapT<I>>=unsafe{&mut *(self.helper2.get_empty_vec_mut() as *mut Vec<&mut I> as *mut Vec<WrapT<I>>)};
+        for b in r2.iter_mut().map(|a|WrapT{inner:a}){
+            bots2.push(b);
+        }
+
+        dinotree::advanced::sweeper_update(axis,&mut bots2);
+        self.find_parallel_2d_ptr(axis,r1,&mut bots2,clos2);
+
+        /*
         for inda in r1.iter_mut() {
             for indb in r2.iter_mut() {
                 if inda.get().intersects_rect(indb.get()){
@@ -114,7 +136,9 @@ impl<I: HasAabb> Sweeper<I> {
                 }
             }
         }
+        */
     }
+    /*
     pub(crate) fn find_perp_2d2<F: ColMulti<T=I>>(&mut self,
         r1: &mut [F::T],
         r2: &mut [F::T],
@@ -129,6 +153,7 @@ impl<I: HasAabb> Sweeper<I> {
             }
         }
     }
+    */
 
 
 

@@ -91,13 +91,13 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 
-pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb,N>{
+pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
-    tree:&'a mut NotSorted<A,N,T>
+    tree:&'a mut NotSorted<A,(),T>
 }
-impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> NotSortedQueryBuilder<'a,A,T,N>{
+impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
 
-    pub fn new(tree:&'a mut NotSorted<A,N,T>)->NotSortedQueryBuilder<'a,A,T,N>{
+    pub fn new(tree:&'a mut NotSorted<A,(),T>)->NotSortedQueryBuilder<'a,A,T>{
         let switch_height=default_level_switch_sequential();
         NotSortedQueryBuilder{switch_height,tree}
     }
@@ -124,14 +124,14 @@ impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> NotSortedQueryBuilder<'a,A,T,N>{
     }
 }
 
-pub struct QueryBuilder<'a,A:AxisTrait,T:HasAabb,N>{
+pub struct QueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
-    tree:DinoTreeRefMut<'a,A,N,T>
+    tree:DinoTreeRefMut<'a,A,(),T>
     //_p:PhantomData<std::sync::Mutex<(A,T,N)>>
 }
 
 
-impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> QueryBuilder<'a,A,T,N>{
+impl<'a,A:AxisTrait,T:HasAabb+Send> QueryBuilder<'a,A,T>{
     pub fn query_par(mut self,func:impl Fn(&mut T,&mut T)+Copy+Send){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -160,8 +160,8 @@ impl<'a,A:AxisTrait,T:HasAabb+Send,N:Send> QueryBuilder<'a,A,T,N>{
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, dt,&mut SplitterEmpty);
     }
 }
-impl<'a,A:AxisTrait,T:HasAabb,N> QueryBuilder<'a,A,T,N>{
-    pub fn new(tree:DinoTreeRefMut<'a,A,N,T>)->QueryBuilder<'a,A,T,N>{
+impl<'a,A:AxisTrait,T:HasAabb> QueryBuilder<'a,A,T>{
+    pub fn new(tree:DinoTreeRefMut<'a,A,(),T>)->QueryBuilder<'a,A,T>{
         let switch_height=dinotree::advanced::default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
     }
@@ -195,9 +195,8 @@ fn inner_query_seq_adv_mut<
     A: AxisTrait,
     T: HasAabb,
     K:Splitter,
-    S: NodeHandler<T=T>+Splitter,
-    N>(   
-    mut tree:DinoTreeRefMut<A,N,T>,
+    S: NodeHandler<T=T>+Splitter>(   
+    mut tree:DinoTreeRefMut<A,(),T>,
     splitter:&mut K,
     sweeper:&mut S
 ){
@@ -284,7 +283,7 @@ fn inner_query_seq_adv_mut<
     let axis=tree.axis();
 
     let dt=tree.vistr_mut();    
-    let vistr_mut:VistrMut<wrap::Wrap<N>,wrap::Wrap<T>>=unsafe{std::mem::transmute(dt)};
+    let vistr_mut:VistrMut<(),wrap::Wrap<T>>=unsafe{std::mem::transmute(dt)};
     
     //let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
     let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{&mut *(sweeper as *mut S as *mut wrap::NodeHandlerWrapper<S>)};

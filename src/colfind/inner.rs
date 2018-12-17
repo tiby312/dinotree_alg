@@ -1,20 +1,17 @@
 use crate::inner_prelude::*;
-
-
-
-
 use super::node_handle::*;
 use super::*;
 
-struct GoDownRecurser<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait>{
-    _p:PhantomData<std::sync::Mutex<(N,NN)>>,
+
+struct GoDownRecurser<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait>{
     anchor:DestructuredNode<'a,T,B>,
     sweeper:&'a mut NN
 }
-impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>{
 
-    fn new(anchor:DestructuredNode<'a,T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,T,N,NN,B>{
-        GoDownRecurser{_p:PhantomData,anchor,sweeper}
+impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
+
+    fn new(anchor:DestructuredNode<'a,T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,T,NN,B>{
+        GoDownRecurser{anchor,sweeper}
     }
 
     fn go_down<
@@ -22,7 +19,7 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
     >(
         &mut self,
         this_axis: A,
-        m: VistrMut<N,T>,
+        m: VistrMut<(),T>,
     ) {
         let anchor_axis=self.anchor.axis;
         let (nn,rest)=m.next();
@@ -37,11 +34,10 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
                 let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.range,fullcomp:Some(fullcomp)};
                 self.sweeper.handle_children(&mut self.anchor,&mut current);
                 
-                //This can be evaluated at compile time!
                 if this_axis.is_equal_to(anchor_axis) {
                     if fullcomp.div >= self.anchor.fullcomp.cont.left {
                         self.go_down(this_axis.next(), left);
-                    };//TODO can be else if?
+                    } //TODO can be else if?
                     if fullcomp.div <= self.anchor.fullcomp.cont.right {
                         self.go_down(this_axis.next(), right);
                     };
@@ -52,13 +48,10 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
             },
             None=>{
                 let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.range,fullcomp:None};
-                self.sweeper.handle_children(&mut self.anchor,&mut current);
-            
+                self.sweeper.handle_children(&mut self.anchor,&mut current);       
             }
         }
     }
-
-
 }
 
 
@@ -66,14 +59,14 @@ impl<'a,T:HasAabb,N,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,N,NN,B>
 
 
 
-pub struct ColFindRecurser<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send,N:Send>{
-    _p:PhantomData<std::sync::Mutex<(T,K,S,N)>>
+pub struct ColFindRecurser<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send>{
+    _p:PhantomData<std::sync::Mutex<(T,K,S)>>
 }
-impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send,N:Send> ColFindRecurser<T,K,S,N>{
-    pub fn new()->ColFindRecurser<T,K,S,N>{
+impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRecurser<T,K,S>{
+    pub fn new()->ColFindRecurser<T,K,S>{
         ColFindRecurser{_p:PhantomData}
     }
-    pub fn recurse<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<N,T>>,splitter:&mut K){
+    pub fn recurse<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<(),T>>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
@@ -187,6 +180,3 @@ impl<T,F:Copy> Splitter for QueryFn<T,F>{
     fn node_start(&mut self){}
     fn node_end(&mut self){}
 }
-
-//TODO why?
-//unsafe impl<T,F> Sync for Bo2<T,F>{}

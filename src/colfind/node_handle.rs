@@ -73,10 +73,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
         });
     }
     fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
-        //let &mut DestructuredNode{fullcomp,range:anchor_range,axis:anchor_axis,}=anchor;
-
-        //let (this_axis,this_range,cont)=current;
-        //let (anchor_axis,anchor_range,anchor_box)=anchor;
+        
         let func=&mut self.func;
         
         let res=match current.fullcomp{
@@ -136,17 +133,6 @@ impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
 
 
 
-pub struct WrapT<'a,T:HasAabb+'a>{
-    pub inner:&'a mut T
-}
-
-unsafe impl<'a,T:HasAabb> HasAabb for WrapT<'a,T>{
-    type Num=T::Num;
-    fn get(&self)->&axgeom::Rect<T::Num>{
-        self.inner.get()
-    }
-}
-
 
 impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
     type T=K::T;
@@ -155,10 +141,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
         self.sweeper.find_2d(axis,bots,func);
     }
     fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
-        //let (this_axis,this_range,cont)=current;
-        //let &mut DestructuredNode{fullcomp,range:anchor_range,axis:anchor_axis,}=anchor;
-
-        //let (anchor_axis,anchor_range,anchor_box)=anchor;
+        
         let func=&mut self.func;
         match current.fullcomp{
             Some(current_fullcomp)=>{
@@ -167,14 +150,16 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                         let r2= oned::get_section_mut(current.axis,anchor.range,&current_fullcomp.cont);   
 
                         //TODO document this!!!!!!!!!!!!!
-                        if r1.len()*r2.len()>64{
-                            let mut bots2:Vec<_>=r2.iter_mut().map(|a|WrapT{inner:a}).collect();
-                            dinotree::advanced::sweeper_update(anchor.axis,&mut bots2);
-                            self.sweeper.find_parallel_2d_ptr(current.axis.next(),r1,&mut bots2,func);
+                        //if r1.len()*r2.len()>64{
+                        //let mut bots2:Vec<_>=r2.iter_mut().map(|a|WrapT{inner:a}).collect();
+                        //dinotree::advanced::sweeper_update(anchor.axis,&mut bots2);
+                        //self.sweeper.find_parallel_2d_ptr(current.axis.next(),r1,&mut bots2,func);
 
-                        }else{
-                            self.sweeper.find_perp_2d1(r1,r2,func);
-                        }
+                        //}else{
+                            self.sweeper.find_perp_2d1(anchor.axis,r1,r2,func);
+                        //}
+
+
                 } else if current_fullcomp.cont.intersects(&anchor.fullcomp.cont){
                     self.sweeper.find_parallel_2d(
                         current.axis.next(),
@@ -187,11 +172,14 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
             },
             None=>{
                 if !current.axis.is_equal_to(anchor.axis) {
-
                     let r1 =oned::get_section_mut(anchor.axis,current.range, &anchor.fullcomp.cont);
+                    self.sweeper.find_perp_2d1(anchor.axis,r1,anchor.range,func);
                     
-
-                    self.sweeper.find_perp_2d2(r1,anchor.range,func);
+                    
+                    //let mut bots2:Vec<_>=r1.iter_mut().map(|a|WrapT{inner:a}).collect();
+                    //dinotree::advanced::sweeper_update(anchor.axis.next(),&mut bots2);
+                    //self.sweeper.find_parallel_2d_ptr(anchor.axis.next(),anchor.range,&mut bots2,func);
+                    
 
                 } else {
                     self.sweeper.find_parallel_2d(
