@@ -37,7 +37,7 @@ pub trait ColMulti{
 
 mod inner;
 mod node_handle;
-pub mod oned;
+pub(crate) mod oned;
 
 use self::node_handle::*;
 use self::inner::*;
@@ -90,12 +90,13 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 
-
+///Builder for a query on a NotSorted Dinotree.
 pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
     tree:&'a mut NotSorted<A,(),T>
 }
 impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
+
 
     pub fn new(tree:&'a mut NotSorted<A,(),T>)->NotSortedQueryBuilder<'a,A,T>{
         let switch_height=default_level_switch_sequential();
@@ -124,10 +125,10 @@ impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
     }
 }
 
+///Build for a query on a DinoTree.
 pub struct QueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
     tree:DinoTreeRefMut<'a,A,(),T>
-    //_p:PhantomData<std::sync::Mutex<(A,T,N)>>
 }
 
 
@@ -165,6 +166,9 @@ impl<'a,A:AxisTrait,T:HasAabb> QueryBuilder<'a,A,T>{
         let switch_height=dinotree::advanced::default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
     }
+
+    ///Choose a custom height at which to switch from parallel to sequential.
+    ///If you end up building sequentially, this option is ignored.
     pub fn with_switch_height(mut self,height:usize)->Self{
         self.switch_height=height;
         self
