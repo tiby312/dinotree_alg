@@ -25,7 +25,7 @@ impl KnearestDemo{
             Bot{id,pos:ret.pos,radius:ret.radius}
         }).collect();
 
-        let tree = DinoTree::new(axgeom::XAXISS,(),&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))});
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))}).build_par();
         KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }

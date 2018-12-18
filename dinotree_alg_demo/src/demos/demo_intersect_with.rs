@@ -100,9 +100,9 @@ impl DemoSys for IntersectWithDemo{
         bots[0].pos=cursor;
 
 
-        let mut tree=DinoTree::new(axgeom::XAXISS,(),&bots,|bot|{
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|bot|{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
-        }); 
+        }).build_par(); 
 
         intersect_with::intersect_with_mut(tree.as_ref_mut(),walls,|wall|{wall.0},|bot,wall|{
             let fric=0.8;
@@ -148,7 +148,7 @@ impl DemoSys for IntersectWithDemo{
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
  
-        colfind::query_mut(tree.as_ref_mut(),|a, b| {
+        colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
             let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
         });
     

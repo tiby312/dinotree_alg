@@ -62,7 +62,9 @@ fn main() {
 
     let mut fb=FigureBuilder{};
     
-    colfind::theory_colfind::handle(&mut fb);
+    colfind::level_analysis::handle(&mut fb);
+    
+    //colfind::theory_colfind::handle(&mut fb);
     /*
     colfind::copy_vs_nocopy::handle(&mut fb);
     
@@ -72,7 +74,6 @@ fn main() {
     
     
     colfind::parallel_heur_comparison::handle(&mut fb);
-    colfind::level_analysis::handle(&mut fb);
     spiral::handle(&mut fb);
     colfind::float_vs_integer::handle(&mut fb);
     colfind::theory_colfind::handle(&mut fb);

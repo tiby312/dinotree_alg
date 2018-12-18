@@ -133,13 +133,13 @@ impl RaycastDemo{
 
         let bots:Vec<Bot>=(0..500).map(|id|Bot{id}).collect();
 
-        let tree = DinoTree::new(axgeom::XAXISS,(),&bots,|_a|{
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|_a|{
             let ret=bots_fake.next().unwrap();
             let ret=ret.into_isize();
             let p=ret.pos;
             let r=ret.radius;
             axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
-        });
+        }).build_par();
         RaycastDemo{tree,counter:0.0,dim:[dim2[0] as isize,dim2[1] as isize]}
     }
 }

@@ -81,12 +81,12 @@ impl RaycastF64Demo{
 
         let bots=vec![();500];
 
-        let tree = DinoTree::new(axgeom::XAXISS,(),&bots,|_|{
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|_|{
             let ret=bot_iter.next().unwrap();
             let p=ret.pos;
             let r=ret.radius;
             Conv::from_rect(aabb_from_pointf64(p,r))
-        });
+        }).build_par();
 
         RaycastF64Demo{tree,dim}
     }

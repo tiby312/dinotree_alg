@@ -10,7 +10,7 @@ pub mod prelude{
     pub(crate) use piston_window;
     pub use ordered_float::NotNan;
     pub use piston_window::*;
-    pub use dinotree::DinoTree;
+    pub use dinotree::*;
     pub use dinotree::HasAabb;
     pub(crate) use axgeom;
     pub(crate) use crate::support::*;

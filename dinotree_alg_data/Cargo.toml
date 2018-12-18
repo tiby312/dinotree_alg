@@ -14,9 +14,8 @@ duckduckgeo = "0.1.0"
 dinotree_alg = {path=".."}
 new-ordered-float = "1.0.1"
 rustc-test = "0.3.0"
-#compt = "1.2.4"
-compt = {path="../../compt"}
-axgeom = "1.0.2"
+compt = "1.3.2"
+axgeom = "1.0.5"
 dinotree = {path="../../dinotree"}
 
 

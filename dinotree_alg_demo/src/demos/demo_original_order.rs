@@ -79,9 +79,9 @@ impl DemoSys for OrigOrderDemo{
         }
 
 
-        let mut tree=DinoTree::new(axgeom::XAXISS,(),&bots,|bot|{
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|bot|{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
-        }); 
+        }).build_par(); 
 
         
         rect::for_all_in_rect_mut(tree.as_ref_mut(),&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
@@ -135,12 +135,12 @@ impl DemoSys for OrigOrderDemo{
         }
 
         if !check_naive{
-            colfind::query_mut(tree.as_ref_mut(),|a, b| {
+            colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
                 let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
             });
         }else{
             let mut res=Vec::new();
-            colfind::query_seq_mut(tree.as_ref_mut(),|a, b| {
+            colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
                 let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
                 let (a,b)=if a.inner.id<b.inner.id{
                     (a,b)
@@ -149,6 +149,7 @@ impl DemoSys for OrigOrderDemo{
                 };
                 res.push((a.inner.id,b.inner.id));
             });
+
 
 
             let mut res2=Vec::new();
