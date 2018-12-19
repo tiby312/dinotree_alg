@@ -62,13 +62,14 @@ fn main() {
 
     let mut fb=FigureBuilder{};
     
-    colfind::level_analysis::handle(&mut fb);
+    //colfind::level_analysis::handle(&mut fb);
     
-    //colfind::theory_colfind::handle(&mut fb);
+    colfind::theory_colfind::handle(&mut fb);
+    //colfind::rebal_strat::handle(&mut fb);
+    
     /*
     colfind::copy_vs_nocopy::handle(&mut fb);
     
-    colfind::rebal_strat::handle(&mut fb);
     
 
     
