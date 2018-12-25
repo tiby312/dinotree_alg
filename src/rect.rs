@@ -36,27 +36,29 @@ macro_rules! rect{
 
             let (nn,rest)=m.next();
             match rest{
-                Some((extra,left,right))=>{
-                    let &FullComp{div,..}=match extra{
+                Some([left,right])=>{
+
+                    let div=match nn.div{
                         Some(b)=>b,
                         None=>return
                     };
-                    let sl = $get_section(this_axis.next(),nn.range, rect.get_range(this_axis.next()));
+
+                    let sl = $get_section(this_axis.next(),nn.bots,rect.get_range(this_axis.next()));
 
                     for i in sl {
                         func(i);
                     }
                     let rr = rect.get_range(this_axis);
 
-                    if !(div < rr.left) {
+                    if !(*div < rr.left) {
                         self::rect_recurse(this_axis.next(), left, rect, func);
                     }
-                    if !(div > rr.right) {
+                    if !(*div > rr.right) {
                         self::rect_recurse(this_axis.next(), right, rect, func);
                     }
                 },
                 None=>{
-                    let sl = $get_section(this_axis.next(),nn.range, rect.get_range(this_axis.next()));
+                    let sl = $get_section(this_axis.next(),nn.bots, rect.get_range(this_axis.next()));
 
                     for i in sl {
                         func(i);
@@ -68,25 +70,26 @@ macro_rules! rect{
 }
 
 
-pub fn for_all_not_in_rect_mut<A:AxisTrait,T:HasAabb>(mut tree:DinoTreeRefMut<A,(),T>,rect:&Rect<T::Num>,closure:impl FnMut(&mut T)){
-    fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(&mut T)>(axis:A,it:VistrMut<(),T>,rect:&Rect<T::Num>,mut closure:F)->F{
+pub fn for_all_not_in_rect_mut<A:AxisTrait,T:HasAabb>(mut tree:DinoTreeRefMut<A,T>,rect:&Rect<T::Num>,closure:impl FnMut(&mut T)){
+    fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(&mut T)>(axis:A,it:VistrMut<T>,rect:&Rect<T::Num>,mut closure:F)->F{
         let (nn,rest)=it.next();
         
         //TODO exploit sorted property.
-        for a in nn.range.iter_mut(){
+        for a in nn.bots.iter_mut(){
             if !rect.contains_rect(a.get()){
                 closure(a);
             }
         }
         
         match rest{
-            Some((extra,left,right))=>{
-                let &FullComp{div,..}=match extra{
+            Some([left,right])=>{
+                
+                let div=match nn.div{
                     Some(b)=>b,
                     None=>return closure,
                 };
 
-                match rect.get_range(axis).left_or_right_or_contain(&div){
+                match rect.get_range(axis).left_or_right_or_contain(div){
                     std::cmp::Ordering::Less=>{
                         rect_recurse(axis.next(),left,rect,closure)
                     },
@@ -125,9 +128,9 @@ mod mutable{
     use crate::colfind::oned::get_section_mut;
     use super::*;
 
-    rect!(VistrMut<(),T>,&mut T,get_section_mut);
+    rect!(VistrMut<T>,&mut T,get_section_mut);
     pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
-        mut tree:DinoTreeRefMut<A,(),T>,
+        mut tree:DinoTreeRefMut<A,T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
@@ -169,7 +172,7 @@ mod mutable{
 
     }
     pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
-        mut tree:DinoTreeRefMut<A,(),T>,
+        mut tree:DinoTreeRefMut<A,T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&mut T),
     ) {
@@ -188,11 +191,11 @@ mod constant{
 
     use crate::colfind::oned::get_section;
     use super::*;
-    rect!(Vistr<(),T>,&T,get_section);
+    rect!(Vistr<T>,&T,get_section);
     //rect!(Vistr<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
     pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(
-        tree:DinoTreeRef<A,(),T>,
+        tree:DinoTreeRef<A,T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {
@@ -208,7 +211,7 @@ mod constant{
     }
 
     pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
-        tree:DinoTreeRef<A,(),T>,
+        tree:DinoTreeRef<A,T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&T),
     ) {

@@ -22,7 +22,7 @@ pub struct RectIntersectErr;
 ///Handles a multi rect mut "sessions" within which
 ///the user can query multiple non intersecting rectangles.
 pub struct MultiRectMut<'a,A: AxisTrait+'a,T:HasAabb+'a> {
-    tree: DinoTreeRefMut<'a,A,(),T>,
+    tree: DinoTreeRefMut<'a,A,T>,
     rects: SmallVec<[Rect<T::Num>; 16]>,
 }
 
@@ -48,7 +48,7 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 
 
 ///Starts a multi rect mut sessions.
-pub fn multi_rect_mut<A:AxisTrait,T:HasAabb>(tree:DinoTreeRefMut<A,(),T>)->MultiRectMut<A,T>{
+pub fn multi_rect_mut<A:AxisTrait,T:HasAabb>(tree:DinoTreeRefMut<A,T>)->MultiRectMut<A,T>{
 	MultiRectMut{tree,rects:SmallVec::new()}
 }
 

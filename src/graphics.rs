@@ -16,27 +16,33 @@ pub trait DividerDrawer{
 ///Calls the user supplied function on each divider.
 ///Since the leaves do not have dividers, it is not called for the leaves.
 pub fn draw<A:AxisTrait,T: HasAabb,D:DividerDrawer<N=T::Num>>(
-    gentree: DinoTreeRef<A,(),T>,
+    gentree: DinoTreeRef<A,T>,
     dr:&mut D,
     rect:&Rect<T::Num>
 ) {
     fn recc<A:AxisTrait,T:HasAabb,D:DividerDrawer<N=T::Num>>
-        (axis:A,stuff:LevelIter<Vistr<(),T>>,dr:&mut D,rect:&Rect<T::Num>){
+        (axis:A,stuff:LevelIter<Vistr<T>>,dr:&mut D,rect:&Rect<T::Num>){
 
-        let ((depth,_nn),rest)=stuff.next();
+        let ((depth,nn),rest)=stuff.next();
 
-        if let Some((extra,left,right)) = rest{
-            let &FullComp{div,cont}=match extra{
+        if let Some([left,right]) = rest{
+            
+            let div=match nn.div{
+                Some(d)=>d,
+                None=>return
+            };
+
+            let cont=match nn.cont{
                 Some(d)=>d,
                 None=>return
             };
 
             let cont=[cont.left,cont.right];
             let rr=rect.get_range(axis.next());
-            dr.draw_divider::<A>(axis,div,cont,[rr.left,rr.right],depth.0);
+            dr.draw_divider::<A>(axis,*div,cont,[rr.left,rr.right],depth.0);
 
 
-            let (a,b)=rect.subdivide(axis,div);
+            let (a,b)=rect.subdivide(axis,*div);
 
             recc(axis.next(),left,dr,&a);
             recc(axis.next(),right,dr,&b);

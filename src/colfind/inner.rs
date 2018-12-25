@@ -19,36 +19,40 @@ impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
     >(
         &mut self,
         this_axis: A,
-        m: VistrMut<(),T>,
+        m: VistrMut<T>,
     ) {
         let anchor_axis=self.anchor.axis;
         let (nn,rest)=m.next();
 
         match rest{
-            Some((extra,left,right))=>{
-                let fullcomp=match extra{
+            Some([left,right])=>{
+                let div=match nn.div{
                     Some(d)=>d,
                     None=>return
                 };
-                
-                let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.range,fullcomp:Some(fullcomp)};
-                self.sweeper.handle_children(&mut self.anchor,&mut current);
-                
+
+                if let Some(cont)=nn.cont{
+                    let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.bots,cont};
+                    self.sweeper.handle_children(&mut self.anchor,&mut current);
+                }    
                 if this_axis.is_equal_to(anchor_axis) {
-                    if fullcomp.div >= self.anchor.fullcomp.cont.left {
+                    if *div >= self.anchor.cont.left {
                         self.go_down(this_axis.next(), left);
                     } //TODO can be else if?
-                    if fullcomp.div <= self.anchor.fullcomp.cont.right {
+                    if *div <= self.anchor.cont.right {
                         self.go_down(this_axis.next(), right);
                     };
                 } else {
                     self.go_down(this_axis.next(), left);
                     self.go_down(this_axis.next(),right);
                 }
+            
             },
             None=>{
-                let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.range,fullcomp:None};
-                self.sweeper.handle_children(&mut self.anchor,&mut current);       
+                if let Some(cont)=nn.cont{
+                    let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.bots,cont};
+                    self.sweeper.handle_children(&mut self.anchor,&mut current);       
+                }
             }
         }
     }
@@ -66,18 +70,18 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRec
     pub fn new()->ColFindRecurser<T,K,S>{
         ColFindRecurser{_p:PhantomData}
     }
-    pub fn recurse<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<(),T>>,splitter:&mut K){
+    pub fn recurse<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<T>>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
 
         let((depth,nn),rest)=m.next();
 
-        sweeper.handle_node(this_axis.next(),nn.range);
+        sweeper.handle_node(this_axis.next(),nn.bots);
                     
         match rest{
-            Some((extra,mut left,mut right))=>{
-                let fullcomp=match extra{
+            Some([mut left,mut right])=>{
+                let div=match nn.div{
                     Some(d)=>d,
                     None=>{
                         sweeper.node_end();
@@ -86,14 +90,15 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRec
                     }
                 };
                 
-
-                let nn=DestructuredNode{range:nn.range,fullcomp,axis:this_axis};
-                {
-                    let left=left.inner.create_wrap_mut();
-                    let right=right.inner.create_wrap_mut();
-                    let mut g=GoDownRecurser::new(nn,sweeper);
-                    g.go_down(this_axis.next(), left);
-                    g.go_down(this_axis.next(), right);
+                if let Some(cont)=nn.cont{
+                    let nn=DestructuredNode{range:nn.bots,cont,div,axis:this_axis};
+                    {
+                        let left=left.inner.create_wrap_mut();
+                        let right=right.inner.create_wrap_mut();
+                        let mut g=GoDownRecurser::new(nn,sweeper);
+                        g.go_down(this_axis.next(), left);
+                        g.go_down(this_axis.next(), right);
+                    }
                 }
 
                 let mut splitter2=splitter.div();
@@ -170,9 +175,9 @@ impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for QueryFn<T,F>{
         self.0(a,b);
     }   
 }
-impl<T,F:Copy> Splitter for QueryFn<T,F>{
+impl<T,F:Clone> Splitter for QueryFn<T,F>{
     fn div(&mut self)->Self{
-        QueryFn(self.0,PhantomData)
+        QueryFn(self.0.clone(),PhantomData)
     }
     fn add(&mut self,_:Self){
         

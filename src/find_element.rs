@@ -17,18 +17,19 @@ pub enum Dir{
 ///Used for debugging.
 ///Returns the debugging information of the first bot found that satisfies the predicate.
 ///Returns the depth, as well as the path down the tree taken to get to the node.
-pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(tree:DinoTreeRef<A,(),T>,mut func:F) -> Option<(usize,Vec<Dir>)>{
-   fn recc<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(axis:A,func:&mut F,stuff:LevelIter<Vistr<(),T>>,trail:Vec<Dir>)->Option<(usize,Vec<Dir>)>{
+pub fn find_element<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(tree:DinoTreeRef<A,T>,mut func:F) -> Option<(usize,Vec<Dir>)>{
+   fn recc<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(axis:A,func:&mut F,stuff:LevelIter<Vistr<T>>,trail:Vec<Dir>)->Option<(usize,Vec<Dir>)>{
         let ((depth,nn),rest)=stuff.next();
 
-        for b in nn.range.iter(){
+
+        for b in nn.bots.iter(){
             if func(b){
                 return Some((depth.0,trail));
             }
         }
 
         match rest{
-            Some((_extra,left,right))=>{
+            Some([left,right])=>{
                 let mut tl=trail.clone();
                 let mut tr=trail.clone();
                 tl.push(Dir::Left);

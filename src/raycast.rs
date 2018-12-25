@@ -159,13 +159,14 @@ macro_rules! raycast{
 
             let ((_depth,nn),rest)=stuff.next();
             match rest{
-                Some((extra,left,right))=>{
-                    let &FullComp{div,..}=match extra{
+                Some([left,right])=>{
+
+                    let div=match nn.div{
                         Some(b)=>b,
                         None=>return
                     };
                     
-                    let (rleft,rright) = rect.subdivide(axis,div);
+                    let (rleft,rright) = rect.subdivide(axis,*div);
 
                     let axis_next=axis.next();
 
@@ -191,7 +192,7 @@ macro_rules! raycast{
                         
                         match closest.get_dis(){
                             Some(dis)=>{
-                                if let Some(dis2)=rtrait.compute_distance_to_line(axis,div){
+                                if let Some(dis2)=rtrait.compute_distance_to_line(axis,*div){
                                     if dis2<=dis{
                                         recc(axis_next,second.0,rtrait,second.1,closest);
                                     }else{
@@ -215,15 +216,16 @@ macro_rules! raycast{
                     //since its more likely that we will find the closest bot in a child node
                     
                     //TODO prune bots here?
-                    for b in $get_iter!(nn.range){
+                    for b in $get_iter!(nn.bots){
                         closest.consider(b,rtrait);
                     }
                 
                     
                 },
                 None=>{
+                    
                     //Can't do better here since for leafs, cont is none.
-                    for b in $get_iter!(nn.range){
+                    for b in $get_iter!(nn.bots){
                         closest.consider(b,rtrait);
                     } 
                 }
@@ -254,7 +256,7 @@ pub use self::mutable::raycast_mut;
 
 mod mutable{
     use super::*;
-    raycast!(VistrMut<'a,(),T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T);
+    raycast!(VistrMut<'a,T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T);
 
     pub fn naive_mut<
         'a,A:AxisTrait,
@@ -273,7 +275,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,A:AxisTrait+'a,
         T:HasAabb,
-        >(tree:DinoTreeRefMut<'a,A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(tree:DinoTreeRefMut<'a,A,T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
         
         let axis=tree.axis();
         let dt = tree.into_vistr_mut().with_depth(Depth(0));
@@ -303,11 +305,11 @@ mod cons{
         closest.closest
     }
 
-    raycast!(Vistr<'a,(),T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
+    raycast!(Vistr<'a,T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
     pub fn raycast<
         'a,A:AxisTrait+'a,
         T:HasAabb,
-        >(tree:DinoTreeRef<'a,A,(),T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(tree:DinoTreeRef<'a,A,T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
         
 
         let axis=tree.axis();

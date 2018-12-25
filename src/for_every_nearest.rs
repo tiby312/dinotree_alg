@@ -23,10 +23,10 @@ pub trait IsPoint{
 ///By exploiting this geometric propety that B.nearest()=A -> A.nearest()=B, we can half the
 ///numbers of knearest() queries that need to be done.
 ///This function is implemented simply, by iterating thorugh all the bots and calling knearest on it.
-pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>+HasAabb<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DinoTree<A,(),T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
+pub fn for_every_nearest_mut<A:AxisTrait,N:NumTrait,T:IsPoint<Num=N>+HasAabb<Num=N>,K:Knearest<T=T,N=N>+Copy>(tree:&mut DinoTree<A,T>,mut func:impl FnMut(&mut T,&mut T,K::D),kn:K){
 	let mut already_hit:Vec<*const T>=Vec::with_capacity(tree.num_bots()/2);
 
-	let tree2=tree as *mut DinoTree<A,(),T>;
+	let tree2=tree as *mut DinoTree<A,T>;
 	for b in tree.iter_mut(){
         if !already_hit.contains(&(b as *const T)){	        
 	        

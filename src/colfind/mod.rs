@@ -93,12 +93,12 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 ///Builder for a query on a NotSorted Dinotree.
 pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
-    tree:&'a mut NotSorted<A,(),T>
+    tree:&'a mut NotSorted<A,T>
 }
 impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
 
 
-    pub fn new(tree:&'a mut NotSorted<A,(),T>)->NotSortedQueryBuilder<'a,A,T>{
+    pub fn new(tree:&'a mut NotSorted<A,T>)->NotSortedQueryBuilder<'a,A,T>{
         let switch_height=default_level_switch_sequential();
         NotSortedQueryBuilder{switch_height,tree}
     }
@@ -128,12 +128,12 @@ impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
 ///Build for a query on a DinoTree.
 pub struct QueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
-    tree:DinoTreeRefMut<'a,A,(),T>
+    tree:DinoTreeRefMut<'a,A,T>
 }
 
 
 impl<'a,A:AxisTrait,T:HasAabb+Send> QueryBuilder<'a,A,T>{
-    pub fn query_par(mut self,func:impl Fn(&mut T,&mut T)+Copy+Send){
+    pub fn query_par(mut self,func:impl Fn(&mut T,&mut T)+Clone+Send){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleSorted::new(b);
 
@@ -149,7 +149,7 @@ impl<'a,A:AxisTrait,T:HasAabb+Send> QueryBuilder<'a,A,T>{
     ///The splitter will split and add at every level.
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
-    pub fn query_splitter<C:ColMulti<T=T>+Splitter+Send+Copy>(mut self,clos:C){
+    pub fn query_splitter<C:ColMulti<T=T>+Splitter+Send>(mut self,clos:C){
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();
 
@@ -162,7 +162,7 @@ impl<'a,A:AxisTrait,T:HasAabb+Send> QueryBuilder<'a,A,T>{
     }
 }
 impl<'a,A:AxisTrait,T:HasAabb> QueryBuilder<'a,A,T>{
-    pub fn new(tree:DinoTreeRefMut<'a,A,(),T>)->QueryBuilder<'a,A,T>{
+    pub fn new(tree:DinoTreeRefMut<'a,A,T>)->QueryBuilder<'a,A,T>{
         let switch_height=dinotree::advanced::default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
     }
@@ -200,7 +200,7 @@ fn inner_query_seq_adv_mut<
     T: HasAabb,
     K:Splitter,
     S: NodeHandler<T=T>+Splitter>(   
-    mut tree:DinoTreeRefMut<A,(),T>,
+    mut tree:DinoTreeRefMut<A,T>,
     splitter:&mut K,
     sweeper:&mut S
 ){
@@ -287,7 +287,7 @@ fn inner_query_seq_adv_mut<
     let axis=tree.axis();
 
     let dt=tree.vistr_mut();    
-    let vistr_mut:VistrMut<(),wrap::Wrap<T>>=unsafe{std::mem::transmute(dt)};
+    let vistr_mut:VistrMut<wrap::Wrap<T>>=unsafe{std::mem::transmute(dt)};
     
     //let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
     let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{&mut *(sweeper as *mut S as *mut wrap::NodeHandlerWrapper<S>)};

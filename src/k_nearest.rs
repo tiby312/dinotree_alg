@@ -77,6 +77,7 @@ macro_rules! get_mut_range_iter{
     }}
 }
 
+
 /// Returned by k_nearest
 pub struct Unit<'a,T:'a,D>{ //:Ord+Copy
     pub bots:SmallVec<[&'a T;2]>,
@@ -93,15 +94,11 @@ macro_rules! unit_create{
     }}
 }
 
-
 macro_rules! unit_mut_create{
     ($a:expr,$b:expr)=>{{
         UnitMut{bots:$a,mag:$b}
     }}
 }
-
-
-//Unit<'a,T,D>
 
 macro_rules! knearest_recc{
     ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty,$unit:ty,$unit_create:ident)=>{
@@ -122,7 +119,6 @@ macro_rules! knearest_recc{
             }
 
             fn consider(&mut self,a:($ref_lifetime,D))->bool{
-                
                 //let a=(a.0 as $ptr,a.1);
                 let curr_bot=a.0;
                 let curr_dis=a.1;
@@ -164,8 +160,8 @@ macro_rules! knearest_recc{
                     }
                 }
                 return false;
-
             }
+
             fn full_and_max_distance(&self)->Option<D>{
                 use is_sorted::IsSorted;
                 assert!(self.a.iter().map(|a|a.mag).is_sorted());
@@ -181,8 +177,6 @@ macro_rules! knearest_recc{
             }
         }
         
-
-
         fn traverse_other<K:Knearest>(res:&ClosestCand<K::T,K::D>,k:&mut K,pp:K::N,div:K::N)->bool{
             match res.full_and_max_distance(){
                 Some(max)=>{
@@ -193,7 +187,7 @@ macro_rules! knearest_recc{
                 }
             }
         }
-         
+
         fn recc<'a,
             N:NumTrait+'a,
             T:HasAabb<Num=N>+'a,
@@ -207,13 +201,13 @@ macro_rules! knearest_recc{
             let ((_depth,nn),rest)=stuff.next();
 
             match rest{
-                Some((extra,left,right))=>{
-                    let &FullComp{div,..}=match extra{
+                Some([left,right])=>{
+                    let div=match nn.div{
                         Some(b)=>b,
                         None=>return
                     };
 
-                    let (first,second)=match pp.cmp(&div){
+                    let (first,second)=match pp.cmp(div){
                         std::cmp::Ordering::Less=>{
                             (left,right)
                         },
@@ -228,14 +222,14 @@ macro_rules! knearest_recc{
 
                     recc(axis.next(),first,knear,point,res);
 
-                    if traverse_other(res,knear,pp,div){
+                    if traverse_other(res,knear,pp,*div){
                         recc(axis.next(),second,knear,point,res);
                     }
                     //Check again incase the other recursion took care of everything
                     //We are hoping that it is more likely that the closest points are found
                     //in decendant nodes instead of ancestor nodes.
                     //if traverse_other(res,knear,pp,div){
-                    for bot in $get_iter!(nn.range){
+                    for bot in $get_iter!(nn.bots){
                         match res.full_and_max_distance(){
                             Some(dis)=>{
                                 
@@ -264,14 +258,10 @@ macro_rules! knearest_recc{
                             }
                         }                           
                     }
-
-                    
-
-
-                
                 },
                 None=>{
-                    for bot in $get_iter!(nn.range){
+                    
+                    for bot in $get_iter!(nn.bots){
                         match res.full_and_max_distance(){
                             Some(dis)=>{
                                 
@@ -333,7 +323,7 @@ mod con{
         T:HasAabb,
         A:AxisTrait+'b,
         K:Knearest<T=T,N=T::Num>,
-        >(tree:DinoTreeRef<'b,A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
+        >(tree:DinoTreeRef<'b,A,T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
         let axis=tree.axis();
         let dt = tree.into_vistr().with_depth(Depth(0));
 
@@ -345,7 +335,7 @@ mod con{
         NearestResult{inner:c.into_sorted().into_iter()}
     }
 
-    knearest_recc!(Vistr<'a,(),K::T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T,Unit<'a,T,D>,unit_create);
+    knearest_recc!(Vistr<'a,K::T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T,Unit<'a,T,D>,unit_create);
 
     pub fn naive<'b,K:Knearest>(bots:impl Iterator<Item=&'b K::T>,point:[K::N;2],num:usize,mut k:K)->Vec<Unit<'b,K::T,K::D>>{
         
@@ -393,13 +383,13 @@ mod mutable{
     }
 
 
-    knearest_recc!(VistrMut<'a,(),K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T,UnitMut<'a,T,D>,unit_mut_create);
+    knearest_recc!(VistrMut<'a,K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T,UnitMut<'a,T,D>,unit_mut_create);
 
     pub fn k_nearest_mut<'b,
         T:HasAabb,
         A:AxisTrait+'b,
         K:Knearest<N=T::Num,T=T>,
-        >(tree:DinoTreeRefMut<'b,A,(),T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
+        >(tree:DinoTreeRefMut<'b,A,T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
         let axis=tree.axis();
         let dt = tree.into_vistr_mut().with_depth(Depth(0));
 

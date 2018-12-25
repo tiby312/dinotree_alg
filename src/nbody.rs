@@ -139,21 +139,22 @@ fn buildtree<'a,
         
         let (nn,rest)=stuff.next();
         match rest{
-            Some((extra,mut left,mut right))=>{
+            Some([mut left,mut right])=>{
 
-                match extra{
+                match nn.as_nonleaf_mut(){
                     None=>{
                         let empty:&[T]=&[];
                         let nodeb=ncontext.new(empty.iter(),rect);
                         
-                        *nn.misc=nodeb;
+                        //*nn.misc=nodeb;
+                        unimplemented!();
                         //let n2=ncontext.clone();
                         //recurse anyway even though there is no divider.
                         //we want to populate this tree entirely.
                         recc(axis.next(),left,ncontext,rect);    
                         recc(axis.next(),right,ncontext,rect);
                     },
-                    Some(FullComp{div,..})=>{
+                    Some((bots,div))=>{
                         let (l,r)=rect.subdivide(axis,*div);
 
                         let nodeb={
@@ -167,7 +168,8 @@ fn buildtree<'a,
                             ncontext.new(i3,rect)
                         };
 
-                        *nn.misc=nodeb;
+                        //*nn.misc=nodeb;
+                        unimplemented!();
 
                         //let n2=ncontext.clone();
                         recc(axis.next(),left,ncontext,l);
@@ -393,8 +395,8 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
 
     let ((depth,nn),rest)=it.next();
     match rest{
-        Some((extra,mut left,mut right))=>{
-            let &FullComp{div,..}=match extra{
+        Some([mut left,mut right])=>{
+            let (cont,div)=match nn.as_nonleaf_mut(){
                 Some(b)=>b,
                 None=>return
             };
@@ -475,9 +477,9 @@ trait Bok2{
         }
 
         match rest{
-            Some((extra,left,right))=>{
-                let &FullComp{..}=match extra{
-                    Some(b)=>b,
+            Some([left,right])=>{
+                match nn.as_nonleaf_mut(){
+                    Some(b)=>(),
                     None=>return
                 };
                 

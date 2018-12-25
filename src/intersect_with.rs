@@ -44,7 +44,7 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb,X:HasAabb<Num=T::Num>>(
 ///This would be a bit tricky to implement since the tree heights might be different.
 ///But without changing this api, better performance can be achieved.
 pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb+Send,X:Copy+Send>(
-    mut tree:DinoTreeRefMut<A,(),T>,
+    mut tree:DinoTreeRefMut<A,T>,
     b: &mut [X],
     mut aabb_create:impl FnMut(&X)->axgeom::Rect<T::Num>,
     func: impl Fn(&mut T, &mut BBox<T::Num,X>)+Copy+Send,
