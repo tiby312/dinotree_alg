@@ -187,9 +187,9 @@ impl DemoSys for DemoNbody{
         let bots=&mut self.bots;
         
         let mut tree={
-            let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2],rect:axgeom::Rect::new(f64n!(0.0),f64n!(0.0),f64n!(0.0),f64n!(0.0))};
+            //let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2],rect:axgeom::Rect::new(f64n!(0.0),f64n!(0.0),f64n!(0.0),f64n!(0.0))};
 
-            DinoTreeBuilder::new(axgeom::XAXISS,n,&bots,|b|{b.create_aabb()}).build_par()
+            DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{b.create_aabb()}).build_par()
         };
         //println!("tree height={:?}",tree.get_height());
 
@@ -278,7 +278,7 @@ impl DemoSys for DemoNbody{
         }
         
 
-        let mut tree=tree.with_extra(());                
+        //let mut tree=tree.with_extra(());                
       
         colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
             let (a,b)=if a.inner.mass>b.inner.mass{

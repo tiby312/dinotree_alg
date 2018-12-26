@@ -79,7 +79,7 @@ impl DemoSys for OrigOrderDemo{
         }
 
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|bot|{
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
         }).build_par(); 
 

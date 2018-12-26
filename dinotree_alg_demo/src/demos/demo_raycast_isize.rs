@@ -120,7 +120,7 @@ pub struct Bot{
 }
 
 pub struct RaycastDemo{
-    tree:DinoTree<axgeom::XAXISS,(),BBox<isize,Bot>>,
+    tree:DinoTree<axgeom::XAXISS,BBox<isize,Bot>>,
     counter:f64,
     dim:[isize;2]
 }
@@ -133,7 +133,7 @@ impl RaycastDemo{
 
         let bots:Vec<Bot>=(0..500).map(|id|Bot{id}).collect();
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|_a|{
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_a|{
             let ret=bots_fake.next().unwrap();
             let ret=ret.into_isize();
             let p=ret.pos;

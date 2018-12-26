@@ -12,7 +12,7 @@ struct Bot{
 
 pub struct KnearestDemo{
     _bots:Vec<Bot>,
-    tree:DinoTree<axgeom::XAXISS,(),BBox<F64n,Bot>>,
+    tree:DinoTree<axgeom::XAXISS,BBox<F64n,Bot>>,
     _dim:[f64;2]
 }
 impl KnearestDemo{
@@ -25,7 +25,7 @@ impl KnearestDemo{
             Bot{id,pos:ret.pos,radius:ret.radius}
         }).collect();
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))}).build_par();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))}).build_par();
         KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }

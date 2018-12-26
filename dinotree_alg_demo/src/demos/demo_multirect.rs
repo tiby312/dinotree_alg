@@ -9,7 +9,7 @@ struct Bot{
 }
 
 pub struct MultiRectDemo{
-    tree:DinoTree<axgeom::XAXISS,(),BBox<isize,Bot>>
+    tree:DinoTree<axgeom::XAXISS,BBox<isize,Bot>>
 }
 impl MultiRectDemo{
     pub fn new(dim:[f64;2])->MultiRectDemo{
@@ -22,7 +22,7 @@ impl MultiRectDemo{
             Bot{radius:ret.radius,pos:ret.pos}
         }).collect();
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{aabb_from_point_isize(b.pos,b.radius)}).build_par();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{aabb_from_point_isize(b.pos,b.radius)}).build_par();
 
         MultiRectDemo{tree}
     }

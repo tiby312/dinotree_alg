@@ -68,7 +68,7 @@ mod ray_f64{
 
 
 pub struct RaycastF64Demo{
-    tree:DinoTree<axgeom::XAXISS,(),BBox<F64n,()>>,
+    tree:DinoTree<axgeom::XAXISS,BBox<F64n,()>>,
     dim:[f64;2]
 }
 impl RaycastF64Demo{
@@ -81,7 +81,7 @@ impl RaycastF64Demo{
 
         let bots=vec![();500];
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|_|{
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_|{
             let ret=bot_iter.next().unwrap();
             let p=ret.pos;
             let r=ret.radius;
