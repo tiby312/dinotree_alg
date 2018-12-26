@@ -93,8 +93,8 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRec
                 if let Some(cont)=nn.cont{
                     let nn=DestructuredNode{range:nn.bots,cont,div,axis:this_axis};
                     {
-                        let left=left.inner.create_wrap_mut();
-                        let right=right.inner.create_wrap_mut();
+                        let left=left.as_inner_mut().create_wrap_mut();
+                        let right=right.as_inner_mut().create_wrap_mut();
                         let mut g=GoDownRecurser::new(nn,sweeper);
                         g.go_down(this_axis.next(), left);
                         g.go_down(this_axis.next(), right);

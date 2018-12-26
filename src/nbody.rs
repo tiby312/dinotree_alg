@@ -124,6 +124,21 @@ pub fn naive_mut<T>(bots:&mut [T],func:impl FnMut(&mut T,&mut T)){
 }
 
 
+use compt::dfs_order;
+type CombinedVistr<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::Vistr<'a,N,dfs_order::PreOrder>,dinotree::VistrMut<'a,T>>>;
+type CombinedVistrMut<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::VistrMut<'a,N,dfs_order::PreOrder>,dinotree::VistrMut<'a,T>>>;
+
+
+fn wrap_mut<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistrMut<'a,N,T>)->CombinedVistrMut<'b,N,T>{
+    let depth=bla.depth();
+
+
+    unimplemented!()
+}
+fn wrap<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistr<'a,N,T>)->CombinedVistr<'b,N,T>{
+    unimplemented!()
+}
+
 
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
@@ -131,30 +146,28 @@ fn buildtree<'a,
     T:HasAabb+Send+'a,
     N:NodeMassTrait<T=T>
     >
-    (axis:impl AxisTrait,node:VistrMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
+    (axis:impl AxisTrait,node:VistrMut<T>,misc_nodes:&mut Vec<N::No>,ncontext:&mut N,rect:Rect<T::Num>){
 
 
     fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
-        (axis:impl AxisTrait,stuff:VistrMut<N::No,T>,ncontext:&mut N,rect:Rect<T::Num>){
+        (axis:impl AxisTrait,stuff:VistrMut<T>,misc_nodes:&mut Vec<N::No>,ncontext:&mut N,rect:Rect<T::Num>){
         
         let (nn,rest)=stuff.next();
         match rest{
             Some([mut left,mut right])=>{
 
-                match nn.as_nonleaf_mut(){
+                match nn.div{
                     None=>{
                         let empty:&[T]=&[];
-                        let nodeb=ncontext.new(empty.iter(),rect);
-                        
+                        misc_nodes.push(ncontext.new(empty.iter(),rect));
                         //*nn.misc=nodeb;
-                        unimplemented!();
                         //let n2=ncontext.clone();
                         //recurse anyway even though there is no divider.
                         //we want to populate this tree entirely.
-                        recc(axis.next(),left,ncontext,rect);    
-                        recc(axis.next(),right,ncontext,rect);
+                        recc(axis.next(),left,misc_nodes,ncontext,rect);    
+                        recc(axis.next(),right,misc_nodes,ncontext,rect);
                     },
-                    Some((bots,div))=>{
+                    Some(div)=>{
                         let (l,r)=rect.subdivide(axis,*div);
 
                         let nodeb={
@@ -162,58 +175,54 @@ fn buildtree<'a,
                             let right=right.create_wrap_mut();
 
                             
-                            let i1=left.dfs_inorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
-                            let i2=right.dfs_inorder_iter().flat_map(|(node,_extra)|{node.range.iter()});
-                            let i3=nn.range.iter().chain(i1.chain(i2));
+                            let i1=left.dfs_inorder_iter().flat_map(|node|{node.bots.iter()});
+                            let i2=right.dfs_inorder_iter().flat_map(|node|{node.bots.iter()});
+                            let i3=nn.bots.iter().chain(i1.chain(i2));
                             ncontext.new(i3,rect)
                         };
 
-                        //*nn.misc=nodeb;
-                        unimplemented!();
-
-                        //let n2=ncontext.clone();
-                        recc(axis.next(),left,ncontext,l);
-                        recc(axis.next(),right,ncontext,r);
+                        misc_nodes.push(nodeb);
+                        
+                        recc(axis.next(),left,misc_nodes,ncontext,l);
+                        recc(axis.next(),right,misc_nodes,ncontext,r);
                     }
                 }
             },
             None=>{
-                let nodeb=ncontext.new(nn.range.iter(),rect);
-                *nn.misc=nodeb;
+                misc_nodes.push(ncontext.new(nn.bots.iter(),rect));
             }
         }
     }
-    recc(axis,node,ncontext,rect);
+    recc(axis,node,misc_nodes,ncontext,rect);
 }
 
 fn apply_tree<'a,   
-    T:HasAabb+'a,
-    N:NodeMassTrait<T=T>
+    N:NodeMassTrait
     >
-    (_axis:impl AxisTrait,node:VistrMut<N::No,T>,ncontext:&mut N){
+    (_axis:impl AxisTrait,node:CombinedVistr<N::No,N::T>,ncontext:&mut N){
 
-    fn recc<'a,T:HasAabb+'a,N:NodeMassTrait<T=T>>
-        (stuff:VistrMut<N::No,T>,ncontext:&mut N){
+    fn recc<'a,N:NodeMassTrait>
+        (stuff:CombinedVistr<N::No,N::T>,ncontext:&mut N){
         
-        let (nn,rest)=stuff.next();
+        let ((depth,(misc,nn)),rest)=stuff.next();
         match rest{
-            Some((extra,mut left,mut right))=>{
-                if extra.is_some(){        
-                    let left=left.create_wrap_mut();
-                    let right=right.create_wrap_mut();
+            Some([mut left,mut right])=>{
+                //if let Some(cont)=nn.cont{        
+                    //let left=wrap(&mut left);
+                    //let right=wrap(&mut right);
                                             
-                    let i1=left.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
-                    let i2=right.dfs_preorder_iter().flat_map(|(node,_extra)|{node.range.iter_mut()});
-                    let i3=nn.range.iter_mut().chain(i1.chain(i2));
+                    let i1=wrap(&mut left).dfs_preorder_iter().flat_map(|(_,(_,nn))|{nn.bots.iter_mut()});
+                    let i2=wrap(&mut right).dfs_preorder_iter().flat_map(|(_,(_,nn))|{nn.bots.iter_mut()});
+                    let i3=nn.bots.iter_mut().chain(i1.chain(i2));
                     
-                    ncontext.apply_to_bots(nn.misc,i3);
-                }
+                    ncontext.apply_to_bots(misc,i3);
+                //}
 
                 recc(left,ncontext);
                 recc(right,ncontext);
             },
             None=>{
-                ncontext.apply_to_bots(nn.misc,nn.range.iter_mut());
+                ncontext.apply_to_bots(misc,nn.bots.iter_mut());
             }
         }
     }
@@ -233,7 +242,7 @@ fn handle_anchor_with_children<'a,
 	A:AxisTrait,
 	B:AxisTrait,
     N:NodeMassTrait+'a>
-(thisa:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<VistrMut<N::No,N::T>>,right:LevelIter<VistrMut<N::No,N::T>>,ncontext:&mut N){
+(thisa:A,anchor:&mut Anchor<B,N::T>,left:CombinedVistrMut<N::No,N::T>,right:CombinedVistrMut<N::No,N::T>,ncontext:&mut N){
     
 
     struct BoLeft<'a,B:AxisTrait,N:NodeMassTrait+'a>{
@@ -303,7 +312,7 @@ fn handle_anchor_with_children<'a,
 }
 
 fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
-    (axis:A,anchor:&mut Anchor<B,N::T>,left:LevelIter<VistrMut<'a,N::No,N::T>>,mut right:LevelIter<VistrMut<'a,N::No,N::T>>,ncontext:&mut N){
+    (axis:A,anchor:&mut Anchor<B,N::T>,left:CombinedVistrMut<'a,N::No,N::T>,mut right:CombinedVistrMut<'a,N::No,N::T>,ncontext:&mut N){
 
 
 	struct Bo4<'a,B:AxisTrait,N:NodeMassTrait+'a,>{
@@ -355,7 +364,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
 
     struct Bo<'a:'b,'b,B:AxisTrait,N:NodeMassTrait+'a>{
         _anchor_axis:B,
-        right:&'b mut LevelIter<VistrMut<'a,N::No,N::T>>,
+        //right:&'b mut LevelIter<VistrMut<'a,N::No,N::T>>,
+        right:&'b mut CombinedVistrMut<'a,N::No,N::T>,
         ncontext:&'b mut N
     }
     
@@ -365,7 +375,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         type AnchorAxis=B;
         fn handle_node<A:AxisTrait>(&mut self,axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
     		let d=self.right.depth;
-            let r=self.right.inner.create_wrap_mut().with_depth(d);
+            //let r=self.right.inner.create_wrap_mut().with_depth(d);
+            let r=wrap_mut(&mut self.right);
             let anchor_axis=anchor.axis;
 
             let mut bok=Bo4{_anchor_axis:anchor_axis,bot:b,ncontext:self.ncontext,div:anchor.div};
@@ -373,7 +384,8 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	}
     	fn handle_node_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
     		let d=self.right.depth;
-            let r=self.right.inner.create_wrap_mut().with_depth(d);
+            //let r=self.right.inner.create_wrap_mut().with_depth(d);
+            let r=wrap_mut(&mut self.right);
             let anchor_axis=anchor.axis;
 
             let mut bok=Bo2{_anchor_axis:anchor_axis,node:a,ncontext:self.ncontext,div:anchor.div};
@@ -390,24 +402,24 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     
 }
 
-fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIter<VistrMut<N::No,N::T>>,ncontext:&mut N) where N::T:Send,N::No:Send{
+fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:CombinedVistrMut<N::No,N::T>,ncontext:&mut N) where N::T:Send,N::No:Send{
     
 
-    let ((depth,nn),rest)=it.next();
+    let ((depth,(misc,nn)),rest)=it.next();
     match rest{
         Some([mut left,mut right])=>{
-            let (cont,div)=match nn.as_nonleaf_mut(){
+            let div=match nn.div{
                 Some(b)=>b,
                 None=>return
             };
 
             //handle bots in itself
-            tools::for_every_pair(nn.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
+            tools::for_every_pair(nn.bots,|a,b|{ncontext.handle_bot_with_bot(a,b)});
             {
                 let depth=left.depth;
-                let l1=left.inner.create_wrap_mut().with_depth(depth);
-                let l2=right.inner.create_wrap_mut().with_depth(depth);
-                let mut anchor=Anchor{axis,range:nn.range,div};
+                let l1=wrap_mut(&mut left);//.inner.create_wrap_mut().with_depth(depth);
+                let l2=wrap_mut(&mut right);//.inner.create_wrap_mut().with_depth(depth);
+                let mut anchor=Anchor{axis,range:nn.bots,div:*div};
 
                 handle_anchor_with_children(axis.next(),&mut anchor,l1,l2,ncontext);
             }
@@ -424,9 +436,9 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
             {
                 let depth=left.depth;
                     
-                let l1=left.inner.create_wrap_mut().with_depth(depth);
-                let l2=right.inner.create_wrap_mut().with_depth(depth);
-                let mut anchor=Anchor{axis,range:nn.range,div};
+                let l1=wrap_mut(&mut left);//.inner.create_wrap_mut().with_depth(depth);
+                let l2=wrap_mut(&mut right);//.inner.create_wrap_mut().with_depth(depth);
+                let mut anchor=Anchor{axis,range:nn.bots,div:*div};
 
                 handle_left_with_right(axis.next(),&mut anchor,l1,l2,ncontext);
             }
@@ -447,7 +459,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:LevelIt
         },
         None=>{
             //handle bots in itself
-            tools::for_every_pair(nn.range,|a,b|{ncontext.handle_bot_with_bot(a,b)});
+            tools::for_every_pair(nn.bots,|a,b|{ncontext.handle_bot_with_bot(a,b)});
         }
     }
 }
@@ -467,23 +479,23 @@ trait Bok2{
 
     fn generic_rec2<
         A:AxisTrait,
-        >(&mut self,this_axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,stuff:LevelIter<VistrMut<Self::No,Self::T>>){
+        >(&mut self,this_axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,stuff:CombinedVistrMut<Self::No,Self::T>){
 
-        let ((_depth,nn),rest)=stuff.next();
+        let ((_depth,(misc,nn)),rest)=stuff.next();
         
-        if this_axis.is_equal_to(anchor.axis) && self.is_far_enough(this_axis,anchor,&nn.misc){
-            self.handle_node_far_enough(this_axis,nn.misc,anchor);
+        if this_axis.is_equal_to(anchor.axis) && self.is_far_enough(this_axis,anchor,misc){
+            self.handle_node_far_enough(this_axis,misc,anchor);
             return;
         }
 
         match rest{
             Some([left,right])=>{
-                match nn.as_nonleaf_mut(){
+                match nn.div{
                     Some(b)=>(),
                     None=>return
                 };
                 
-                for i in nn.range.iter_mut(){
+                for i in nn.bots.iter_mut(){
                     self.handle_node(this_axis,i,anchor);    
                 }
 
@@ -491,7 +503,7 @@ trait Bok2{
                 self.generic_rec2(this_axis.next(),anchor,right);
             },
             None=>{
-                for i in nn.range.iter_mut(){
+                for i in nn.bots.iter_mut(){
                     self.handle_node(this_axis,i,anchor);    
                 }
             }
@@ -502,7 +514,7 @@ trait Bok2{
 
 
 ///Parallel version.
-pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(mut t1:DinoTreeRefMut<A,N::No,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
+pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(mut t1:DinoTreeRefMut<A,T>,ncontext:&N,rect:Rect<<N::T as HasAabb>::Num>) where N::No:Send{
     let axis=t1.axis();
  
     struct Wrapper<'a,N:NodeMassTraitConst+'a>(&'a N);
@@ -556,22 +568,31 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(mut 
 
 
     let mut ncontext=Wrapper(ncontext);
-    buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
+
+
+    //let vistr=misc_tree.vistr_mut().zip(t1.vistr_mut());
+
+
+
+    let mut misc_nodes=Vec::new();
+    buildtree(axis,t1.vistr_mut(),&mut misc_nodes,&mut ncontext,rect);
+
+    let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_vec(misc_nodes).unwrap();
 
     {
         let k=dinotree::advanced::default_level_switch_sequential();
         let par=dinotree::advanced::compute_default_level_switch_sequential(k,t1.height());
 
-        let d=t1.vistr_mut().with_depth(Depth(0));
+        let d=misc_tree.vistr_mut().zip(t1.vistr_mut()).with_depth(Depth(0));
         recc(par,axis,d,&mut ncontext);    
     }
 
-    apply_tree(axis,t1.vistr_mut(),&mut ncontext);
+    apply_tree(axis,misc_tree.vistr().zip(t1.vistr_mut()).with_depth(Depth(0)),&mut ncontext);
 }
 
 
 ///Sequential version.
-pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(mut t1:DinoTreeRefMut<A,N::No,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
+pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(mut t1:DinoTreeRefMut<A,N::T>,ncontext:&mut N,rect:Rect<<N::T as HasAabb>::Num>){
     
     #[derive(Copy,Clone)]
     #[repr(transparent)]
@@ -643,18 +664,25 @@ pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(mut t1:DinoTreeRefMut<A,N::No,N::T>
     let axis=t1.axis();
     let mut ncontext=Wrapper(ncontext);
 
-    let t1:&mut DinoTreeRefMut<A,N::No,N::T>=&mut t1;
-    let t1:&mut DinoTreeRefMut<A,Wrap<N::No>,Wrap<N::T>>=unsafe{&mut *(t1 as *mut DinoTreeRefMut<A,N::No,N::T> as *mut DinoTreeRefMut<A,Wrap<N::No>,Wrap<N::T>>)};
+    let t1:&mut DinoTreeRefMut<A,N::T>=&mut t1;
+    let t1:&mut DinoTreeRefMut<A,Wrap<N::T>>=unsafe{&mut *(t1 as *mut DinoTreeRefMut<A,N::T> as *mut DinoTreeRefMut<A,Wrap<N::T>>)};
 
 
-    buildtree(axis,t1.vistr_mut(),&mut ncontext,rect);
+    let mut misc_nodes=Vec::new();
+    
+    buildtree(axis,t1.vistr_mut(),&mut misc_nodes,&mut ncontext,rect);
+
+    let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_vec(misc_nodes).unwrap();
 
     {
-        let d=t1.vistr_mut().with_depth(Depth(0));
+        let d=misc_tree.vistr_mut().zip(t1.vistr_mut()).with_depth(Depth(0));
+        
+        //let d=t1.vistr_mut().with_depth(Depth(0));
         recc(par::Sequential,axis,d,&mut ncontext);    
     }
 
-    apply_tree(axis,t1.vistr_mut(),&mut ncontext);
+    let d=misc_tree.vistr().zip(t1.vistr_mut()).with_depth(Depth(0));
+    apply_tree(axis,d,&mut ncontext);
 
 }
 

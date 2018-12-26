@@ -70,7 +70,7 @@ pub mod for_every_nearest;
 */
 
 ///Contains all nbody code.
-//pub mod nbody;
+pub mod nbody;
 
 ///Contains all raycast code.
 pub mod raycast;
