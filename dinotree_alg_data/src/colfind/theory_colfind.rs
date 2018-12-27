@@ -44,7 +44,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
         let c0={
             let instant=Instant::now();
             
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_par();
 
@@ -64,7 +64,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
         let c1={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_seq();
 
@@ -135,7 +135,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
             //if num_bots<120000{
                 let instant=Instant::now();
 
-                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                     aabb_from_point_isize(b.pos,[5,5])
                 }).build_not_sorted_par();
 
@@ -159,7 +159,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
             //if num_bots<120000{
                 let instant=Instant::now();
 
-                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
+                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
                     aabb_from_point_isize(b.pos,[5,5])
                 }).build_not_sorted_seq();
 
@@ -242,7 +242,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:us
         let c1={
             let mut counter=datanum::Counter::new();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
                 datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
             }).build_seq();
 
@@ -309,7 +309,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:us
         let c4={
             let mut counter=datanum::Counter::new();
 
-            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
+            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
                 datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
             }).build_not_sorted_seq();
 

@@ -15,7 +15,7 @@ struct Res{
 fn test1(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
     }).build_seq();
 

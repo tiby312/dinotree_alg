@@ -17,7 +17,7 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
         let instant=Instant::now();
     
         let func=|b:&Bot|{aabb_from_point_isize(b.pos,[5,5])};
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,func).with_height(height).build_seq();
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
         colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
             a.inner.num+=2;
@@ -44,7 +44,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
 
 
         let func=|b:&Bot|{datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))};
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,func).with_height(height).build_seq();
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
         colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
             a.inner.num+=2;

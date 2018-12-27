@@ -18,7 +18,7 @@ fn test1(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|aabb_from_point_isize(b.pos,[5,5])).build_seq();
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5])).build_seq();
 
 
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
@@ -42,7 +42,7 @@ fn test2(bots:&mut [BBox<isize,Bot>])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=advanced::DinoTreeNoCopyBuilder::new(axgeom::XAXISS,(),bots).build_seq();
+    let mut tree=advanced::DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_seq();
 
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
         a.inner.num+=1;
@@ -64,7 +64,7 @@ fn test3(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|aabb_from_point_isize(b.pos,[5,5]) ).build_par();
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5]) ).build_par();
 
 
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
@@ -88,7 +88,7 @@ fn test4(bots:&mut [BBox<isize,Bot>])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=advanced::DinoTreeNoCopyBuilder::new(axgeom::XAXISS,(),bots).build_par();
+    let mut tree=advanced::DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par();
 
 
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {

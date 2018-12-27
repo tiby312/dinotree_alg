@@ -16,7 +16,7 @@ fn test1(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
     
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_rebal_strat(RebalStrat::First).build_par();
     
@@ -33,7 +33,7 @@ fn test2(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_rebal_strat(RebalStrat::Second).build_par();
     
@@ -51,7 +51,7 @@ fn test3(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_rebal_strat(RebalStrat::First).build_seq();
     
@@ -69,7 +69,7 @@ fn test4(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_rebal_strat(RebalStrat::Second).build_seq();
     
@@ -87,7 +87,7 @@ fn test5(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_rebal_strat(RebalStrat::Third).build_par();
     
@@ -107,7 +107,7 @@ fn test6(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_rebal_strat(RebalStrat::Third).build_seq();
     

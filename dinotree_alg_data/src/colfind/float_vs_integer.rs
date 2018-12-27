@@ -44,7 +44,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_integer={
             let instant=Instant::now();
             
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_seq();
 
@@ -63,7 +63,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_float={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
             }).build_seq();
 
@@ -82,7 +82,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_float_par={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
             }).build_par();
 
@@ -101,7 +101,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_integer_par={
             let instant=Instant::now();
             
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_par();
 
@@ -120,7 +120,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_f64={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
             }).build_seq();
 
@@ -139,7 +139,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_f64_par={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
             }).build_par();
 

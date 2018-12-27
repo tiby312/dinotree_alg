@@ -114,6 +114,16 @@ impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
     }
 
+    pub fn query_with_splitter_seq(self,func:impl FnMut(&mut T,&mut T),splitter:&mut impl Splitter){
+
+        let b=inner::QueryFnMut::new(func);
+        
+        let mut sweeper=HandleNoSorted::new(b);
+
+
+        inner_query_seq_adv_mut(self.tree.0.as_ref_mut(),splitter,&mut sweeper);
+    }    
+
     pub fn query_seq(self,func:impl FnMut(&mut T,&mut T)){
         let b=inner::QueryFnMut::new(func);
     

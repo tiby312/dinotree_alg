@@ -132,11 +132,22 @@ type CombinedVistrMut<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::VistrMut<
 fn wrap_mut<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistrMut<'a,N,T>)->CombinedVistrMut<'b,N,T>{
     let depth=bla.depth();
 
+    let (a,b)=bla.as_inner_mut().as_inner_mut();
 
-    unimplemented!()
+    let a=a.create_wrap_mut();
+    let b=b.create_wrap_mut();
+
+    a.zip(b).with_depth(Depth(depth))
 }
 fn wrap<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistr<'a,N,T>)->CombinedVistr<'b,N,T>{
-    unimplemented!()
+    let depth=bla.depth();
+
+    let (a,b)=bla.as_inner_mut().as_inner_mut();
+
+    let a=a.create_wrap();
+    let b=b.create_wrap_mut();
+
+    a.zip(b).with_depth(Depth(depth))
 }
 
 
@@ -374,7 +385,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         type T=N::T;
         type AnchorAxis=B;
         fn handle_node<A:AxisTrait>(&mut self,axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
-    		let d=self.right.depth;
+    		//let d=self.right.depth();
             //let r=self.right.inner.create_wrap_mut().with_depth(d);
             let r=wrap_mut(&mut self.right);
             let anchor_axis=anchor.axis;
@@ -383,7 +394,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
             bok.generic_rec2(axis,anchor,r);
     	}
     	fn handle_node_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
-    		let d=self.right.depth;
+    		//let d=self.right.depth;
             //let r=self.right.inner.create_wrap_mut().with_depth(d);
             let r=wrap_mut(&mut self.right);
             let anchor_axis=anchor.axis;
@@ -416,7 +427,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:Combine
             //handle bots in itself
             tools::for_every_pair(nn.bots,|a,b|{ncontext.handle_bot_with_bot(a,b)});
             {
-                let depth=left.depth;
+                //let depth=left.depth;
                 let l1=wrap_mut(&mut left);//.inner.create_wrap_mut().with_depth(depth);
                 let l2=wrap_mut(&mut right);//.inner.create_wrap_mut().with_depth(depth);
                 let mut anchor=Anchor{axis,range:nn.bots,div:*div};
@@ -434,7 +445,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:Combine
 
 
             {
-                let depth=left.depth;
+                //let depth=left.depth;
                     
                 let l1=wrap_mut(&mut left);//.inner.create_wrap_mut().with_depth(depth);
                 let l2=wrap_mut(&mut right);//.inner.create_wrap_mut().with_depth(depth);

@@ -15,7 +15,7 @@ fn test1(bots:&mut [Bot])->(usize,usize){
     
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))).build_seq();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))).build_seq();
 
 
     let a=counter.into_inner();
@@ -39,7 +39,7 @@ fn test11(bots:&mut [Bot])->(usize,usize){
     
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
     }).build_not_sorted_seq();
 
@@ -65,7 +65,7 @@ fn test2(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).build_seq();
 
@@ -91,7 +91,7 @@ fn test3(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).build_par();
 
@@ -118,7 +118,7 @@ fn test4(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).build_not_sorted_seq();
 
@@ -144,7 +144,7 @@ fn test5(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).build_not_sorted_par();
 

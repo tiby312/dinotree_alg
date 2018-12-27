@@ -14,13 +14,6 @@ pub struct Bot{
     num:usize
 }
 
-/*
-#[derive(Copy,Clone)]
-enum RebalOrQuery{
-	Rebal,
-	Query
-}
-*/
 
 mod level_counter{
 	use crate::datanum;
@@ -64,19 +57,6 @@ mod level_counter{
 	        if len<a.levels.len(){
 	            self.levels.extend_from_slice(&a.levels[len..]);
 	        }
-	    	/*
-	        let (smaller,mut larger)=if self.levels.len()<a.levels.len(){
-	            (self,a)
-	        }else{
-	            (a,self)
-	        };
-
-
-	        for (a,b) in larger.levels.iter_mut().zip(smaller.levels.iter()){
-	            *a+=*b;
-	        }
-	        larger
-	        */
 	    }
 	    fn node_start(&mut self){
 	    	let counter=unsafe{&mut *self.counter};
@@ -115,7 +95,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 		    let mut levelc=level_counter::LevelCounter::new(&mut counter);
 
 
-			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
+			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
         		datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
 			}).build_with_splitter_seq(&mut levelc);
 	
@@ -172,22 +152,17 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 
 		
 
-		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,(),&bots,|b|{
+		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
 		        aabb_from_point_isize(b.pos,[5,5])  
 		}).build_with_splitter_seq(&mut times1);
 
 		
-		/*
-		let mut tree=dinotree::advanced::NotSorted::new_adv_seq(axgeom::XAXISS,(),&bots,|b|{
-			        aabb_from_point_isize(b.pos,[5,5])  
-			    },height,&mut times1);
-		*/
-
 
 		let mut times2=LevelTimer::new();
+		//colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
+		
 		colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
-		//colfind::query_nosort_seq_adv_mut(&mut tree,|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
-
+		
 	    tree.apply(&mut bots,|a,b|{
 	        *b=a.inner;
 	    });
@@ -215,7 +190,7 @@ fn grow_to_fit<T:Default>(a:&mut Vec<T>,b:usize){
 
 
 pub fn handle(fb:&mut FigureBuilder){
-	handle_bench(3000,fb);
+	handle_bench(300,fb);
 	//handle_theory(3000,fb);
 }
 
