@@ -215,7 +215,7 @@ fn apply_tree<'a,
     fn recc<'a,N:NodeMassTrait>
         (stuff:CombinedVistr<N::No,N::T>,ncontext:&mut N){
         
-        let ((depth,(misc,nn)),rest)=stuff.next();
+        let ((_,(misc,nn)),rest)=stuff.next();
         match rest{
             Some([mut left,mut right])=>{
                 //if let Some(cont)=nn.cont{        
@@ -416,7 +416,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
 fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Send>(join:J,axis:A,it:CombinedVistrMut<N::No,N::T>,ncontext:&mut N) where N::T:Send,N::No:Send{
     
 
-    let ((depth,(misc,nn)),rest)=it.next();
+    let ((depth,(_,nn)),rest)=it.next();
     match rest{
         Some([mut left,mut right])=>{
             let div=match nn.div{
@@ -502,7 +502,7 @@ trait Bok2{
         match rest{
             Some([left,right])=>{
                 match nn.div{
-                    Some(b)=>(),
+                    Some(_)=>(),
                     None=>return
                 };
                 

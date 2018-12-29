@@ -114,11 +114,11 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
     pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
-        axis:A,
+        _axis:A,
         r1: &mut [F::T],
         r2: &mut [F::T],
         clos2: &mut F){
-        /*
+        /* //TODO
         if r1.len()*r2.len()>128{
             let mut bots2:&mut Vec<WrapT<I>>=unsafe{&mut *(self.helper2.get_empty_vec_mut() as *mut Vec<&mut I> as *mut Vec<WrapT<I>>)};
             for b in r2.iter_mut().map(|a|WrapT{inner:a}){
