@@ -1,6 +1,6 @@
 use crate::inner_prelude::*;
 
-
+use dinotree::advanced::*;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
@@ -18,7 +18,7 @@ fn test1(bots:&mut [Bot])->f64{
     
     let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    }).with_rebal_strat(RebalStrat::First).build_par();
+    }).with_bin_strat(BinStrat::Checked).build_par();
     
 
     black_box(tree);
@@ -35,7 +35,7 @@ fn test2(bots:&mut [Bot])->f64{
    
     let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    }).with_rebal_strat(RebalStrat::Second).build_par();
+    }).with_bin_strat(BinStrat::NotChecked).build_par();
     
     
     black_box(tree);
@@ -53,7 +53,7 @@ fn test3(bots:&mut [Bot])->f64{
    
     let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    }).with_rebal_strat(RebalStrat::First).build_seq();
+    }).with_bin_strat(BinStrat::Checked).build_seq();
     
     
     black_box(tree);
@@ -71,7 +71,7 @@ fn test4(bots:&mut [Bot])->f64{
    
     let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
-    }).with_rebal_strat(RebalStrat::Second).build_seq();
+    }).with_bin_strat(BinStrat::NotChecked).build_seq();
     
     
 
@@ -80,46 +80,6 @@ fn test4(bots:&mut [Bot])->f64{
     let a=instant_to_sec(instant.elapsed());
     a
 }
-
-
-
-fn test5(bots:&mut [Bot])->f64{
-    
-    let instant=Instant::now();
-
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
-    }).with_rebal_strat(RebalStrat::Third).build_par();
-    
-    
-
-    black_box(tree);
-
-    let a=instant_to_sec(instant.elapsed());
-    a
-}
-
-
-
-
-
-fn test6(bots:&mut [Bot])->f64{
-    
-    let instant=Instant::now();
-
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
-    }).with_rebal_strat(RebalStrat::Third).build_seq();
-    
-    
-
-    black_box(tree);
-
-    let a=instant_to_sec(instant.elapsed());
-    a
-}
-
-
 
 
 
@@ -132,11 +92,11 @@ pub fn handle(fb:&mut FigureBuilder){
 #[derive(Debug)]
 struct Record {
     num_bots:usize,
-    arr:[f64;6]    
+    arr:[f64;4]    
 }
 impl Record{
     fn draw(records:&[Record],fg:&mut Figure){
-        const NAMES:[&'static str;6]=["RebalStrat1","RebalStrat2","RebalStrat1 Seq","RebalStrat2 Seq","RebalStrat3","RebalStrat3 Seq"];
+        const NAMES:[&'static str;4]=["RebalStrat1","RebalStrat2","RebalStrat1 Seq","RebalStrat2 Seq"];
         {
             let k=fg.axes2d()
                 .set_title(&format!("Rebal vs Query Comparisons with a spiral grow of 1"), &[])
@@ -145,7 +105,7 @@ impl Record{
                 .set_y_label("Number of Comparisons", &[]);
 
             let x=records.iter().map(|a|a.num_bots);
-            for index in 0..6{
+            for index in 0..4{
                 let y=records.iter().map(|a|a.arr[index]);
                 k.lines(x.clone(),y,&[Caption(NAMES[index]),Color(COLS[index]),LineWidth(2.0)]);
             }
@@ -169,10 +129,8 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
         let b=test2(&mut bots);
         let c=test3(&mut bots);
         let d=test4(&mut bots);
-        let e=test5(&mut bots);
-        let f=test6(&mut bots);
 
-        let r=Record{num_bots,arr:[a,b,c,d,e,f]};
+        let r=Record{num_bots,arr:[a,b,c,d]};
         rects.push(r);      
     }
 

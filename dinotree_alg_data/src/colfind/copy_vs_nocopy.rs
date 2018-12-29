@@ -96,7 +96,7 @@ fn test4(bots:&mut [BBox<isize,Bot>])->f64{
         b.inner.num+=1;
     });
 
-    let bots=tree.into_original();
+    let bots = tree.into_original();
 
     black_box(bots);
 
@@ -137,18 +137,14 @@ impl Record{
     }
 }
 
+
+
 fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
-    for num_bots in (0..2000_000).step_by(20000){
-
-        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
-        }).collect();
-
+    for num_bots in (0..200_000).rev().step_by(1000){
         let mut bots2:Vec<BBox<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
             let b=Bot{num:0,pos};
@@ -156,10 +152,16 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
             unsafe{BBox::new(rect,b)}
         }).collect();
 
-        let a=test1(&mut bots);
-        let b=test2(&mut bots2);
+        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
+            let pos=[pos[0] as isize,pos[1] as isize];
+            Bot{num:0,pos}
+        }).collect();
+
         let c=test3(&mut bots);
         let d=test4(&mut bots2);
+
+        let a=test1(&mut bots);
+        let b=test2(&mut bots2);
 
         let r=Record{num_bots,arr:[a,b,c,d]};
         rects.push(r);      

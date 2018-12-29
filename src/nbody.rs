@@ -207,12 +207,12 @@ fn buildtree<'a,
     recc(axis,node,misc_nodes,ncontext,rect);
 }
 
-fn apply_tree<'a,   
+fn apply_tree<   
     N:NodeMassTrait
     >
     (_axis:impl AxisTrait,node:CombinedVistr<N::No,N::T>,ncontext:&mut N){
 
-    fn recc<'a,N:NodeMassTrait>
+    fn recc<N:NodeMassTrait>
         (stuff:CombinedVistr<N::No,N::T>,ncontext:&mut N){
         
         let ((_,(misc,nn)),rest)=stuff.next();

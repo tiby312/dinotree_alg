@@ -1,5 +1,5 @@
 use crate::inner_prelude::*;
-use dinotree::advanced::RebalStrat;
+use dinotree::advanced::BinStrat;
 
 #[derive(Copy,Clone)]
 pub struct Bot{

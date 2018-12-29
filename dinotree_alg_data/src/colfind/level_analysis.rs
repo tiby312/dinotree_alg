@@ -190,7 +190,7 @@ fn grow_to_fit<T:Default>(a:&mut Vec<T>,b:usize){
 
 
 pub fn handle(fb:&mut FigureBuilder){
-	handle_bench(300,fb);
+	handle_bench(10000,fb);
 	//handle_theory(3000,fb);
 }
 
@@ -215,17 +215,17 @@ fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 	  	let x=res.iter().map(|a|a.grow);
     
     	if rebal{
-	  		let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.rebal[ii])});
+	  		let cc=(0..num).step_by(2).map(|ii:usize|{res.iter().map(move |a|a.rebal[ii])});
 
 		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
-		  		let s=format!("Level {}",i);
+		  		let s=format!("Level {}",2*i);
 		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(1.0)]);
 		  	}
 		}else{
-			let cc=(0..num).map(|ii:usize|{res.iter().map(move |a|a.query[ii])});
+			let cc=(0..num).step_by(2).map(|ii:usize|{res.iter().map(move |a|a.query[ii])});
 			
 		  	for (i,(col,y)) in COLS.iter().cycle().zip( cc   ).enumerate(){
-		  		let s=format!("Level {}",i);
+		  		let s=format!("Level {}",2*i);
 		  		ax.lines(x.clone(),y,&[Color(col),Caption(&s),LineWidth(1.0)]);
 		  	}
 		}

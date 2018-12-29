@@ -14,7 +14,6 @@ pub struct DestructuredNode<'a,T:HasAabb,AnchorAxis:AxisTrait>{
 }
 
 pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:AxisTrait>{
-    //pub range:&'a mut BotRange<T>,
     pub range:&'a mut [T],
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:A
@@ -144,16 +143,8 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                 let r2 = oned::get_section_mut(current.axis,anchor.range,current.cont);   
 
 
-                //TODO document this!!!!!!!!!!!!!
-                //if r1.len()*r2.len()>64{
-                //let mut bots2:Vec<_>=r2.iter_mut().map(|a|WrapT{inner:a}).collect();
-                //dinotree::advanced::sweeper_update(anchor.axis,&mut bots2);
-                //self.sweeper.find_parallel_2d_ptr(current.axis.next(),r1,&mut bots2,func);
-
-                //}else{
-                    self.sweeper.find_perp_2d1(anchor.axis,r1,r2,func);
-                //}
-
+                self.sweeper.find_perp_2d1(anchor.axis,r1,r2,func);
+            
 
         } else if current.cont.intersects(anchor.cont){
             self.sweeper.find_parallel_2d(

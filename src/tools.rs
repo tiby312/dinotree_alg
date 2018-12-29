@@ -40,15 +40,14 @@ use std::ptr::Unique;
 
 
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
+#[derive(Clone)]
 pub struct PreVecMut<T> {
-    //vec: smallvec::SmallVec<[Unique<T>; 64]>,
     vec:Vec<Unique<T>>
 }
 impl<T> PreVecMut<T> {
     #[inline(always)]
     pub fn new() -> PreVecMut<T> {
         PreVecMut {
-            //vec: smallvec::SmallVec::new(),
             vec:Vec::new()
         }
     }
