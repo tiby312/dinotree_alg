@@ -13,7 +13,7 @@ pub struct Bot{
 fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
 
     use std::time::Instant;
-    use std::time::Duration;
+    
     #[derive(Debug)]
     struct Record {
         num_bots: usize,
@@ -23,11 +23,6 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
         bench_naive:Option<f64>,
         bench_nosort_par:Option<f64>,
         bench_nosort_seq:Option<f64>
-    }
-
-    fn instant_to_sec(elapsed:Duration)->f64{
-         (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0)
-               
     }
 
     let mut records=Vec::new();
@@ -226,12 +221,12 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:us
         num_comparison_nosort:usize
     }
 
-    let stop_naive_at=2000;
-    let stop_sweep_at=20000;
+    let stop_naive_at=2_000;
+    let stop_sweep_at=20_000;
 
     let mut records=Vec::new();
 
-    for num_bots in (0usize..100000).step_by(200){
+    for num_bots in (0usize..100_000).step_by(200){
         let s2=s.clone();
         let mut bots:Vec<Bot>=s2.take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
@@ -354,28 +349,30 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:us
 
 
 pub fn handle(fb:&mut FigureBuilder){
-    let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
-    let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
            
     {
+        let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
+        let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
+    
         let mut fg=fb.new("colfind_theory");
         //handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0");
         handle_bench(&s1.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",0);
         
-        //handle_bench(&s2.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",1);
+        handle_bench(&s2.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",1);
         
         //fg.echo(&mut std::io::stdout());
         fb.finish(fg);
     }
-    /*
+    
     {
         let s=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
         let mut fg=fb.new("colfind_theory_0.05");
-        handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05");
-        handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05");
+        
+        handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",0);
+        handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
         fb.finish(fg)   
     }
-    */
+    
     
     
 }

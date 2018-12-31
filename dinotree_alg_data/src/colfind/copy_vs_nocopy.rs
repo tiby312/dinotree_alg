@@ -9,6 +9,13 @@ pub struct Bot{
 }
 
 
+//TODO use this!!!
+trait TestInt{
+    type T;
+    type Result;
+    fn test(bots:&mut [Self::T])->Self::Result;
+    fn name(&self)->&'static str;
+}
 
 
 
@@ -32,8 +39,7 @@ fn test1(bots:&mut [Bot])->f64{
 
     black_box(tree);
 
-    let a=instant_to_sec(instant.elapsed());
-    a
+    instant_to_sec(instant.elapsed())
 }
 
 
@@ -53,8 +59,7 @@ fn test2(bots:&mut [BBox<isize,Bot>])->f64{
 
     black_box(bots);
 
-    let a=instant_to_sec(instant.elapsed());
-    a
+    instant_to_sec(instant.elapsed())
 }
 
 
@@ -78,8 +83,7 @@ fn test3(bots:&mut [Bot])->f64{
 
     black_box(tree);
 
-    let a=instant_to_sec(instant.elapsed());
-    a
+    instant_to_sec(instant.elapsed())
 }
 
 
@@ -100,8 +104,7 @@ fn test4(bots:&mut [BBox<isize,Bot>])->f64{
 
     black_box(bots);
 
-    let a=instant_to_sec(instant.elapsed());
-    a
+    instant_to_sec(instant.elapsed())
 }
 
 
@@ -120,7 +123,7 @@ struct Record {
 }
 impl Record{
     fn draw(records:&[Record],fg:&mut Figure){
-        const NAMES:[&'static str;4]=["Copy Seq","No Copy Seq","Copy Par","No Copy Par"];
+        const NAMES:&[&str]=&["Copy Seq","No Copy Seq","Copy Par","No Copy Par"];
         {
             let k=fg.axes2d()
                 .set_title(&format!("Rebal vs Query Comparisons with a spiral grow of 1"), &[])
@@ -157,13 +160,13 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
             Bot{num:0,pos}
         }).collect();
 
-        let c=test3(&mut bots);
-        let d=test4(&mut bots2);
+        let arr=[
+            test1(&mut bots),
+            test2(&mut bots2),
+            test3(&mut bots),
+            test4(&mut bots2)];
 
-        let a=test1(&mut bots);
-        let b=test2(&mut bots2);
-
-        let r=Record{num_bots,arr:[a,b,c,d]};
+        let r=Record{num_bots,arr};
         rects.push(r);      
     }
 

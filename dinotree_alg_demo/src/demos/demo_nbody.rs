@@ -256,10 +256,8 @@ impl DemoSys for DemoNbody{
                             }
                         }
                     }
-                    //max_diff=diff.max(max_diff);
                 }
                 let d=max_diff.unwrap();
-                //self.max_percentage_error=self.max_percentage_error.max(d.2*100.0);
                 self.max_percentage_error=d.2*100.0;
              
                 let f=num_pair_alg as f64/num_pair_naive as f64;
@@ -276,10 +274,7 @@ impl DemoSys for DemoNbody{
                 }
             }
         }
-        
-
-        //let mut tree=tree.with_extra(());                
-      
+              
         colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
             let (a,b)=if a.inner.mass>b.inner.mass{
                 (a,b)

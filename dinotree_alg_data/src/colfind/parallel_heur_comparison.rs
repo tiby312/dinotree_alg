@@ -55,7 +55,7 @@ fn test1(bots:&mut [Bot])->(f64,f64){
 
     let b=instant_to_sec(instant.elapsed());
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
@@ -82,7 +82,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
 
     let b=instant_to_sec(instant.elapsed());
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 

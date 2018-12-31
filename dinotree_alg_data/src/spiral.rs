@@ -18,7 +18,7 @@ fn handle1(fb:&mut FigureBuilder){
 	for grow in (0..100).map(|a|0.2+(a as f64)*0.02){
 		let s=dists::spiral::Spiral::new([0.0,0.0],17.0,grow);
 
-	    let mut bots:Vec<[f64;2]>=s.take(num_bots).collect();
+	    let bots:Vec<[f64;2]>=s.take(num_bots).collect();
     	
 
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   

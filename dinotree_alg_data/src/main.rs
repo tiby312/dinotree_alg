@@ -23,7 +23,6 @@ mod inner_prelude{
     pub(crate) use dists;
     pub use std::time::Instant;
     pub use std::time::Duration;
-    pub(crate) use ordered_float::NotNan;
     pub(crate) use crate::test::*;
 
 }
@@ -35,7 +34,6 @@ mod spiral;
 pub(crate) mod datanum;
 
 
-use std::env;
 
 
 use gnuplot::*;
@@ -43,12 +41,12 @@ pub struct FigureBuilder{
 }
 
 impl FigureBuilder{
-    fn new(&mut self,filename:&str)->Figure{
-        let mut fg=Figure::new();
-        let ss=format!("target/graphs/{}.png",filename);
+    fn new(&mut self,_filename:&str)->Figure{
+        Figure::new()
+        //let ss=format!("target/graphs/{}.png",filename);
         //println!("Creating {}",ss);
         //fg.set_terminal("pngcairo size 800, 600",&ss);
-        fg
+        
     }
     fn finish(&mut self,mut figure:Figure){
         //figure.echo(&mut std::io::stdout());
@@ -57,18 +55,18 @@ impl FigureBuilder{
 }
 
 fn main() {
-    use std::fs;
+    //use std::fs;
     
 
     let mut fb=FigureBuilder{};
     
     colfind::construction_vs_query::handle(&mut fb);
     
-    //colfind::level_analysis::handle(&mut fb);
-    //colfind::theory_colfind::handle(&mut fb);
-    //colfind::copy_vs_nocopy::handle(&mut fb);
+    colfind::level_analysis::handle(&mut fb);
+    colfind::theory_colfind::handle(&mut fb);
+    colfind::copy_vs_nocopy::handle(&mut fb);
     
-    /*
+    
     colfind::rebal_strat::handle(&mut fb);
     
     
@@ -84,6 +82,6 @@ fn main() {
     colfind::theory_colfind_3d::handle(&mut fb);
     colfind::height_heur_comparison::handle(&mut fb);
     //nbody::theory::handle(&mut fb);
-    */
+    
 
 }

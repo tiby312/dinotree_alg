@@ -31,7 +31,7 @@ fn test1(bots:&mut [Bot])->(usize,usize){
 
     let b=counter.into_inner();
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 
@@ -56,7 +56,7 @@ fn test11(bots:&mut [Bot])->(usize,usize){
 
     let b=counter.into_inner();
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 
@@ -84,7 +84,7 @@ fn test2(bots:&mut [Bot])->(f64,f64){
 
     let b=instant_to_sec(instant.elapsed());
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 fn test3(bots:&mut [Bot])->(f64,f64){
@@ -110,7 +110,7 @@ fn test3(bots:&mut [Bot])->(f64,f64){
 
     let b=instant_to_sec(instant.elapsed());
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 
@@ -137,7 +137,7 @@ fn test4(bots:&mut [Bot])->(f64,f64){
 
     let b=instant_to_sec(instant.elapsed());
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 fn test5(bots:&mut [Bot])->(f64,f64){
@@ -163,7 +163,7 @@ fn test5(bots:&mut [Bot])->(f64,f64){
 
     let b=instant_to_sec(instant.elapsed());
 
-    return (a,(b-a));
+    (a,(b-a))
 }
 
 
@@ -309,8 +309,8 @@ fn handle_grow(fb:&mut FigureBuilder){
         .set_title("Rebal vs Query Comparisons with 80,000 objects", &[])
         .lines(x.clone(), y1,  &[Caption("Rebalance"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Query"), Color("green"), LineWidth(2.0)])
-        //.lines(x.clone(), y3,  &[Caption("NoSort Query"), Color("red"), LineWidth(2.0)])
-        //.lines(x.clone(), y4,  &[Caption("NoSort Query"), Color("brown"), LineWidth(2.0)])
+        .lines(x.clone(), y3,  &[Caption("NoSort Query"), Color("red"), LineWidth(2.0)])
+        .lines(x.clone(), y4,  &[Caption("NoSort Query"), Color("brown"), LineWidth(2.0)])
         .set_x_label("Grow", &[])
         .set_y_label("Number of comparisons", &[]);
 

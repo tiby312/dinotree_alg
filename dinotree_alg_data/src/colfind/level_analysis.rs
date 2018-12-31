@@ -147,8 +147,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 	        Bot{num:0,pos}
 	    }).collect();
 	    
-	    let height=compute_tree_height_heuristic(num_bots);
-		let mut times1=LevelTimer::new();
+	    let mut times1=LevelTimer::new();
 
 		
 
@@ -191,7 +190,7 @@ fn grow_to_fit<T:Default>(a:&mut Vec<T>,b:usize){
 
 pub fn handle(fb:&mut FigureBuilder){
 	handle_bench(10000,fb);
-	//handle_theory(3000,fb);
+	handle_theory(3000,fb);
 }
 
 

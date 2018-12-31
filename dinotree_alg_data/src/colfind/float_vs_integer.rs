@@ -13,7 +13,7 @@ pub struct Bot{
 fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
     use std::time::Instant;
-    use std::time::Duration;
+    
     #[derive(Debug)]
     struct Record {
         num_bots: usize,
@@ -25,10 +25,6 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         bench_f64_par:f64
     }
 
-    fn instant_to_sec(elapsed:Duration)->f64{
-         (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0)
-               
-    }
 
     let mut records=Vec::new();
 

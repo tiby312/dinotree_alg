@@ -1,5 +1,4 @@
 use crate::inner_prelude::*;
-use dinotree::advanced::BinStrat;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
@@ -12,65 +11,55 @@ pub struct Bot{
 
 pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
 
-    let c1={
-        
-        let instant=Instant::now();
     
-        let func=|b:&Bot|{aabb_from_point_isize(b.pos,[5,5])};
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
+    let instant=Instant::now();
 
-        colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
-            a.inner.num+=2;
-            b.inner.num+=2;            
-        });
-        
-        tree.apply(bots,|a,b|{
-            *b=a.inner;
-        });
-        instant_to_sec(instant.elapsed())
+    let func=|b:&Bot|{aabb_from_point_isize(b.pos,[5,5])};
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
-    };
+    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+        a.inner.num+=2;
+        b.inner.num+=2;            
+    });
+    
+    tree.apply(bots,|a,b|{
+        *b=a.inner;
+    });
+    instant_to_sec(instant.elapsed())
 
-    c1
 }
 
 
 pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
     
     
-    let c1={
-        let mut counter=datanum::Counter::new();
+    let mut counter=datanum::Counter::new();
 
 
 
-        let func=|b:&Bot|{datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))};
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
+    let func=|b:&Bot|{datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))};
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
-        colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
-            a.inner.num+=2;
-            b.inner.num+=2;            
-        });
-        
-        tree.apply(bots,|a,b|{
-            *b=a.inner;
-        });
+    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+        a.inner.num+=2;
+        b.inner.num+=2;            
+    });
+    
+    tree.apply(bots,|a,b|{
+        *b=a.inner;
+    });
 
-        counter.into_inner()
-    };
+    counter.into_inner()
 
-    c1
 }
 
 pub fn create_bots(num_bots:usize)->Vec<Bot>{
     let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
 
-
-    let bots:Vec<Bot>=s.take(num_bots).map(|pos|{
+    s.take(num_bots).map(|pos|{
         let pos=[pos[0] as isize,pos[1] as isize];
         Bot{num:0,pos}
-    }).collect();
-    
-    bots
+    }).collect()    
 }
 
 
@@ -87,6 +76,7 @@ fn handle3d(fb:&mut FigureBuilder){
         num_bots:usize,
         bench:f64
     }
+    
     let mut benches:Vec<BenchRecord>=Vec::new();
     for num_bots in (5_000usize..20_000).step_by(100){
         let max_height=(num_bots as f64).log2() as usize;
