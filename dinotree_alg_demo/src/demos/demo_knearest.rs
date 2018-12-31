@@ -112,7 +112,7 @@ impl DemoSys for KnearestDemo{
         let vv={
             let kn=Kn{c:&c,g};
             let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-            k_nearest::k_nearest(tree.as_ref(),point,3,kn).into_iter()
+            k_nearest::k_nearest(tree.as_ref(),point,3,kn)
         };
 
         if check_naive{
@@ -159,8 +159,7 @@ impl DemoSys for KnearestDemo{
                 let kn=Kn2{};
                 let point=[f64n!(cursor[0]),f64n!(cursor[1])];
                 
-                let vv2=k_nearest::naive(tree.as_ref().into_iter(),point,3,kn).into_iter();
-                vv2
+                k_nearest::naive(tree.as_ref().into_iter(),point,3,kn).into_iter()
             };
             
 

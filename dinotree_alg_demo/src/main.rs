@@ -27,7 +27,7 @@ mod demo_iter{
             DemoIter(0)
         }
         pub fn next(&mut self,area:[u32;2])->Box<DemoSys>{
-            let area=[area[0] as f64,area[1] as f64];
+            let area=[f64::from(area[0]),f64::from(area[1])];
             let curr=self.0;
             self.0+=1;
 
@@ -88,7 +88,7 @@ fn main(){
                 curr=demo_iter.next(area);
             }
             if key == Key::C{
-                check_naive=!check_naive;
+                check_naive= !check_naive;
                 if check_naive{
                     println!("Naive checking is on. Some demo's will now check the tree algorithm against a naive non tree version");
                 }else{

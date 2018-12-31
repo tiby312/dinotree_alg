@@ -82,7 +82,7 @@ impl nbody::NodeMassTraitMut for Bla{
 
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,a:&'a Self::No,it:I){
 
-        if a.mass>0.0000001{
+        if a.mass>0.000_000_1{
 
             let total_forcex=a.force[0];
             let total_forcey=a.force[1];
@@ -233,7 +233,8 @@ impl DemoSys for DemoNbody{
             
                 for (a,bb) in bots3.iter().zip(bots2.iter()){
                     let b=&bb.inner;
-                    assert_eq!(a.mass,b.mass);
+                    //TODO what is this assertion?
+                    //assert_eq!(a.mass,b.mass);
                     let dis_sqr1=a.force[0]*a.force[0]+a.force[1]*a.force[1];
                     let dis_sqr2=b.force[0]*b.force[0]+b.force[1]*b.force[1];
                     let dis1=dis_sqr1.sqrt();
@@ -257,21 +258,18 @@ impl DemoSys for DemoNbody{
                         }
                     }
                 }
-                let d=max_diff.unwrap();
-                self.max_percentage_error=d.2*100.0;
+                let max_diff=max_diff.unwrap();
+                self.max_percentage_error=max_diff.2*100.0;
              
-                let f=num_pair_alg as f64/num_pair_naive as f64;
-                println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",d.0,self.max_percentage_error,f*100.0);
+                let f={
+                    let a:f64=num_pair_alg.as_();
+                    let b:f64=num_pair_naive.as_();
+                    a/b
+                };
+                
+                println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",max_diff.0,self.max_percentage_error,f*100.0);
 
-                {
-                    let ((x1,x2),(y1,y2))=d.1.get().get();
-                    let x1=x1-5.0;
-                    let y1=y1-5.0;
-                    let w=x2-x1+10.0;
-                    let h=y2-y1+10.0;
-                    let square = [x1.into_inner(),y1.into_inner(),w.into_inner(),h.into_inner()];
-                    rectangle([1.0,0.0,1.0,1.0], square, c.transform, g);
-                }
+                draw_rect_f64n([1.0,0.0,1.0,1.0],max_diff.1.get(),c,g);
             }
         }
               
@@ -391,7 +389,7 @@ impl DemoSys for DemoNbody{
             b.force=[0.0;2];
             b.vel=[1.0,0.0];
             bots.push(b);
-            break;
+            //break;
         }     
     }
 }

@@ -101,10 +101,10 @@ impl DemoSys for RaycastF64Demo{
         }
     
         { 
-            for i in 0..360{
-                let i=i as f64*(std::f64::consts::PI/180.0);
-                let x=(i.cos()*20.0) as f64 ;
-                let y=(i.sin()*20.0) as f64;
+            for dir in 0..360{
+                let dir=f64::from(dir)*(std::f64::consts::PI/180.0);
+                let x=(dir.cos()*20.0) as f64 ;
+                let y=(dir.sin()*20.0) as f64;
 
                 let ray={
                     let dir=[f64n!(x),f64n!(y)];
@@ -113,9 +113,9 @@ impl DemoSys for RaycastF64Demo{
                 };
 
                 
-                let k=raycast::raycast(tree.as_ref(),axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
+                let res=raycast::raycast(tree.as_ref(),axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
                 
-                let (ppx,ppy)=if let Some(k)=k{
+                let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point[0]+ray.dir[0]*k.1;
                     let ppy=ray.point[1]+ray.dir[1]*k.1;
                     (ppx,ppy)

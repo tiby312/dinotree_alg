@@ -78,20 +78,16 @@ impl DemoSys for IntersectWithDemo{
         for b in bots.iter_mut(){
             b.update();
             
-            match b.wall_move[0]{
-                Some((pos,vel))=>{
-                    b.pos[0]=pos.into_inner();
-                    b.vel[0]=vel;
-                },
-                None=>{}
+            if let Some((pos,vel))=b.wall_move[0]{
+                b.pos[0]=pos.into_inner();
+                b.vel[0]=vel;
             }
-            match b.wall_move[1]{
-                Some((pos,vel))=>{
-                    b.pos[1]=pos.into_inner();
-                    b.vel[1]=vel;
-                },
-                None=>{}
+
+            if let Some((pos,vel))=b.wall_move[1]{    
+                b.pos[1]=pos.into_inner();
+                b.vel[1]=vel;
             }
+
             b.wall_move[0]=None;
             b.wall_move[1]=None;
             

@@ -210,7 +210,8 @@ impl DemoSys for OrigOrderDemo{
         */
         
         fn conv(a:u8)->f32{
-            a as f32/256.0
+            let a:f32=a.as_();
+            a/256.0
         }
         for (bot,cols) in bots.iter().zip(self.colors.iter()){
             let rect=&Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]));

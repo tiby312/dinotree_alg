@@ -15,6 +15,7 @@ pub mod prelude{
     pub(crate) use axgeom;
     pub(crate) use crate::support::*;
     pub use dinotree::BBox;
+    pub use num_traits::cast::AsPrimitive;
 }
 use ordered_float::NotNan;
 
@@ -78,6 +79,9 @@ pub fn aabb_from_point_isize(p:[isize;2],r:[isize;2])->Rect<isize>{
 }
 
 use piston_window::*;
+
+
+
 pub fn draw_rect_f64n(col:[f32;4],r1:&Rect<F64n>,c:&Context,g:&mut G2d){
     let ((x1,x2),(y1,y2))=r1.get();        
     {
