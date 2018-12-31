@@ -10,7 +10,10 @@ pub const COLS:&[&str]=&["blue","green","red","violet","orange","pink","gray","b
 
 
 pub fn instant_to_sec(elapsed:Duration)->f64{
-    (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64) / 1_000_000_000.0      
+    use num_traits::cast::AsPrimitive;
+    let secs:f64=elapsed.as_secs().as_();
+    let nano:f64=elapsed.subsec_nanos().as_();
+    secs + nano / 1_000_000_000.0      
 }
 
 

@@ -184,7 +184,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 pub fn handle(fb:&mut FigureBuilder){
     let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
 
-    let mut fg=fb.new("colfind_float_vs_integer");
+    let mut fg=fb.build("colfind_float_vs_integer");
     handle_bench(&s,&mut fg);
     fb.finish(fg);
 }

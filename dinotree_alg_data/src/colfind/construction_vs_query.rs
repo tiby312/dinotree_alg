@@ -18,7 +18,7 @@ fn test1(bots:&mut [Bot])->(usize,usize){
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))).build_seq();
 
 
-    let a=counter.into_inner();
+    let a=*counter.get_inner();
 
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
         a.inner.num+=2;
@@ -43,7 +43,7 @@ fn test11(bots:&mut [Bot])->(usize,usize){
         datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
     }).build_not_sorted_seq();
 
-    let a=counter.into_inner();
+    let a=*counter.get_inner();
 
     colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
         a.inner.num+=2;
@@ -214,7 +214,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     let y1=rects.iter().map(|a|a.theory.0);
     let y2=rects.iter().map(|a|a.theory.1);
 
-    let mut fg= fb.new(&format!("colfind_rebal_vs_query_num_bots_grow_of_{}",grow));
+    let mut fg= fb.build(&format!("colfind_rebal_vs_query_num_bots_grow_of_{}",grow));
     
     fg.axes2d()
         .set_pos_grid(2,1,0)
@@ -273,7 +273,7 @@ fn handle_grow(fb:&mut FigureBuilder){
 
     let mut rects=Vec::new();
 
-    for grow in (0..200).map(|a|0.1+(a as f64)*0.005){
+    for grow in (0..200).map(|a|{let a:f64=a.as_();0.1+a*0.005}){
         let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
         let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{
@@ -302,7 +302,7 @@ fn handle_grow(fb:&mut FigureBuilder){
     let y3=rects.iter().map(|a|a.nosort_theory.0);
     let y4=rects.iter().map(|a|a.nosort_theory.1);
 
-    let mut fg= fb.new("colfind_rebal_vs_query_theory_spiral");
+    let mut fg= fb.build("colfind_rebal_vs_query_theory_spiral");
     
     fg.axes2d()
         .set_pos_grid(2,1,0)

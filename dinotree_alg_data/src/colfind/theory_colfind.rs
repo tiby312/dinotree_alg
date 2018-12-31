@@ -354,7 +354,7 @@ pub fn handle(fb:&mut FigureBuilder){
         let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
         let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
     
-        let mut fg=fb.new("colfind_theory");
+        let mut fg=fb.build("colfind_theory");
         //handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0");
         handle_bench(&s1.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",0);
         
@@ -366,7 +366,7 @@ pub fn handle(fb:&mut FigureBuilder){
     
     {
         let s=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
-        let mut fg=fb.new("colfind_theory_0.05");
+        let mut fg=fb.build("colfind_theory_0.05");
         
         handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",0);
         handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);

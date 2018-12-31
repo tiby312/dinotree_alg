@@ -11,11 +11,11 @@ pub fn handle(fb:&mut FigureBuilder){
 fn handle1(fb:&mut FigureBuilder){
 
 
-	let mut fg=fb.new("spiral_data");	
+	let mut fg=fb.build("spiral_data");	
 
 	let num_bots=10000;
 	let mut rects=Vec::new();
-	for grow in (0..100).map(|a|0.2+(a as f64)*0.02){
+	for grow in (0..100).map(|a|{let a:f64=a.as_();0.2+a*0.02}){
 		let s=dists::spiral::Spiral::new([0.0,0.0],17.0,grow);
 
 	    let bots:Vec<[f64;2]>=s.take(num_bots).collect();
@@ -65,7 +65,7 @@ fn handle2(fb:&mut FigureBuilder){
 
 
 
-	let mut fg=fb.new("spiral_visualize");	
+	let mut fg=fb.build("spiral_visualize");	
 
 
     let a=make(0.1);

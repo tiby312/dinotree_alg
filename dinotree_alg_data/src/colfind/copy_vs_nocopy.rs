@@ -126,7 +126,7 @@ impl Record{
         const NAMES:&[&str]=&["Copy Seq","No Copy Seq","Copy Par","No Copy Par"];
         {
             let k=fg.axes2d()
-                .set_title(&format!("Rebal vs Query Comparisons with a spiral grow of 1"), &[])
+                .set_title(&"Rebal vs Query Comparisons with a spiral grow of 1".to_string(), &[])
                 .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
                 .set_x_label("Number of Elements", &[])
                 .set_y_label("Number of Comparisons", &[]);
@@ -170,7 +170,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
         rects.push(r);      
     }
 
-    let mut fg= fb.new(&format!("colfind_rebal_vs_query_num_bots_grow_of_{}",grow));
+    let mut fg= fb.build(&format!("colfind_rebal_vs_query_num_bots_grow_of_{}",grow));
     
     Record::draw(&rects,&mut fg);
     

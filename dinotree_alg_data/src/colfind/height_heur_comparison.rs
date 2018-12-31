@@ -92,7 +92,7 @@ fn handle3d(fb:&mut FigureBuilder){
     let y=benches.iter().map(|a|a.num_bots);
     let z=benches.iter().map(|a|a.bench);
 
-    let mut fg = fb.new("colfind_height_heuristic_3d");
+    let mut fg = fb.build("colfind_height_heuristic_3d");
 
     fg.axes3d().set_view(80.0,360.0-15.0)
         .set_title("Dinotree Colfind query bench times", &[])
@@ -157,24 +157,21 @@ fn handle_lowest(fb:&mut FigureBuilder){
             }
         }
 
-        match minimum{
-            Some((bench,height))=>{
-                benches.push(BenchRecord{height,num_bots,bench});
-            },
-            None=>{}
+        {
+            let (bench,height)=minimum.unwrap();
+            benches.push(BenchRecord{height,num_bots,bench});
+        }
+        {
+            let (theory,height)=minimum_theory.unwrap();
+            theories.push(TheoryRecord{height,num_bots,_theory:theory})            
         }
 
-        match minimum_theory{
-            Some((theory,height))=>{
-                theories.push(TheoryRecord{height,num_bots,_theory:theory})
-            },
-            None=>{}
-        }
+
     }
 
 
     {
-        let mut fg = fb.new("colfind_optimal_height_vs_heuristic_height");
+        let mut fg = fb.build("colfind_optimal_height_vs_heuristic_height");
 
         let xx=theories.iter().map(|a|a.num_bots);
         let yy=theories.iter().map(|a|a.height);
@@ -228,7 +225,7 @@ fn handle_lowest(fb:&mut FigureBuilder){
         let y1=benches.iter().map(|a|a.bench);
         let y2=vals.iter();
         
-        let mut fg = fb.new("colfind_heuristic_bench_vs_optimal_bench");
+        let mut fg = fb.build("colfind_heuristic_bench_vs_optimal_bench");
 
         fg.axes2d()
         .set_title("Dinotree Colfind Query Bench Times: Optimal vs Heuristic", &[])
@@ -284,7 +281,7 @@ fn handle2d(fb:&mut FigureBuilder){
     let x=rects.iter().map(|a|a.height);
     let y=rects.iter().map(|a|a.num_comparison);
 
-    let mut fg = fb.new("colfind_height_heuristic");
+    let mut fg = fb.build("colfind_height_heuristic");
 
     fg.axes2d()
         .set_pos_grid(2,1,0)

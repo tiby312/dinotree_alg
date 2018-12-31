@@ -71,7 +71,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    let _ =colfind::QueryBuilder::new(tree.as_ref_mut()).with_switch_height(query_height).query_par(|a,b|{
+    colfind::QueryBuilder::new(tree.as_ref_mut()).with_switch_height(query_height).query_par(|a,b|{
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -130,7 +130,7 @@ pub fn handle(fb:&mut FigureBuilder){
     let yy1=seqs.iter().map(|a|a.0);
     let yy2=seqs.iter().map(|a|a.1);
 
-    let mut fg= fb.new("parallel_height_heuristic");
+    let mut fg= fb.build("parallel_height_heuristic");
     
     fg.axes2d()
         //.set_pos_grid(2,1,0)

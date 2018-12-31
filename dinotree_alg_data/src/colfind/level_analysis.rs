@@ -34,7 +34,7 @@ mod level_counter{
 	    }
 	    fn node_end_common(&mut self){
 	    	let counter=unsafe{&mut *self.counter};
-	    	let nc=counter.into_inner();
+	    	let nc=*counter.get_inner();
 
 	        let elapsed=nc-self.cursor.unwrap();
 	        self.levels.push(elapsed);
@@ -60,7 +60,7 @@ mod level_counter{
 	    }
 	    fn node_start(&mut self){
 	    	let counter=unsafe{&mut *self.counter};
-	    	self.cursor=Some(counter.into_inner());
+	    	self.cursor=Some(*counter.get_inner());
 	    }
 	    fn node_end(&mut self){
 	        self.node_end_common();
@@ -196,12 +196,12 @@ pub fn handle(fb:&mut FigureBuilder){
 
 fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 
-    let res1=handle_inner_bench(num_bots,(0..1000).map(|a|0.0005+(a as f64)*0.00001));
+    let res1=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f64=a.as_();0.0005+a*0.00001}));
 	
-	let res2=handle_inner_bench(num_bots,(0..1000).map(|a|0.01+(a as f64)*0.00002));
+	let res2=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f64=a.as_();0.01+a*0.00002}));
 
 
-    fn draw_graph(title_name:&str,fg:&mut Figure,res:&Vec<BenchRes>,rebal:bool,pos:usize){
+    fn draw_graph(title_name:&str,fg:&mut Figure,res:&[BenchRes],rebal:bool,pos:usize){
     	//let cols=["blue","green","red","violet","red","orange","pink","gray","brown"];
 	
     	let ax=fg.axes2d().set_pos_grid(2,1,pos as u32)
@@ -229,12 +229,12 @@ fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 		  	}
 		}
 	}
-	let mut fg=fb.new("level_analysis_bench_rebal");
+	let mut fg=fb.build("level_analysis_bench_rebal");
 	draw_graph(&format!("Rebal Level Bench with {} objects",num_bots),&mut fg,&res1,true,0);
 	draw_graph(&format!("Rebal Level Bench with {} objects",num_bots),&mut fg,&res2,true,1);
     fb.finish(fg);
     
-	let mut fg=fb.new("level_analysis_bench_query");
+	let mut fg=fb.build("level_analysis_bench_query");
 	draw_graph(&format!("Query Level Bench with {} objects",num_bots),&mut fg,&res1,false,0);
 	draw_graph(&format!("Query Level Bench with {} objects",num_bots),&mut fg,&res2,false,1);
     fb.finish(fg);
@@ -243,15 +243,15 @@ fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
 	
 
-    let res1=handle_inner_theory(num_bots,(0..100).map(|a|0.0005+(a as f64)*0.0001));
+    let res1=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f64=a.as_();0.0005+a*0.0001}));
 	
-	let res2=handle_inner_theory(num_bots,(0..100).map(|a|0.01+(a as f64)*0.0002));
+	let res2=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f64=a.as_();0.01+a*0.0002}));
 
 
     use gnuplot::*;
     
     
-    fn draw_graph(title_name:&str,fg:&mut Figure,res:&Vec<TheoryRes>,rebal:bool,pos:usize){
+    fn draw_graph(title_name:&str,fg:&mut Figure,res:&[TheoryRes],rebal:bool,pos:usize){
     	
     	let ax=fg.axes2d().set_pos_grid(2,1,pos as u32)
 	        .set_title(title_name, &[])
@@ -280,12 +280,12 @@ fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
 		}
 	}
 
-	let mut fg=fb.new("level_analysis_theory_rebal");
+	let mut fg=fb.build("level_analysis_theory_rebal");
 	draw_graph(&format!("Rebal Level Comparisons with {} Objects",num_bots),&mut fg,&res1,true,0);
 	draw_graph(&format!("Rebal Level Comparisons with {} Objects",num_bots),&mut fg,&res2,true,1);
     fb.finish(fg);
 
-	let mut fg=fb.new("level_analysis_theory_query");
+	let mut fg=fb.build("level_analysis_theory_query");
 	draw_graph(&format!("Query Level Comparisons with {} Objects",num_bots),&mut fg,&res1,false,0);
 	draw_graph(&format!("Query Level Comparisons with {} Objects",num_bots),&mut fg,&res2,false,1);
     fb.finish(fg);

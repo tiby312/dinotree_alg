@@ -24,6 +24,7 @@ mod inner_prelude{
     pub use std::time::Instant;
     pub use std::time::Duration;
     pub(crate) use crate::test::*;
+    pub use num_traits::cast::AsPrimitive;
 
 }
 #[macro_use]
@@ -41,7 +42,7 @@ pub struct FigureBuilder{
 }
 
 impl FigureBuilder{
-    fn new(&mut self,_filename:&str)->Figure{
+    fn build(&mut self,_filename:&str)->Figure{
         Figure::new()
         //let ss=format!("target/graphs/{}.png",filename);
         //println!("Creating {}",ss);

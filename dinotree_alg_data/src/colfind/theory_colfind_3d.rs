@@ -92,11 +92,15 @@ struct Record {
 
 
 
+
+
+
 fn handle_spiral(fb:&mut FigureBuilder){
     let mut rects=Vec::new();
 
     for num_bots in (0..10000).step_by(1000){
-        for grow in (0..100).map(|a|0.0005+(a as f64)*0.0001){//0.001 to 0.002
+
+        for grow in (0usize..100).map(|a|{let a:f64=a.as_();0.0005+a*0.0001}){//0.001 to 0.002
             let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
             let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{
@@ -135,7 +139,7 @@ fn handle_spiral_two(fb:&mut FigureBuilder){
     let mut rects=Vec::new();
 
     for num_bots in (0..10000).step_by(1000){
-        for grow in (0..100).map(|a|0.2+(a as f64)*0.1){
+        for grow in (0..100).map(|a|{let a:f64=a.as_();0.2+a*0.1}){
             let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
             
@@ -193,7 +197,7 @@ fn draw_rects(rects:&mut [Record],fb:&mut FigureBuilder,name1:&str,name2:&str){
         };
         
 
-        let mut fg=fb.new(name1);
+        let mut fg=fb.build(name1);
 
         fg.axes3d().set_view(110.0,30.0)
             .set_title("Comparison of Sweep and Prune versus Dinotree", &[])
@@ -209,7 +213,7 @@ fn draw_rects(rects:&mut [Record],fb:&mut FigureBuilder,name1:&str,name2:&str){
 
     {
         //let mut fg = Figure::new();
-        let mut fg=fb.new(name2);
+        let mut fg=fb.build(name2);
         let x=rects.iter().map(|a|a.num_bots);
         let y=rects.iter().map(|a|a.grow);
         let z=rects.iter().map(|a|a.num_pairs as f64);
