@@ -23,7 +23,7 @@ fn test_send_sync_dinotree(){
     let mut bots1:Vec<Bot>=Vec::new();
     let mut bots2:Vec<Bot>=Vec::new();
 
-    let (t1,t2)=rayon::join(||{DinoTree::new(axgeom::XAXISS,(),&mut bots1,|_|axgeom::Rect::new(0,0,0,0))},||{DinoTree::new(axgeom::YAXISS,(),&mut bots2,|_|axgeom::Rect::new(0,0,0,0))});
+    let (t1,t2)=rayon::join(||{DinoTreeBuilder::new(axgeom::XAXISS,&mut bots1,|_|axgeom::Rect::new(0,0,0,0))}.build_seq(),||{DinoTreeBuilder::new(axgeom::YAXISS,&mut bots2,|_|axgeom::Rect::new(0,0,0,0)).build_seq()});
 
     let (p1,p2)=(&t1,&t2);
 
@@ -43,10 +43,10 @@ fn test_zero_sized_type() {
             Bot
         }).collect();
 
-        let mut tree = DinoTree::new(axgeom::XAXISS,(),&mut bots,|_|axgeom::Rect::new(0,0,0,0));
+        let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
 
         let mut num=0;
-        dinotree_alg::colfind::query_seq_mut(&mut tree,|_, _| {
+        dinotree_alg::colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_, _| {
                num+=1;
         });
 
@@ -64,10 +64,10 @@ fn test_one_bot() {
     let mut bots:Vec<Bot> = Vec::new();
     bots.push(Bot);
     
-    let mut tree = DinoTree::new(axgeom::XAXISS,(),&mut bots,|_|axgeom::Rect::new(0,0,0,0));
+    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
 
     let mut num=0;
-    dinotree_alg::colfind::query_seq_mut(&mut tree,|_, _| {
+    dinotree_alg::colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_, _| {
            num+=1;
     });
 
@@ -89,11 +89,11 @@ fn recursive_dinotree(){
 
     let mut bots2=bots.clone();
 
-    let mut tree = DinoTree::new(axgeom::XAXISS,(),&mut bots,|_|axgeom::Rect::new(0,0,0,0));
+    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
 
-    let mut vec:Vec<DinoTree<axgeom::XAXISS,(),BBox<isize,Bot>>>=Vec::new();
-    dinotree_alg::colfind::query_seq_mut(&mut tree,|_, _| {
-           vec.push(DinoTree::new(axgeom::XAXISS,(),&mut bots2,|_|axgeom::Rect::new(0,0,0,0)));
+    let mut vec:Vec<DinoTree<axgeom::XAXISS,BBox<isize,Bot>>>=Vec::new();
+    dinotree_alg::colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_, _| {
+           vec.push(DinoTreeBuilder::new(axgeom::XAXISS,&mut bots2,|_|axgeom::Rect::new(0,0,0,0)).build_seq());
     });
 
     black_box(vec);
@@ -108,10 +108,10 @@ fn test_empty() {
 
     let mut bots:Vec<Bot> = Vec::new();
     
-    let mut tree = DinoTree::new(axgeom::XAXISS,(),&mut bots,|_|axgeom::Rect::new(0,0,0,0));
+    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
 
     let mut num=0;
-    dinotree_alg::colfind::query_seq_mut(&mut tree,|_, _| {
+    dinotree_alg::colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_, _| {
            num+=1;
     });
 

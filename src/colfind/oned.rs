@@ -295,7 +295,7 @@ fn test_parallel(){
     }
     impl Counter{
         fn make(&mut self,x1:isize,x2:isize)->BBox<isize,Bot>{
-            let b=unsafe{BBox::new(axgeom::Rect::new(x1,x2,0,10),Bot{id:self.counter})};
+            let b=BBox::new(axgeom::Rect::new(x1,x2,0,10),Bot{id:self.counter});
             self.counter+=1;
             b
         }
@@ -310,8 +310,8 @@ fn test_parallel(){
     let mut right=[b.make(1,2),b.make(-5,-4),b.make(2,3),b.make(-5,-4),b.make(3,4),b.make(-5,-4),b.make(4,5),b.make(-5,-4),b.make(5,6),b.make(-5,-4),b.make(6,7)];
     
 
-    let mut left=[b.make(0,10),b.make(5,20)];
-    let mut right=[b.make(16,20)];
+    //let mut left=[b.make(0,10),b.make(5,20)];
+    //let mut right=[b.make(16,20)];
 
     let mut sweeper=Sweeper::new();
     

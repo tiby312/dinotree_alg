@@ -49,8 +49,7 @@ fn test_sequential(num:usize,grow:f64){
     }).collect();
 
     {
-        let height=dinotree::advanced::compute_tree_height_heuristic(bots.len());
-     
+        
         let mut treetimes=dinotree::advanced::LevelTimer::new();   
         let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.create_rect()).build_with_splitter_seq(&mut treetimes);
         
