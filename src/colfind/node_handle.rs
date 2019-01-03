@@ -86,16 +86,13 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
         if res{
             for a in current.range.iter_mut(){
                 for b in anchor.range.iter_mut(){
-                    //if a.get().get_intersect_rect(b.get()).is_some(){
                     if a.get().intersects_rect(b.get()){
                         func.collide(a,b);
                     }
                 }
             }
         }
-        
     }
-
 }
 
 
@@ -139,11 +136,9 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
         let func=&mut self.func;
 
         if !current.axis.is_equal_to(anchor.axis) {
-                let r1 = oned::get_section_mut(anchor.axis,current.range,anchor.cont);
-                let r2 = oned::get_section_mut(current.axis,anchor.range,current.cont);   
-
-                self.sweeper.find_perp_2d1(anchor.axis,r1,r2,func);
-            
+            let r1 = oned::get_section_mut(anchor.axis,current.range,anchor.cont);
+            let r2 = oned::get_section_mut(current.axis,anchor.range,current.cont);   
+            self.sweeper.find_perp_2d1(anchor.axis,r1,r2,func);
 
         } else if current.cont.intersects(anchor.cont){
             self.sweeper.find_parallel_2d(

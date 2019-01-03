@@ -35,10 +35,12 @@ impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
                     let mut current=DestructuredNodeLeaf{axis:this_axis,range:nn.bots,cont};
                     self.sweeper.handle_children(&mut self.anchor,&mut current);
                 }    
+                
                 if this_axis.is_equal_to(anchor_axis) {
                     if *div >= self.anchor.cont.left {
                         self.go_down(this_axis.next(), left);
-                    } //TODO can be else if?
+                    }
+
                     if *div <= self.anchor.cont.right {
                         self.go_down(this_axis.next(), right);
                     };

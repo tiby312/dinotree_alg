@@ -54,9 +54,7 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb+Send,X:Copy+Send>(
     //This way we can paralleliz this function.
 
 
-    let mut b2:Vec<_>=unsafe {
-        b.iter_mut().map(|a|BBox::new(aabb_create(a),*a)).collect()
-    };
+    let mut b2:Vec<_>=b.iter_mut().map(|a|BBox::new(aabb_create(a),*a)).collect();
 
     for i in b2.iter_mut() {
         let rect=*i.get();
