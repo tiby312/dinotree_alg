@@ -127,52 +127,45 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
         };
 
         let c5={
-            //if num_bots<120000{
-                let instant=Instant::now();
+            let instant=Instant::now();
 
-                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                    aabb_from_point_isize(b.pos,[5,5])
-                }).build_not_sorted_par();
+            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
+                aabb_from_point_isize(b.pos,[5,5])
+            }).build_not_sorted_par();
 
-                colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
-                    a.inner.num+=1;
-                    b.inner.num+=1;
-                });
+            colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
+                a.inner.num+=1;
+                b.inner.num+=1;
+            });
 
-                tree.0.apply(&mut bots,|a,b|{
-                    b.num=a.inner.num;
-                });
+            tree.0.apply(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
 
 
-                Some(instant_to_sec(instant.elapsed()))
-            //}else {
-            //    None
-            //}
+            Some(instant_to_sec(instant.elapsed()))
+       
         };
 
         let c6={
-            //if num_bots<120000{
-                let instant=Instant::now();
+            let instant=Instant::now();
 
-                let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
-                    aabb_from_point_isize(b.pos,[5,5])
-                }).build_not_sorted_seq();
-
-
-                colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
-                    a.inner.num+=1;
-                    b.inner.num+=1;
-                });
-
-                tree.0.apply(&mut bots,|a,b|{
-                    b.num=a.inner.num;
-                });
+            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
+                aabb_from_point_isize(b.pos,[5,5])
+            }).build_not_sorted_seq();
 
 
-                Some(instant_to_sec(instant.elapsed()))
-            //}else {
-            //    None
-            //}
+            colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
+                a.inner.num+=1;
+                b.inner.num+=1;
+            });
+
+            tree.0.apply(&mut bots,|a,b|{
+                b.num=a.inner.num;
+            });
+
+
+            Some(instant_to_sec(instant.elapsed()))
         };
 
         records.push(Record{num_bots,bench_alg:c1,bench_par:c0,bench_sweep:c3,bench_naive:c4,bench_nosort_par:c5,bench_nosort_seq:c6});
@@ -364,6 +357,7 @@ pub fn handle(fb:&mut FigureBuilder){
         fb.finish(fg);
     }
     
+    
     {
         let s=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
         let mut fg=fb.build("colfind_theory_0.05");
@@ -372,6 +366,7 @@ pub fn handle(fb:&mut FigureBuilder){
         handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
         fb.finish(fg)   
     }
+    
     
     
     

@@ -38,49 +38,45 @@ pub(crate) mod datanum;
 
 
 use gnuplot::*;
-pub struct FigureBuilder{
-}
+pub struct FigureBuilder{}
 
 impl FigureBuilder{
     fn build(&mut self,_filename:&str)->Figure{
-        Figure::new()
-        //let ss=format!("target/graphs/{}.png",filename);
-        //println!("Creating {}",ss);
-        //fg.set_terminal("pngcairo size 800, 600",&ss);
-        
+        let mut fg = Figure::new();
+        let ss=format!("target/graphs/{}.png",_filename);
+        println!("Creating {}",ss);
+        //fg.set_terminal("pngcairo",&ss);// size 1024, 800
+        fg
     }
     fn finish(&mut self,mut figure:Figure){
-        //figure.echo(&mut std::io::stdout());
         figure.show();
     }
 }
 
 fn main() {
-    //use std::fs;
     
-
     let mut fb=FigureBuilder{};
     
     colfind::construction_vs_query::handle(&mut fb);
     
     colfind::level_analysis::handle(&mut fb);
+    
     colfind::theory_colfind::handle(&mut fb);
+    
     colfind::copy_vs_nocopy::handle(&mut fb);
     
-    
     colfind::rebal_strat::handle(&mut fb);
-    
-    
-    
-    
 
-    
-    
     colfind::parallel_heur_comparison::handle(&mut fb);
+    
     spiral::handle(&mut fb);
+    
     colfind::float_vs_integer::handle(&mut fb);
+    
     colfind::theory_colfind::handle(&mut fb);
+    
     colfind::theory_colfind_3d::handle(&mut fb);
+    
     colfind::height_heur_comparison::handle(&mut fb);
     //nbody::theory::handle(&mut fb);
     
