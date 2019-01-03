@@ -20,7 +20,7 @@ impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
     }
 }
 
-
+/*
 #[repr(transparent)]
 pub struct WrapT<'a,T:HasAabb+'a>{
     pub inner:&'a mut T
@@ -32,12 +32,13 @@ unsafe impl<'a,T:HasAabb> HasAabb for WrapT<'a,T>{
         self.inner.get()
     }
 }
+*/
 
 
 ///Provides 1d collision detection.
 pub struct Sweeper<T: HasAabb> {
     helper: tools::PreVecMut<T>,
-    helper2: tools::PreVecMut<T>,
+    //helper2: tools::PreVecMut<T>,
 }
 
 impl<T:HasAabb> std::default::Default for Sweeper<T>{
@@ -49,7 +50,7 @@ impl<I: HasAabb> Sweeper<I> {
     pub fn new() -> Sweeper<I> {
         Sweeper {
             helper: tools::PreVecMut::new(),
-            helper2: tools::PreVecMut::new()
+            //helper2: tools::PreVecMut::new()
         }
     }
 
@@ -69,7 +70,7 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
 
-
+    /*
     pub(crate) fn find_parallel_2d_ptr<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
@@ -84,6 +85,7 @@ impl<I: HasAabb> Sweeper<I> {
 
         self.find_bijective_parallel_ptr(axis,(bots1, bots2), &mut b);
     }
+    */
 
 
     pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
@@ -114,19 +116,19 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
     pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
-        axis:A,
+        _axis:A,
         r1: &mut [F::T],
         r2: &mut [F::T],
         clos2: &mut F){
-    
+        /*
         let mut bots2:&mut Vec<WrapT<I>>=unsafe{&mut *(self.helper2.get_empty_vec_mut() as *mut Vec<&mut I> as *mut Vec<WrapT<I>>)};
         for b in r2.iter_mut().map(|a|WrapT{inner:a}){
             bots2.push(b);
         }
         dinotree::advanced::sweeper_update(axis,&mut bots2);
         self.find_parallel_2d_ptr(axis,r1,&mut bots2,clos2);
-    
-        /*
+        */
+        
         for inda in r1.iter_mut() {
             for indb in r2.iter_mut() {
                 if inda.get().intersects_rect(indb.get()){
@@ -134,7 +136,8 @@ impl<I: HasAabb> Sweeper<I> {
                 }
             }
         } 
-        */   
+        
+           
     }
 
 
@@ -166,18 +169,7 @@ impl<I: HasAabb> Sweeper<I> {
                 {
                     let crr = curr_bot.get().get_range(axis);
                     //change this to do retain and then iter
-                    active.retain(|that_bot| {
-                        let brr = that_bot.get().get_range(axis);
-
-                        brr.right >= crr.left
-                        /*
-                        if brr.right < crr.left {
-                            false
-                        } else {
-                            true
-                        }
-                        */
-                    });
+                    active.retain(|that_bot|that_bot.get().get_range(axis).right >= crr.left);
                 }
 
                 for that_bot in active.iter_mut() {
@@ -213,18 +205,7 @@ impl<I: HasAabb> Sweeper<I> {
             }
             
             //Prune all the x's that are no longer touching the y.
-            active_x.retain(|x| {
-                x.get().get_range(axis).right >= y.get().get_range(axis).left
-                /*
-                if x.get().get_range(axis).right
-                    < y.get().get_range(axis).left
-                {
-                    false
-                } else {
-                    true
-                }
-                */
-            });
+            active_x.retain(|x| x.get().get_range(axis).right >= y.get().get_range(axis).left);
 
             //So at this point some of the x's could actualy not intersect y.
             //These are the x's that are to the complete right of y.
@@ -241,7 +222,7 @@ impl<I: HasAabb> Sweeper<I> {
         }
     }
 
-
+    /*
     fn find_bijective_parallel_ptr<A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
@@ -260,18 +241,7 @@ impl<I: HasAabb> Sweeper<I> {
             }
             
             //Prune all the x's that are no longer touching the y.
-            active_x.retain(|x| {
-                x.get().get_range(axis).right >= y.get().get_range(axis).left
-                /*
-                if x.get().get_range(axis).right
-                    < y.get().get_range(axis).left
-                {
-                    false
-                } else {
-                    true
-                }
-                */
-            });
+            active_x.retain(|x|x.get().get_range(axis).right >= y.get().get_range(axis).left);
 
             //So at this point some of the x's could actualy not intersect y.
             //These are the x's that are to the complete right of y.
@@ -287,8 +257,10 @@ impl<I: HasAabb> Sweeper<I> {
             }
         }
     }
+    */
 
 }
+
 
 #[test]
 fn test_parallel(){
@@ -304,7 +276,7 @@ fn test_parallel(){
     struct Test{
         set:BTreeSet<[usize;2]>
     };
-    impl ColMulti for &mut Test{
+    impl ColMulti for Test{
         type T=BBox<isize,Bot>;
         fn collide(&mut self,a:&mut Self::T,b:&mut Self::T){
             let [a,b]=[a.inner.id,b.inner.id];

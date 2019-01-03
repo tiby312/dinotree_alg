@@ -142,7 +142,6 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
                 let r1 = oned::get_section_mut(anchor.axis,current.range,anchor.cont);
                 let r2 = oned::get_section_mut(current.axis,anchor.range,current.cont);   
 
-
                 self.sweeper.find_perp_2d1(anchor.axis,r1,r2,func);
             
 

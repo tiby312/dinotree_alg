@@ -28,9 +28,9 @@ fn main() {
     bots.push(make_bot(5, (50, 60), (16, 30)));
 
     {
-        let mut tree = DinoTree::new(axgeom::YAXISS,(),&mut bots,|a|a.rect);
+        let mut tree = DinoTreeBuilder::new(axgeom::YAXISS,&mut bots,|a|a.rect).build_seq();
 
-        let mut rects = dinotree_alg::multirect::multi_rect_mut(&mut tree);
+        let mut rects = dinotree_alg::multirect::multi_rect_mut(tree.as_ref_mut());
         let r1 = axgeom::Rect::new(10, 25, 40, 70);
         let r2 = axgeom::Rect::new(40, 70, 10, 25);
 

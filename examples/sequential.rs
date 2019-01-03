@@ -29,9 +29,9 @@ fn main() {
 
     let mut pairs=Vec::new();
     {
-        let mut dinotree = DinoTree::new(axgeom::XAXISS,(),&mut bots,|a|a.rect);
+        let mut dinotree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.rect).build_seq();
 
-        dinotree_alg::colfind::query_seq_mut(&mut dinotree,|a, b| {
+        dinotree_alg::colfind::QueryBuilder::new(dinotree.as_ref_mut()).query_seq(|a, b| {
             pairs.push((a.inner.id,b.inner.id))
         });
     }

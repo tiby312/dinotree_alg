@@ -104,11 +104,11 @@ fn main() {
 
 
     {
-        let mut dinotree = DinoTree::new(axgeom::XAXISS,(),&mut bots,|a|a.rect);
+        let mut dinotree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.rect).build_seq();
 
         {
             let mut v=Vec::new();
-            for a in k_nearest::k_nearest(&mut dinotree,[100,0],1,Kn){
+            for a in k_nearest::k_nearest(dinotree.as_ref(),[100,0],1,Kn){
                 v.push(a);
             }
             assert_eq!(v[0].bots[0].inner.id,3);
@@ -116,7 +116,7 @@ fn main() {
         }
         {
             let mut v=Vec::new();
-            for a in k_nearest::k_nearest(&mut dinotree,[41,0],2,Kn){
+            for a in k_nearest::k_nearest(dinotree.as_ref(),[41,0],2,Kn){
                 v.push(a);
             }
             assert_eq!(v[0].bots[0].inner.id,0);

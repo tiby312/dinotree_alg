@@ -49,17 +49,18 @@ fn test_sequential(num:usize,grow:f64){
     }).collect();
 
     {
-        let treetimes=dinotree::advanced::LevelTimer::new();
         let height=dinotree::advanced::compute_tree_height_heuristic(bots.len());
-        let (mut tree,treetimes) = dinotree::advanced::new_adv_seq(axgeom::XAXISS,(),&mut bots,|a|a.create_rect(),height,treetimes);
-
-        let treetimes2=dinotree::advanced::LevelTimer::new();
+     
+        let mut treetimes=dinotree::advanced::LevelTimer::new();   
+        let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.create_rect()).build_with_splitter_seq(&mut treetimes);
         
-        let treetimes2=colfind::query_seq_adv_mut(&mut tree,|a, b| {
+
+        let mut treetimes2=dinotree::advanced::LevelTimer::new();
+        
+        colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a, b| {
             a.inner.col+=1;
             b.inner.col+=1;
-            
-        },treetimes2);
+        },&mut treetimes2);
 
         let treetimes=treetimes.into_inner();
         let treetimes2=treetimes2.into_inner();
