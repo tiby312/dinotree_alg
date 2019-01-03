@@ -153,7 +153,7 @@ impl DemoSys for OrigOrderDemo{
 
 
             let mut res2=Vec::new();
-            let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|unsafe{BBox::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)}).collect();
+            let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)).collect();
             colfind::query_naive_mut(&mut bots2,|a,b|{
                 let (a,b)=if a.inner.id<b.inner.id{
                     (a,b)

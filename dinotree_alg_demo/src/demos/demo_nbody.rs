@@ -210,7 +210,7 @@ impl DemoSys for DemoNbody{
             let num_pair_alg=bla.num_pairs_checked;
             
             let (bots2,num_pair_naive)={
-                let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|unsafe{BBox::new(bot.create_aabb(),*bot)}).collect();
+                let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(bot.create_aabb(),*bot)).collect();
                 let mut num_pairs_checked=0;
                 nbody::naive_mut(&mut bots2,|a,b|{
                     let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004,|a|a.sqrt());
