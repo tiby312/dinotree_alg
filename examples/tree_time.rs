@@ -73,7 +73,7 @@ fn test_sequential(num:usize,grow:f64){
 }
 
 fn main() {
-    let num=50_000;
+    let num=500_000;
     println!("Colliding {} bots! (run example with --release)",num);
 
     println!("Sequential ------------------------------------------------------------------------------------------------------------------");

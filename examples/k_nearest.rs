@@ -104,7 +104,7 @@ fn main() {
 
 
     {
-        let mut dinotree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.rect).build_seq();
+        let dinotree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.rect).build_seq();
 
         {
             let mut v=Vec::new();
