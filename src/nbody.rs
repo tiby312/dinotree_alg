@@ -139,6 +139,7 @@ fn wrap_mut<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistrMut<'a,N,T>)->Combine
 
     a.zip(b).with_depth(Depth(depth))
 }
+/*
 fn wrap<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistr<'a,N,T>)->CombinedVistr<'b,N,T>{
     let depth=bla.depth();
 
@@ -149,7 +150,7 @@ fn wrap<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistr<'a,N,T>)->CombinedVistr<
 
     a.zip(b).with_depth(Depth(depth))
 }
-
+*/
 
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
@@ -165,7 +166,7 @@ fn buildtree<'a,
         
         let (nn,rest)=stuff.next();
         match rest{
-            Some([mut left,mut right])=>{
+            Some([left,right])=>{
 
                 match nn.div{
                     None=>{
@@ -182,12 +183,15 @@ fn buildtree<'a,
                         let (l,r)=rect.subdivide(axis,*div);
 
                         let nodeb={
-                            let left=left.create_wrap_mut();
-                            let right=right.create_wrap_mut();
+                            //let left=left.create_wrap_mut();
+                            //let right=right.create_wrap_mut();
 
                             
-                            let i1=left.dfs_inorder_iter().flat_map(|node|{node.bots.iter()});
-                            let i2=right.dfs_inorder_iter().flat_map(|node|{node.bots.iter()});
+                            //let i1=left.dfs_inorder_iter().flat_map(|node|{node.bots.iter()});
+                            //let i2=right.dfs_inorder_iter().flat_map(|node|{node.bots.iter()});
+                            //let i3=nn.bots.iter().chain(i1.chain(i2));
+                            let i1=left.get_nodes().iter().flat_map(|a|a.get().bots.iter());
+                            let i2=right.get_nodes().iter().flat_map(|a|a.get().bots.iter());
                             let i3=nn.bots.iter().chain(i1.chain(i2));
                             ncontext.new(i3,rect)
                         };
@@ -222,10 +226,14 @@ fn apply_tree<
                     //let left=wrap(&mut left);
                     //let right=wrap(&mut right);
                                             
-                    let i1=wrap(&mut left).dfs_preorder_iter().flat_map(|(_,(_,nn))|{nn.bots.iter_mut()});
-                    let i2=wrap(&mut right).dfs_preorder_iter().flat_map(|(_,(_,nn))|{nn.bots.iter_mut()});
+                    //let i1=wrap(&mut left).dfs_preorder_iter().flat_map(|(_,(_,nn))|{nn.bots.iter_mut()});
+                    //let i2=wrap(&mut right).dfs_preorder_iter().flat_map(|(_,(_,nn))|{nn.bots.iter_mut()});
+                    //let i3=nn.bots.iter_mut().chain(i1.chain(i2));
+                    let i1=left.as_inner_mut().as_inner_mut().1.get_nodes_mut().iter_mut().flat_map(|a|a.get_mut().bots.iter_mut());
+                    let i2=right.as_inner_mut().as_inner_mut().1.get_nodes_mut().iter_mut().flat_map(|a|a.get_mut().bots.iter_mut());
                     let i3=nn.bots.iter_mut().chain(i1.chain(i2));
                     
+
                     ncontext.apply_to_bots(misc,i3);
                 //}
 
