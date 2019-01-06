@@ -2,14 +2,13 @@
 //! Some misc tests. Most tests can be found in the dinotree_alg_data project.
 //!
 
-#![feature(test)]
 extern crate dinotree;
 extern crate dinotree_alg;
 extern crate axgeom;
-extern crate test;
 extern crate dists;
-use test::*;
 use dinotree::*;
+
+//TODO write better code
 
 #[derive(Copy,Clone,Debug)]
 struct Bot{
@@ -50,7 +49,7 @@ fn test_zero_sized_type() {
                num+=1;
         });
 
-        black_box(num);
+        //black_box(num);
     }
 }
 
@@ -71,7 +70,7 @@ fn test_one_bot() {
            num+=1;
     });
 
-    black_box(num);
+    //black_box(num);
 }
 
 
@@ -96,7 +95,7 @@ fn recursive_dinotree(){
            vec.push(DinoTreeBuilder::new(axgeom::XAXISS,&mut bots2,|_|axgeom::Rect::new(0,0,0,0)).build_seq());
     });
 
-    black_box(vec);
+    //black_box(vec);
 }
 
 
@@ -115,7 +114,7 @@ fn test_empty() {
            num+=1;
     });
 
-    black_box(num);
+    //black_box(num);
 
 }
 

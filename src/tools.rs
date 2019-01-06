@@ -36,9 +36,9 @@ impl<T> Clone for PhantomSendSync<T> {
 unsafe impl<T> std::marker::Send for PreVecMut<T> {}
 unsafe impl<T> std::marker::Sync for PreVecMut<T> {}
 
-use std::ptr::Unique;
 
 
+use dinotree::advanced::Unique;
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
 #[derive(Clone)]
 pub struct PreVecMut<T> {

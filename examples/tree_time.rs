@@ -1,11 +1,8 @@
-#![feature(test)]
-
 extern crate dinotree;
 extern crate dinotree_alg;
 extern crate axgeom;
-extern crate test;
 extern crate dists;
-use test::*;
+
 
 use dinotree_alg::colfind;
 
@@ -68,7 +65,6 @@ fn test_sequential(num:usize,grow:f64){
         print_times("dinotree query times (seconds):",&treetimes2);
         
     };
-    black_box(bots);
     
 }
 

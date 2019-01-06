@@ -588,7 +588,7 @@ pub fn nbody_par<A:AxisTrait,T:HasAabb+Send,N:NodeMassTraitConst<T=T>+Sync>(mut 
     let mut misc_nodes=Vec::new();
     buildtree(axis,t1.vistr_mut(),&mut misc_nodes,&mut ncontext,rect);
 
-    let mut misc_tree=compt::dfs_order::CompleteTreeContainer::<_,compt::dfs_order::PreOrder>::from_vec(misc_nodes).unwrap();
+    let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
     {
         let k=dinotree::advanced::default_level_switch_sequential();
@@ -683,7 +683,7 @@ pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(mut t1:DinoTreeRefMut<A,N::T>,ncont
     
     buildtree(axis,t1.vistr_mut(),&mut misc_nodes,&mut ncontext,rect);
 
-    let mut misc_tree=compt::dfs_order::CompleteTreeContainer::<_,compt::dfs_order::PreOrder>::from_vec(misc_nodes).unwrap();
+    let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
     {
         let d=misc_tree.vistr_mut().zip(t1.vistr_mut()).with_depth(Depth(0));

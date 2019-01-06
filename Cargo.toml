@@ -21,4 +21,7 @@ smallvec = "0.6.5"
 itertools = "0.7.8"
 compt="1.5.3"
 axgeom="1.0.5"
-dinotree = "0.2.2"
+dinotree = "0.2.5"
+
+[features]
+#unstable =[]

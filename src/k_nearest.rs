@@ -420,7 +420,7 @@ impl<'a,T,D> Iterator for NearestResult<'a,T,D>{
 
 impl<'a,T,D> std::iter::FusedIterator for NearestResult<'a,T,D>{}
 impl<'a,T,D> std::iter::ExactSizeIterator for NearestResult<'a,T,D>{}
-unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResult<'a,T,D>{}
+//unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResult<'a,T,D>{}
 
 
 ///Returns the closest to the furthest unit found.
@@ -439,4 +439,4 @@ impl<'a,T,D> Iterator for NearestResultMut<'a,T,D>{
 }
 impl<'a,T,D> std::iter::FusedIterator for NearestResultMut<'a,T,D>{}
 impl<'a,T,D> std::iter::ExactSizeIterator for NearestResultMut<'a,T,D>{}
-unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResultMut<'a,T,D>{}
+//unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResultMut<'a,T,D>{}

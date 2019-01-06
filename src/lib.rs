@@ -21,10 +21,6 @@
 //! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
 //!
 
-#![feature(ptr_internals)]
-#![feature(test)]
-#![feature(trusted_len)]
-
 extern crate axgeom;
 extern crate compt;
 extern crate rayon;
@@ -32,7 +28,7 @@ extern crate smallvec;
 extern crate dinotree;
 extern crate itertools;
 
-#[cfg(test)]
+#[cfg(all(feature = "unstable", test))]
 extern crate test;
 
 extern crate is_sorted;
