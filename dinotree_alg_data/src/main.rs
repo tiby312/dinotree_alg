@@ -1,5 +1,5 @@
-#![feature(trusted_len)]
-#![feature(test)]
+//#![feature(trusted_len)]
+//#![feature(test)]
 extern crate compt;
 extern crate axgeom;
 extern crate dinotree_alg;
@@ -9,7 +9,15 @@ extern crate rayon;
 extern crate duckduckgeo;
 extern crate dists;
 extern crate gnuplot;
-extern crate test;
+//extern crate test;
+
+pub fn black_box<T>(dummy: T) -> T {
+    unsafe {
+        let ret = std::ptr::read_volatile(&dummy);
+        std::mem::forget(dummy);
+        ret
+    }
+}
 
 mod inner_prelude{
     pub(crate) use crate::FigureBuilder;
@@ -23,18 +31,14 @@ mod inner_prelude{
     pub(crate) use dists;
     pub use std::time::Instant;
     pub use std::time::Duration;
-    pub(crate) use crate::test::*;
+    pub use crate::black_box;
     pub use num_traits::cast::AsPrimitive;
-
 }
 #[macro_use]
 mod support;
 mod colfind;
-//mod nbody;
 mod spiral;
 pub(crate) mod datanum;
-
-
 
 
 use gnuplot::*;
