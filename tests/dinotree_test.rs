@@ -10,6 +10,30 @@ use dinotree::*;
 
 //TODO write better code
 
+
+#[test]
+fn query_test(){
+use axgeom;
+    use dinotree_sample::SampleBuilder;
+    use dinotree::DinoTreeNoCopyBuilder;
+    use dinotree_alg::colfind::{query_naive_mut,QueryBuilder};
+
+    let mut bots=SampleBuilder::new().with_num(10_000).build();
+    let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut bots).build_seq();
+    QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.collide(b));
+
+
+    let mut bots2=SampleBuilder::new().with_num(10_000).build();
+    query_naive_mut(&mut bots2,|a,b|a.collide(b));
+
+    for (a,b) in bots.iter().zip(bots2.iter()){
+        assert_eq!(a.acc,b.acc);
+    }
+
+
+}
+
+
 #[derive(Copy,Clone,Debug)]
 struct Bot{
     id:usize,

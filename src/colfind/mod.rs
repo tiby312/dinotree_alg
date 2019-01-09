@@ -1,26 +1,7 @@
-//!
-//! # User Guide
-//!
-//! Provides broadphase collision detection.
-//!
-//! There a multiple versions of the same fundamental query algorithm. There are parallel/sequential and 
-//! advanced versions. 
-//!
-//! ```ignore
-//! pub fn query_seq_mut<A:AxisTrait,T:HasAabb>(
-//!             tree:&mut DinoTree<A,(),T>,
-//!             func:impl FnMut(&mut T,&mut T));
-//!
-//! ```
-//! The user supplies a reference to the tree, and a function to be called on every pair. The order in which
-//! each pair is handled is not defined and has no meaning to the user.
-//! 
-//!
-//! # Safety
-//!
-//! There is unsafe code to reuse code between the sequential and parallel versions.
-//!
-//! 
+
+//! ## Overview
+//! Provides 2d broadphase collision detection.
+
 use crate::inner_prelude::*;
 
 ///Used for the advanced algorithms.
@@ -43,6 +24,15 @@ use self::node_handle::*;
 use self::inner::*;
 
 ///Naive algorithm.
+/// # Examples
+///
+/// ```
+/// use dinotree_sample::SampleBuilder;
+/// use dinotree_alg::colfind::query_naive_mut;
+///
+/// let mut bots=SampleBuilder::new().build();
+/// query_naive_mut(&mut bots,|a,b|a.collide(b));
+/// ```
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,|a,b|{
         if a.get().get_intersect_rect(b.get()).is_some(){
@@ -53,6 +43,17 @@ pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut 
 
 
 ///Sweep and prune algorithm.
+///Naive algorithm.
+/// # Examples
+///
+/// ```
+/// use axgeom;
+/// use dinotree_sample::SampleBuilder;
+/// use dinotree_alg::colfind::query_sweep_mut;
+///
+/// let mut bots=SampleBuilder::new().build();
+/// query_sweep_mut(axgeom::XAXISS,&mut bots,|a,b|a.collide(b));
+/// ```
 pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(&mut T,&mut T)){  
     ///Sorts the bots.
     fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
@@ -91,6 +92,19 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 ///Builder for a query on a NotSorted Dinotree.
+/// # Examples
+///
+/// ```
+/// use axgeom;
+/// use dinotree_sample::SampleBuilder;
+/// use dinotree::DinoTreeBuilder;
+/// use dinotree_alg::colfind::NotSortedQueryBuilder;
+/// use dinotree::HasAabb;
+///
+/// let mut bots=SampleBuilder::new().build();
+/// let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|*a.get()).build_not_sorted_seq();
+/// NotSortedQueryBuilder::new(&mut tree).query_seq(|a,b|a.inner.collide(&mut b.inner));
+/// ```
 pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
     tree:&'a mut NotSorted<A,T>
@@ -115,27 +129,31 @@ impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
     }
 
     pub fn query_with_splitter_seq(self,func:impl FnMut(&mut T,&mut T),splitter:&mut impl Splitter){
-
-        let b=inner::QueryFnMut::new(func);
-        
+        let b=inner::QueryFnMut::new(func);        
         let mut sweeper=HandleNoSorted::new(b);
-
-
         inner_query_seq_adv_mut(self.tree.0.as_ref_mut(),splitter,&mut sweeper);
     }    
 
     pub fn query_seq(self,func:impl FnMut(&mut T,&mut T)){
         let b=inner::QueryFnMut::new(func);
-    
         let mut sweeper=HandleNoSorted::new(b);
-
         inner_query_seq_adv_mut(self.tree.0.as_ref_mut(),&mut SplitterEmpty,&mut sweeper);
-   
-
     }
 }
 
 ///Builder for a query on a DinoTree.
+/// # Examples
+///
+/// ```
+/// use axgeom;
+/// use dinotree_sample::SampleBuilder;
+/// use dinotree::DinoTreeNoCopyBuilder;
+/// use dinotree_alg::colfind::QueryBuilder;
+///
+/// let mut bots=SampleBuilder::new().build();
+/// let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut bots).build_seq();
+/// QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.collide(b));
+/// ```
 pub struct QueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
     tree:DinoTreeRefMut<'a,A,T>

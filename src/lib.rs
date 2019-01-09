@@ -1,5 +1,5 @@
-//! ## Goal
-//! To provide useful algorithms that you can perform on a dinotree.
+//! ## Overview
+//! This crate provides some useful 2d space querying algorithms that you can perform on a dinotree.
 //!
 //! ## Notes                      
 //!
@@ -8,16 +8,14 @@
 //! ## Testing
 //!
 //! A quick way to verify to a good level a lot of these algorithms is visually, so the demo inner project is used
-//! to verify correctness of a lot of these algorithms. Some of the algorithms demos additionally have an option to
-//! verify the algorithm against the naive algorithm. This is to catch more subtle corner case bugs.
-//! The demo projects are not deterministic. Its up to the user to try and trigger corner cases by moving their mouse around.
-//! More rigorous automated + visual testing and benchmarking is needed.
+//! to verify correctness of a lot of these algorithms. Coupled with these visual demo's, comparisons against the naive algorithm is used
+//! to catch more subtle corner case bugs.
 //! 
 //! Simply testing for correctness doesnt mean the algorithms are working as expected. 
-//! The dinotree_alg_data inner project measures a lot of these algorithms to give an even better feel that they are working
+//! The dinotree_alg_data inner project measures the performance of a lot of these algorithms to give an even better feel that they are working
 //! as anticipated. 
 //!
-//!# Analysis
+//! ## Analysis
 //! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
 //!
 
@@ -51,7 +49,6 @@ mod inner_prelude {
 ///Provides functionality to draw the dividers of a dinotree.
 pub mod graphics;
 
-///Contains aabb broadphase query code
 pub mod colfind;
 
 ///Allows user to intersect the tree with a seperate group of bots.

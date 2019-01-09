@@ -19,7 +19,7 @@ fn test1(bots:&mut [Bot])->(usize,usize){
 
 
     let a=*counter.get_inner();
-
+    
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
@@ -168,8 +168,8 @@ fn test5(bots:&mut [Bot])->(f64,f64){
 
 
 pub fn handle(fb:&mut FigureBuilder){
-    handle_num_bots(fb,0.2);
-    handle_num_bots(fb,2.0);
+    //handle_num_bots(fb,0.2);
+    //handle_num_bots(fb,2.0);
     handle_grow(fb);
 }
 
@@ -257,8 +257,9 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
 
 
 
+
 fn handle_grow(fb:&mut FigureBuilder){
-    let num_bots=80_000;
+    let num_bots=50_000;
 
     #[derive(Debug)]
     struct Record {
