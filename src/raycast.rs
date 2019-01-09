@@ -9,7 +9,7 @@
 //!
 //! ```ignore
 //! pub fn raycast_mut<'a,A:AxisTrait,T:HasAabb>(
-//!              tree:&'a mut DinoTree<A,(),T>,
+//!              tree:DinoTreeRefMut<'a, A, T>,
 //!              rect:Rect<T::Num>,
 //!              mut rtrait:impl RayTrait<T=T,N=T::Num>)
 //!       ->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{

@@ -2,7 +2,7 @@
 //!
 //! ```ignore
 //! pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
-//!        tree: &mut DinoTree<A,(),T>,
+//!        tree: DinoTreeRefMut<'a, A, T>,
 //!        rect: &Rect<T::Num>,
 //!        mut closure: impl FnMut(&mut T),
 //! );

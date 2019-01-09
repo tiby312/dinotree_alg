@@ -7,7 +7,7 @@
 //!
 //! ```ignore
 //! pub fn k_nearest_mut<'b, T: HasAabb, A: AxisTrait, K: Knearest<N = T::Num, T = T>>(
-//!     tree: &'b mut DinoTree<A, (), T>, 
+//!     tree: DinoTreeRefMut<'b, A, T>, 
 //!     point: [T::Num; 2], 
 //!     num: usize, 
 //!     knear: K

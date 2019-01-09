@@ -7,7 +7,7 @@
 //! A sequential and parallel version are supplied, both with a similar api:
 //! ```ignore
 //! pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(
-//!           t1:&mut DinoTree<A,N::No,N::T>,
+//!           t1:DinoTreeRefMut<'a, A, N::T>,
 //!           ncontext:&mut N,
 //!           rect:Rect<<N::T as HasAabb>::Num>){
 //! ```
