@@ -18,7 +18,7 @@ use axgeom;
     use dinotree::DinoTreeNoCopyBuilder;
     use dinotree_alg::colfind::{query_naive_mut,QueryBuilder};
 
-    let mut bots=SampleBuilder::new().with_num(10_000).build();
+    let mut bots=SampleBuilder::new().build().take(10_000);
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut bots).build_seq();
     QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.collide(b));
 

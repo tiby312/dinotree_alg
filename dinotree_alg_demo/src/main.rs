@@ -24,7 +24,7 @@ mod demo_iter{
 
     impl DemoIter{
         pub fn new()->DemoIter{
-            DemoIter(0)
+            DemoIter(7)
         }
         pub fn next(&mut self,area:[u32;2])->Box<DemoSys>{
             let area=[f64::from(area[0]),f64::from(area[1])];
@@ -32,7 +32,7 @@ mod demo_iter{
             self.0+=1;
 
 
-            if self.0==7{
+            if self.0==8{
                 self.0=0
             }
             match curr{
@@ -42,8 +42,9 @@ mod demo_iter{
                 2=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
                 3=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
                 4=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                5=>{Box::new(demo_original_order::OrigOrderDemo::new(area))}
-                6=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))}
+                5=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
+                6=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
+                7=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 _=>{panic!("Not possible")}
             }
         }

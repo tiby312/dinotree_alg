@@ -210,7 +210,7 @@ impl DemoSys for DemoNbody{
             let num_pair_alg=bla.num_pairs_checked;
             
             let (bots2,num_pair_naive)={
-                let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(bot.create_aabb(),*bot)).collect();
+                let mut bots2:Vec<BBoxMut<F64n,Bot>>=bots.iter().map(|bot|BBoxMut::new(bot.create_aabb(),*bot)).collect();
                 let mut num_pairs_checked=0;
                 nbody::naive_mut(&mut bots2,|a,b|{
                     let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004,|a|a.sqrt());
@@ -269,7 +269,7 @@ impl DemoSys for DemoNbody{
                 
                 println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",max_diff.0,self.max_percentage_error,f*100.0);
 
-                draw_rect_f64n([1.0,0.0,1.0,1.0],max_diff.1.get(),c,g);
+                draw_rect_f64n([1.0,0.0,1.0,1.0],&max_diff.1.aabb,c,g);
             }
         }
               

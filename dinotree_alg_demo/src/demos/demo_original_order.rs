@@ -19,6 +19,7 @@ pub struct Bot{
     vel:[f64;2],
     force:[f64;2],
 }
+
 impl duckduckgeo::RepelTrait for Bot{
     type N=f64;
     fn pos(&self)->[f64;2]{
@@ -50,7 +51,7 @@ impl Bot{
 
 pub struct OrigOrderDemo{
     radius:f64,
-    bots:Vec<Bot>,
+    bots:Vec<BBoxMut<F64n,Bot>>,
     colors:Vec<[u8;3]>,
     dim:[f64;2]
 }
@@ -60,7 +61,9 @@ impl OrigOrderDemo{
         let radius=[3,5];
         let velocity=[1,3];
         let bots=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
-            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],id}
+            let bot=Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],id};
+            let rect=Conv::from_rect(aabb_from_pointf64(ret.pos,[5.0;2]));
+            BBoxMut::new(rect,bot)
         }).collect();
  
         let colors=ColorGenerator::new().take(4000).collect();
@@ -71,19 +74,22 @@ impl OrigOrderDemo{
 impl DemoSys for OrigOrderDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
-        let bots=&mut self.bots;
-
-        for b in bots.iter_mut(){
-            b.update();
-            duckduckgeo::wrap_position(&mut b.pos,self.dim);
+        
+        for b in self.bots.iter_mut(){
+            b.inner.update();
+            b.aabb=Conv::from_rect(aabb_from_pointf64(b.inner.pos,[radius;2]));
+            duckduckgeo::wrap_position(&mut b.inner.pos,self.dim);
         }
 
 
+        /*
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
         }).build_par(); 
-
+        */
+        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
         
+
         rect::for_all_in_rect_mut(tree.as_ref_mut(),&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
@@ -141,26 +147,30 @@ impl DemoSys for OrigOrderDemo{
         }else{
             let mut res=Vec::new();
             colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
-                let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
-                let (a,b)=if a.inner.id<b.inner.id{
+                let a=&mut a.inner;
+                let b=&mut b.inner;
+                let _ = duckduckgeo::repel(a,b,0.001,2.0,|a|a.sqrt());
+                let (a,b)=if a.id<b.id{
                     (a,b)
                 }else{
                     (b,a)
                 };
-                res.push((a.inner.id,b.inner.id));
+                res.push((a.id,b.id));
             });
 
 
 
             let mut res2=Vec::new();
-            let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)).collect();
-            colfind::query_naive_mut(&mut bots2,|a,b|{
-                let (a,b)=if a.inner.id<b.inner.id{
+            //let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)).collect();
+            colfind::query_naive_mut(tree.get_bots_mut(),|a,b|{
+                let a=&mut a.inner;
+                let b=&mut b.inner;
+                let (a,b)=if a.id<b.id{
                     (a,b)
                 }else{
                     (b,a)
                 };
-                res2.push((a.inner.id,b.inner.id))
+                res2.push((a.id,b.id))
             });
 
             let cmp=|a:&(usize,usize),b:&(usize,usize)|{
@@ -199,7 +209,8 @@ impl DemoSys for OrigOrderDemo{
 
         }
         
-        tree.apply(bots,|b,t|*t=b.inner);
+        tree.into_original();
+        //tree.apply(bots,|b,t|*t=b.inner);
 
         /*
         //If you dont care about the order, you can do this instead.
@@ -213,8 +224,8 @@ impl DemoSys for OrigOrderDemo{
             let a:f32=a.as_();
             a/256.0
         }
-        for (bot,cols) in bots.iter().zip(self.colors.iter()){
-            let rect=&Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]));
+        for (bot,cols) in self.bots.iter().zip(self.colors.iter()){
+            let rect=&Conv::from_rect(aabb_from_pointf64(bot.inner.pos,[radius;2]));
             draw_rect_f64n([conv(cols[0]),conv(cols[1]),conv(cols[2]),1.0],rect,c,g);
         }        
     }

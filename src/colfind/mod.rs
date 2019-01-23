@@ -30,8 +30,8 @@ use self::inner::*;
 /// use dinotree_sample::SampleBuilder;
 /// use dinotree_alg::colfind::query_naive_mut;
 ///
-/// let mut bots=SampleBuilder::new().build();
-/// query_naive_mut(&mut bots,|a,b|a.collide(b));
+/// let mut bots=SampleBuilder::new().take(100).map(|aabb,inner|BBoxMut{aabb,inner});
+/// query_naive_mut(&mut bots,|a,b|a.inner.collide(&mut b.inner));
 /// ```
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     tools::for_every_pair(bots,|a,b|{
@@ -101,9 +101,9 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 /// use dinotree_alg::colfind::NotSortedQueryBuilder;
 /// use dinotree::HasAabb;
 ///
-/// let mut bots=SampleBuilder::new().build();
-/// let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|*a.get()).build_not_sorted_seq();
-/// NotSortedQueryBuilder::new(&mut tree).query_seq(|a,b|a.inner.collide(&mut b.inner));
+/// let (mut bots,radius)=SampleBuilder::new().build();
+/// let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.create_aabb(radius)).build_seq();
+/// QueryBuilder::new(&mut tree).query_seq(|a,b|a.inner.collide(&mut b.inner));
 /// ```
 pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
