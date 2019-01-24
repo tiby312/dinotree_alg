@@ -100,23 +100,25 @@ impl DemoSys for RigidBodyDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
         
-        for b in self.bots.iter_mut(){
-            //b.update();
-            //b.aabb=Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2]));
-            //duckduckgeo::wrap_position(&mut b.pos,self.dim);
-        }
 
 
-        handle_rigid_body(&mut self.bots,self.radius,self.radius*0.5,10);
+        handle_rigid_body(&mut self.bots,self.radius,self.radius,20);
 
         
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&self.bots,|bot|{
             bot.create_loose(radius)
         }).build_par(); 
         
-        rect::for_all_in_rect_mut(tree.as_ref_mut(),&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
+        rect::for_all_in_rect_mut(tree.as_ref_mut(),&Conv::from_rect(aabb_from_pointf64(cursor,[100.0+radius;2])),|b|{
             let diff=Vec2(cursor)-b.inner.pos;
-            b.inner.pos-=diff*0.1;    
+
+            let dis=diff.dis();
+            if dis<100.0{
+                let mag=100.0-dis;
+                if mag>0.0{
+                    b.inner.pos-=diff*(mag/dis);    
+                }
+            }
         });
         
         /*
@@ -127,6 +129,12 @@ impl DemoSys for RigidBodyDemo{
         
         tree.apply(&mut self.bots,|b,t|*t=b.inner);
         
+
+        for b in self.bots.iter_mut(){
+            //b.update();
+            //b.aabb=Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2]));
+            duckduckgeo::stop_wall(&mut b.pos.0,self.dim);
+        }
 
         /*
         //If you dont care about the order, you can do this instead.
