@@ -5,12 +5,13 @@
 extern crate dinotree;
 extern crate dinotree_alg;
 extern crate axgeom;
-extern crate dists;
+//extern crate dists;
 use dinotree::*;
 
 //TODO write better code
 
-
+use dinotree_sample::SampleBuilder;
+    
 #[test]
 fn query_test(){
 use axgeom;
@@ -18,16 +19,19 @@ use axgeom;
     use dinotree::DinoTreeNoCopyBuilder;
     use dinotree_alg::colfind::{query_naive_mut,QueryBuilder};
 
-    let mut bots=SampleBuilder::new().build().take(10_000);
-    let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut bots).build_seq();
-    QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.collide(b));
+    let test_size=2000;
+    let builder=SampleBuilder::new();
+    let mut bots:Vec<_>=builder.build().take(test_size).collect();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_seq();
+    QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.inner.collide(&mut b.inner));
 
 
-    let mut bots2=SampleBuilder::new().with_num(10_000).build();
-    query_naive_mut(&mut bots2,|a,b|a.collide(b));
+    let mut bots2=dinotree::advanced::into_bbox_vec(builder.build().take(test_size),|a|builder.create_aabb(a));
+
+    query_naive_mut(&mut bots2,|a,b|a.inner.collide(&mut b.inner));
 
     for (a,b) in bots.iter().zip(bots2.iter()){
-        assert_eq!(a.acc,b.acc);
+        assert_eq!(a.acc,b.inner.acc);
     }
 
 
@@ -60,13 +64,10 @@ fn test_zero_sized_type() {
 
   
     {
-        let s=dists::spiral::Spiral::new([400.0,400.0],17.0,0.7);
-    
-        let mut bots:Vec<_>=s.take(500).map(|_|{
-            Bot
-        }).collect();
+        let builder=SampleBuilder::new();
+        let mut bots:Vec<_>=builder.build().take(500).collect();
 
-        let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
+        let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_seq();
 
         let mut num=0;
         dinotree_alg::colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_, _| {

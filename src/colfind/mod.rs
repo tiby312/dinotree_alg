@@ -30,7 +30,8 @@ use self::inner::*;
 /// use dinotree_sample::SampleBuilder;
 /// use dinotree_alg::colfind::query_naive_mut;
 ///
-/// let mut bots=SampleBuilder::new().take(100).map(|aabb,inner|BBoxMut{aabb,inner});
+/// let mut builder=SampleBuilder::new();
+/// let mut bots = dinotree::advanced::into_bbox_vec(builder.build().take(1000),|a|builder.create_aabb(a));
 /// query_naive_mut(&mut bots,|a,b|a.inner.collide(&mut b.inner));
 /// ```
 pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
@@ -51,8 +52,9 @@ pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut 
 /// use dinotree_sample::SampleBuilder;
 /// use dinotree_alg::colfind::query_sweep_mut;
 ///
-/// let mut bots=SampleBuilder::new().build();
-/// query_sweep_mut(axgeom::XAXISS,&mut bots,|a,b|a.collide(b));
+/// let mut builder=SampleBuilder::new();
+/// let mut bots = dinotree::advanced::into_bbox_vec(builder.build().take(1000),|a|builder.create_aabb(a));
+/// query_sweep_mut(axgeom::XAXISS,&mut bots,|a,b|a.inner.collide(&mut b.inner));
 /// ```
 pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(&mut T,&mut T)){  
     ///Sorts the bots.
@@ -92,19 +94,6 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 ///Builder for a query on a NotSorted Dinotree.
-/// # Examples
-///
-/// ```
-/// use axgeom;
-/// use dinotree_sample::SampleBuilder;
-/// use dinotree::DinoTreeBuilder;
-/// use dinotree_alg::colfind::NotSortedQueryBuilder;
-/// use dinotree::HasAabb;
-///
-/// let (mut bots,radius)=SampleBuilder::new().build();
-/// let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.create_aabb(radius)).build_seq();
-/// QueryBuilder::new(&mut tree).query_seq(|a,b|a.inner.collide(&mut b.inner));
-/// ```
 pub struct NotSortedQueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,
     tree:&'a mut NotSorted<A,T>
@@ -147,12 +136,13 @@ impl<'a,A:AxisTrait,T:HasAabb+Send> NotSortedQueryBuilder<'a,A,T>{
 /// ```
 /// use axgeom;
 /// use dinotree_sample::SampleBuilder;
-/// use dinotree::DinoTreeNoCopyBuilder;
+/// use dinotree::DinoTreeBuilder;
 /// use dinotree_alg::colfind::QueryBuilder;
 ///
-/// let mut bots=SampleBuilder::new().build();
-/// let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut bots).build_seq();
-/// QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.collide(b));
+/// let builder = SampleBuilder::new();
+/// let mut bots:Vec<_>= builder.build().take(1000).collect();
+/// let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_seq();
+/// QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.inner.collide(&mut b.inner));
 /// ```
 pub struct QueryBuilder<'a,A:AxisTrait,T:HasAabb>{
     switch_height:usize,

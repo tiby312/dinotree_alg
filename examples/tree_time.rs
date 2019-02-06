@@ -1,8 +1,8 @@
 extern crate dinotree;
 extern crate dinotree_alg;
 extern crate axgeom;
-extern crate dists;
-
+//extern crate dists;
+extern crate dinotree_sample;
 
 use dinotree_alg::colfind;
 
@@ -37,25 +37,22 @@ impl Bot{
 
 
 fn test_sequential(num:usize,grow:f64){
-    let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     
-    let mut bots:Vec<_>=s.take(num).map(|pos|{
-        let x=pos[0] as isize;
-        let y=pos[1] as isize;
-        Bot{pos:[x,y],col:0}
-    }).collect();
+    use dinotree_sample::SampleBuilder;
+    let mut builder=SampleBuilder::new();
+
+    let mut bots:Vec<_>=builder.with_grow(grow).build().take(num).collect();
 
     {
         
         let mut treetimes=dinotree::advanced::LevelTimer::new();   
-        let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.create_rect()).build_with_splitter_seq(&mut treetimes);
+        let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_with_splitter_seq(&mut treetimes);
         
 
         let mut treetimes2=dinotree::advanced::LevelTimer::new();
         
         colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a, b| {
-            a.inner.col+=1;
-            b.inner.col+=1;
+            a.inner.collide(&mut b.inner);
         },&mut treetimes2);
 
         let treetimes=treetimes.into_inner();

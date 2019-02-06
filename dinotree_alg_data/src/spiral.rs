@@ -47,7 +47,8 @@ fn handle1(fb:&mut FigureBuilder){
         .lines(x, y,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("Spiral Grow", &[])
         .set_y_label("Number of Intersections", &[]);
-    fg.show();
+    
+    fb.finish(fg);
 }
 
 fn handle2(fb:&mut FigureBuilder){
@@ -82,7 +83,7 @@ fn handle2(fb:&mut FigureBuilder){
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
-    fg.show();
+    //fg.show();
 
 
     let a=make(0.5);
@@ -98,7 +99,8 @@ fn handle2(fb:&mut FigureBuilder){
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]) ;
-    fg.show();
+
+    //fb.finish(fg);
 
 
     let a=make(3.0);
@@ -114,7 +116,9 @@ fn handle2(fb:&mut FigureBuilder){
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
-    fg.show();
+
+    //fb.finish(fg);
+    //fg.show();
 
 
     let a=make(6.0);
@@ -130,6 +134,6 @@ fn handle2(fb:&mut FigureBuilder){
         .points(ax, ay,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
-    fg.show();
-    
+    //fg.show();
+    fb.finish(fg);
 }

@@ -10,7 +10,7 @@ use duckduckgeo::vec2f64::Vec2;
 #[derive(Copy,Clone,Debug)]
 pub struct RigidBody{
     pub pos:Vec2,
-    pub push_vec:Vec2
+    pub push_vec:Vec2,
 }
 
 impl RigidBody{
@@ -85,10 +85,11 @@ pub struct RigidBodyDemo{
 }
 impl RigidBodyDemo{
     pub fn new(dim:[f64;2])->RigidBodyDemo{
+        let dim=[dim[0],dim[1]-100.0];
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[2,5];
         let velocity=[0,1];
-        let bots=create_world_generator(1000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
+        let bots=create_world_generator(1300,dim2,radius,velocity).enumerate().map(|(id,ret)|{
             RigidBody::new(Vec2(ret.pos))//{pos:ret.pos,vel:ret.vel,force:[0.0;2],id,aabb:Conv::from_rect(aabb_from_pointf64(ret.pos,[5.0;2]))}
         }).collect();
  
@@ -102,7 +103,7 @@ impl DemoSys for RigidBodyDemo{
         
 
 
-        handle_rigid_body(&mut self.bots,self.radius,self.radius,20);
+        handle_rigid_body(&mut self.bots,self.radius,self.radius*2.0,20);
 
         
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&self.bots,|bot|{
