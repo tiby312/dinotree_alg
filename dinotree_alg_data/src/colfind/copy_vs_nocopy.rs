@@ -199,7 +199,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
-    for num_bots in (0..200_000).rev().step_by(1000){
+    for num_bots in (0..150_000).rev().step_by(2000){
         let mut bots2:Vec<BBoxMut<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
             let inner=Bot{num:0,pos,_val:[0;ARR_SIZE]};

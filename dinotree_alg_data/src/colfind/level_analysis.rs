@@ -187,14 +187,15 @@ fn grow_to_fit<T:Default>(a:&mut Vec<T>,b:usize){
 }
 
 
-
+/*
 pub fn handle(fb:&mut FigureBuilder){
 	handle_bench(10000,fb);
 	handle_theory(3000,fb);
 }
+*/
 
 
-fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
+pub fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
 
     let res1=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f64=a.as_();0.0005+a*0.00001}));
 	
@@ -240,7 +241,7 @@ fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
     fb.finish(fg);
 }
 
-fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
+pub fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
 	
 
     let res1=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f64=a.as_();0.0005+a*0.0001}));
