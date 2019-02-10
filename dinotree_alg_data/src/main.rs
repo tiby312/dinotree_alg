@@ -58,6 +58,12 @@ impl FigureBuilder{
         let ss=format!("{}/{}.gplot",&self.folder,filename);
         //println!("Creating {}",ss);
         
+        //let ss2=format!("{}/{}.png",&self.folder,filename);
+        fg.set_terminal("pngcairo size 800,600 enhanced font 'Veranda,10'","");
+        
+        fg.set_pre_commands("set output system(\"echo $FILE_PATH\")");        
+
+        //set terminal pngcairo size 350,262 enhanced font 'Verdana,10'
         self.last_file_name=Some(ss);
         //fg.set_terminal("pngcairo",&ss);// size 1024, 800
         fg
@@ -67,6 +73,9 @@ impl FigureBuilder{
         //figure.show();
     }
 }
+
+
+use std::path::Path;
 
 fn main() {
 
@@ -83,13 +92,18 @@ fn main() {
         "gen"=>{
             let folder=args[2].clone();
 
+            let path=Path::new(folder.trim_end_matches('/'));
+
+            println!("path={:?}",path);
+
             //std::fs::create_dir_all("target/gen");
-            std::fs::create_dir_all(&folder);
+            std::fs::create_dir_all(&path);
 
             let mut fb=FigureBuilder::new(folder);
             
-            /*
             colfind::copy_vs_nocopy::handle(&mut fb);
+            
+            /*
             
             colfind::construction_vs_query::handle(&mut fb);
             
@@ -117,9 +131,62 @@ fn main() {
 
         },
         "graph"=>{
-            //gnuplot -p "colfind_rebal_vs_query_num_bots_grow_of_1.gplot"
-            //std::fs::create_dir_all("target/graphs");
+            let folder=args[2].clone();
 
+            let path=Path::new(folder.trim_end_matches('/'));
+
+
+            let target_folder=args[3].clone();
+            let target_dir=Path::new(target_folder.trim_end_matches('/'));
+            std::fs::create_dir_all(&target_dir);
+
+
+            println!("path={:?}",path);
+
+            println!("target dir={:?}",target_dir);
+
+
+            let paths = std::fs::read_dir(path).unwrap();
+
+            for path in paths {
+                let path=match path{
+                    Ok(path)=>path,
+                    _=>continue
+                };
+
+
+
+                if let Some(ext) = path.path().extension(){
+                    if ext == "gplot"{
+                        let path_command=path.path();
+                        println!("generating {:?}",path.file_name());
+
+                        
+                        //let output=format!("-e \"output='{}' \"",path.path().with_extension("png").to_str().unwrap());
+                        //gnuplot -e "filename='foo.data'" foo.plg
+                    
+                        let mut command=std::process::Command::new("gnuplot");
+
+                        println!("filename={:?}",path.path().file_stem().unwrap());
+
+
+                        let new_path=path.path().with_extension("png");
+                        let blag=Path::new(new_path.file_name().unwrap().to_str().unwrap());
+                        let file_path=target_dir.join(blag);
+                        command
+                            .arg("-p")
+                            .arg(path_command)
+                            .env("FILE_PATH",file_path.to_str().unwrap());
+
+                        println!("command={:?}",command);
+
+                        let result=command.status()
+                            .expect("Couldn't spawn gnuplot. Make sure it is installed and available in PATH.");
+                    }
+                }
+            }
+            //gnuplot -p "colfind_rebal_vs_query_num_bots_grow_of_1.gplot"
+            println!("Finished generating graphs");
         },
         _=>{
             println!("First argument must be gen or graph");
