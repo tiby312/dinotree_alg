@@ -79,6 +79,12 @@ use std::path::Path;
 
 fn main() {
 
+    //to run program to generate android bench data.
+    //adb -d push binary /sdcard/dinotree/dinotree_data
+    //adb -d shell pm grant /sdcard/dinotree/dinotree_data android.permission.WRITE_EXTERNAL_STORAGE
+    //adb -d shell /sdcard/dinotree/dinotree_data bench /sdcard/dinotree/graphs
+    //adb -d pull "/sdcard/dinotree/graphs"
+    //
     //TODO
     //seperate into benches versus theory runs
     //run benches on laptop/new gaming laptop/android phone/web assembly, and compare differences.
@@ -89,45 +95,51 @@ fn main() {
     //assert_eq!(args.len(),2,"First arguent needs to be gen or graph");
 
     match args[1].as_ref(){
-        "gen"=>{
+        "theory"=>{
             let folder=args[2].clone();
-
             let path=Path::new(folder.trim_end_matches('/'));
-
-            println!("path={:?}",path);
-
-            //std::fs::create_dir_all("target/gen");
             std::fs::create_dir_all(&path);
-
             let mut fb=FigureBuilder::new(folder);
             
+            spiral::handle(&mut fb);
+            
+            colfind::colfind::handle_theory(&mut fb);
+        }
+        "bench"=>{
+            let folder=args[2].clone();
+            let path=Path::new(folder.trim_end_matches('/'));
+            std::fs::create_dir_all(&path);
+            let mut fb=FigureBuilder::new(folder);
+            
+            colfind::colfind::handle_bench(&mut fb);        
+
+            /*
             colfind::copy_vs_nocopy::handle(&mut fb);
             
-            /*
+            
             
             colfind::construction_vs_query::handle(&mut fb);
             
             
             colfind::level_analysis::handle(&mut fb);
             
-            colfind::theory_colfind::handle(&mut fb);
             
             
             colfind::rebal_strat::handle(&mut fb);
 
             colfind::parallel_heur_comparison::handle(&mut fb);
-            */
-            spiral::handle(&mut fb);
-            /*
+            
+            
             colfind::float_vs_integer::handle(&mut fb);
             
             colfind::theory_colfind::handle(&mut fb);
             
             colfind::theory_colfind_3d::handle(&mut fb);
-            */
+            
             //colfind::height_heur_comparison::handle(&mut fb);
             
             //nbody::theory::handle(&mut fb);
+            */
 
         },
         "graph"=>{

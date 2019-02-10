@@ -10,7 +10,7 @@ pub struct Bot{
 
 
 
-fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
+fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
 
     use std::time::Instant;
     
@@ -27,7 +27,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
 
     let mut records=Vec::new();
 
-    for num_bots in (0..400_000).rev().step_by(1000){
+    for num_bots in (0..40_000).rev().step_by(500){
         let s2=s.clone();
 
         let mut bots:Vec<Bot>=s2.take(num_bots).enumerate().map(|(_e,pos)|{
@@ -203,7 +203,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usi
 
 
 
-fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
+fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
 
     #[derive(Debug)]
     struct Record {
@@ -214,12 +214,12 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:us
         num_comparison_nosort:usize
     }
 
-    let stop_naive_at=2_000;
-    let stop_sweep_at=20_000;
+    let stop_naive_at=9_000;
+    let stop_sweep_at=30_000;
 
     let mut records=Vec::new();
 
-    for num_bots in (0usize..100_000).step_by(200){
+    for num_bots in (0usize..30_000).step_by(1000){
         let s2=s.clone();
         let mut bots:Vec<Bot>=s2.take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
@@ -328,7 +328,7 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:us
     let y4=rects.iter().map(|a|a.num_comparison_nosort);
 
     fg.axes2d()
-        .set_pos_grid(2,1,yposition as u32)
+        //.set_pos_grid(2,1,yposition as u32)
         .set_title(title, &[])
         .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
         .lines(x.clone(), y2,  &[Caption("Naive"), Color("blue"), LineWidth(4.0)])
@@ -341,7 +341,19 @@ fn handle_theory(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:us
 }
 
 
-pub fn handle(fb:&mut FigureBuilder){
+pub fn handle_theory(fb:&mut FigureBuilder){
+
+    {
+        let s=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
+        let mut fg=fb.build("colfind_theory_0.05");
+        
+        handle_theory_inner(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",0);
+        //handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
+        fb.finish(fg)   
+    }
+    
+}
+pub fn handle_bench(fb:&mut FigureBuilder){
            
     {
         let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
@@ -349,23 +361,14 @@ pub fn handle(fb:&mut FigureBuilder){
     
         let mut fg=fb.build("colfind_theory");
         //handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0");
-        handle_bench(&s1.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",0);
+        handle_bench_inner(&s1.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",0);
         
-        handle_bench(&s2.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",1);
+        handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
         
         //fg.echo(&mut std::io::stdout());
         fb.finish(fg);
     }
     
-    
-    {
-        let s=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
-        let mut fg=fb.build("colfind_theory_0.05");
-        
-        handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",0);
-        handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
-        fb.finish(fg)   
-    }
     
     
     
