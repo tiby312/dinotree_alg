@@ -157,13 +157,10 @@ fn handle_lowest(fb:&mut FigureBuilder){
             }
         }
 
-        {
+        if let Some((theory,height))=minimum_theory{
+            theories.push(TheoryRecord{height,num_bots,_theory:theory});            
             let (bench,height)=minimum.unwrap();
             benches.push(BenchRecord{height,num_bots,bench});
-        }
-        {
-            let (theory,height)=minimum_theory.unwrap();
-            theories.push(TheoryRecord{height,num_bots,_theory:theory})            
         }
 
 

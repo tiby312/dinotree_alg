@@ -195,7 +195,8 @@ pub fn handle(fb:&mut FigureBuilder){
 */
 
 
-pub fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
+pub fn handle_bench(fb:&mut FigureBuilder){
+	let num_bots=10000;
 
     let res1=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f64=a.as_();0.0005+a*0.00001}));
 	
@@ -241,8 +242,8 @@ pub fn handle_bench(num_bots:usize,fb:&mut FigureBuilder){
     fb.finish(fg);
 }
 
-pub fn handle_theory(num_bots:usize,fb:&mut FigureBuilder){
-	
+pub fn handle_theory(fb:&mut FigureBuilder){
+	let num_bots=3000;
 
     let res1=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f64=a.as_();0.0005+a*0.0001}));
 	

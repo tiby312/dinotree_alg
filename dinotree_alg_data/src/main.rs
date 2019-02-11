@@ -101,11 +101,11 @@ fn main() {
             std::fs::create_dir_all(&path);
             let mut fb=FigureBuilder::new(folder);
             
-            //spiral::handle(&mut fb);
-            //colfind::colfind::handle_theory(&mut fb);
-            //colfind::construction_vs_query::handle_theory(&mut fb);
-            //colfind::level_analysis::handle_theory(&mut fb);
-            //colfind::theory_colfind_3d::handle(&mut fb);
+            spiral::handle(&mut fb);
+            colfind::colfind::handle_theory(&mut fb);
+            colfind::construction_vs_query::handle_theory(&mut fb);
+            colfind::level_analysis::handle_theory(&mut fb);
+            colfind::theory_colfind_3d::handle(&mut fb);
         }
         "bench"=>{
             let folder=args[2].clone();
@@ -113,24 +113,20 @@ fn main() {
             std::fs::create_dir_all(&path);
             let mut fb=FigureBuilder::new(folder);
             
-            //colfind::colfind::handle_bench(&mut fb);        
-            //colfind::copy_vs_nocopy::handle(&mut fb);
-            //colfind::construction_vs_query::handle_bench(&mut fb);
-            //colfind::rebal_strat::handle(&mut fb);
-            //colfind::float_vs_integer::handle(&mut fb);
-            //colfind::level_analysis::handle_bench(&mut fb);
             
-            //This is the one thats interesting to see what the results are on phone/vs/laptop
-            //colfind::parallel_heur_comparison::handle(&mut fb);
+            colfind::colfind::handle_bench(&mut fb);        
+            colfind::copy_vs_nocopy::handle(&mut fb);
+            colfind::construction_vs_query::handle_bench(&mut fb);
+            colfind::rebal_strat::handle(&mut fb);
+            colfind::float_vs_integer::handle(&mut fb);
+            colfind::level_analysis::handle_bench(&mut fb);
+            
+            colfind::parallel_heur_comparison::handle(&mut fb);
+            
+            colfind::height_heur_comparison::handle(&mut fb); //This is the one thats interesting to see what the results are on phone/vs/laptop
+            
 
-            colfind::height_heur_comparison::handle(&mut fb);
-            
-            /*
-            
-            
             //nbody::theory::handle(&mut fb);
-            */
-
         },
         "graph"=>{
             let folder=args[2].clone();
