@@ -80,9 +80,10 @@ use std::path::Path;
 fn main() {
 
     //to run program to generate android bench data.
-    //adb -d push binary /sdcard/dinotree/dinotree_data
-    //adb -d shell pm grant /sdcard/dinotree/dinotree_data android.permission.WRITE_EXTERNAL_STORAGE
-    //adb -d shell /sdcard/dinotree/dinotree_data bench /sdcard/dinotree/graphs
+    //build armv7-linux-androideabi
+    //adb -d push dinotree_alg_data /data/local/tmp/dinotree_data
+    //adb -d shell pm grant /data/local/tmp/dinotree_data android.permission.WRITE_EXTERNAL_STORAGE
+    //adb -d shell /data/local/tmp/dinotree_data bench /sdcard/dinotree/graphs
     //adb -d pull "/sdcard/dinotree/graphs"
     //
     //TODO
@@ -113,14 +114,14 @@ fn main() {
             std::fs::create_dir_all(&path);
             let mut fb=FigureBuilder::new(folder);
             
-            
+            /*
             colfind::colfind::handle_bench(&mut fb);        
             colfind::copy_vs_nocopy::handle(&mut fb);
             colfind::construction_vs_query::handle_bench(&mut fb);
             colfind::rebal_strat::handle(&mut fb);
             colfind::float_vs_integer::handle(&mut fb);
             colfind::level_analysis::handle_bench(&mut fb);
-            
+            */
             colfind::parallel_heur_comparison::handle(&mut fb);
             
             colfind::height_heur_comparison::handle(&mut fb); //This is the one thats interesting to see what the results are on phone/vs/laptop
