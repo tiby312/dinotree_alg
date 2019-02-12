@@ -68,7 +68,7 @@ impl FigureBuilder{
         //fg.set_terminal("pngcairo",&ss);// size 1024, 800
         fg
     }
-    fn finish(&mut self,mut figure:Figure){
+    fn finish(&mut self,figure:Figure){
         figure.echo_to_file(&self.last_file_name.take().unwrap());
         //figure.show();
     }
@@ -76,6 +76,29 @@ impl FigureBuilder{
 
 
 use std::path::Path;
+use std::io::Write;
+use std::time::*;
+
+
+fn into_secs(elapsed: std::time::Duration) -> f64 {
+    (elapsed.as_secs() as f64) + (f64::from(elapsed.subsec_nanos()) / 1_000_000_000.0)
+}
+
+// This is a simple macro named `say_hello`.
+macro_rules! run_test {
+    // `()` indicates that the macro takes no argument.
+    ($fo:expr,$tre:expr) => (
+        // The macro will expand into the contents of this block.
+        print!("Running {}...",stringify!($tre));
+        std::io::stdout().flush().unwrap();
+        let time=Instant::now();
+        $tre($fo);
+        let val=into_secs(time.elapsed());
+        println!("finished in {} seconds.",val);
+
+    )
+}
+
 
 fn main() {
 
@@ -91,7 +114,8 @@ fn main() {
     //run benches on laptop/new gaming laptop/android phone/web assembly, and compare differences.
     // 
 
-
+    //println!("{:?}",stringify!(spiral::handle));
+            
     let args:Vec<String> = env::args().collect();
     //assert_eq!(args.len(),2,"First arguent needs to be gen or graph");
 
@@ -99,32 +123,31 @@ fn main() {
         "theory"=>{
             let folder=args[2].clone();
             let path=Path::new(folder.trim_end_matches('/'));
-            std::fs::create_dir_all(&path);
+            std::fs::create_dir_all(&path).expect("failed to create directory");
             let mut fb=FigureBuilder::new(folder);
             
-            spiral::handle(&mut fb);
-            colfind::colfind::handle_theory(&mut fb);
-            colfind::construction_vs_query::handle_theory(&mut fb);
-            colfind::level_analysis::handle_theory(&mut fb);
-            colfind::theory_colfind_3d::handle(&mut fb);
+            run_test!(&mut fb,spiral::handle);
+            run_test!(&mut fb,colfind::colfind::handle_theory);
+            run_test!(&mut fb,colfind::construction_vs_query::handle_theory);
+            run_test!(&mut fb,colfind::level_analysis::handle_theory);
+            run_test!(&mut fb,colfind::theory_colfind_3d::handle);
         }
         "bench"=>{
             let folder=args[2].clone();
             let path=Path::new(folder.trim_end_matches('/'));
-            std::fs::create_dir_all(&path);
+            std::fs::create_dir_all(&path).expect("failed to create directory");
             let mut fb=FigureBuilder::new(folder);
             
-            /*
-            colfind::colfind::handle_bench(&mut fb);        
-            colfind::copy_vs_nocopy::handle(&mut fb);
-            colfind::construction_vs_query::handle_bench(&mut fb);
-            colfind::rebal_strat::handle(&mut fb);
-            colfind::float_vs_integer::handle(&mut fb);
-            colfind::level_analysis::handle_bench(&mut fb);
-            */
-            colfind::parallel_heur_comparison::handle(&mut fb);
+            run_test!(&mut fb,colfind::colfind::handle_bench);
+            run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
+            run_test!(&mut fb,colfind::construction_vs_query::handle_bench);
+            run_test!(&mut fb,colfind::rebal_strat::handle);
+            run_test!(&mut fb,colfind::float_vs_integer::handle);
+            run_test!(&mut fb,colfind::level_analysis::handle_bench);
+            run_test!(&mut fb,colfind::parallel_heur_comparison::handle);
             
-            colfind::height_heur_comparison::handle(&mut fb); //This is the one thats interesting to see what the results are on phone/vs/laptop
+            //This is the one thats interesting to see what the results are on phone/vs/laptop
+            run_test!(&mut fb,colfind::height_heur_comparison::handle);
             
 
             //nbody::theory::handle(&mut fb);
@@ -137,12 +160,11 @@ fn main() {
 
             let target_folder=args[3].clone();
             let target_dir=Path::new(target_folder.trim_end_matches('/'));
-            std::fs::create_dir_all(&target_dir);
+            std::fs::create_dir_all(&target_dir).expect("failed to create directory");
 
 
-            println!("path={:?}",path);
-
-            println!("target dir={:?}",target_dir);
+            //println!("path={:?}",path);
+            //println!("target dir={:?}",target_dir);
 
 
             let paths = std::fs::read_dir(path).unwrap();
@@ -166,7 +188,7 @@ fn main() {
                     
                         let mut command=std::process::Command::new("gnuplot");
 
-                        println!("filename={:?}",path.path().file_stem().unwrap());
+                        //println!("filename={:?}",path.path().file_stem().unwrap());
 
 
                         let new_path=path.path().with_extension("png");
@@ -177,9 +199,9 @@ fn main() {
                             .arg(path_command)
                             .env("FILE_PATH",file_path.to_str().unwrap());
 
-                        println!("command={:?}",command);
+                        //println!("command={:?}",command);
 
-                        let result=command.status()
+                        command.status()
                             .expect("Couldn't spawn gnuplot. Make sure it is installed and available in PATH.");
                     }
                 }

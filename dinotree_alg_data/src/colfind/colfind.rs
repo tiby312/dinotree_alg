@@ -203,7 +203,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
 
 
 
-fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
+fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposition:usize){
 
     #[derive(Debug)]
     struct Record {
