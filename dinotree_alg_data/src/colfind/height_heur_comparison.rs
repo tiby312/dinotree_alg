@@ -65,10 +65,11 @@ pub fn create_bots(num_bots:usize)->Vec<Bot>{
 
 pub fn handle(fb:&mut FigureBuilder){
     handle2d(fb);
-    handle3d(fb);
+    //handle3d(fb);
     handle_lowest(fb);
 }
 
+/*
 fn handle3d(fb:&mut FigureBuilder){
 
     struct BenchRecord{
@@ -105,7 +106,7 @@ fn handle3d(fb:&mut FigureBuilder){
     fb.finish(fg);
 }
 
-
+*/
 
 fn handle_lowest(fb:&mut FigureBuilder){
 
@@ -191,24 +192,27 @@ fn handle_lowest(fb:&mut FigureBuilder){
 
         fg.axes2d()
             .set_pos_grid(2,1,0)
-            .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height.", &[])
+            .set_legend(Graph(1.0),Graph(0.0),&[LegendOption::Placement(AlignRight,AlignBottom)],&[])
+            .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height with aspiral(x,2.0)", &[])
             .set_x_label("Num bots", &[])
             .set_y_label("Best Tree Height", &[])
-            .points(xx, yy,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
-            .lines(heurx.clone(),heury.clone(),&[Caption("Heuristic")]);
+            .points(xx, yy,  &[Caption("Optimal"),PointSymbol('O'), Color("red"), PointSize(1.0)])
+            .points(heurx.clone(),heury.clone(),&[Caption("Heuristic"),PointSymbol('x'), Color("blue"), PointSize(2.0)]);
 
         fg.axes2d()
             .set_pos_grid(2,1,1)
-            .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height.", &[])
+            .set_legend(Graph(1.0),Graph(0.0),&[LegendOption::Placement(AlignRight,AlignBottom)],&[])
+            .set_title("Dinotree Colfind Query: Optimal Height vs Heuristic Height with aspiral(x,2.0)", &[])
             .set_x_label("Num bots", &[])
             .set_y_label("Best Tree Height", &[])
-            .points(x, y,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
-            .lines(heurx,heury,&[Caption("Heuristic")]);
+            .points(x, y,  &[Caption("Optimal"),PointSymbol('O'), Color("red"), PointSize(1.0)])
+            .points(heurx,heury,&[Caption("Heuristic"),PointSymbol('x'), Color("blue"), PointSize(2.0)]);
 
 
         fb.finish(fg);
         
     }
+    /*
     {
         let mut vals=Vec::new();
         for num_bots in its.clone(){
@@ -233,6 +237,7 @@ fn handle_lowest(fb:&mut FigureBuilder){
         fb.finish(fg);
     
     }
+    */
 
 
 }
@@ -282,7 +287,7 @@ fn handle2d(fb:&mut FigureBuilder){
 
     fg.axes2d()
         .set_pos_grid(2,1,0)
-        .set_title("Number of Comparisons with 10,000 objects in a dinotree with different numbers of objects per node", &[])
+        .set_title("Number of Comparisons with different numbers of objects per node with aspiral(10_000,2)", &[])
         .lines(x, y,  &[Color("blue"), LineWidth(2.0)])
         .set_x_label("Tree Height", &[])
         .set_y_label("Number of Comparisons", &[]);
@@ -296,7 +301,7 @@ fn handle2d(fb:&mut FigureBuilder){
 
     fg.axes2d()
         .set_pos_grid(2,1,1)
-        .set_title("Bench times with 10,000 objects in a dinotree with different numbers of objects per node (seq,colfind)", &[])
+        .set_title("Bench times with different numbers of objects per node (seq,colfind) with aspiral(10_000,2)", &[])
         .points(x,y,&[Color("blue"), LineWidth(2.0)])
         .set_x_label("Tree Height", &[])
         .set_y_label("Time in seconds", &[]);
