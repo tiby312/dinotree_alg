@@ -232,13 +232,13 @@ pub fn handle_bench(fb:&mut FigureBuilder){
 		}
 	}
 	let mut fg=fb.build("level_analysis_bench_rebal");
-	draw_graph(&format!("Rebal Level Bench with {} objects",num_bots),&mut fg,&res1,true,0);
-	draw_graph(&format!("Rebal Level Bench with {} objects",num_bots),&mut fg,&res2,true,1);
+	draw_graph(&format!("Rebal Level Bench with abspiral({},x)",num_bots),&mut fg,&res1,true,0);
+	draw_graph(&format!("Rebal Level Bench with abspiral({},x)",num_bots),&mut fg,&res2,true,1);
     fb.finish(fg);
     
 	let mut fg=fb.build("level_analysis_bench_query");
-	draw_graph(&format!("Query Level Bench with {} objects",num_bots),&mut fg,&res1,false,0);
-	draw_graph(&format!("Query Level Bench with {} objects",num_bots),&mut fg,&res2,false,1);
+	draw_graph(&format!("Query Level Bench with abspiral({},x)",num_bots),&mut fg,&res1,false,0);
+	draw_graph(&format!("Query Level Bench with abspiral({},x)",num_bots),&mut fg,&res2,false,1);
     fb.finish(fg);
 }
 

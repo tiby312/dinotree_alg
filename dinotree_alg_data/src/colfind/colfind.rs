@@ -219,7 +219,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
 
     let mut records=Vec::new();
 
-    for num_bots in (0usize..30_000).step_by(1000){
+    for num_bots in (0usize..30_000).step_by(500){
         let s2=s.clone();
         let mut bots:Vec<Bot>=s2.take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
@@ -361,9 +361,9 @@ pub fn handle_bench(fb:&mut FigureBuilder){
     
         let mut fg=fb.build("colfind_theory");
         //handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0");
-        handle_bench_inner(&s1.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",0);
+        handle_bench_inner(&s1.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,1.0)",0);
         
-        handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
+        handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,0.05)",1);
         
         //fg.echo(&mut std::io::stdout());
         fb.finish(fg);

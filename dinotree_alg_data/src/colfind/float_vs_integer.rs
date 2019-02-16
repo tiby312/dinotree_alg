@@ -166,7 +166,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
     let y6=rects.iter().map(|a|a.bench_f64_par);
 
     fg.axes2d()
-        .set_title("Comparison of DinoTree Performance With Different Number Types With aspiral(x,2.0)", &[])
+        .set_title("Comparison of DinoTree Performance With Different Number Types With abspiral(x,2.0)", &[])
         .lines(x.clone(), y1,  &[Caption("f32"), Color("blue"), LineWidth(1.6)])
         .lines(x.clone(), y2,  &[Caption("isize"), Color("green"), LineWidth(1.6)])
         .lines(x.clone(), y3,  &[Caption("f32 parallel"), Color("red"), LineWidth(1.6)])

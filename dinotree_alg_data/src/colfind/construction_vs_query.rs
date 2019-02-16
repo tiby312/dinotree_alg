@@ -356,18 +356,19 @@ fn handle_num_bots_bench(fb:&mut FigureBuilder){
     let y7=rects.iter().map(|a|a.nosort_par.0);
     let y8=rects.iter().map(|a|a.nosort_par.1);
 
+    let s=1.2;
     fg.axes2d()
         .set_pos_grid(2,1,1)
-        .set_title(&format!("Rebal vs Query Benches with a spiral grow of {}",2.0), &[])
-        .lines(x.clone(), y1,  &[Caption("Rebal Sequential"), Color("blue"), LineWidth(1.0)])
-        .lines(x.clone(), y2,  &[Caption("Query Sequential"), Color("green"), LineWidth(1.0)])
-        .lines(x.clone(), y3,  &[Caption("Rebal Parallel"), Color("red"), LineWidth(1.0)])
-        .lines(x.clone(), y4,  &[Caption("Query Parallel"), Color("brown"), LineWidth(1.0)])
+        .set_title(&format!("Rebal vs Query Benches with abspiral(x,2.0)"), &[])
+        .lines(x.clone(), y1,  &[Caption("Rebal Sequential"), Color("blue"), LineWidth(s)])
+        .lines(x.clone(), y2,  &[Caption("Query Sequential"), Color("green"), LineWidth(s)])
+        .lines(x.clone(), y3,  &[Caption("Rebal Parallel"), Color("red"), LineWidth(s)])
+        .lines(x.clone(), y4,  &[Caption("Query Parallel"), Color("brown"), LineWidth(s)])
         
-        .lines(x.clone(), y5,  &[Caption("NoSort Rebal"), Color("black"), LineWidth(1.0)])
-        .lines(x.clone(), y6,  &[Caption("NoSort Query"), Color("orange"), LineWidth(1.0)])
-        .lines(x.clone(), y7,  &[Caption("NoSort Parallel Rebal"), Color("pink"), LineWidth(1.0)])
-        .lines(x.clone(), y8,  &[Caption("NoSort Parallel Query"), Color("gray"), LineWidth(1.0)])
+        .lines(x.clone(), y5,  &[Caption("NoSort Rebal"), Color("black"), LineWidth(s)])
+        .lines(x.clone(), y6,  &[Caption("NoSort Query"), Color("orange"), LineWidth(s)])
+        .lines(x.clone(), y7,  &[Caption("NoSort Parallel Rebal"), Color("pink"), LineWidth(s)])
+        .lines(x.clone(), y8,  &[Caption("NoSort Parallel Query"), Color("gray"), LineWidth(s)])
         .set_x_label("Grow", &[])
         .set_y_label("Time in seconds", &[]);
 
@@ -435,7 +436,7 @@ fn handle_grow_bench(fb:&mut FigureBuilder){
 
     fg.axes2d()
         //.set_pos_grid(2,1,1)
-        .set_title("Rebal vs Query Benches with a 80,000 objects", &[])
+        .set_title("Rebal vs Query Benches with abspiral(80000,y)", &[])
         .lines(x.clone(), y1,  &[Caption("Rebal Sequential"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Query Sequential"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y3,  &[Caption("Rebal Parallel"), Color("red"), LineWidth(2.0)])
