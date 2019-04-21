@@ -20,6 +20,7 @@ pub fn black_box<T>(dummy: T) -> T {
 }
 
 mod inner_prelude{
+    pub(crate) use duckduckgeo::bot;
     pub(crate) use crate::FigureBuilder;
     pub use crate::support::*;
     pub use dinotree_alg::colfind;
@@ -34,6 +35,11 @@ mod inner_prelude{
     pub use crate::black_box;
     pub use num_traits::cast::AsPrimitive;
 }
+
+
+
+
+
 
 #[macro_use]
 mod support;
@@ -126,11 +132,11 @@ fn main() {
             std::fs::create_dir_all(&path).expect("failed to create directory");
             let mut fb=FigureBuilder::new(folder);
             
-            run_test!(&mut fb,spiral::handle);
-            run_test!(&mut fb,colfind::colfind::handle_theory);
-            run_test!(&mut fb,colfind::construction_vs_query::handle_theory);
-            run_test!(&mut fb,colfind::level_analysis::handle_theory);
-            run_test!(&mut fb,colfind::theory_colfind_3d::handle);
+            //run_test!(&mut fb,spiral::handle);
+            //run_test!(&mut fb,colfind::colfind::handle_theory);
+            //run_test!(&mut fb,colfind::construction_vs_query::handle_theory);
+            //run_test!(&mut fb,colfind::level_analysis::handle_theory);
+            //run_test!(&mut fb,colfind::theory_colfind_3d::handle);
         }
         "bench"=>{
             let folder=args[2].clone();
@@ -138,9 +144,11 @@ fn main() {
             std::fs::create_dir_all(&path).expect("failed to create directory");
             let mut fb=FigureBuilder::new(folder);
             
-            run_test!(&mut fb,colfind::colfind::handle_bench);
-            run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
+            //run_test!(&mut fb,colfind::colfind::handle_bench);
+            //run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
+            
             run_test!(&mut fb,colfind::construction_vs_query::handle_bench);
+            /*
             run_test!(&mut fb,colfind::rebal_strat::handle);
             run_test!(&mut fb,colfind::float_vs_integer::handle);
             run_test!(&mut fb,colfind::level_analysis::handle_bench);
@@ -148,7 +156,7 @@ fn main() {
             
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb,colfind::height_heur_comparison::handle);
-            
+            */
 
             //nbody::theory::handle(&mut fb);
         },

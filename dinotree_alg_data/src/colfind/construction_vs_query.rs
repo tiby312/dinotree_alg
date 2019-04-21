@@ -2,31 +2,23 @@ use crate::inner_prelude::*;
 
 
 
-#[derive(Copy,Clone)]
-pub struct Bot{
-    num:usize,
-    pos:[isize;2]
-}
 
-
-
-
-fn test1(bots:&mut [Bot])->(usize,usize){
+fn theory(scene:&mut bot::BotScene)->(usize,usize){
     
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))).build_seq();
-
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_seq();
 
     let a=*counter.get_inner();
     
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
-        a.inner.num+=2;
-        b.inner.num+=2;
+        prop.collide(&mut a.inner,&mut b.inner);
     });
 
-    tree.apply(bots,|a,b|{
-        b.num=a.inner.num;
+    tree.apply(&mut scene.bots,|a,b|{
+        b.apply(&a.inner)
     });
 
     let b=counter.into_inner();
@@ -35,78 +27,79 @@ fn test1(bots:&mut [Bot])->(usize,usize){
 }
 
 
-fn test11(bots:&mut [Bot])->(usize,usize){
-    
-    let mut counter=datanum::Counter::new();
+fn theory_not_sorted(scene:&mut bot::BotScene)->(usize,usize){
+     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-    }).build_not_sorted_seq();
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_not_sorted_seq();
 
     let a=*counter.get_inner();
-
+    
     colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
-        a.inner.num+=2;
-        b.inner.num+=2;
+        prop.collide(&mut a.inner,&mut b.inner);
     });
 
-    tree.0.apply(bots,|a,b|{
-        b.num=a.inner.num;
+    tree.0.apply(&mut scene.bots,|a,b|{
+        b.apply(&a.inner)
     });
 
     let b=counter.into_inner();
 
     (a,(b-a))
+
 }
 
 
 
-fn test2(bots:&mut [Bot])->(f64,f64){
+fn bench_seq(scene:&mut bot::BotScene)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
-    }).build_seq();
 
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_seq();
 
     let a=instant_to_sec(instant.elapsed());
     
-
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
-        a.inner.num+=2;
-        b.inner.num+=2;
+        prop.collide(&mut a.inner,&mut b.inner);
     });
 
-    tree.apply(bots,|a,b|{
-        b.num=a.inner.num;
+    tree.apply(&mut scene.bots,|a,b|{
+        b.apply(&a.inner)
     });
+
+
+
 
     let b=instant_to_sec(instant.elapsed());
 
     (a,(b-a))
 }
 
-fn test3(bots:&mut [Bot])->(f64,f64){
+fn bench_par(scene:&mut bot::BotScene)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
-    }).build_par();
 
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_par();
 
-    let a=instant_to_sec(instant.elapsed());
     
+    let a=instant_to_sec(instant.elapsed());
 
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
-        a.inner.num+=2;
-        b.inner.num+=2;
+        prop.collide(&mut a.inner,&mut b.inner);
     });
 
-    tree.apply(bots,|a,b|{
-        b.num=a.inner.num;
+    tree.apply(&mut scene.bots,|a,b|{
+        b.apply(&a.inner)
     });
+
+
 
     let b=instant_to_sec(instant.elapsed());
 
@@ -114,57 +107,56 @@ fn test3(bots:&mut [Bot])->(f64,f64){
 }
 
 
-fn test4(bots:&mut [Bot])->(f64,f64){
+fn bench_not_sorted_seq(scene:&mut bot::BotScene)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
-    }).build_not_sorted_seq();
 
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_not_sorted_seq();
 
     let a=instant_to_sec(instant.elapsed());
     
-
     colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
-        a.inner.num+=2;
-        b.inner.num+=2;
+        prop.collide(&mut a.inner,&mut b.inner);
     });
 
-    tree.0.apply(bots,|a,b|{
-        b.num=a.inner.num;
+    tree.0.apply(&mut scene.bots,|a,b|{
+        b.apply(&a.inner)
     });
+
 
     let b=instant_to_sec(instant.elapsed());
 
     (a,(b-a))
 }
 
-fn test5(bots:&mut [Bot])->(f64,f64){
+fn bench_not_sorted_par(scene:&mut bot::BotScene)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
-    }).build_not_sorted_par();
+
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_not_sorted_par();
 
 
     let a=instant_to_sec(instant.elapsed());
     
-
     colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
-        a.inner.num+=2;
-        b.inner.num+=2;
+        prop.collide(&mut a.inner,&mut b.inner);
     });
 
-    tree.0.apply(bots,|a,b|{
-        b.num=a.inner.num;
+    tree.0.apply(&mut scene.bots,|a,b|{
+        b.apply(&a.inner)
     });
 
     let b=instant_to_sec(instant.elapsed());
 
     (a,(b-a))
 }
+
 
 
 pub fn handle_bench(fb:&mut FigureBuilder){
@@ -190,18 +182,16 @@ fn handle_num_bots_theory(fb:&mut FigureBuilder){
 
     //let grow=0.2;
 
-    let s=dists::spiral::Spiral::new([400.0,400.0],17.0,0.2);
+
+    //let s=dists::spiral::Spiral::new([400.0,400.0],17.0,0.2);
     let mut rects=Vec::new();
 
     for num_bots in (1..80_000).step_by(1000){
 
-        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
-        }).collect();
-    
 
-        let theory=test1(&mut bots);
+        let mut scene=bot::BotSceneBuilder::new(num_bots).build();
+        
+        let theory=theory(&mut scene);
         
         let r=Record{num_bots,theory};
         rects.push(r);      
@@ -229,13 +219,9 @@ fn handle_num_bots_theory(fb:&mut FigureBuilder){
 
     for num_bots in (1..80_000).step_by(1000){
 
-        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
-        }).collect();
-    
-
-        let theory=test1(&mut bots);
+        let mut scene=bot::BotSceneBuilder::new(num_bots).build();
+        
+        let theory=theory(&mut scene);
         
         let r=Record{num_bots,theory};
         rects.push(r);      
@@ -265,29 +251,27 @@ fn handle_num_bots_bench(fb:&mut FigureBuilder){
     struct Record {
         num_bots:usize,
         bench:(f64,f64),
-        bench_par:(f64,f64)  ,
+        bench_par:(f64,f64),
         nosort:(f64,f64),
         nosort_par:(f64,f64)      
     }
 
     //let grow=0.2;
 
-    let s=dists::spiral::Spiral::new([400.0,400.0],17.0,0.2);
-    let mut rects=Vec::new();
+    //let s=dists::spiral::Spiral::new([400.0,400.0],17.0,0.2);
+    let mut rects:Vec<Record>=Vec::new();
 
-    for num_bots in (1..80_000).step_by(1000){
+    for num_bots in (1..20_000).step_by(200){
 
-        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
-        }).collect();
-    
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(0.2).build();
+        
 
         //let theory=test1(&mut bots);
-        let bench=test2(&mut bots);
-        let bench_par=test3(&mut bots);
-        let nosort=test4(&mut bots);
-        let nosort_par=test5(&mut bots);
+        let bench=bench_seq(&mut scene);
+        let bench_par=bench_par(&mut scene);
+        let nosort=bench_not_sorted_seq(&mut scene);
+        let nosort_par=bench_not_sorted_par(&mut scene);
+        
 
         let r=Record{num_bots,bench,bench_par,nosort,nosort_par};
         rects.push(r);      
@@ -310,38 +294,34 @@ fn handle_num_bots_bench(fb:&mut FigureBuilder){
     fg.axes2d()
         .set_pos_grid(2,1,0)
         .set_title(&format!("Rebal vs Query Benches with a spiral grow of {}",0.2), &[])
-        .lines(x.clone(), y1,  &[Caption("Rebal Sequential"), Color("blue"), LineWidth(1.0)])
-        .lines(x.clone(), y2,  &[Caption("Query Sequential"), Color("green"), LineWidth(1.0)])
-        .lines(x.clone(), y3,  &[Caption("Rebal Parallel"), Color("red"), LineWidth(1.0)])
-        .lines(x.clone(), y4,  &[Caption("Query Parallel"), Color("brown"), LineWidth(1.0)])
+        .lines(x.clone(), y1,  &[Caption("Rebal Sequential"), Color("blue"), LineWidth(2.0)])
+        .lines(x.clone(), y2,  &[Caption("Query Sequential"), Color("green"), LineWidth(2.0)])
+        .lines(x.clone(), y3,  &[Caption("Rebal Parallel"), Color("red"), LineWidth(2.0)])
+        .lines(x.clone(), y4,  &[Caption("Query Parallel"), Color("brown"), LineWidth(2.0)])
         
-        .lines(x.clone(), y5,  &[Caption("NoSort Rebal"), Color("black"), LineWidth(1.0)])
-        .lines(x.clone(), y6,  &[Caption("NoSort Query"), Color("orange"), LineWidth(1.0)])
-        .lines(x.clone(), y7,  &[Caption("NoSort Parallel Rebal"), Color("pink"), LineWidth(1.0)])
-        .lines(x.clone(), y8,  &[Caption("NoSort Parallel Query"), Color("gray"), LineWidth(1.0)])
+        .lines(x.clone(), y5,  &[Caption("NoSort Rebal"), Color("black"), LineWidth(2.0)])
+        .lines(x.clone(), y6,  &[Caption("NoSort Query"), Color("orange"), LineWidth(2.0)])
+        .lines(x.clone(), y7,  &[Caption("NoSort Parallel Rebal"), Color("pink"), LineWidth(2.0)])
+        .lines(x.clone(), y8,  &[Caption("NoSort Parallel Query"), Color("gray"), LineWidth(2.0)])
         .set_x_label("Grow", &[])
         .set_y_label("Time in seconds", &[]);
 
 
-    let s=dists::spiral::Spiral::new([400.0,400.0],17.0,2.0);
-    let mut rects=Vec::new();
+    //let s=dists::spiral::Spiral::new([400.0,400.0],17.0,2.0);
+    let mut rects:Vec<Record>=Vec::new();
 
-    for num_bots in (1..80_000).step_by(1000){
-
-        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
-        }).collect();
-    
-
-        //let theory=test1(&mut bots);
-        let bench=test2(&mut bots);
-        let bench_par=test3(&mut bots);
-        let nosort=test4(&mut bots);
-        let nosort_par=test5(&mut bots);
-
+    for num_bots in (1..20_000).step_by(200){
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(2.0).build();
+        
+        let bench=bench_seq(&mut scene);
+        let bench_par=bench_par(&mut scene);
+        
+        let nosort=bench_not_sorted_seq(&mut scene);
+        let nosort_par=bench_not_sorted_par(&mut scene);
+        
         let r=Record{num_bots,bench,bench_par,nosort,nosort_par};
         rects.push(r);      
+        
     }
 
     let x=rects.iter().map(|a|a.num_bots);
@@ -356,7 +336,7 @@ fn handle_num_bots_bench(fb:&mut FigureBuilder){
     let y7=rects.iter().map(|a|a.nosort_par.0);
     let y8=rects.iter().map(|a|a.nosort_par.1);
 
-    let s=1.2;
+    let s=2.0;
     fg.axes2d()
         .set_pos_grid(2,1,1)
         .set_title(&format!("Rebal vs Query Benches with abspiral(x,2.0)"), &[])
@@ -395,27 +375,26 @@ fn handle_grow_bench(fb:&mut FigureBuilder){
         nosort_par:(f64,f64)      
     }
 
-    let mut rects=Vec::new();
+    let mut rects:Vec<Record>=Vec::new();
 
     for grow in (0..200).map(|a|{let a:f64=a.as_();0.1+a*0.005}){
         let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
-        let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
-        }).collect();
 
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
+        
 
-        let theory=test1(&mut bots);
-        let nosort_theory=test11(&mut bots);
-        let bench=test2(&mut bots);
-        let bench_par=test3(&mut bots);
-        let nosort=test4(&mut bots);
-        let nosort_par=test5(&mut bots);
+        let theory=theory(&mut scene);
+        let nosort_theory=theory_not_sorted(&mut scene);
+        let bench=bench_seq(&mut scene);
+        let bench_par=bench_par(&mut scene);
+        let nosort=bench_not_sorted_seq(&mut scene);
+        let nosort_par=bench_not_sorted_par(&mut scene);
 
 
         let r=Record{grow,nosort_theory,theory,bench,bench_par,nosort,nosort_par};
         rects.push(r);   
+        
     }
 
 
@@ -465,27 +444,26 @@ fn handle_grow_theory(fb:&mut FigureBuilder){
         nosort_par:(f64,f64)      
     }
 
-    let mut rects=Vec::new();
+    let mut rects:Vec<Record>=Vec::new();
 
     for grow in (0..200).map(|a|{let a:f64=a.as_();0.1+a*0.005}){
         let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
-        let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
-        }).collect();
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
+        
 
 
-        let theory=test1(&mut bots);
-        let nosort_theory=test11(&mut bots);
-        let bench=test2(&mut bots);
-        let bench_par=test3(&mut bots);
-        let nosort=test4(&mut bots);
-        let nosort_par=test5(&mut bots);
+        let theory=theory(&mut scene);
+        let nosort_theory=theory_not_sorted(&mut scene);
+        let bench=bench_seq(&mut scene);
+        let bench_par=bench_par(&mut scene);
+        let nosort=bench_not_sorted_seq(&mut scene);
+        let nosort_par=bench_not_sorted_par(&mut scene);
 
 
         let r=Record{grow,nosort_theory,theory,bench,bench_par,nosort,nosort_par};
         rects.push(r);   
+        
     }
 
 
