@@ -1,10 +1,11 @@
 
 use std::cmp::Ordering;
 use axgeom::Rect;
+use dinotree::NumTrait;
 
 pub struct Counter(usize);
 
-pub fn from_rect(counter:&mut Counter,rect:Rect<isize>)->Rect<DataNum>{
+pub fn from_rect<I:NumTrait>(counter:&mut Counter,rect:Rect<I>)->Rect<DataNum<I>>{
     let ((a,b),(c,d))=rect.get();
     Rect::new(counter.new_num(a),counter.new_num(b),counter.new_num(c),counter.new_num(d))
 }
@@ -23,35 +24,35 @@ impl Counter{
     pub fn reset(&mut self){
         self.0=0;
     }
-    pub fn new_num(&mut self,a:isize)->DataNum{
+    pub fn new_num<I:NumTrait>(&mut self,a:I)->DataNum<I>{
         DataNum(a,self as *mut Counter)
     }
 }
 
 #[derive(Copy,Clone,Debug)]
-pub struct DataNum(pub isize,*mut Counter);
+pub struct DataNum<I:NumTrait>(pub I,*mut Counter);
 
 //unsafe implement send and sync.
 //we will be cause to only use sequential version of the tree algorithms
-unsafe impl Send for DataNum{}
-unsafe impl Sync for DataNum{}
+unsafe impl<I:NumTrait> Send for DataNum<I>{}
+unsafe impl<I:NumTrait> Sync for DataNum<I>{}
 
 
-impl PartialOrd for DataNum {
-    fn partial_cmp(&self, other: &DataNum) -> Option<Ordering> {
+impl<I:NumTrait> PartialOrd for DataNum<I> {
+    fn partial_cmp(&self, other: &DataNum<I>) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl PartialEq for DataNum {
-    fn eq(&self, other: &DataNum) -> bool {
+impl<I:NumTrait> PartialEq for DataNum<I> {
+    fn eq(&self, other: &DataNum<I>) -> bool {
         self.0.cmp(&other.0)==Ordering::Equal
     }
 }
 
-impl Eq for DataNum {}
-impl Ord for DataNum{
-    fn cmp(&self, other: &DataNum) -> Ordering {
+impl<I:NumTrait> Eq for DataNum<I> {}
+impl<I:NumTrait> Ord for DataNum<I>{
+    fn cmp(&self, other: &DataNum<I>) -> Ordering {
 
         unsafe{
             let p=self.1;

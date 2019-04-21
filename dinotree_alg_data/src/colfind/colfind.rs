@@ -30,6 +30,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
     for num_bots in (0..40_000).rev().step_by(500){
         let s2=s.clone();
 
+
         let mut bots:Vec<Bot>=s2.take(num_bots).enumerate().map(|(_e,pos)|{
             let pos=[pos[0] as isize,pos[1] as isize];
             Bot{num:0,pos}
@@ -251,7 +252,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
             if num_bots<stop_naive_at{
                 let mut counter=datanum::Counter::new();
             
-                let mut bb:Vec<BBoxDemo<datanum::DataNum,Bot>>=bots.iter().map(|b|{
+                let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
                     let rect=aabb_from_point_isize(b.pos,[5,5]);
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
@@ -273,7 +274,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
         let c3={
             if num_bots<stop_sweep_at{
                 let mut counter=datanum::Counter::new();
-                let mut bb:Vec<BBoxDemo<datanum::DataNum,Bot>>=bots.iter().map(|b|{
+                let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
                     let rect=aabb_from_point_isize(b.pos,[5,5]);
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
@@ -360,12 +361,10 @@ pub fn handle_bench(fb:&mut FigureBuilder){
         let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
     
         let mut fg=fb.build("colfind_theory");
-        //handle_theory(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0");
         handle_bench_inner(&s1.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,1.0)",0);
         
         handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,0.05)",1);
         
-        //fg.echo(&mut std::io::stdout());
         fb.finish(fg);
     }
     
