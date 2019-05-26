@@ -164,7 +164,7 @@ macro_rules! knearest_recc{
 
             fn full_and_max_distance(&self)->Option<D>{
                 use is_sorted::IsSorted;
-                assert!(self.a.iter().map(|a|a.mag).is_sorted());
+                assert!(IsSorted::is_sorted(&mut self.a.iter().map(|a|a.mag)));
                 match self.a.get(self.num-1){
                     Some(x)=>
                     {

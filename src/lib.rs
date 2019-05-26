@@ -36,6 +36,9 @@ extern crate is_sorted;
 mod inner_prelude {
     pub use dinotree::advanced::*;
     pub use dinotree::*;
+    pub use dinotree::copy::*;
+    pub use dinotree::nocopy::*;
+    pub use dinotree::notsorted::*;
     pub use compt::LevelIter;
     pub use compt::Depth;
     pub use axgeom::Range;
