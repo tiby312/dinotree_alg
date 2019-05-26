@@ -28,7 +28,7 @@ fn theory_not_sorted(scene:&mut bot::BotScene)->(usize,usize){
 
     let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|datanum::from_rect(&mut counter,b.create_bbox_nan(prop))).build_not_sorted_seq();
+    let mut tree=NotSortedBuilder::new(axgeom::XAXISS,bots,|b|datanum::from_rect(&mut counter,b.create_bbox_nan(prop))).build_seq();
 
     let a=*counter.get_inner();
     
@@ -94,7 +94,7 @@ fn bench_not_sorted_seq(scene:&mut bot::BotScene)->(f64,f64){
 
     let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_not_sorted_seq();
+    let mut tree=NotSortedBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_seq();
 
     let a=instant_to_sec(instant.elapsed());
     
@@ -119,7 +119,7 @@ fn bench_not_sorted_par(scene:&mut bot::BotScene)->(f64,f64){
 
     let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_not_sorted_par();
+    let mut tree=NotSortedBuilder::new(axgeom::XAXISS,bots,|b|b.create_bbox_nan(prop)).build_par();
 
 
     let a=instant_to_sec(instant.elapsed());
@@ -347,8 +347,7 @@ fn handle_grow_theory(fb:&mut FigureBuilder){
     let mut rects:Vec<Record>=Vec::new();
 
     for grow in (0..200).map(|a|{let a:f64=a.as_();0.1+a*0.005}){
-        let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
-
+        
         let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
 
         let theory=theory(&mut scene);

@@ -62,7 +62,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_height_switch_seq(rebal_height).build_par();
     

@@ -11,7 +11,8 @@ pub mod prelude{
     pub use ordered_float::NotNan;
     pub use piston_window::*;
     pub use dinotree::*;
-    pub use dinotree::HasAabb;
+    pub use dinotree::nocopy::*;
+    pub use dinotree::copy::*;
     pub(crate) use axgeom;
     pub(crate) use crate::support::*;
     pub use dinotree::BBox;

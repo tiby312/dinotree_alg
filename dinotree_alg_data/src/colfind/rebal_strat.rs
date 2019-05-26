@@ -15,7 +15,7 @@ fn test1(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
     
-    let tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_bin_strat(BinStrat::Checked).build_par();
     
@@ -31,7 +31,7 @@ fn test2(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_bin_strat(BinStrat::NotChecked).build_par();
     
@@ -48,7 +48,7 @@ fn test3(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_bin_strat(BinStrat::Checked).build_seq();
     
@@ -65,7 +65,7 @@ fn test4(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
         aabb_from_point_isize(b.pos,[5,5])  
     }).with_bin_strat(BinStrat::NotChecked).build_seq();
     

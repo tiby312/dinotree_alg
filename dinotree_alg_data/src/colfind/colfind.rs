@@ -130,9 +130,9 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         let c5={
             let instant=Instant::now();
 
-            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
+            let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{   
                 aabb_from_point_isize(b.pos,[5,5])
-            }).build_not_sorted_par();
+            }).build_par();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
                 a.inner.num+=1;
@@ -151,9 +151,9 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         let c6={
             let instant=Instant::now();
 
-            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
+            let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{
                 aabb_from_point_isize(b.pos,[5,5])
-            }).build_not_sorted_seq();
+            }).build_seq();
 
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -298,9 +298,9 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
         let c4={
             let mut counter=datanum::Counter::new();
 
-            let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
+            let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{
                 datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
-            }).build_not_sorted_seq();
+            }).build_seq();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
                 a.inner.num+=2;

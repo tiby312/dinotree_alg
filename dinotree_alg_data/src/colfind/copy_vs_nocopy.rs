@@ -28,7 +28,7 @@ fn test1(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5])).build_seq();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5])).build_seq();
 
     
     colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
@@ -200,12 +200,16 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     let mut rects=Vec::new();
 
     for num_bots in (0..150_000).rev().step_by(2000){
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
+
+        
         let mut bots2:Vec<BBoxMut<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
             let inner=Bot{num:0,pos,_val:[0;ARR_SIZE]};
             let aabb=aabb_from_point_isize(inner.pos,[5,5]);
             BBoxMut{aabb,inner}
         }).collect();
+        
 
         let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
@@ -224,7 +228,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
         rects.push(r);      
     }
 
-    let mut fg= fb.build(&format!("colfind_rebal_vs_query_num_bots_grow_of_{}",grow));
+    let mut fg= fb.build(&format!("copy_vs_no_copy{}",grow));
     
     Record::draw(&rects,&mut fg);
     
