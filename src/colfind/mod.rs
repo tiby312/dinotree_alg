@@ -137,13 +137,13 @@ impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K> where K::Item:Send{
 /// ```
 /// use axgeom;
 /// use dinotree_sample::SampleBuilder;
-/// use dinotree::DinoTreeBuilder;
+/// use dinotree::copy::DinoTreeBuilder;
 /// use dinotree_alg::colfind::QueryBuilder;
 ///
 /// let builder = SampleBuilder::new();
 /// let mut bots:Vec<_>= builder.build().take(1000).collect();
 /// let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_seq();
-/// QueryBuilder::new(tree.as_ref_mut()).query_seq(|a,b|a.inner.collide(&mut b.inner));
+/// QueryBuilder::new(&mut tree).query_seq(|a,b|a.inner.collide(&mut b.inner));
 /// ```
 pub struct QueryBuilder<K:DinoTreeRefMutTrait>{
     switch_height:usize,

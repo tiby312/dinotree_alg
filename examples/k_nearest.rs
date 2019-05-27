@@ -1,6 +1,7 @@
 extern crate dinotree;
 extern crate dinotree_alg;
 use dinotree::*;
+use dinotree::copy::*;
 use dinotree_alg::k_nearest;
 
 pub fn clamp<T: PartialOrd>(input: T, min: T, max: T) -> T {
@@ -108,7 +109,7 @@ fn main() {
 
         {
             let mut v=Vec::new();
-            for a in k_nearest::k_nearest(dinotree.as_ref(),[100,0],1,Kn){
+            for a in k_nearest::k_nearest(&dinotree,[100,0],1,Kn){
                 v.push(a);
             }
             assert_eq!(v[0].bots[0].inner.id,3);
@@ -116,7 +117,7 @@ fn main() {
         }
         {
             let mut v=Vec::new();
-            for a in k_nearest::k_nearest(dinotree.as_ref(),[41,0],2,Kn){
+            for a in k_nearest::k_nearest(&dinotree,[41,0],2,Kn){
                 v.push(a);
             }
             assert_eq!(v[0].bots[0].inner.id,0);

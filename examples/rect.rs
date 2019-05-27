@@ -1,6 +1,7 @@
 extern crate dinotree;
 extern crate dinotree_alg;
 use dinotree::*;
+use dinotree::copy::*;
 
 #[derive(Copy,Clone,Debug)]
 struct Bot {
@@ -30,7 +31,7 @@ fn main() {
     {
         let mut tree = DinoTreeBuilder::new(axgeom::YAXISS,&mut bots,|a|a.rect).build_seq();
 
-        let mut rects = dinotree_alg::multirect::multi_rect_mut(tree.as_ref_mut());
+        let mut rects = dinotree_alg::multirect::multi_rect_mut(&mut tree);
         let r1 = axgeom::Rect::new(10, 25, 40, 70);
         let r2 = axgeom::Rect::new(40, 70, 10, 25);
 

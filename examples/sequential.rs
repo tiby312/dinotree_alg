@@ -1,6 +1,7 @@
 extern crate dinotree;
 extern crate dinotree_alg;
 use dinotree::*;
+use dinotree::copy::*;
 
 
 #[derive(Copy,Clone,Debug)]
@@ -31,7 +32,7 @@ fn main() {
     {
         let mut dinotree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|a.rect).build_seq();
 
-        dinotree_alg::colfind::QueryBuilder::new(dinotree.as_ref_mut()).query_seq(|a, b| {
+        dinotree_alg::colfind::QueryBuilder::new(&mut dinotree).query_seq(|a, b| {
             pairs.push((a.inner.id,b.inner.id))
         });
     }

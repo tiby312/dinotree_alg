@@ -5,7 +5,7 @@ extern crate axgeom;
 extern crate dinotree_sample;
 
 use dinotree_alg::colfind;
-
+use dinotree::copy::*;
 
 fn print_times(st:&str,times:&[f64]){
     println!("{}",st);
@@ -46,12 +46,12 @@ fn test_sequential(num:usize,grow:f64){
     {
         
         let mut treetimes=dinotree::advanced::LevelTimer::new();   
-        let mut tree=dinotree::DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_with_splitter_seq(&mut treetimes);
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_with_splitter_seq(&mut treetimes);
         
 
         let mut treetimes2=dinotree::advanced::LevelTimer::new();
         
-        colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a, b| {
+        colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|a, b| {
             a.inner.collide(&mut b.inner);
         },&mut treetimes2);
 
