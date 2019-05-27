@@ -140,7 +140,7 @@ impl DemoSys for IntersectWithDemo{
         for wall in walls.iter(){
             draw_rect_f64n([0.0,0.0,1.0,0.3],&wall.0,c,g);
         }
-        for bot in tree.as_ref().iter(){
+        for bot in tree.get_bots().iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
  

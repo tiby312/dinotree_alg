@@ -34,7 +34,7 @@ impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&mut self.tree;
 
-        for bot in tree.as_ref().iter(){
+        for bot in tree.get_bots().iter(){
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
@@ -159,7 +159,7 @@ impl DemoSys for KnearestDemo{
                 let kn=Kn2{};
                 let point=[f64n!(cursor[0]),f64n!(cursor[1])];
                 
-                k_nearest::naive(tree.into_iter(),point,3,kn).into_iter()
+                k_nearest::naive(tree.get_bots().iter(),point,3,kn).into_iter()
             };
             
 

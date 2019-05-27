@@ -683,27 +683,34 @@ pub fn nbody<K:DinoTreeRefMutTrait<Item=N::T,Num=<N::T as HasAabb>::Num>,N:NodeM
     let axis=t1.axis();
     let mut ncontext=Wrapper(ncontext);
 
-    unimplemented!();
-    /*
-    let t1:&mut DinoTreeRefMut<A,N::T>=&mut t1;
-    let t1:&mut DinoTreeRefMut<A,Wrap<N::T>>=unsafe{&mut *(t1 as *mut DinoTreeRefMut<A,N::T> as *mut DinoTreeRefMut<A,Wrap<N::T>>)};
-
+    
+    //let t1:&mut DinoTreeRefMut<A,N::T>=&mut t1;
+    //let t1:&mut DinoTreeRefMut<A,Wrap<N::T>>=unsafe{&mut *(t1 as *mut DinoTreeRefMut<A,N::T> as *mut DinoTreeRefMut<A,Wrap<N::T>>)};
+    let vistrm:VistrMut<N::T>=t1.vistr_mut();
+    let vistrm:VistrMut<Wrap<N::T>>=unsafe{std::mem::transmute(vistrm)};
 
     let mut misc_nodes=Vec::new();
     
-    buildtree(axis,t1.vistr_mut(),&mut misc_nodes,&mut ncontext,rect);
+    buildtree(axis,vistrm,&mut misc_nodes,&mut ncontext,rect);
+
+    let vistrm:VistrMut<N::T>=t1.vistr_mut();
+    let vistrm:VistrMut<Wrap<N::T>>=unsafe{std::mem::transmute(vistrm)};
 
     let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
     {
-        let d=misc_tree.vistr_mut().zip(t1.vistr_mut()).with_depth(Depth(0));
+        let d=misc_tree.vistr_mut().zip(vistrm).with_depth(Depth(0));
         
         //let d=t1.vistr_mut().with_depth(Depth(0));
         recc(par::Sequential,axis,d,&mut ncontext);    
     }
 
-    let d=misc_tree.vistr().zip(t1.vistr_mut()).with_depth(Depth(0));
+
+    let vistrm:VistrMut<N::T>=t1.vistr_mut();
+    let vistrm:VistrMut<Wrap<N::T>>=unsafe{std::mem::transmute(vistrm)};
+
+    let d=misc_tree.vistr().zip(vistrm).with_depth(Depth(0));
     apply_tree(axis,d,&mut ncontext);
-    */
+    
 }
 

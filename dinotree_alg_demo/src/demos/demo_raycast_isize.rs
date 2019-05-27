@@ -161,7 +161,7 @@ impl DemoSys for RaycastDemo{
             duckduckgeo::Ray{point,dir}
         };
 
-        for bot in tree.as_ref().iter(){
+        for bot in tree.get_bots().iter(){
             draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }   
 
@@ -174,7 +174,7 @@ impl DemoSys for RaycastDemo{
  
                     if check_naive{
                         let tree_ref=&tree;
-                        let (mut bots2,dis2)  = raycast::naive(tree_ref.iter(),ray_isize::RayNoDraw{ray}).unwrap();
+                        let (mut bots2,dis2)  = raycast::naive(tree_ref.get_bots().iter(),ray_isize::RayNoDraw{ray}).unwrap();
                         assert_eq!(dis,dis2);
                         bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
 
