@@ -21,7 +21,7 @@ fn test1(bots:&mut [Bot])->Res{
 
     let mut num_pairs=0;
 
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_a, _b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|_a, _b| {
         num_pairs+=1;
     });
 

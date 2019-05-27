@@ -31,7 +31,7 @@ fn test1(bots:&mut [Bot])->f64{
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5])).build_seq();
 
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -54,7 +54,7 @@ fn test2(bots:&mut [BBoxMut<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_seq();
 
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -76,7 +76,7 @@ fn test3(bots:&mut [Bot])->f64{
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5]) ).build_par();
 
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -99,7 +99,7 @@ fn test4(bots:&mut [BBoxMut<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par();
 
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -122,7 +122,7 @@ fn test5(bots:&mut [BBoxMut<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_seq_aux();
 
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -146,7 +146,7 @@ fn test6(bots:&mut [BBoxMut<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par_aux();
 
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });

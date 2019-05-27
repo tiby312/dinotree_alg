@@ -10,7 +10,7 @@ fn theory(scene:&mut bot::BotScene)->(usize,usize){
 
     let a=*counter.get_inner();
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
         prop.collide(&mut a.inner,&mut b.inner);
     });
 
@@ -53,7 +53,7 @@ fn bench_seq(scene:&mut bot::BotScene)->(f64,f64){
 
     let a=instant_to_sec(instant.elapsed());
     
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
         prop.collide(&mut a.inner,&mut b.inner);
     });
 
@@ -74,7 +74,7 @@ fn bench_par(scene:&mut bot::BotScene)->(f64,f64){
 
     let a=instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
         prop.collide(&mut a.inner,&mut b.inner);
     });
 

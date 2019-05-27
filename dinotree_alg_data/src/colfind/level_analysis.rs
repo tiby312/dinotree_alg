@@ -102,7 +102,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 
 			counter.reset();
 			let mut levelc2=level_counter::LevelCounter::new(&mut counter);
-			colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{
+			colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|a,b|{
 				a.inner.num+=1;
 				b.inner.num+=1;
 			},&mut levelc2);
@@ -117,7 +117,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 
 
 		    let mut t=TheoryRes{grow,rebal:levelc.into_inner(),query:levelc2.into_inner()};
-		    let height=tree.as_ref().height();
+		    let height=tree.height();
 
 		    grow_to_fit(&mut t.rebal,height);
 			grow_to_fit(&mut t.query,height);
@@ -160,7 +160,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 		let mut times2=LevelTimer::new();
 		//colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
 		
-		colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
+		colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
 		
 	    tree.apply(&mut bots,|a,b|{
 	        *b=a.inner;
@@ -168,7 +168,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 
 
 	    let mut t=BenchRes{grow,rebal:times1.into_inner(),query:times2.into_inner()};
-	    let height=tree.as_ref().height();
+	    let height=tree.height();
 	    
 	    grow_to_fit(&mut t.rebal,height);
 		grow_to_fit(&mut t.query,height);

@@ -273,12 +273,14 @@ mod mutable{
     }
     //RaycastResultMut<'a,T,T::Num>
     pub fn raycast_mut<
-        'a,A:AxisTrait+'a,
-        T:HasAabb,
-        >(tree:DinoTreeRefMut<'a,A,T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        'a,   
+        //'a,A:AxisTrait+'a,
+        //T:HasAabb,
+        K:DinoTreeRefMutTrait
+        >(tree:&'a mut K,rect:Rect<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a mut K::Item;2]>,K::Num)>{
         
         let axis=tree.axis();
-        let dt = tree.into_vistr_mut().with_depth(Depth(0));
+        let dt = tree.vistr_mut().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};
@@ -307,13 +309,15 @@ mod cons{
 
     raycast!(Vistr<'a,T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
     pub fn raycast<
-        'a,A:AxisTrait+'a,
-        T:HasAabb,
-        >(tree:DinoTreeRef<'a,A,T>,rect:Rect<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        'a,
+        //'a,A:AxisTrait+'a,
+        //T:HasAabb,
+        K:DinoTreeRefTrait
+        >(tree:&'a K,rect:Rect<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a K::Item;2]>,K::Num)>{
         
 
         let axis=tree.axis();
-        let dt = tree.into_vistr().with_depth(Depth(0));
+        let dt = tree.vistr().with_depth(Depth(0));
 
 
         let mut closest=Closest{closest:None};

@@ -26,7 +26,7 @@ fn handle1(fb:&mut FigureBuilder){
         }).build_par();
 
         let mut num_intersection=0;
-        colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|_a, _b| {
+        colfind::QueryBuilder::new(&mut tree).query_seq(|_a, _b| {
            num_intersection+=1;
         });
 

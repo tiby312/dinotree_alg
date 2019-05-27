@@ -113,7 +113,7 @@ impl DemoSys for RaycastF64Demo{
                 };
 
                 
-                let res=raycast::raycast(tree.as_ref(),axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
+                let res=raycast::raycast(&tree,axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point[0]+ray.dir[0]*k.1;

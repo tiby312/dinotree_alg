@@ -33,7 +33,7 @@ impl DemoSys for MultiRectDemo{
         
         let tree=&mut self.tree;
 
-        for bot in tree.as_ref().iter(){
+        for bot in tree.iter(){
             draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
@@ -43,7 +43,7 @@ impl DemoSys for MultiRectDemo{
         let r2=axgeom::Rect::new(100,400,100,400);
 
         {
-            let mut rects=multirect::multi_rect_mut(tree.as_ref_mut());
+            let mut rects=multirect::multi_rect_mut(&mut tree);
 
 
             let mut to_draw=Vec::new();
@@ -74,12 +74,12 @@ impl DemoSys for MultiRectDemo{
             }
         }
 
-        rect::for_all_intersect_rect(tree.as_ref(),&r1,|a|{
+        rect::for_all_intersect_rect(&tree,&r1,|a|{
             draw_rect_isize([0.0,0.0,1.0,0.3],a.get(),c,g);
             
         });
 
-        let mut rects=multirect::multi_rect_mut(tree.as_ref_mut());
+        let mut rects=multirect::multi_rect_mut(&mut tree);
         let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
             
             let arr=[a.inner.pos[0] as f64,a.inner.pos[1] as f64,b.inner.pos[0] as f64,b.inner.pos[1] as f64];

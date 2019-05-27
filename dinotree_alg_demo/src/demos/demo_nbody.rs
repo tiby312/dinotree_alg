@@ -203,10 +203,10 @@ impl DemoSys for DemoNbody{
         let border=axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1]));
 
         if !check_naive{
-            nbody::nbody(tree.as_ref_mut(),&mut Bla{num_pairs_checked:0},border);
+            nbody::nbody(&mut tree,&mut Bla{num_pairs_checked:0},border);
         }else{
             let mut bla=Bla{num_pairs_checked:0};
-            nbody::nbody(tree.as_ref_mut(),&mut bla,border);
+            nbody::nbody(&mut tree,&mut bla,border);
             let num_pair_alg=bla.num_pairs_checked;
             
             let (bots2,num_pair_naive)={
@@ -273,7 +273,7 @@ impl DemoSys for DemoNbody{
             }
         }
               
-        colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+        colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
             let (a,b)=if a.inner.mass>b.inner.mass{
                 (a,b)
             }else{
@@ -350,7 +350,7 @@ impl DemoSys for DemoNbody{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(tree.as_ref(),&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
         }
 
         //Draw bots.

@@ -58,7 +58,7 @@ pub fn handle_rigid_body(bodies:&mut [RigidBody],ball_size:f64,push_unit:f64,num
     for _ in 0..num_iteration{        
         let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate)).build_par();
 
-        dinotree_alg::colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a,b|{
+        dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_par(|a,b|{
             a.inner.push_away(&mut b.inner,ball_size,push_rate);
         });    
 
@@ -110,7 +110,7 @@ impl DemoSys for RigidBodyDemo{
             bot.create_loose(radius)
         }).build_par(); 
         
-        rect::for_all_in_rect_mut(tree.as_ref_mut(),&Conv::from_rect(aabb_from_pointf64(cursor,[100.0+radius;2])),|b|{
+        rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0+radius;2])),|b|{
             let diff=Vec2(cursor)-b.inner.pos;
 
             let dis=diff.dis();

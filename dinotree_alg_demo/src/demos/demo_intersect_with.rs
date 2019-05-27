@@ -100,7 +100,7 @@ impl DemoSys for IntersectWithDemo{
            Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
         }).build_par(); 
 
-        intersect_with::intersect_with_mut(tree.as_ref_mut(),walls,|wall|{wall.0},|bot,wall|{
+        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|bot,wall|{
             let fric=0.8;
 
 
@@ -131,7 +131,7 @@ impl DemoSys for IntersectWithDemo{
         println!("tree health={:?} sum={:?}",cont,sum);
         */
         
-        rect::for_all_in_rect_mut(tree.as_ref_mut(),&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
+        rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
             //b.inner.repel_mouse(cursor);
             let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
@@ -144,7 +144,7 @@ impl DemoSys for IntersectWithDemo{
             draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
  
-        colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+        colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
             let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
         });
     

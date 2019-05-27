@@ -166,14 +166,14 @@ impl DemoSys for RaycastDemo{
         }   
 
         let k={
-            let height=tree.as_ref().height();
-            let res1=raycast::raycast(tree.as_ref(),axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height});
+            let height=tree.height();
+            let res1=raycast::raycast(&tree,axgeom::Rect::new(0,self.dim[0],0,self.dim[1]),ray_isize::RayT{ray,c:&c,g,height});
             match res1{
                 Some((mut bots,dis))=>{
                     bots.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
  
                     if check_naive{
-                        let tree_ref=tree.as_ref();
+                        let tree_ref=&tree;
                         let (mut bots2,dis2)  = raycast::naive(tree_ref.iter(),ray_isize::RayNoDraw{ray}).unwrap();
                         assert_eq!(dis,dis2);
                         bots2.sort_by(|a,b|a.inner.id.cmp(&b.inner.id));
@@ -252,7 +252,7 @@ impl DemoSys for RaycastDemo{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(tree.as_ref(),&mut dd,&axgeom::Rect::new(0,self.dim[0],0,self.dim[1]));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(0,self.dim[0],0,self.dim[1]));
         }
 
 

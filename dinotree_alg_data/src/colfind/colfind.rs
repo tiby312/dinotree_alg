@@ -44,7 +44,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_par();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
         
@@ -64,7 +64,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_seq();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -134,7 +134,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_par();
 
-            colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
+            colfind::NotSortedQueryBuilder::new(tree).query_par(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });

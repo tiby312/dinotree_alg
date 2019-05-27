@@ -44,7 +44,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_seq();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -63,7 +63,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
             }).build_seq();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -82,7 +82,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
             }).build_par();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -101,7 +101,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 aabb_from_point_isize(b.pos,[5,5])
             }).build_par();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -120,7 +120,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
             }).build_seq();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -139,7 +139,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
                 unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
             }).build_par();
 
-            colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });

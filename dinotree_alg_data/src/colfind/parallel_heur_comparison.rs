@@ -44,7 +44,7 @@ fn test1(bots:&mut [Bot])->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::QueryBuilder::new(tree.as_ref_mut()).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
         a.inner.num+=2;
         b.inner.num+=2;
     });
@@ -71,7 +71,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     let a=instant_to_sec(instant.elapsed());
     
 
-    colfind::QueryBuilder::new(tree.as_ref_mut()).with_switch_height(query_height).query_par(|a,b|{
+    colfind::QueryBuilder::new(&mut tree).with_switch_height(query_height).query_par(|a,b|{
         a.inner.num+=1;
         b.inner.num+=1;
     });
