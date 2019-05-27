@@ -320,12 +320,13 @@ pub use self::con::k_nearest;
 mod con{
     use super::*;
     pub fn k_nearest<'b,
-        T:HasAabb,
-        A:AxisTrait+'b,
-        K:Knearest<T=T,N=T::Num>,
-        >(tree:DinoTreeRef<'b,A,T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResult<'b,T,K::D>{
+        //T:HasAabb,
+        //A:AxisTrait+'b,
+        V:DinoTreeRefTrait,
+        K:Knearest<T=V::Item,N=V::Num>,
+        >(tree:&'b V,point:[V::Num;2],num:usize,mut knear: K)->NearestResult<'b,V::Item,K::D>{
         let axis=tree.axis();
-        let dt = tree.into_vistr().with_depth(Depth(0));
+        let dt = tree.vistr().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 
@@ -386,12 +387,11 @@ mod mutable{
     knearest_recc!(VistrMut<'a,K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T,UnitMut<'a,T,D>,unit_mut_create);
 
     pub fn k_nearest_mut<'b,
-        T:HasAabb,
-        A:AxisTrait+'b,
-        K:Knearest<N=T::Num,T=T>,
-        >(tree:DinoTreeRefMut<'b,A,T>,point:[T::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,T,K::D>{ //Vec<UnitMut<'b,T,K::D>>
+        V:DinoTreeRefMutTrait,
+        K:Knearest<N=V::Num,T=V::Item>,
+        >(tree:&'b mut V,point:[V::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,V::Item,K::D>{ //Vec<UnitMut<'b,T,K::D>>
         let axis=tree.axis();
-        let dt = tree.into_vistr_mut().with_depth(Depth(0));
+        let dt = tree.vistr_mut().with_depth(Depth(0));
 
         let mut c=ClosestCand::new(num);
 

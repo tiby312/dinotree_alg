@@ -70,7 +70,7 @@ macro_rules! rect{
 }
 
 
-pub fn for_all_not_in_rect_mut<A:AxisTrait,T:HasAabb>(mut tree:DinoTreeRefMut<A,T>,rect:&Rect<T::Num>,closure:impl FnMut(&mut T)){
+pub fn for_all_not_in_rect_mut<K:DinoTreeRefMutTrait>(tree:&mut K,rect:&Rect<K::Num>,closure:impl FnMut(&mut K::Item)){
     fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(&mut T)>(axis:A,it:VistrMut<T>,rect:&Rect<T::Num>,mut closure:F)->F{
         let (nn,rest)=it.next();
         
@@ -129,12 +129,12 @@ mod mutable{
     use super::*;
 
     rect!(VistrMut<T>,&mut T,get_section_mut);
-    pub fn for_all_intersect_rect_mut<A: AxisTrait, T: HasAabb>(
-        mut tree:DinoTreeRefMut<A,T>,
-        rect: &Rect<T::Num>,
-        mut closure: impl FnMut(&mut T),
+    pub fn for_all_intersect_rect_mut<K:DinoTreeRefMutTrait>(
+        mut tree: K,
+        rect: &Rect<K::Num>,
+        mut closure: impl FnMut(&mut K::Item),
     ) {
-        let mut f = |a: &mut T| {
+        let mut f = |a: &mut K::Item| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
@@ -171,12 +171,12 @@ mod mutable{
         }
 
     }
-    pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
-        mut tree:DinoTreeRefMut<A,T>,
-        rect: &Rect<T::Num>,
-        mut closure: impl FnMut(&mut T),
+    pub fn for_all_in_rect_mut<K:DinoTreeRefMutTrait>(
+        mut tree: K,
+        rect: &Rect<K::Num>,
+        mut closure: impl FnMut(&mut K::Item),
     ) {
-        let mut f = |a: &mut T | {
+        let mut f = |a: &mut K::Item | {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }
@@ -194,13 +194,13 @@ mod constant{
     rect!(Vistr<T>,&T,get_section);
     //rect!(Vistr<(),T>,&T,oned::mod_const::Sweeper<T>,get_slice,make_colsingle);
     
-    pub fn for_all_intersect_rect<A: AxisTrait, T: HasAabb>(
-        tree:DinoTreeRef<A,T>,
-        rect: &Rect<T::Num>,
-        mut closure: impl FnMut(&T),
+    pub fn for_all_intersect_rect<K:DinoTreeRefTrait>(
+        tree:K,
+        rect: &Rect<K::Num>,
+        mut closure: impl FnMut(&K::Item),
     ) {
         
-        let mut f = |a: &T| {
+        let mut f = |a: &K::Item| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
@@ -210,13 +210,13 @@ mod constant{
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
-    pub fn for_all_in_rect<A: AxisTrait, T: HasAabb>(
-        tree:DinoTreeRef<A,T>,
-        rect: &Rect<T::Num>,
-        mut closure: impl FnMut(&T),
+    pub fn for_all_in_rect<K:DinoTreeRefTrait>(
+        tree:K,
+        rect: &Rect<K::Num>,
+        mut closure: impl FnMut(&K::Item),
     ) {
         
-        let mut f = |a: &T| {
+        let mut f = |a: &K::Item| {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }

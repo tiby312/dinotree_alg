@@ -21,13 +21,14 @@ pub struct RectIntersectErr;
 
 ///Handles a multi rect mut "sessions" within which
 ///the user can query multiple non intersecting rectangles.
-pub struct MultiRectMut<'a,A: AxisTrait+'a,T:HasAabb+'a> {
-    tree: DinoTreeRefMut<'a,A,T>,
-    rects: SmallVec<[Rect<T::Num>; 16]>,
+pub struct MultiRectMut<'a,K:DinoTreeRefMutTrait> {
+    //tree: DinoTreeRefMut<'a,A,T>,
+    tree:&'a mut K,
+    rects: SmallVec<[Rect<K::Num>; 16]>,
 }
 
-impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
-	pub fn for_all_in_rect_mut(&mut self,rect:Rect<T::Num>,mut func:impl FnMut(&'a mut T))->Result<(),RectIntersectErr>{
+impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
+	pub fn for_all_in_rect_mut(&mut self,rect:Rect<K::Num>,mut func:impl FnMut(&'a mut K::Item))->Result<(),RectIntersectErr>{
 		for r in self.rects.iter(){
 			if rect.get_intersect_rect(r).is_some(){
 				return Err(RectIntersectErr);
@@ -36,9 +37,9 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 
 		self.rects.push(rect);
 
-		rect::for_all_in_rect_mut(self.tree.as_ref_mut(),&rect,|bbox:&mut T|{
+		rect::for_all_in_rect_mut(&mut self.tree,&rect,|bbox:&mut K::Item|{
 			//This is only safe to do because the user is unable to mutate the bounding box.
-			let bbox:&'a mut T=unsafe {std::mem::transmute(bbox)};
+			let bbox:&'a mut K::Item=unsafe {std::mem::transmute(bbox)};
 			func(bbox);
 		});
 
@@ -48,7 +49,7 @@ impl<'a,A: AxisTrait+'a,T:HasAabb+'a> MultiRectMut<'a,A,T>{
 
 
 ///Starts a multi rect mut sessions.
-pub fn multi_rect_mut<A:AxisTrait,T:HasAabb>(tree:DinoTreeRefMut<A,T>)->MultiRectMut<A,T>{
+pub fn multi_rect_mut<'a,K:DinoTreeRefMutTrait>(tree:&'a mut K)->MultiRectMut<'a,K>{
 	MultiRectMut{tree,rects:SmallVec::new()}
 }
 
@@ -72,15 +73,14 @@ fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 ///So the bots may not actually collide in 2d space, but collide alone the x or y axis.
 ///This is useful when implementing "wrap around" behavior of bots that pass over a rectangular border.
 pub fn collide_two_rect_parallel<
-    'a,A: AxisTrait,
-    Num: NumTrait,
-    T: HasAabb<Num = Num>,
-    F: FnMut(&mut T, &mut T),
+    'a,
+    K:DinoTreeRefMutTrait,
+    F: FnMut(&mut K::Item, &mut K::Item),
 >(
-    multi: &mut MultiRectMut<'a,A,T>,
+    multi: &mut MultiRectMut<'a,K>,
     axis:impl AxisTrait, //axis to sort under. not neccesarily the same as DinoTree axis
-    rect1: &Rect<T::Num>,
-    rect2: &Rect<T::Num>,
+    rect1: &Rect<K::Num>,
+    rect2: &Rect<K::Num>,
     mut func: F,
 )->Result<(),RectIntersectErr> {
 
@@ -124,7 +124,7 @@ pub fn collide_two_rect_parallel<
 
     }
 
-    let ff=|a:&mut Wr<T>,b:&mut Wr<T>|{
+    let ff=|a:&mut Wr<K::Item>,b:&mut Wr<K::Item>|{
         func(a.0,b.0)
     };
     sweeper.find_parallel_2d_no_check(axis,&mut b1, &mut b2, &mut Bl{a:ff,_p:PhantomData});

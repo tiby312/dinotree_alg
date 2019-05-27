@@ -43,11 +43,11 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb,X:HasAabb<Num=T::Num>>(
 ///to exploirt the divide and conquer properties of this problem.
 ///This would be a bit tricky to implement since the tree heights might be different.
 ///But without changing this api, better performance can be achieved.
-pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb+Send,X:Copy+Send>(
-    mut tree:DinoTreeRefMut<A,T>,
+pub fn intersect_with_mut<K:DinoTreeRefMutTrait+Send,X:Copy+Send>(
+    mut tree:K,
     b: &mut [X],
-    mut aabb_create:impl FnMut(&X)->axgeom::Rect<T::Num>,
-    func: impl Fn(&mut T, &mut BBox<T::Num,X>)+Copy+Send,
+    mut aabb_create:impl FnMut(&X)->axgeom::Rect<K::Num>,
+    func: impl Fn(&mut K::Item, &mut BBox<K::Num,X>)+Copy+Send,
 ) {
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
@@ -58,7 +58,7 @@ pub fn intersect_with_mut<A:axgeom::AxisTrait,T:HasAabb+Send,X:Copy+Send>(
 
     for i in b2.iter_mut() {
         let rect=*i.get();
-        for_all_intersect_rect_mut(tree.as_ref_mut(),&rect, |a: &mut T| {
+        for_all_intersect_rect_mut(&mut tree,&rect, |a: &mut K::Item| {
             func(a,i);
         });
     }
