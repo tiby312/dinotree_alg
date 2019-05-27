@@ -5,14 +5,6 @@
 //! There is a naive version, and there is a version that uses the tree, and there are mutable versions of those 
 //! that return mutable references.
 //!
-//! ```ignore
-//! pub fn k_nearest_mut<'b, T: HasAabb, A: AxisTrait, K: Knearest<N = T::Num, T = T>>(
-//!     tree: DinoTreeRefMut<'b, A, T>, 
-//!     point: [T::Num; 2], 
-//!     num: usize, 
-//!     knear: K
-//! ) -> NearestResultMut<'b,T,K::D>
-//! ```
 //! Along with a reference to the tree, the user provides the needed geometric functions by passing an implementation of Knearest.
 //! The user provides a point, and the number of nearest objects to return. Then an iterator containing up to that number of units is returned. 
 //! A unit is a distance plus one or bots. This is to handle solutions where there is a tie. There may be multiple nearest elements.
@@ -26,6 +18,9 @@
 //! # Safety
 //!
 //! There is no unsafe code in this module
+//!
+//!
+
 
 use crate::inner_prelude::*;
 
