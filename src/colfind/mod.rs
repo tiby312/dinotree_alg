@@ -1,5 +1,3 @@
-
-//! ## Overview
 //! Provides 2d broadphase collision detection.
 
 use crate::inner_prelude::*;

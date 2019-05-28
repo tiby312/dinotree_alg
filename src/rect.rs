@@ -1,12 +1,5 @@
-//! Provides two basic functions: for_all_in_rect, for_all_intersect_rect that both have similar api like this:
+//! Provides two basic functions: for_all_in_rect, for_all_intersect_rect that both have similar api.
 //!
-//! ```ignore
-//! pub fn for_all_in_rect_mut<A: AxisTrait, T: HasAabb>(
-//!        tree: DinoTreeRefMut<'a, A, T>,
-//!        rect: &Rect<T::Num>,
-//!        mut closure: impl FnMut(&mut T),
-//! );
-//! ```
 //!
 //! for_all_in_rect allows the user to retreive references to all bots whose aabb's are strictly inside of the specified rectangle.
 //! for_all_intersect_rect is similar, but will return all bots who are inside as well as all bots whose aabb's intersect the rect.

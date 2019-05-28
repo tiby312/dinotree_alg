@@ -5,16 +5,7 @@
 //! There is a naive version, and there is a version that uses the tree, and there are mutable versions of those 
 //! that return mutable references.
 //!
-//! They all look something like this:
-//!
-//! ```ignore
-//! pub fn raycast_mut<'a,A:AxisTrait,T:HasAabb>(
-//!              tree:DinoTreeRefMut<'a, A, T>,
-//!              rect:Rect<T::Num>,
-//!              mut rtrait:impl RayTrait<T=T,N=T::Num>)
-//!       ->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
-//!    
-//! ```
+//! 
 //! In addition to the tree, the user provides the geometric functions needed by passing an implementation of RayTrait.
 //! The user must also provide a rectangle within which all objects that the user is interested in possibly
 //! being hit by the raycast must include. 

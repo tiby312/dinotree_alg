@@ -4,13 +4,8 @@
 //! A nbody problem approximate solver. The user can choose the distance at which to fallback on approximate solutions.
 //! The algorithm works similar to a Barnes–Hut simulation, but uses a kdtree instead of a quad tree.
 //! 
-//! A sequential and parallel version are supplied, both with a similar api:
-//! ```ignore
-//! pub fn nbody<A:AxisTrait,N:NodeMassTraitMut>(
-//!           t1:DinoTreeRefMut<'a, A, N::T>,
-//!           ncontext:&mut N,
-//!           rect:Rect<<N::T as HasAabb>::Num>){
-//! ```
+//! A sequential and parallel version are supplied, both with a similar api.
+//!
 //! The user defines some geometric functions and their ideal accuracy. The user also supplies
 //! a rectangle within which the nbody simulation will take place. So the simulation is only designed to work
 //! in a finite area.
