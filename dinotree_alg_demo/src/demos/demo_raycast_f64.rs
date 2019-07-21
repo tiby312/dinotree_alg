@@ -85,7 +85,7 @@ impl RaycastF64Demo{
             let ret=bot_iter.next().unwrap();
             let p=ret.pos;
             let r=ret.radius;
-            Conv::from_rect(aabb_from_pointf64(p,r))
+            axgeom::Rect::from_point(p,r).into_notnan().unwrap()
         }).build_par();
 
         RaycastF64Demo{tree,dim}

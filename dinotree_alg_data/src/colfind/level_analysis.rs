@@ -96,7 +96,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 
 
 			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
-        		datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
+        		datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
 			}).build_with_splitter_seq(&mut levelc);
 	
 
@@ -152,7 +152,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 		
 
 		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
-		        aabb_from_point_isize(b.pos,[5,5])  
+		        axgeom::Rect::from_point(b.pos,[5,5])  
 		}).build_with_splitter_seq(&mut times1);
 
 		

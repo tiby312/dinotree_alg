@@ -72,6 +72,8 @@ macro_rules! f64n {
 pub type F64n=NotNan<f64>;
 pub type F32n=NotNan<f32>;
 
+
+/*
 pub struct ConvF64;
 impl ConvF64{
 
@@ -94,9 +96,10 @@ impl ConvF32{
         Rect::new(NotNan::unchecked_new(a),NotNan::unchecked_new(b),NotNan::unchecked_new(c),NotNan::unchecked_new(d))
     }
 }
+*/
 
 
-
+/*
 pub fn aabb_from_pointf32(p:[f32;2],r:[f32;2])->Rect<f32>{
     Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
 }
@@ -109,6 +112,8 @@ pub fn aabb_from_pointf64(p:[f64;2],r:[f64;2])->Rect<f64>{
 pub fn aabb_from_point_isize(p:[isize;2],r:[isize;2])->Rect<isize>{
     Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
 }
+*/
+
 
 /*
 pub struct RangeGenIterf64{

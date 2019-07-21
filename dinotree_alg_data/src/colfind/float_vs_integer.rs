@@ -41,7 +41,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
             
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                aabb_from_point_isize(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,[5,5])
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -60,7 +60,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
+                axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -79,7 +79,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                unsafe{ConvF32::from_rect_unchecked(aabb_from_pointf32([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]))}
+                 axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -98,7 +98,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
             
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                aabb_from_point_isize(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,[5,5])
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -117,7 +117,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
+                 axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -136,7 +136,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                unsafe{ConvF64::from_rect_unchecked(aabb_from_pointf64([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]))}
+                 axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -184,7 +184,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 pub fn handle(fb:&mut FigureBuilder){
     let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
 
-    let mut fg=fb.build("colfind_float_vs_integer");
+    let mut fg=fb.build("float_vs_integer");
     handle_bench(&s,&mut fg);
     fb.finish(fg);
 }

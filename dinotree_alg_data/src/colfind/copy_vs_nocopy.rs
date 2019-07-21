@@ -28,7 +28,7 @@ fn test1(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5])).build_seq();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,[5,5])).build_seq();
 
     
     colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -73,7 +73,7 @@ fn test3(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|aabb_from_point_isize(b.pos,[5,5]) ).build_par();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,[5,5]) ).build_par();
 
     
     colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -206,7 +206,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
         let mut bots2:Vec<BBoxMut<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];
             let inner=Bot{num:0,pos,_val:[0;ARR_SIZE]};
-            let aabb=aabb_from_point_isize(inner.pos,[5,5]);
+            let aabb=axgeom::Rect::from_point(inner.pos,[5,5]);
             BBoxMut{aabb,inner}
         }).collect();
         

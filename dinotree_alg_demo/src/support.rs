@@ -53,13 +53,17 @@ macro_rules! f64n {
 
 pub type F64n=NotNan<f64>;
 
+
+
 pub struct Conv;
 impl Conv{
 
+    //TODO use transmute on these for more performance!!!
     pub fn point_to_inner(a:[F64n;2])->[f64;2]{
         //TODO safe to use transmute?
         [a[0].into_inner(),a[1].into_inner()]
     }
+    /*
     pub fn rect_to_inner(rect:Rect<F64n>)->Rect<f64>{
         let ((a,b),(c,d))=rect.get();
         Rect::new(a.into_inner(),b.into_inner(),c.into_inner(),d.into_inner())   
@@ -69,16 +73,10 @@ impl Conv{
         let ((a,b),(c,d))=rect.get();
         Rect::new(f64n!(a),f64n!(b),f64n!(c),f64n!(d))
     }
+    */
 }
 
 
-pub fn aabb_from_pointf64(p:[f64;2],r:[f64;2])->Rect<f64>{
-    Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
-}
-
-pub fn aabb_from_point_isize(p:[isize;2],r:[isize;2])->Rect<isize>{
-    Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
-}
 
 use piston_window::*;
 

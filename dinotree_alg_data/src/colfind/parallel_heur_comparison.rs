@@ -7,37 +7,12 @@ pub struct Bot{
 }
 
 
-/*
-struct Bo{}
-impl colfind::ColMulti for Bo{
-    type T=BBox<isize,Bot>;
-    fn collide(&mut self,a:&mut Self::T,b:&mut Self::T){
-        a.inner.num+=1;
-        b.inner.num+=1;
-    }
-}
-impl Splitter for Bo{
-    fn div(&mut self)->Self{
-        Bo{}
-    }
-    fn add(&mut self,a:Self){
-        
-    }
-    fn node_start(&mut self){}
-    fn node_end(&mut self){}
-}
-*/
-
-
-
-
-
 fn test1(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,[5,5])  
     }).build_seq();
 
 
@@ -63,7 +38,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     let instant=Instant::now();
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        aabb_from_point_isize(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,[5,5])  
     }).with_height_switch_seq(rebal_height).build_par();
     
 

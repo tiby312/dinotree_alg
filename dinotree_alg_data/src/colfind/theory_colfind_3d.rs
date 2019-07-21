@@ -16,7 +16,7 @@ fn test1(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
+        datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
     }).build_seq();
 
     let mut num_pairs=0;
@@ -31,11 +31,12 @@ fn test1(bots:&mut [Bot])->Res{
 
     Res{num_pairs,num_comparison:counter.into_inner()}
 }
+
 fn test2(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
     let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
-        let rect=datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]));  
+        let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]));  
         BBoxDemo::new(rect,*b)
     }).collect();
     
@@ -45,12 +46,7 @@ fn test2(bots:&mut [Bot])->Res{
         num_pairs+=1;
     });
     
-
-    //println!("Number of comparisons tree={}",counter.into_inner());
-
     for (i,j) in bb.into_iter().zip(bots.iter_mut()){
-        //let b=BBoxDemo::new(datanum::into_rect(*i.get()),i.inner);    
-        //bots.push(b);
         *j=i.inner;
     }
 
@@ -61,7 +57,7 @@ fn test3(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
     let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
-        let rect=datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]));  
+        let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]));  
         BBoxDemo::new(rect,*b)
     }).collect();
     
@@ -133,8 +129,9 @@ fn handle_spiral(fb:&mut FigureBuilder){
             
         }
     }
-    draw_rects(&mut rects,fb,"colfind_num_pairs_detailed","colfind_num_comparisons_detailed");       
+    draw_rects(&mut rects,fb,"3d_colfind_num_pairs");       
 }
+/*
 fn handle_spiral_two(fb:&mut FigureBuilder){
     let mut rects=Vec::new();
 
@@ -173,12 +170,12 @@ fn handle_spiral_two(fb:&mut FigureBuilder){
             
         }
     }
-    draw_rects(&mut rects,fb,"colfind_num_pairs","colfind_num_comparisons");    
+    draw_rects(&mut rects,fb,"3d_colfind_num_pairs","3d_colfind_num_comparisons");    
 }
+*/
 
 
-
-fn draw_rects(rects:&mut [Record],fb:&mut FigureBuilder,name1:&str,name2:&str){
+fn draw_rects(rects:&mut [Record],fb:&mut FigureBuilder,name1:&str){
     {
         let x=rects.iter().map(|a|a.num_bots as f64);
         let y=rects.iter().map(|a|a.grow);
@@ -210,26 +207,8 @@ fn draw_rects(rects:&mut [Record],fb:&mut FigureBuilder,name1:&str,name2:&str){
 
         fb.finish(fg);
     }
-
-    {
-        //let mut fg = Figure::new();
-        let mut fg=fb.build(name2);
-        let x=rects.iter().map(|a|a.num_bots);
-        let y=rects.iter().map(|a|a.grow);
-        let z=rects.iter().map(|a|a.num_pairs as f64);
-
-
-        fg.axes3d().set_view(110.0,30.0)
-            .set_title("Number of Pair Intersections for Spiral Distribution", &[])
-            .set_x_label("Number of Objects", &[])
-            .set_y_label("Spareness of Objects", &[])
-            .set_z_label("Number of Intersections", &[Rotate(90.0),TextOffset(-3.0,0.0)])
-            .points(x, y, z, &[PointSymbol('O'), Color("violet"), PointSize(1.0)]);
-        fb.finish(fg);
-    }
 }
 
 pub fn handle(fb:&mut FigureBuilder){
-    handle_spiral(fb);
-    handle_spiral_two(fb);    
+    handle_spiral(fb); 
 }

@@ -41,7 +41,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
             
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                aabb_from_point_isize(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,[5,5])
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -61,7 +61,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                aabb_from_point_isize(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,[5,5])
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -79,7 +79,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         let c3={
             if num_bots<50000{
                 let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
-                    BBoxDemo::new(aabb_from_point_isize(b.pos,[5,5]),*b)
+                    BBoxDemo::new(axgeom::Rect::from_point(b.pos,[5,5]),*b)
                 }).collect();
 
 
@@ -104,7 +104,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             
             if num_bots<8000{
                 let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
-                    let rect=aabb_from_point_isize(b.pos,[5,5]);
+                    let rect=axgeom::Rect::from_point(b.pos,[5,5]);
                     BBoxDemo::new(rect,*b)
                 }).collect();
 
@@ -131,7 +131,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
 
             let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                aabb_from_point_isize(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,[5,5])
             }).build_par();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -152,7 +152,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
 
             let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{
-                aabb_from_point_isize(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,[5,5])
             }).build_seq();
 
 
@@ -204,7 +204,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
 
 
 
-fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposition:usize){
+fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
 
     #[derive(Debug)]
     struct Record {
@@ -232,7 +232,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
             let mut counter=datanum::Counter::new();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
-                datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
+                datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
             }).build_seq();
 
 
@@ -253,7 +253,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
                 let mut counter=datanum::Counter::new();
             
                 let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
-                    let rect=aabb_from_point_isize(b.pos,[5,5]);
+                    let rect=axgeom::Rect::from_point(b.pos,[5,5]);
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
@@ -275,7 +275,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
             if num_bots<stop_sweep_at{
                 let mut counter=datanum::Counter::new();
                 let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
-                    let rect=aabb_from_point_isize(b.pos,[5,5]);
+                    let rect=axgeom::Rect::from_point(b.pos,[5,5]);
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
@@ -299,7 +299,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
             let mut counter=datanum::Counter::new();
 
             let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{
-                datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))  
+                datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
             }).build_seq();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -317,9 +317,6 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
         records.push(Record{num_bots,num_comparison_alg:c1,num_comparison_naive:c2,num_comparison_sweep:c3,num_comparison_nosort:c4});
     }
 
-    
-        
-
     let rects=&mut records;
     use gnuplot::*;
     let x=rects.iter().map(|a|a.num_bots);
@@ -329,7 +326,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
     let y4=rects.iter().map(|a|a.num_comparison_nosort);
 
     fg.axes2d()
-        //.set_pos_grid(2,1,yposition as u32)
+        .set_pos_grid(2,1,yposition as u32)
         .set_title(title, &[])
         .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
         .lines(x.clone(), y2,  &[Caption("Naive"), Color("blue"), LineWidth(4.0)])
@@ -338,38 +335,29 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,_yposi
         .lines(x.clone(), y4,  &[Caption("KDTree"), Color("brown"), LineWidth(2.0)])
         .set_x_label("Number of Objects", &[])
         .set_y_label("Number of Comparisons", &[]);
-
 }
 
 
 pub fn handle_theory(fb:&mut FigureBuilder){
 
-    {
-        let s=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
-        let mut fg=fb.build("colfind_theory_0.05");
-        
-        handle_theory_inner(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",0);
-        //handle_bench(&s,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
-        fb.finish(fg)   
-    }
+    let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
+    let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
+
+    let mut fg=fb.build("colfind_theory");
     
+    handle_theory_inner(&s1,&mut fg,"Comparison of space partitioning algs with dinotree grow of 1.0",0);
+    handle_theory_inner(&s2,&mut fg,"Comparison of space partitioning algs with dinotree grow of 0.05",1);
+    fb.finish(fg)       
 }
+
 pub fn handle_bench(fb:&mut FigureBuilder){
            
-    {
-        let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
-        let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
+    let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
+    let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
+
+    let mut fg=fb.build("colfind_bench");
+    handle_bench_inner(&s1.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,1.0)",0);
+    handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,0.05)",1);
     
-        let mut fg=fb.build("colfind_theory");
-        handle_bench_inner(&s1.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,1.0)",0);
-        
-        handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,0.05)",1);
-        
-        fb.finish(fg);
-    }
-    
-    
-    
-    
-    
+    fb.finish(fg);
 }

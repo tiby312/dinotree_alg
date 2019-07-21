@@ -19,13 +19,13 @@ impl KnearestDemo{
     pub fn new(dim:[f64;2])->KnearestDemo{
 
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[5,20];
+        let radius=[2,6];
         let velocity=[1,3];
-        let bots:Vec<Bot>=create_world_generator(500,dim2,radius,velocity).enumerate().map(|(id,ret)|{
+        let bots:Vec<Bot>=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
             Bot{id,pos:ret.pos,radius:ret.radius}
         }).collect();
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{Conv::from_rect(aabb_from_pointf64(bot.pos,bot.radius))}).build_par();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{axgeom::Rect::from_point(bot.pos,bot.radius).into_notnan().unwrap()}).build_par();
         KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }
@@ -53,7 +53,7 @@ impl DemoSys for KnearestDemo{
                 
                 draw_rect_f64n([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
                 
-                let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()));
+                let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&bot.get().into_inner());
                 let dis=match dis{
                     Some(dis)=>{
                         dis
@@ -123,7 +123,7 @@ impl DemoSys for KnearestDemo{
                 type N=F64n;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                    let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&Conv::rect_to_inner(*bot.get()));
+                    let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&bot.get().into_inner());
                     let dis=match dis{
                         Some(dis)=>{
                             dis

@@ -152,7 +152,7 @@ pub fn handle_theory(fb:&mut FigureBuilder){
 
 
 fn handle_num_bots_theory(fb:&mut FigureBuilder){
-    let mut fg= fb.build(&format!("colfind_rebal_vs_query_num_bots_grow_of_{}",0.2));
+    let mut fg= fb.build("construction_vs_query_num_theory");
     handle_num_bots_theory_inner(&mut fg,0.2,0);   
     handle_num_bots_theory_inner(&mut fg,2.0,1);   
     fb.finish(fg);
@@ -196,7 +196,7 @@ fn handle_num_bots_theory_inner(fg:&mut Figure,grow:f64,counter:u32){
 
 
 fn handle_num_bots_bench(fb:&mut FigureBuilder){
-    let mut fg= fb.build(&format!("colfind_rebal_vs_query_num_bots_grow_of_bench"));
+    let mut fg= fb.build(&format!("construction_vs_query_num_bench"));
     
     handle_num_bots_bench_inner(&mut fg,0.2,0);
     handle_num_bots_bench_inner(&mut fg,2.0,1);
@@ -309,7 +309,7 @@ fn handle_grow_bench(fb:&mut FigureBuilder){
     let y7=rects.iter().map(|a|a.nosort_par.0);
     let y8=rects.iter().map(|a|a.nosort_par.1);
 
-    let mut fg= fb.build("colfind_rebal_vs_query_bench_spiral");
+    let mut fg= fb.build("construction_vs_query_grow_bench");
 
     fg.axes2d()
         .set_title("Rebal vs Query Benches with abspiral(80000,y)", &[])
@@ -371,7 +371,7 @@ fn handle_grow_theory(fb:&mut FigureBuilder){
     let y3=rects.iter().map(|a|a.nosort_theory.0);
     let y4=rects.iter().map(|a|a.nosort_theory.1);
 
-    let mut fg= fb.build("colfind_rebal_vs_query_theory_spiral");
+    let mut fg= fb.build("construction_vs_query_grow_theory");
     
     fg.axes2d()
         .set_title("Rebal vs Query Comparisons with 80,000 objects", &[])

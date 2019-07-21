@@ -20,6 +20,13 @@ pub struct Bot{
     force:[f64;2],
 }
 
+impl duckduckgeo::BorderCollideTrait for Bot{
+    type N=f64;
+    fn pos_vel_mut(&mut self)->(&mut [f64;2],&mut [f64;2]){
+        (&mut self.pos,&mut self.vel)
+    }
+}
+
 impl duckduckgeo::RepelTrait for Bot{
     type N=f64;
     fn pos(&self)->[f64;2]{
@@ -62,7 +69,7 @@ impl OrigOrderDemo{
         let velocity=[1,3];
         let bots=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
             let bot=Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],id};
-            let rect=Conv::from_rect(aabb_from_pointf64(ret.pos,[5.0;2]));
+            let rect=axgeom::Rect::from_point(ret.pos,[5.0;2]).into_notnan().unwrap();
             BBoxMut::new(rect,bot)
         }).collect();
  
@@ -71,31 +78,41 @@ impl OrigOrderDemo{
     }
 }
 
+
+
 impl DemoSys for OrigOrderDemo{
     fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
         
         for b in self.bots.iter_mut(){
             b.inner.update();
-            b.aabb=Conv::from_rect(aabb_from_pointf64(b.inner.pos,[radius;2]));
-            duckduckgeo::wrap_position(&mut b.inner.pos,self.dim);
+            b.aabb=axgeom::Rect::from_point(b.inner.pos,[radius;2]).into_notnan().unwrap();
+            //duckduckgeo::wrap_position(&mut b.inner.pos,self.dim);
         }
 
 
-        /*
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{
-           Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2]))
-        }).build_par(); 
-        */
-        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
         
 
-        rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0;2])),|b|{
+        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
+
+
+        let rect=axgeom::Rect::new(0.0,self.dim[0],0.0,self.dim[1]).into_notnan().unwrap();
+            
+
+        {
+            let rect2=rect.into_inner();
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&rect,|a|{
+                duckduckgeo::collide_with_border(&mut a.inner,&rect2,0.5);
+            });
+        }
+
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,[100.0;2]).into_notnan().unwrap(),|b|{
             let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
         });
         
 
         
+
         {
             struct Bla<'a,'b:'a>{
                 c:&'a Context,
@@ -140,6 +157,85 @@ impl DemoSys for OrigOrderDemo{
             dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
         }
 
+
+        //draw lines to the bots.
+        {
+            fn draw_bot_lines<A:axgeom::AxisTrait>
+                (axis:A,stuff:Vistr<BBox<F64n,Bot>>,rect:&axgeom::Rect<F64n>,c:&Context,g:&mut G2d){
+                use compt::Visitor;
+                let (nn,rest)=stuff.next();
+
+                let mid=match rest{
+
+                    Some([left,right]) =>{
+              
+
+                        let rr=rect.get_range(axis.next());
+                        
+                        match nn.div{
+                            Some(div)=>{
+
+                                let (a,b)=rect.subdivide(axis,*div);
+
+                                draw_bot_lines(axis.next(),left,&a,c,g);
+                                draw_bot_lines(axis.next(),right,&b,c,g);
+
+                                let ((x1,x2),(y1,y2))=rect.into_inner().get();
+                                let midx = if !axis.is_xaxis(){
+                                    x1 + (x2-x1)/2.0
+                                }else{
+                                    div.into_inner()
+                                };
+
+                                let midy = if axis.is_xaxis(){
+                                    y1 + (y2-y1)/2.0
+                                }else{
+                                    div.into_inner()
+                                };
+
+
+                                Some((midx,midy))
+                        
+                            },
+                            None=>{
+                               None
+                            }
+                        }
+                    },
+                    None=>{
+                        let ((x1,x2),(y1,y2))=rect.into_inner().get();
+                        let midx = x1 + (x2-x1)/2.0;
+
+                        let midy = y1 + (y2-y1)/2.0;
+
+                        Some((midx,midy))
+                    }
+                };
+
+
+                if let Some((midx,midy)) = mid{
+                    let color_delta=1.0/nn.bots.len() as f32;
+                    let mut counter=0.0;
+                    for b in nn.bots.iter(){
+                        let bx=b.inner.pos[0];
+                        let by=b.inner.pos[1];
+
+                        line([counter, 0.2, 0.0, 0.3], // black
+                             2.0, // radius of line
+                             [midx,midy,bx,by], // [x0, y0, x1,y1] coordinates of line
+                             c.transform,
+                             g);
+
+                        counter+=color_delta;
+                    }
+                }
+            }
+
+            draw_bot_lines(tree.axis(),tree.vistr(),&rect,c,g);
+
+        }
+
+
         if !check_naive{
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
                 let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
@@ -161,7 +257,7 @@ impl DemoSys for OrigOrderDemo{
 
 
             let mut res2=Vec::new();
-            //let mut bots2:Vec<BBox<F64n,Bot>>=bots.iter().map(|bot|BBox::new(Conv::from_rect(aabb_from_pointf64(bot.pos,[radius;2])),*bot)).collect();
+            
             colfind::query_naive_mut(tree.get_bots_mut(),|a,b|{
                 let a=&mut a.inner;
                 let b=&mut b.inner;
@@ -210,24 +306,20 @@ impl DemoSys for OrigOrderDemo{
         }
         
         tree.into_original();
-        //tree.apply(bots,|b,t|*t=b.inner);
+        
 
-        /*
-        //If you dont care about the order, you can do this instead.
-        //But in this case, this will cause the colors to not be assigned to the correct bots.
-        for (a,b) in tree.iter_every_bot().zip(bots.iter_mut()){
-            *b=a.inner;
-        }
-        */
         
         fn conv(a:u8)->f32{
             let a:f32=a.as_();
             a/256.0
         }
+        
         for (bot,cols) in self.bots.iter().zip(self.colors.iter()){
-            let rect=&Conv::from_rect(aabb_from_pointf64(bot.inner.pos,[radius;2]));
-            draw_rect_f64n([conv(cols[0]),conv(cols[1]),conv(cols[2]),1.0],rect,c,g);
-        }        
+            let rect=&axgeom::Rect::from_point(bot.inner.pos,[radius;2]).into_notnan().unwrap();
+            draw_rect_f64n([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
+        } 
+        
+
     }
 }
 

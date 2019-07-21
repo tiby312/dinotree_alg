@@ -14,7 +14,7 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
     
     let instant=Instant::now();
 
-    let func=|b:&Bot|{aabb_from_point_isize(b.pos,[5,5])};
+    let func=|b:&Bot|{axgeom::Rect::from_point(b.pos,[5,5])};
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
     colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -37,7 +37,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
 
 
 
-    let func=|b:&Bot|{datanum::from_rect(&mut counter,aabb_from_point_isize(b.pos,[5,5]))};
+    let func=|b:&Bot|{datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))};
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
     colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -69,44 +69,6 @@ pub fn handle(fb:&mut FigureBuilder){
     handle_lowest(fb);
 }
 
-/*
-fn handle3d(fb:&mut FigureBuilder){
-
-    struct BenchRecord{
-        height:usize,
-        num_bots:usize,
-        bench:f64
-    }
-    
-    let mut benches:Vec<BenchRecord>=Vec::new();
-    for num_bots in (5_000usize..20_000).step_by(100){
-        let max_height=(num_bots as f64).log2() as usize;
-
-        let mut bots=create_bots(num_bots);
-        for height in 3..(max_height-2){
-            let bench=handle_bench_inner(&mut bots,height);
-            benches.push(BenchRecord{height,num_bots,bench});
-        }
-    }
-
-    let x=benches.iter().map(|a|a.height);
-    let y=benches.iter().map(|a|a.num_bots);
-    let z=benches.iter().map(|a|a.bench);
-
-    let mut fg = fb.build("colfind_height_heuristic_3d");
-
-    fg.axes3d().set_view(80.0,360.0-15.0)
-        .set_title("Dinotree Colfind query bench times", &[])
-        .set_x_label("Tree Height", &[])
-        .set_y_label("Number of Bots", &[])
-        .set_z_label("Time Taken in seconds", &[Rotate(90.0),TextOffset(-3.0,0.0)])
-        .points(x.clone(), y.clone(), z.clone(), &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(0.4)]);
-
-
-    fb.finish(fg);
-}
-
-*/
 
 fn handle_lowest(fb:&mut FigureBuilder){
 
@@ -169,7 +131,7 @@ fn handle_lowest(fb:&mut FigureBuilder){
 
 
     {
-        let mut fg = fb.build("colfind_optimal_height_vs_heuristic_height");
+        let mut fg = fb.build("height_heuristic_vs_optimal");
 
         let xx=theories.iter().map(|a|a.num_bots);
         let yy=theories.iter().map(|a|a.height);
@@ -212,34 +174,6 @@ fn handle_lowest(fb:&mut FigureBuilder){
         fb.finish(fg);
         
     }
-    /*
-    {
-        let mut vals=Vec::new();
-        for num_bots in its.clone(){
-            let mut bots=create_bots(num_bots);
-        
-            let b=handle_bench_inner(&mut bots,compute_tree_height_heuristic(num_bots));
-            vals.push(b);
-        }    
-
-        let x=benches.iter().map(|a|a.num_bots);
-        let y1=benches.iter().map(|a|a.bench);
-        let y2=vals.iter();
-        
-        let mut fg = fb.build("colfind_heuristic_bench_vs_optimal_bench");
-
-        fg.axes2d()
-        .set_title("Dinotree Colfind Query Bench Times: Optimal vs Heuristic", &[])
-        .set_x_label("Num bots", &[])
-        .set_y_label("Best Tree Height", &[])
-        .points(x.clone(), y1,  &[Caption("Dinotree"),PointSymbol('O'), Color("violet"), PointSize(1.0)])
-        .points(x, y2,  &[Caption("Dinotree"),PointSymbol('O'), Color("red"), PointSize(1.0)]); 
-        fb.finish(fg);
-    
-    }
-    */
-
-
 }
 
 fn handle2d(fb:&mut FigureBuilder){
@@ -283,7 +217,7 @@ fn handle2d(fb:&mut FigureBuilder){
     let x=rects.iter().map(|a|a.height);
     let y=rects.iter().map(|a|a.num_comparison);
 
-    let mut fg = fb.build("colfind_height_heuristic");
+    let mut fg = fb.build("height_heuristic");
 
     fg.axes2d()
         .set_pos_grid(2,1,0)

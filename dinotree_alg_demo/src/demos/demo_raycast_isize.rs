@@ -127,11 +127,11 @@ pub struct RaycastDemo{
 impl RaycastDemo{
     pub fn new(dim2:[f64;2])->RaycastDemo{
         let dim=&[0,dim2[0] as isize,0,dim2[1] as isize];
-        let radius=[5,20];
+        let radius=[2,6];
         let velocity=[1,3];
-        let mut bots_fake=create_world_generator(500,dim,radius,velocity);
+        let mut bots_fake=create_world_generator(4000,dim,radius,velocity);
 
-        let bots:Vec<Bot>=(0..500).map(|id|Bot{id}).collect();
+        let bots:Vec<Bot>=(0..4000).map(|id|Bot{id}).collect();
 
         let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_a|{
             let ret=bots_fake.next().unwrap();

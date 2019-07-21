@@ -22,7 +22,7 @@ impl MultiRectDemo{
             Bot{radius:ret.radius,pos:ret.pos}
         }).collect();
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{aabb_from_point_isize(b.pos,b.radius)}).build_par();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{axgeom::Rect::from_point(b.pos,b.radius)}).build_par();
 
         MultiRectDemo{tree}
     }

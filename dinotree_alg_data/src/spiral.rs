@@ -22,7 +22,7 @@ fn handle1(fb:&mut FigureBuilder){
     	
 
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-            ConvF64::from_rect(aabb_from_pointf64(*b,[5.0,5.0]))
+            axgeom::Rect::from_point(*b,[5.0,5.0]).into_notnan().unwrap()
         }).build_par();
 
         let mut num_intersection=0;

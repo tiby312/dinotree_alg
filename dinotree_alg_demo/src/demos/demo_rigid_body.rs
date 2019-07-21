@@ -19,7 +19,7 @@ impl RigidBody{
         RigidBody{pos,push_vec}
     }
     pub fn create_loose(&self,radius:f64)->Rect<F64n>{
-        Conv::from_rect(aabb_from_pointf64(self.pos.0,[radius;2]))
+        axgeom::Rect::from_point(self.pos.0,[radius;2]).into_notnan().unwrap()
     }
     pub fn push_away(&mut self,b:&mut Self,radius:f64,max_amount:f64){
         let mut diff=b.pos-self.pos;
@@ -110,7 +110,7 @@ impl DemoSys for RigidBodyDemo{
             bot.create_loose(radius)
         }).build_par(); 
         
-        rect::for_all_in_rect_mut(&mut tree,&Conv::from_rect(aabb_from_pointf64(cursor,[100.0+radius;2])),|b|{
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,[100.0+radius;2]).into_notnan().unwrap(),|b|{
             let diff=Vec2(cursor)-b.inner.pos;
 
             let dis=diff.dis();
@@ -146,7 +146,7 @@ impl DemoSys for RigidBodyDemo{
         */
         
         for bot in self.bots.iter(){
-            let rect=&Conv::from_rect(aabb_from_pointf64(bot.pos.0,[radius;2]));
+            let rect=&axgeom::Rect::from_point(bot.pos.0,[radius;2]).into_notnan().unwrap();
             draw_rect_f64n([0.0,1.0,1.0,1.0],rect,c,g);
         }        
     }
