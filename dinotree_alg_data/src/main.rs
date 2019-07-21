@@ -1,5 +1,3 @@
-//#![feature(trusted_len)]
-//#![feature(test)]
 extern crate compt;
 extern crate axgeom;
 extern crate dinotree_alg;
@@ -9,7 +7,7 @@ extern crate rayon;
 extern crate duckduckgeo;
 extern crate dists;
 extern crate gnuplot;
-//extern crate test;
+
 
 pub fn black_box<T>(dummy: T) -> T {
     unsafe {

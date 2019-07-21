@@ -22,7 +22,7 @@ mod ray_isize{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBox<isize,Bot>;
+        type T=BBox<isize,Bot2>;
         type N=isize;
 
  
@@ -80,7 +80,7 @@ mod ray_isize{
     }
 
     impl RayTrait for RayNoDraw{
-        type T=BBox<isize,Bot>;
+        type T=BBox<isize,Bot2>;
         type N=isize;
 
         fn intersects_rect(&self,_rect:&axgeom::Rect<Self::N>)->bool{
@@ -115,12 +115,12 @@ mod ray_isize{
 }
 
 #[derive(Copy,Clone,Debug)]
-pub struct Bot{
+pub struct Bot2{
     id:usize
 }
 
 pub struct RaycastDemo{
-    tree:DinoTree<axgeom::XAXISS,BBox<isize,Bot>>,
+    tree:DinoTree<axgeom::XAXISS,BBox<isize,Bot2>>,
     counter:f64,
     dim:[isize;2]
 }
@@ -131,7 +131,7 @@ impl RaycastDemo{
         let velocity=[1,3];
         let mut bots_fake=create_world_generator(4000,dim,radius,velocity);
 
-        let bots:Vec<Bot>=(0..4000).map(|id|Bot{id}).collect();
+        let bots:Vec<Bot2>=(0..4000).map(|id|Bot2{id}).collect();
 
         let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_a|{
             let ret=bots_fake.next().unwrap();
@@ -184,8 +184,8 @@ impl DemoSys for RaycastDemo{
                             for (&v,&p) in bots.iter().zip(bots2.iter()){
                                 
                                 {
-                                    let a=v as *const BBox<isize,Bot>;
-                                    let b=p as *const BBox<isize,Bot>;
+                                    let a=v as *const BBox<isize,Bot2>;
+                                    let b=p as *const BBox<isize,Bot2>;
                                     //println!("{:?}",(a,b));
                                     if  a!=b {
                                         println!("{:?}\n{:?}\n{:?}",v,p,ray.point);

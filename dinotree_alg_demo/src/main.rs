@@ -1,6 +1,5 @@
 extern crate piston_window;
 extern crate axgeom;
-extern crate rand;
 extern crate dinotree_alg;
 extern crate ordered_float;
 extern crate dinotree;
