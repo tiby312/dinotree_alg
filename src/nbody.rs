@@ -682,14 +682,14 @@ pub fn nbody<K:DinoTreeRefMutTrait<Item=N::T,Num=<N::T as HasAabb>::Num>,N:NodeM
     //let t1:&mut DinoTreeRefMut<A,N::T>=&mut t1;
     //let t1:&mut DinoTreeRefMut<A,Wrap<N::T>>=unsafe{&mut *(t1 as *mut DinoTreeRefMut<A,N::T> as *mut DinoTreeRefMut<A,Wrap<N::T>>)};
     let vistrm:VistrMut<N::T>=t1.vistr_mut();
-    let vistrm:VistrMut<Wrap<N::T>>=unsafe{std::mem::transmute(vistrm)};
+    let vistrm:VistrMut<Wrap<N::T>>=unsafe{core::mem::transmute(vistrm)};
 
     let mut misc_nodes=Vec::new();
     
     buildtree(axis,vistrm,&mut misc_nodes,&mut ncontext,rect);
 
     let vistrm:VistrMut<N::T>=t1.vistr_mut();
-    let vistrm:VistrMut<Wrap<N::T>>=unsafe{std::mem::transmute(vistrm)};
+    let vistrm:VistrMut<Wrap<N::T>>=unsafe{core::mem::transmute(vistrm)};
 
     let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
@@ -702,7 +702,7 @@ pub fn nbody<K:DinoTreeRefMutTrait<Item=N::T,Num=<N::T as HasAabb>::Num>,N:NodeM
 
 
     let vistrm:VistrMut<N::T>=t1.vistr_mut();
-    let vistrm:VistrMut<Wrap<N::T>>=unsafe{std::mem::transmute(vistrm)};
+    let vistrm:VistrMut<Wrap<N::T>>=unsafe{core::mem::transmute(vistrm)};
 
     let d=misc_tree.vistr().zip(vistrm).with_depth(Depth(0));
     apply_tree(axis,d,&mut ncontext);

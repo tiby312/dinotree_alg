@@ -12,6 +12,10 @@
 //! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
 //!
 
+
+#![no_std]
+
+extern crate alloc;
 extern crate axgeom;
 extern crate compt;
 extern crate rayon;
@@ -27,6 +31,8 @@ extern crate is_sorted;
 
 
 mod inner_prelude {
+
+    pub use alloc::vec::Vec;
     pub use dinotree::advanced::*;
     pub use dinotree::*;
     pub use dinotree::copy::*;
@@ -38,7 +44,7 @@ mod inner_prelude {
     pub use crate::*;
     pub use compt::Visitor;
     pub use axgeom::AxisTrait;
-    pub use std::marker::PhantomData;
+    pub use core::marker::PhantomData;
     pub use itertools::Itertools;
 }
 

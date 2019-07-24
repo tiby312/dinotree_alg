@@ -32,7 +32,7 @@ pub trait Knearest{
 
     ///The type of number of minimize based off on.
     ///For example it can be distance or distance squared.
-    type D:Ord+Copy+std::fmt::Debug;
+    type D:Ord+Copy+core::fmt::Debug;
 
 
     ///User defined expensive distance function. Here the user can return fine-grained distance
@@ -203,13 +203,13 @@ macro_rules! knearest_recc{
                     };
 
                     let (first,second)=match pp.cmp(div){
-                        std::cmp::Ordering::Less=>{
+                        core::cmp::Ordering::Less=>{
                             (left,right)
                         },
-                        std::cmp::Ordering::Greater=>{
+                        core::cmp::Ordering::Greater=>{
                             (right,left)
                         },
-                        std::cmp::Ordering::Equal=>{
+                        core::cmp::Ordering::Equal=>{
                             //This case it doesnt really matter whether we traverse left or right first.
                             (left,right)
                         }
@@ -401,7 +401,7 @@ mod mutable{
 
 ///Returns the closest to the furthest unit found.
 pub struct NearestResult<'a,T,D>{
-    inner:std::vec::IntoIter<Unit<'a,T,D>>
+    inner:alloc::vec::IntoIter<Unit<'a,T,D>>
 }
 impl<'a,T,D> Iterator for NearestResult<'a,T,D>{
     type Item=Unit<'a,T,D>;
@@ -413,14 +413,14 @@ impl<'a,T,D> Iterator for NearestResult<'a,T,D>{
     }
 }
 
-impl<'a,T,D> std::iter::FusedIterator for NearestResult<'a,T,D>{}
-impl<'a,T,D> std::iter::ExactSizeIterator for NearestResult<'a,T,D>{}
+impl<'a,T,D> core::iter::FusedIterator for NearestResult<'a,T,D>{}
+impl<'a,T,D> core::iter::ExactSizeIterator for NearestResult<'a,T,D>{}
 //unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResult<'a,T,D>{}
 
 
 ///Returns the closest to the furthest unit found.
 pub struct NearestResultMut<'a,T,D>{
-    inner:std::vec::IntoIter<UnitMut<'a,T,D>>
+    inner:alloc::vec::IntoIter<UnitMut<'a,T,D>>
 }
 impl<'a,T,D> Iterator for NearestResultMut<'a,T,D>{
     type Item=UnitMut<'a,T,D>;
@@ -432,6 +432,6 @@ impl<'a,T,D> Iterator for NearestResultMut<'a,T,D>{
         self.inner.size_hint()
     }
 }
-impl<'a,T,D> std::iter::FusedIterator for NearestResultMut<'a,T,D>{}
-impl<'a,T,D> std::iter::ExactSizeIterator for NearestResultMut<'a,T,D>{}
+impl<'a,T,D> core::iter::FusedIterator for NearestResultMut<'a,T,D>{}
+impl<'a,T,D> core::iter::ExactSizeIterator for NearestResultMut<'a,T,D>{}
 //unsafe impl<'a,T,D> std::iter::TrustedLen for NearestResultMut<'a,T,D>{}

@@ -83,13 +83,13 @@ pub fn for_all_not_in_rect_mut<K:DinoTreeRefMutTrait>(tree:&mut K,rect:&Rect<K::
                 };
 
                 match rect.get_range(axis).left_or_right_or_contain(div){
-                    std::cmp::Ordering::Less=>{
+                    core::cmp::Ordering::Less=>{
                         rect_recurse(axis.next(),left,rect,closure)
                     },
-                    std::cmp::Ordering::Greater=>{
+                    core::cmp::Ordering::Greater=>{
                         rect_recurse(axis.next(),right,rect,closure)
                     },
-                    std::cmp::Ordering::Equal=>{
+                    core::cmp::Ordering::Equal=>{
                         let closure=rect_recurse(axis.next(),left,rect,closure);
                         rect_recurse(axis.next(),right,rect,closure)
                     }

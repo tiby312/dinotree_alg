@@ -41,7 +41,7 @@ pub struct Sweeper<T: HasAabb> {
     //helper2: tools::PreVecMut<T>,
 }
 
-impl<T:HasAabb> std::default::Default for Sweeper<T>{
+impl<T:HasAabb> core::default::Default for Sweeper<T>{
     fn default()->Sweeper<T>{
         Sweeper::new()
     }

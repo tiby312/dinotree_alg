@@ -74,7 +74,7 @@ pub trait RayTrait{
     ///return greater.
     ///This function allows us to determine which children to recurse. We want to recurse
     ///towards the origin of the ray since we want to find things that are closer to the ray first.
-    fn divider_side(&self,axis:impl AxisTrait,div:&Self::N)->std::cmp::Ordering;
+    fn divider_side(&self,axis:impl AxisTrait,div:&Self::N)->core::cmp::Ordering;
 
 }
 
@@ -103,16 +103,16 @@ macro_rules! raycast{
                     let diff=match self.closest.take(){
                         Some(mut dis)=>{
                             match x.cmp(&dis.1){
-                                std::cmp::Ordering::Greater=>{
+                                core::cmp::Ordering::Greater=>{
                                     dis
                                     //do nothing.
                                 },
-                                std::cmp::Ordering::Less=>{
+                                core::cmp::Ordering::Less=>{
                                     
                                     //TODO clear instead of remaking vec??
                                     (new_smallvec(b),x)
                                 },
-                                std::cmp::Ordering::Equal=>{
+                                core::cmp::Ordering::Equal=>{
                                     dis.0.push(b);
                                     dis
                                 }
@@ -162,14 +162,14 @@ macro_rules! raycast{
                     let axis_next=axis.next();
 
                     let (first,second)=match rtrait.divider_side(axis,&div){
-                        std::cmp::Ordering::Less=>{
+                        core::cmp::Ordering::Less=>{
                             ((left,rleft),(right,rright))
                         },
-                        std::cmp::Ordering::Greater=>{
+                        core::cmp::Ordering::Greater=>{
 
                             ((right,rright),(left,rleft))
                         },
-                        std::cmp::Ordering::Equal=>{ //We might potentially recurse the wrong way unless we recurse both, so recurse both
+                        core::cmp::Ordering::Equal=>{ //We might potentially recurse the wrong way unless we recurse both, so recurse both
                             ((left,rleft),(right,rright))
                         }
                     };

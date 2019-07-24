@@ -62,11 +62,13 @@ impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
 
 
 
+struct Syncer<T:?Sized>(T);
+unsafe impl<T:?Sized> Sync for Syncer<T>{}
 
 
 
 pub struct ColFindRecurser<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send>{
-    _p:PhantomData<std::sync::Mutex<(T,K,S)>>
+    _p:PhantomData<Syncer<(T,K,S)>>
 }
 impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRecurser<T,K,S>{
     pub fn new()->ColFindRecurser<T,K,S>{
@@ -141,7 +143,7 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRec
 
 
 
-pub struct QueryFnMut<T,F>(F,PhantomData<std::sync::Mutex<T>>);
+pub struct QueryFnMut<T,F>(F,PhantomData<Syncer<T>>);
 impl<T:HasAabb,F:FnMut(&mut T,&mut T)> QueryFnMut<T,F>{
     pub fn new(func:F)->QueryFnMut<T,F>{
         QueryFnMut(func,PhantomData)
@@ -165,7 +167,7 @@ impl<T,F> Splitter for QueryFnMut<T,F>{
 }
 
 
-pub struct QueryFn<T,F>(F,PhantomData<std::sync::Mutex<T>>);
+pub struct QueryFn<T,F>(F,PhantomData<Syncer<T>>);
 impl<T:HasAabb,F:Fn(&mut T,&mut T)> QueryFn<T,F>{
     pub fn new(func:F)->QueryFn<T,F>{
         QueryFn(func,PhantomData)

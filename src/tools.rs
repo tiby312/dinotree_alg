@@ -1,6 +1,6 @@
-use std;
-use std::marker::PhantomData;
-
+use core;
+use core::marker::PhantomData;
+use alloc::vec::Vec;
 
 pub fn for_every_pair<T>(mut arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
     loop{
@@ -33,8 +33,8 @@ impl<T> Clone for PhantomSendSync<T> {
 
 //They are always send and sync because the only time the vec is used
 //is when it is borrowed for the lifetime.
-unsafe impl<T> std::marker::Send for PreVecMut<T> {}
-unsafe impl<T> std::marker::Sync for PreVecMut<T> {}
+unsafe impl<T> core::marker::Send for PreVecMut<T> {}
+unsafe impl<T> core::marker::Sync for PreVecMut<T> {}
 
 
 

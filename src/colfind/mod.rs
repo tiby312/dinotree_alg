@@ -58,12 +58,12 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
     ///Sorts the bots.
     fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
-        let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
+        let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
             let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
             if p1 > p2 {
-                return std::cmp::Ordering::Greater;
+                return core::cmp::Ordering::Greater;
             }
-            std::cmp::Ordering::Less
+            core::cmp::Ordering::Less
         };
 
         collision_botids.sort_unstable_by(sclosure);
@@ -232,7 +232,7 @@ fn inner_query_seq_adv_mut<
     let axis=tree.axis();
 
     let dt=tree.vistr_mut();    
-    let vistr_mut:VistrMut<wrap::Wrap<V::Item>>=unsafe{std::mem::transmute(dt)};
+    let vistr_mut:VistrMut<wrap::Wrap<V::Item>>=unsafe{core::mem::transmute(dt)};
     
     //let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
     let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{&mut *(sweeper as *mut S as *mut wrap::NodeHandlerWrapper<S>)};
@@ -259,7 +259,7 @@ fn inner_query_seq_adv_mut_not_sorted<
     let axis=tree.axis();
 
     let dt=tree.vistr_mut();    
-    let vistr_mut:VistrMut<wrap::Wrap<V::Item>>=unsafe{std::mem::transmute(dt)};
+    let vistr_mut:VistrMut<wrap::Wrap<V::Item>>=unsafe{core::mem::transmute(dt)};
     
     //let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{std::mem::transmute(sweeper)};//wrap::NodeHandlerWrapper(sweeper);
     let sweeper:&mut wrap::NodeHandlerWrapper<S>=unsafe{&mut *(sweeper as *mut S as *mut wrap::NodeHandlerWrapper<S>)};

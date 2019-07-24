@@ -39,7 +39,7 @@ impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
 
 		rect::for_all_in_rect_mut(&mut self.tree,&rect,|bbox:&mut K::Item|{
 			//This is only safe to do because the user is unable to mutate the bounding box.
-			let bbox:&'a mut K::Item=unsafe {std::mem::transmute(bbox)};
+			let bbox:&'a mut K::Item=unsafe {core::mem::transmute(bbox)};
 			func(bbox);
 		});
 
@@ -57,12 +57,12 @@ pub fn multi_rect_mut<'a,K:DinoTreeRefMutTrait>(tree:&'a mut K)->MultiRectMut<'a
 ///Sorts the bots.
 fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
-    let sclosure = |a: &I, b: &I| -> std::cmp::Ordering {
+    let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
         let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
         if p1 > p2 {
-            return std::cmp::Ordering::Greater;
+            return core::cmp::Ordering::Greater;
         }
-        std::cmp::Ordering::Less
+        core::cmp::Ordering::Less
     };
 
     collision_botids.sort_unstable_by(sclosure);
