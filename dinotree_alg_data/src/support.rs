@@ -30,13 +30,6 @@ impl LevelTimer {
     }
 
     #[inline]
-    pub fn with_height(height: usize) -> LevelTimer {
-        LevelTimer {
-            levels: Vec::with_capacity(height),
-            time: None,
-        }
-    }
-    #[inline]
     pub fn into_inner(self) -> Vec<f64> {
         self.levels
     }

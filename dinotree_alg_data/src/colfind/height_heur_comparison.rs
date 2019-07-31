@@ -74,13 +74,11 @@ fn handle_lowest(fb:&mut FigureBuilder){
 
     struct BenchRecord{
         height:usize,
-        bench:f64,
         num_bots:usize,
     }
 
     struct TheoryRecord{
         height:usize,
-        _theory:usize,
         num_bots:usize
     }
 
@@ -101,7 +99,6 @@ fn handle_lowest(fb:&mut FigureBuilder){
                 Some((a,_b))=>{
                     if bench<a{
                         minimum=Some((bench,height));
-                        //(bench,height)
                     }
                 },
                 None=>{
@@ -120,10 +117,10 @@ fn handle_lowest(fb:&mut FigureBuilder){
             }
         }
 
-        if let Some((theory,height))=minimum_theory{
-            theories.push(TheoryRecord{height,num_bots,_theory:theory});            
-            let (bench,height)=minimum.unwrap();
-            benches.push(BenchRecord{height,num_bots,bench});
+        if let Some((_,height))=minimum_theory{
+            theories.push(TheoryRecord{height,num_bots});            
+            let (_,height)=minimum.unwrap();
+            benches.push(BenchRecord{height,num_bots});
         }
 
 

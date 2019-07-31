@@ -12,8 +12,6 @@ pub struct Bot{
 
 fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposition:usize){
 
-    use std::time::Instant;
-    
     #[derive(Debug)]
     struct Record {
         num_bots: usize,

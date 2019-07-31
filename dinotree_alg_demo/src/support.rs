@@ -17,8 +17,13 @@ pub mod prelude{
     pub use duckduckgeo::f64n;
     pub use duckduckgeo::*;
     pub use duckduckgeo::bot::*;
+
+    pub use cgmath::prelude::*;
+    pub use cgmath::Vector2;
+    pub use cgmath::vec2;
 }
-use ordered_float::NotNan;
+
+
 use duckduckgeo::F64n;
 
 

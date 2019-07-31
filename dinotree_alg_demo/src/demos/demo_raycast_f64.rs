@@ -20,7 +20,6 @@ mod ray_f64{
 
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            use duckduckgeo::IntersectsBotResult;
             match self.ray.intersects_box(rect){
                 IntersectsBotResult::Hit(_)=>{
                     true
@@ -48,7 +47,6 @@ mod ray_f64{
         }
 
         fn compute_distance_bot(&mut self,a:&BBox<F64n,()>)->Option<Self::N>{
-            use duckduckgeo::IntersectsBotResult;
             match self.ray.intersects_box(a.get()){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)

@@ -1,30 +1,28 @@
 use crate::support::prelude::*;
-use dinotree_alg::colfind;
 use dinotree_alg::rect;
 use duckduckgeo;
 use dinotree_alg;
 
 use axgeom::Rect;
-use duckduckgeo::vec2f64::Vec2;
 
 #[derive(Copy,Clone,Debug)]
 pub struct RigidBody{
-    pub pos:Vec2,
-    pub push_vec:Vec2,
+    pub pos:Vector2<f64>,
+    pub push_vec:Vector2<f64>,
 }
 
 impl RigidBody{
-    pub fn new(pos:Vec2)->RigidBody{
-        let push_vec=Vec2::new(0.0,0.0);
+    pub fn new(pos:Vector2<f64>)->RigidBody{
+        let push_vec=Vector2::zero();
         RigidBody{pos,push_vec}
     }
     pub fn create_loose(&self,radius:f64)->Rect<F64n>{
-        axgeom::Rect::from_point(self.pos.0,[radius;2]).into_notnan().unwrap()
+        axgeom::Rect::from_point([self.pos.x,self.pos.y],[radius;2]).into_notnan().unwrap()
     }
     pub fn push_away(&mut self,b:&mut Self,radius:f64,max_amount:f64){
         let mut diff=b.pos-self.pos;
 
-        let dis=diff.dis();
+        let dis=diff.magnitude();
 
         if dis<0.000001{
             return;
@@ -65,8 +63,11 @@ pub fn handle_rigid_body(bodies:&mut [RigidBody],ball_size:f64,push_unit:f64,num
         tree.apply(bodies,|a,b|*b=a.inner);
 
         for body in bodies.iter_mut(){
-            if body.push_vec.dis()>0.0000001{
-                body.push_vec.truncate(push_rate);
+            let mm=body.push_vec.magnitude();
+            if mm>0.0000001{
+                if mm>push_rate{
+                    body.push_vec.normalize_to(push_rate);
+                }
                 body.apply_push_vec();
             }
         }
@@ -89,8 +90,8 @@ impl RigidBodyDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[2,5];
         let velocity=[0,1];
-        let bots=create_world_generator(1300,dim2,radius,velocity).enumerate().map(|(id,ret)|{
-            RigidBody::new(Vec2(ret.pos))//{pos:ret.pos,vel:ret.vel,force:[0.0;2],id,aabb:Conv::from_rect(aabb_from_pointf64(ret.pos,[5.0;2]))}
+        let bots=create_world_generator(1300,dim2,radius,velocity).enumerate().map(|(_id,ret)|{
+            RigidBody::new(vec2(ret.pos[0],ret.pos[1]))
         }).collect();
  
         RigidBodyDemo{radius:10.0,bots,dim}
@@ -98,7 +99,7 @@ impl RigidBodyDemo{
 }
 
 impl DemoSys for RigidBodyDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         
 
@@ -111,9 +112,9 @@ impl DemoSys for RigidBodyDemo{
         }).build_par(); 
         
         rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,[100.0+radius;2]).into_notnan().unwrap(),|b|{
-            let diff=Vec2(cursor)-b.inner.pos;
+            let diff=vec2(cursor[0],cursor[1])-b.inner.pos;
 
-            let dis=diff.dis();
+            let dis=diff.magnitude();
             if dis<100.0{
                 let mag=100.0-dis;
                 if mag>0.0{
@@ -134,7 +135,10 @@ impl DemoSys for RigidBodyDemo{
         for b in self.bots.iter_mut(){
             //b.update();
             //b.aabb=Conv::from_rect(aabb_from_pointf64(b.pos,[radius;2]));
-            duckduckgeo::stop_wall(&mut b.pos.0,self.dim);
+            let mut k=[b.pos.x,b.pos.y];
+            duckduckgeo::stop_wall(&mut k,self.dim);
+            b.pos.x=k[0];
+            b.pos.y=k[1];
         }
 
         /*
@@ -146,7 +150,7 @@ impl DemoSys for RigidBodyDemo{
         */
         
         for bot in self.bots.iter(){
-            let rect=&axgeom::Rect::from_point(bot.pos.0,[radius;2]).into_notnan().unwrap();
+            let rect=&axgeom::Rect::from_point([bot.pos.x,bot.pos.y],[radius;2]).into_notnan().unwrap();
             draw_rect_f64n([0.0,1.0,1.0,1.0],rect,c,g);
         }        
     }

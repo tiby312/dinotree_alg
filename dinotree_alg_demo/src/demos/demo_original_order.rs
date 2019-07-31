@@ -15,14 +15,14 @@ struct Ray<N>{
 #[derive(Copy,Clone)]
 pub struct Bot{
     id:usize, //id used to verify pairs against naive
-    pos:[f64;2],
-    vel:[f64;2],
-    force:[f64;2],
+    pos:Vector2<f64>,
+    vel:Vector2<f64>,
+    force:Vector2<f64>,
 }
 
 impl duckduckgeo::BorderCollideTrait for Bot{
     type N=f64;
-    fn pos_vel_mut(&mut self)->(&mut [f64;2],&mut [f64;2]){
+    fn pos_vel_mut(&mut self)->(&mut Vector2<f64>,&mut Vector2<f64>){
         (&mut self.pos,&mut self.vel)
     }
 }
@@ -30,28 +30,27 @@ impl duckduckgeo::BorderCollideTrait for Bot{
 impl duckduckgeo::RepelTrait for Bot{
     type N=f64;
     fn pos(&self)->[f64;2]{
-        self.pos
+        [self.pos.x,self.pos.y]
     }
     fn add_force(&mut self,force:[f64;2]){
-        self.force[0]+=force[0];
-        self.force[1]+=force[1];
+        self.force.x+=force[0];
+        self.force.y+=force[1];
     }
 }
 
 
 impl Bot{
     fn update(&mut self){
-        self.vel[0]+=self.force[0];
-        self.vel[1]+=self.force[1];
+        self.vel+=self.force;
+
 
         //non linear drag
-        self.vel[0]*=0.9;
-        self.vel[1]*=0.9;
+        self.vel*=0.9;
 
-        self.pos[0]+=self.vel[0];
-        self.pos[1]+=self.vel[1];
-        self.force[0]=0.0;
-        self.force[1]=0.0;
+
+        self.pos+=self.vel;
+
+        self.force=Vector2::zero();
     }
 }
 
@@ -68,7 +67,7 @@ impl OrigOrderDemo{
         let radius=[3,5];
         let velocity=[1,3];
         let bots=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
-            let bot=Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],id};
+            let bot=Bot{pos:vec2(ret.pos[0],ret.pos[1]),vel:vec2(ret.vel[0],ret.vel[1]),force:Vector2::zero(),id};
             let rect=axgeom::Rect::from_point(ret.pos,[5.0;2]).into_notnan().unwrap();
             BBoxMut::new(rect,bot)
         }).collect();
@@ -86,8 +85,7 @@ impl DemoSys for OrigOrderDemo{
         
         for b in self.bots.iter_mut(){
             b.inner.update();
-            b.aabb=axgeom::Rect::from_point(b.inner.pos,[radius;2]).into_notnan().unwrap();
-            //duckduckgeo::wrap_position(&mut b.inner.pos,self.dim);
+            b.aabb=axgeom::Rect::from_point([b.inner.pos.x,b.inner.pos.y],[radius;2]).into_notnan().unwrap();
         }
 
 
@@ -147,9 +145,6 @@ impl DemoSys for OrigOrderDemo{
 
                     let square = [x1.into_inner(),y1.into_inner(),w1.into_inner(),w2.into_inner()];
                     rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
-                
-                    
-                    
                 }
             }
 
@@ -168,10 +163,7 @@ impl DemoSys for OrigOrderDemo{
                 let mid=match rest{
 
                     Some([left,right]) =>{
-              
-
-                        let rr=rect.get_range(axis.next());
-                        
+               
                         match nn.div{
                             Some(div)=>{
 
@@ -315,7 +307,7 @@ impl DemoSys for OrigOrderDemo{
         }
         
         for (bot,cols) in self.bots.iter().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point(bot.inner.pos,[radius;2]).into_notnan().unwrap();
+            let rect=&axgeom::Rect::from_point([bot.inner.pos.x,bot.inner.pos.y],[radius;2]).into_notnan().unwrap();
             draw_rect_f64n([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
         } 
         

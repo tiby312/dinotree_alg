@@ -200,8 +200,6 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     let mut rects=Vec::new();
 
     for num_bots in (0..150_000).rev().step_by(2000){
-        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
-
         
         let mut bots2:Vec<BBoxMut<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
             let pos=[pos[0] as isize,pos[1] as isize];

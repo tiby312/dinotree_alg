@@ -9,6 +9,7 @@ use duckduckgeo;
 //isize implementation of a ray.
 mod ray_isize{
     use super::*;
+    
     use self::raycast::RayTrait;
     use duckduckgeo;
 
@@ -28,7 +29,6 @@ mod ray_isize{
  
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            use duckduckgeo::IntersectsBotResult;
             match self.ray.intersects_box(rect){
                 IntersectsBotResult::Hit(_)=>{
                     true
@@ -56,7 +56,6 @@ mod ray_isize{
 
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
             draw_rect_isize([1.0,0.0,0.0,0.8],a.get(),self.c,self.g);
-            use duckduckgeo::IntersectsBotResult;
             match self.ray.intersects_box(a.get()){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
@@ -96,7 +95,6 @@ mod ray_isize{
         }
 
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
-            use duckduckgeo::IntersectsBotResult;
             match self.ray.intersects_box(a.get()){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)

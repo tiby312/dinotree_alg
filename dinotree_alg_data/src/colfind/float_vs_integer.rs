@@ -12,8 +12,6 @@ pub struct Bot{
 
 fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
-    use std::time::Instant;
-    
     #[derive(Debug)]
     struct Record {
         num_bots: usize,
@@ -117,7 +115,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                 axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
+                 axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64 ],[5.0,5.0]).into_notnan().unwrap()
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -136,7 +134,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                 axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
+                 axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]).into_notnan().unwrap()
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
