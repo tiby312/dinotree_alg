@@ -12,7 +12,7 @@ pub struct MultiRectDemo{
     tree:DinoTree<axgeom::XAXISS,BBox<isize,Bot>>
 }
 impl MultiRectDemo{
-    pub fn new(dim:[f64;2])->MultiRectDemo{
+    pub fn new(dim:[F64n;2])->MultiRectDemo{
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
         let velocity=[1,3];
@@ -29,7 +29,7 @@ impl MultiRectDemo{
 }
 
 impl DemoSys for MultiRectDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
+    fn step(&mut self,cursor:[F64n;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
         let tree=&mut self.tree;
 

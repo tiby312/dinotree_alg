@@ -143,7 +143,7 @@ impl RaycastDemo{
 }
 
 impl DemoSys for RaycastDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[F64n;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&self.tree;
         let counter=&mut self.counter;
 

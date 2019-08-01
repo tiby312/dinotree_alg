@@ -20,7 +20,11 @@ mod ray_f64{
 
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            match self.ray.intersects_box(rect){
+            let ray:Ray<f64>=self.ray.cast().unwrap();
+            //TODO investigate if there is a reference based cast????
+            let rect=rect.cast().unwrap();
+
+            match ray_intersects_box(&ray,&rect){
                 IntersectsBotResult::Hit(_)=>{
                     true
                 },
@@ -34,20 +38,26 @@ mod ray_f64{
         }
         fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
             if axis.is_xaxis(){
-                self.ray.point[0].cmp(&div)
+                self.ray.point.x.cmp(&div)
             }else{
-                self.ray.point[1].cmp(&div)
+                self.ray.point.y.cmp(&div)
             }
         }
         
         
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
+            let ray:Ray<f64>=self.ray.cast().unwrap();
+            let line:f64=*line;
             //let ray=duckduckgeo::Ray{point:self.ray.point,dir:self.ray.dir};
-            self.ray.compute_intersection_tvalue(axis,line)
+            ray_compute_intersection_tvalue(&ray,axis,line).map(|a|NotNan::new(a).unwrap())
         }
 
-        fn compute_distance_bot(&mut self,a:&BBox<F64n,()>)->Option<Self::N>{
-            match self.ray.intersects_box(a.get()){
+        fn compute_distance_bot(&mut self,rect:&BBox<F64n,()>)->Option<Self::N>{
+            let ray:Ray<f64>=self.ray.cast().unwrap();
+            //TODO investigate if there is a reference based cast????
+            let rect=rect.get().cast().unwrap();
+
+            match ray_intersects_box(&ray,&rect){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
                 },
@@ -55,10 +65,10 @@ mod ray_f64{
                     None
                 },
                 IntersectsBotResult::Inside=>{
-                    Some(f64n!(0.0))
+                    Some(0.0)
                     //None
                 }
-            }
+            }.map(|a|NotNan::new(a).unwrap())
         }
         
     }
@@ -67,23 +77,26 @@ mod ray_f64{
 
 pub struct RaycastF64Demo{
     tree:DinoTree<axgeom::XAXISS,BBox<F64n,()>>,
-    dim:[f64;2]
+    dim:Vector2<F64n>
 }
 impl RaycastF64Demo{
 
-    pub fn new(dim:[f64;2])->RaycastF64Demo{
-        let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[5,20];
-        let velocity=[1,3];
-        let mut bot_iter=create_world_generator(500,dim2,radius,velocity);
+    pub fn new(dim:Vector2<F64n>)->RaycastF64Demo{
+        let dim2:Vector2<f64>=dim.cast().unwrap();
+        let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
+        
+        let rand_radius=dists::RandomRectBuilder::new(vec2(5.0,5.0),vec2(20.0,20.0));
+        
+        let mut ii=dists::uniform_rand::UniformRangeBuilder::new(border).build().take(500).zip(rand_radius);
 
-        let bots=vec![();500];
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_|{
-            let ret=bot_iter.next().unwrap();
-            let p=ret.pos;
-            let r=ret.radius;
-            axgeom::Rect::from_point(p,r).into_notnan().unwrap()
+        let bots:Vec<()>=(0..500).map(|a|()).collect();
+
+
+
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{
+            let (pos,radius)=ii.next().unwrap();
+            rect_from_point(pos,radius).cast().unwrap()
         }).build_par();
 
         RaycastF64Demo{tree,dim}
@@ -91,7 +104,7 @@ impl RaycastF64Demo{
 }
 
 impl DemoSys for RaycastF64Demo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
+    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let tree=&self.tree;
         //Draw bots
         for bot in tree.get_bots().iter(){
@@ -105,13 +118,12 @@ impl DemoSys for RaycastF64Demo{
                 let y=(dir.sin()*20.0) as f64;
 
                 let ray={
-                    let dir=[f64n!(x),f64n!(y)];
-                    let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                    duckduckgeo::Ray{point,dir}
+                    let k=vec2(x,y).cast().unwrap();
+                    duckduckgeo::Ray::new(cursor,k)
                 };
 
                 
-                let res=raycast::raycast(&tree,axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])),ray_f64::RayT{ray,c:&c,g});
+                let res=raycast::raycast(&tree,axgeom::Rect::new(NotNan::<_>::zero(),self.dim[0],NotNan::<_>::zero(),self.dim[1]),ray_f64::RayT{ray,c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point[0]+ray.dir[0]*k.1;

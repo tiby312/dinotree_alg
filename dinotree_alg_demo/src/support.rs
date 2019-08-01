@@ -13,18 +13,19 @@ pub mod prelude{
     pub(crate) use axgeom;
     pub(crate) use crate::support::*;
     pub use dinotree::BBox;
-    pub use num_traits::cast::AsPrimitive;
-    pub use duckduckgeo::f64n;
+    
     pub use duckduckgeo::*;
     pub use duckduckgeo::bot::*;
 
     pub use cgmath::prelude::*;
     pub use cgmath::Vector2;
     pub use cgmath::vec2;
+    pub use duckduckgeo::F64n;
 }
 
 
 use duckduckgeo::F64n;
+
 
 
 pub struct ColorGenerator{

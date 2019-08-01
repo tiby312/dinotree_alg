@@ -48,7 +48,7 @@ pub struct IntersectWithDemo{
     radius:f64,
     bots:Vec<Bot>,
     walls:Vec<Wall>,
-    dim:[f64;2]
+    dim:[F64n;2]
 }
 impl IntersectWithDemo{
     pub fn new(dim:[f64;2])->IntersectWithDemo{

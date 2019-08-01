@@ -8,22 +8,21 @@ use dinotree_alg;
 #[derive(Copy,Clone)]
 struct NodeMass{
     rect:axgeom::Rect<F64n>,
-    center:[f64;2],
+    center:Vector2<f64>,
     mass:f64,
-    force:[f64;2]
+    force:Vector2<f64>
 }
 
 impl duckduckgeo::GravityTrait for NodeMass{
     type N=f64;
-    fn pos(&self)->[f64;2]{
+    fn pos(&self)->Vector2<f64>{
         self.center
     }
     fn mass(&self)->f64{
         self.mass
     }
-    fn apply_force(&mut self,a:[f64;2]){
-        self.force[0]+=a[0];
-        self.force[1]+=a[1];
+    fn apply_force(&mut self,a:Vector2<f64>){
+        self.force+=a;
     }
 }
 
@@ -143,27 +142,26 @@ impl Bot{
 }
 impl duckduckgeo::GravityTrait for Bot{
     type N=f64;
-    fn pos(&self)->[f64;2]{
+    fn pos(&self)->Vector2<f64>{
         self.pos
     }
     fn mass(&self)->f64{
         self.mass
     }
-    fn apply_force(&mut self,a:[f64;2]){
-        self.force[0]+=a[0];
-        self.force[1]+=a[1];
+    fn apply_force(&mut self,a:Vector2<f64>){
+        self.force+=a;
     }
 }
 
 
 pub struct DemoNbody{
-    dim:[f64;2],
+    dim:[F64n;2],
     bots:Vec<Bot>,
     no_mass_bots:Vec<Bot>,
     max_percentage_error:f64
 }
 impl DemoNbody{
-    pub fn new(dim:[f64;2])->DemoNbody{
+    pub fn new(dim:[F64n;2])->DemoNbody{
         let dim1=dim;
         let dim=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,20];
@@ -182,7 +180,7 @@ impl DemoNbody{
 }
 
 impl DemoSys for DemoNbody{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[F64n;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let no_mass_bots=&mut self.no_mass_bots;
         let bots=&mut self.bots;
         
@@ -200,7 +198,7 @@ impl DemoSys for DemoNbody{
         */
 
 
-        let border=axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1]));
+        let border=axgeom::Rect::new(NotNan::<_>::zero(),self.dim[0],NotNan::<_>::zero(),self.dim[1]);
 
         if !check_naive{
             nbody::nbody(&mut tree,&mut Bla{num_pairs_checked:0},border);
@@ -350,7 +348,7 @@ impl DemoSys for DemoNbody{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(NotNan::<_>::zero(),self.dim[0],NotNan::<_>::zero(),self.dim[1]));
         }
 
         //Draw bots.

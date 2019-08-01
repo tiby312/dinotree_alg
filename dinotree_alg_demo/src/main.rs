@@ -6,14 +6,17 @@ extern crate dinotree;
 extern crate duckduckgeo;
 
 
+use cgmath::Vector2;
+use cgmath::vec2;
+use num_traits::*;
 use piston_window::*;
 #[macro_use]
 pub(crate) mod support;
 pub(crate) mod demos;
-
+use duckduckgeo::F64n;
 
 pub trait DemoSys{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool);
+    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool);
 }
 
 mod demo_iter{
@@ -23,29 +26,34 @@ mod demo_iter{
 
     impl DemoIter{
         pub fn new()->DemoIter{
-            DemoIter(7)
+            DemoIter(0)
         }
         pub fn next(&mut self,area:[u32;2])->Box<DemoSys>{
-            let area=[f64::from(area[0]),f64::from(area[1])];
+            let area=vec2(area[0],area[1]).cast().unwrap();
             let curr=self.0;
-            self.0+=1;
+            
 
 
             if self.0==8{
                 self.0=0
             }
-            match curr{
+            let k:Box<DemoSys>=match curr{
 
                 0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
+                1=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))}
+                /*
                 1=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
                 2=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
-                3=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))},
+                
                 4=>{Box::new(demo_nbody::DemoNbody::new(area))},
                 5=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
                 6=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
                 7=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
-                _=>{panic!("Not possible")}
-            }
+                */
+                _=>{unreachable!("Not possible")}
+            };
+            self.0+=1;
+            k
         }
     }
 }
@@ -76,12 +84,12 @@ fn main(){
     println!("Performance suffers from not batching draw calls (piston's built in rectangle drawing primitives are used instead of vertex buffers). These demos are not meant to showcase the performance of the algorithms. See the dinotree_alg_data project for benches.");
 
 
-    let mut cursor=[0.0,0.0];
+    let mut cursor:Vector2<F64n>=Vector2::zero();
 
     let mut check_naive=false;
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
-            cursor = [x, y];
+            cursor = vec2(x,y).cast().unwrap();
         });
         if let Some(Button::Keyboard(key)) = e.press_args() {
             if key == Key::N {

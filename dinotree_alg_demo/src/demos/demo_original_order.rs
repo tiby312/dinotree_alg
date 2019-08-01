@@ -29,10 +29,10 @@ impl duckduckgeo::BorderCollideTrait for Bot{
 
 impl duckduckgeo::RepelTrait for Bot{
     type N=f64;
-    fn pos(&self)->[f64;2]{
-        [self.pos.x,self.pos.y]
+    fn pos(&self)->Vector2<f64>{
+        self.pos
     }
-    fn add_force(&mut self,force:[f64;2]){
+    fn add_force(&mut self,force:Vector2<f64>){
         self.force.x+=force[0];
         self.force.y+=force[1];
     }
@@ -59,10 +59,10 @@ pub struct OrigOrderDemo{
     radius:f64,
     bots:Vec<BBoxMut<F64n,Bot>>,
     colors:Vec<[u8;3]>,
-    dim:[f64;2]
+    dim:[F64n;2]
 }
 impl OrigOrderDemo{
-    pub fn new(dim:[f64;2])->OrigOrderDemo{
+    pub fn new(dim:[F64n;2])->OrigOrderDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[3,5];
         let velocity=[1,3];
@@ -80,7 +80,7 @@ impl OrigOrderDemo{
 
 
 impl DemoSys for OrigOrderDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[F64n;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
         
         for b in self.bots.iter_mut(){
@@ -149,7 +149,7 @@ impl DemoSys for OrigOrderDemo{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(f64n!(0.0),f64n!(self.dim[0]),f64n!(0.0),f64n!(self.dim[1])));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(NotNan::<_>::zero(),self.dim[0],NotNan::<_>::zero(),self.dim[1]));
         }
 
 

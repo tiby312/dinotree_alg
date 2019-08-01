@@ -1,37 +1,44 @@
 use crate::support::prelude::*;
 use dinotree_alg::k_nearest;
 use duckduckgeo;
+use dists;
 
+use duckduckgeo::cast_2array;
+use duckduckgeo::rect_from_point;
 
 #[derive(Copy,Clone)]
 struct Bot{
     id:usize,
-    pos:[f64;2],
-    radius:[f64;2]
+    pos:Vector2<f64>,
+    radius:Vector2<f64>
 }
 
 pub struct KnearestDemo{
     _bots:Vec<Bot>,
     tree:DinoTree<axgeom::XAXISS,BBox<F64n,Bot>>,
-    _dim:[f64;2]
+    _dim:Vector2<F64n>
 }
 impl KnearestDemo{
-    pub fn new(dim:[f64;2])->KnearestDemo{
+    pub fn new(dim:Vector2<F64n>)->KnearestDemo{
 
-        let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[2,6];
-        let velocity=[1,3];
-        let bots:Vec<Bot>=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
-            Bot{id,pos:ret.pos,radius:ret.radius}
+        let dim2:Vector2<f64>=dim.cast().unwrap();
+        let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
+        
+
+        let rand_radius=dists::RandomRectBuilder::new(vec2(2.0,2.0),vec2(6.0,6.0));
+        let bots:Vec<_>=dists::uniform_rand::UniformRangeBuilder::new(border).build().
+            take(4000).zip(rand_radius).enumerate().map(|(id,(pos,radius))|{
+            Bot{id,pos,radius}
         }).collect();
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{axgeom::Rect::from_point(bot.pos,bot.radius).into_notnan().unwrap()}).build_par();
+
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{rect_from_point(bot.pos,bot.radius).cast().unwrap()}).build_par();
         KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }
 
 impl DemoSys for KnearestDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&mut self.tree;
 
         for bot in tree.get_bots().iter(){
@@ -50,10 +57,12 @@ impl DemoSys for KnearestDemo{
             type N=F64n;
             type D=DisSqr;
             fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                
+                let rect=bot.get().cast().unwrap();
+                let point=cast_2array(point).unwrap();
+
                 draw_rect_f64n([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
                 
-                let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&bot.get().into_inner());
+                let dis=rect.distance_squared_to_point(point);
                 let dis=match dis{
                     Some(dis)=>{
                         dis
@@ -75,19 +84,18 @@ impl DemoSys for KnearestDemo{
                         //If you don't care about a single solution existing, you can simply return zero
                         //for the cases that the point is inside of the rect.
 
-                        
-                        let point=Conv::point_to_inner(point);
-                        -duckduckgeo::distance_squred_point(bot.inner.pos,point)
+                        let point=vec2(point[0],point[1]);
+                        -(bot.inner.pos-point).magnitude2()
                     }
                 };
-                DisSqr(f64n!(dis))
+                DisSqr(NotNan::new(dis).unwrap())
             }
 
             fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{
                 let p1=p1.into_inner();
                 let p2=p2.into_inner();
                 let diff=p2-p1;
-                DisSqr(f64n!(diff*diff))
+                DisSqr(NotNan::new(diff*diff).unwrap())
             }
 
             //create a range around n.
@@ -97,7 +105,7 @@ impl DemoSys for KnearestDemo{
                 }else{
                     let b=b.into_inner();
                     let dis=d.0.into_inner().sqrt();
-                    [f64n!(b-dis),f64n!(b+dis)]
+                    [NotNan::new(b-dis).unwrap(),NotNan::new(b+dis).unwrap()]
                 }
             }
         }
@@ -111,8 +119,7 @@ impl DemoSys for KnearestDemo{
         
         let vv={
             let kn=Kn{c:&c,g};
-            let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-            k_nearest::k_nearest(&tree,point,3,kn)
+            k_nearest::k_nearest(&tree,[cursor.x,cursor.y],3,kn)
         };
 
         if check_naive{
@@ -123,24 +130,30 @@ impl DemoSys for KnearestDemo{
                 type N=F64n;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                    let dis=duckduckgeo::distance_squared_point_to_rect(Conv::point_to_inner(point),&bot.get().into_inner());
+                    let rect=bot.get().cast().unwrap();
+                    let point=cast_2array(point).unwrap();
+
+
+                    let dis=rect.distance_squared_to_point(point);
+                    //let dis=duckduckgeo::distance_squared_point_to_rect(point_notnan_to_inner(point),&bot.get().into_inner());
                     let dis=match dis{
                         Some(dis)=>{
                             dis
                         },
                         None=>{
                             //IMPORTANT THAT THIS NEGATIVE
-                            let point=Conv::point_to_inner(point);
-                            -duckduckgeo::distance_squred_point(bot.inner.pos,point)
+                            
+                            let point=vec2(point[0],point[1]);
+                            -(bot.inner.pos-point).magnitude2()
                         }
                     };
-                    DisSqr(f64n!(dis))    
+                    DisSqr(NotNan::new(dis).unwrap())    
                 }
 
                 fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{
                     let p1=p1.into_inner();
                     let p2=p2.into_inner();
-                    DisSqr(f64n!((p2-p1)*(p2-p1)))
+                    DisSqr(NotNan::new((p2-p1)*(p2-p1)).unwrap())
                 }
 
                 //create a range around n.
@@ -150,16 +163,14 @@ impl DemoSys for KnearestDemo{
                     }else{
                         let b=b.into_inner();
                         let dis=d.0.into_inner().sqrt();
-                        [f64n!(b-dis),f64n!(b+dis)]
+                        [NotNan::new(b-dis).unwrap(),NotNan::new(b+dis).unwrap()]
                     }
                 }
             }
         
             let vv2={
                 let kn=Kn2{};
-                let point=[f64n!(cursor[0]),f64n!(cursor[1])];
-                
-                k_nearest::naive(tree.get_bots().iter(),point,3,kn).into_iter()
+                k_nearest::naive(tree.get_bots().iter(),[cursor.x,cursor.y],3,kn).into_iter()
             };
             
 

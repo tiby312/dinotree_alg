@@ -82,10 +82,10 @@ pub fn handle_rigid_body(bodies:&mut [RigidBody],ball_size:f64,push_unit:f64,num
 pub struct RigidBodyDemo{
     radius:f64,
     bots:Vec<RigidBody>,
-    dim:[f64;2]
+    dim:[F64n;2]
 }
 impl RigidBodyDemo{
-    pub fn new(dim:[f64;2])->RigidBodyDemo{
+    pub fn new(dim:[F64n;2])->RigidBodyDemo{
         let dim=[dim[0],dim[1]-100.0];
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[2,5];

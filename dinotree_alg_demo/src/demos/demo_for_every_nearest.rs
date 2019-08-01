@@ -42,10 +42,10 @@ impl Bot{
 
 pub struct KnearestEveryDemo{
     bots:Vec<Bot>,
-    dim:[f64;2]
+    dim:[F64n;2]
 }
 impl KnearestEveryDemo{
-    pub fn new(dim:[f64;2])->KnearestEveryDemo{
+    pub fn new(dim:[F64n;2])->KnearestEveryDemo{
         let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
         let radius=[5,6];
         let velocity=[1,3];
