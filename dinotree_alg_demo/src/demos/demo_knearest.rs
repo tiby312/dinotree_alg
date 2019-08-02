@@ -3,7 +3,7 @@ use dinotree_alg::k_nearest;
 use duckduckgeo;
 use dists;
 
-use duckduckgeo::cast_2array;
+use duckduckgeo::array2_inner_into;
 use duckduckgeo::rect_from_point;
 
 #[derive(Copy,Clone)]
@@ -21,9 +21,9 @@ pub struct KnearestDemo{
 impl KnearestDemo{
     pub fn new(dim:Vector2<F64n>)->KnearestDemo{
 
-        let dim2:Vector2<f64>=dim.cast().unwrap();
+        let dim2:Vector2<f64>=vec2_inner_into(dim);
         let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
-        
+
 
         let rand_radius=dists::RandomRectBuilder::new(vec2(2.0,2.0),vec2(6.0,6.0));
         let bots:Vec<_>=dists::uniform_rand::UniformRangeBuilder::new(border).build().
@@ -32,7 +32,7 @@ impl KnearestDemo{
         }).collect();
 
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{rect_from_point(bot.pos,bot.radius).cast().unwrap()}).build_par();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{rect_from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_par();
         KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }
@@ -57,8 +57,8 @@ impl DemoSys for KnearestDemo{
             type N=F64n;
             type D=DisSqr;
             fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                let rect=bot.get().cast().unwrap();
-                let point=cast_2array(point).unwrap();
+                let rect=bot.get().inner_into();
+                let point=array2_inner_into(point);
 
                 draw_rect_f64n([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
                 
@@ -130,8 +130,8 @@ impl DemoSys for KnearestDemo{
                 type N=F64n;
                 type D=DisSqr;
                 fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                    let rect=bot.get().cast().unwrap();
-                    let point=cast_2array(point).unwrap();
+                    let rect=bot.get().inner_into();
+                    let point=array2_inner_into(point);
 
 
                     let dis=rect.distance_squared_to_point(point);

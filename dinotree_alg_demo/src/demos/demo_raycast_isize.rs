@@ -29,7 +29,7 @@ mod ray_isize{
  
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            match self.ray.intersects_box(rect){
+            match ray_intersects_box(&self.ray,rect,|a,b|a.min(b),|a,b|a.max(b)){
                 IntersectsBotResult::Hit(_)=>{
                     true
                 },
@@ -50,13 +50,13 @@ mod ray_isize{
         }
   
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
-            self.ray.compute_intersection_tvalue(axis,line)
+            ray_compute_intersection_tvalue(&self.ray,axis,line)
         }
 
 
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
             draw_rect_isize([1.0,0.0,0.0,0.8],a.get(),self.c,self.g);
-            match self.ray.intersects_box(a.get()){
+            match ray_intersects_box(&self.ray,a.get(),|a,b|a.min(b),|a,b|a.max(b)){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
                 },
@@ -91,11 +91,11 @@ mod ray_isize{
   
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
             //let ray=duckduckgeo::Ray{point:self.ray.point,dir:self.ray.dir};
-            self.ray.compute_intersection_tvalue(axis,line)
+            ray_compute_intersection_tvalue(&self.ray,axis,line)
         }
 
         fn compute_distance_bot(&mut self,a:&Self::T)->Option<Self::N>{
-            match self.ray.intersects_box(a.get()){
+            match ray_intersects_box(&self.ray,a.get(),|a,b|a.min(b),|a,b|a.max(b)){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
                 },
@@ -123,39 +123,43 @@ pub struct RaycastDemo{
     dim:[isize;2]
 }
 impl RaycastDemo{
-    pub fn new(dim2:[f64;2])->RaycastDemo{
-        let dim=&[0,dim2[0] as isize,0,dim2[1] as isize];
-        let radius=[2,6];
-        let velocity=[1,3];
-        let mut bots_fake=create_world_generator(4000,dim,radius,velocity);
+    pub fn new(dim:Vector2<F64n>)->RaycastDemo{
 
-        let bots:Vec<Bot2>=(0..4000).map(|id|Bot2{id}).collect();
+
+
+        let dim2:Vector2<f64>=vec2_inner_into(dim);
+        let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
+
+
+        let bots:Vec<_>=(0..4000).map(|id|Bot2{id}).collect();
+
+
+        let rand_radius=dists::RandomRectBuilder::new(vec2(2.0,2.0),vec2(6.0,6.0));
+        let mut ii=dists::uniform_rand::UniformRangeBuilder::new(border).build().
+            take(4000).zip(rand_radius);
 
         let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_a|{
-            let ret=bots_fake.next().unwrap();
-            let ret=ret.into_isize();
-            let p=ret.pos;
-            let r=ret.radius;
-            axgeom::Rect::new(p[0]-r[0],p[0]+r[0],p[1]-r[1],p[1]+r[1])
+            let (pos,radius)=ii.next().unwrap();
+            rect_from_point(pos.cast().unwrap(),radius.cast().unwrap())
         }).build_par();
         RaycastDemo{tree,counter:0.0,dim:[dim2[0] as isize,dim2[1] as isize]}
     }
 }
 
 impl DemoSys for RaycastDemo{
-    fn step(&mut self,cursor:[F64n;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&self.tree;
         let counter=&mut self.counter;
 
         let ray={
-            let point=[cursor[0] as isize,cursor[1] as isize];
+            let point=cursor.cast().unwrap();
             //let point=[573,161];
             //let point=[214,388];
             //println!("cursor={:?}",point);
             *counter+=0.005;         
             let dir=[counter.cos()*10.0,counter.sin()*10.0];
             //let dir=[1,0];
-            let dir=[dir[0] as isize,dir[1] as isize];
+            let dir=vec2(dir[0] as isize,dir[1] as isize);
             duckduckgeo::Ray{point,dir}
         };
 

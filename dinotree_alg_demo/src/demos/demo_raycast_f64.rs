@@ -20,11 +20,10 @@ mod ray_f64{
 
 
         fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            let ray:Ray<f64>=self.ray.cast().unwrap();
-            //TODO investigate if there is a reference based cast????
-            let rect=rect.cast().unwrap();
+            let ray:Ray<f64>=self.ray.inner_into();
+            let rect=rect.inner_into();
 
-            match ray_intersects_box(&ray,&rect){
+            match ray_intersects_box(&ray,&rect,|a,b|a.min(b),|a,b|a.max(b)){
                 IntersectsBotResult::Hit(_)=>{
                     true
                 },
@@ -46,18 +45,17 @@ mod ray_f64{
         
         
         fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
-            let ray:Ray<f64>=self.ray.cast().unwrap();
+            let ray:Ray<f64>=self.ray.inner_into();
             let line:f64=*line;
             //let ray=duckduckgeo::Ray{point:self.ray.point,dir:self.ray.dir};
             ray_compute_intersection_tvalue(&ray,axis,line).map(|a|NotNan::new(a).unwrap())
         }
 
         fn compute_distance_bot(&mut self,rect:&BBox<F64n,()>)->Option<Self::N>{
-            let ray:Ray<f64>=self.ray.cast().unwrap();
-            //TODO investigate if there is a reference based cast????
-            let rect=rect.get().cast().unwrap();
+            let ray:Ray<f64>=self.ray.inner_into();
+            let rect=rect.get().inner_into();
 
-            match ray_intersects_box(&ray,&rect){
+            match ray_intersects_box(&ray,&rect,|a,b|a.min(b),|a,b|a.max(b)){
                 IntersectsBotResult::Hit(val)=>{
                     Some(val)
                 },
@@ -96,7 +94,7 @@ impl RaycastF64Demo{
 
         let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{
             let (pos,radius)=ii.next().unwrap();
-            rect_from_point(pos,radius).cast().unwrap()
+            rect_from_point(pos,radius).inner_try_into().unwrap()
         }).build_par();
 
         RaycastF64Demo{tree,dim}

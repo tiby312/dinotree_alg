@@ -5,12 +5,6 @@ use duckduckgeo;
 use dinotree_alg;
 
 
-#[derive(Debug,Copy,Clone)]
-struct Ray<N>{
-    pub point:[N;2],
-    pub dir:[N;2],
-    pub tlen:N,
-}
 
 #[derive(Copy,Clone)]
 pub struct Bot{
@@ -59,33 +53,39 @@ pub struct OrigOrderDemo{
     radius:f64,
     bots:Vec<BBoxMut<F64n,Bot>>,
     colors:Vec<[u8;3]>,
-    dim:[F64n;2]
+    dim:Vector2<F64n>
 }
 impl OrigOrderDemo{
-    pub fn new(dim:[F64n;2])->OrigOrderDemo{
-        let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[3,5];
-        let velocity=[1,3];
-        let bots=create_world_generator(4000,dim2,radius,velocity).enumerate().map(|(id,ret)|{
-            let bot=Bot{pos:vec2(ret.pos[0],ret.pos[1]),vel:vec2(ret.vel[0],ret.vel[1]),force:Vector2::zero(),id};
-            let rect=axgeom::Rect::from_point(ret.pos,[5.0;2]).into_notnan().unwrap();
+    pub fn new(dim:Vector2<F64n>)->OrigOrderDemo{
+        let dim2:Vector2<f64>=vec2_inner_into(dim);
+        let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
+
+
+        let radius=5.0;
+        //let rand_radius=dists::RandomRectBuilder::new(vec2(2.0,2.0),vec2(6.0,6.0));
+        let bots:Vec<_>=dists::uniform_rand::UniformRangeBuilder::new(border).build().
+            take(4000).enumerate().map(|(id,pos)|{
+            let bot=Bot{pos,vel:Vector2::zero(),force:Vector2::zero(),id};
+            let rect=rect_from_point(pos,vec2(radius,radius)).inner_try_into().unwrap();
             BBoxMut::new(rect,bot)
+
         }).collect();
+
  
         let colors=ColorGenerator::new().take(4000).collect();
-        OrigOrderDemo{radius:5.0,bots,colors,dim}
+        OrigOrderDemo{radius,bots,colors,dim}
     }
 }
 
 
 
 impl DemoSys for OrigOrderDemo{
-    fn step(&mut self,cursor:[F64n;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
         
         for b in self.bots.iter_mut(){
             b.inner.update();
-            b.aabb=axgeom::Rect::from_point([b.inner.pos.x,b.inner.pos.y],[radius;2]).into_notnan().unwrap();
+            b.aabb=rect_from_point(b.inner.pos,vec2(radius,radius)).inner_try_into().unwrap();
         }
 
 
@@ -94,18 +94,20 @@ impl DemoSys for OrigOrderDemo{
         let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
 
 
-        let rect=axgeom::Rect::new(0.0,self.dim[0],0.0,self.dim[1]).into_notnan().unwrap();
+        let rect=axgeom::Rect::new(F64n::zero(),self.dim.x,F64n::zero(),self.dim.y);
             
 
         {
-            let rect2=rect.into_inner();
+            let rect2=rect.inner_into();
             dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&rect,|a|{
                 duckduckgeo::collide_with_border(&mut a.inner,&rect2,0.5);
             });
         }
 
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,[100.0;2]).into_notnan().unwrap(),|b|{
-            let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
+        let vv=vec2_inner_try_into(vec2(100.0,100.0)).unwrap();
+        let cc=vec2_inner_into(cursor);
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point([cursor.x,cursor.y],[vv.x,vv.y]),|b|{
+            let _ =duckduckgeo::repel_one(&mut b.inner,cc,0.001,20.0);
         });
         
 
@@ -172,7 +174,7 @@ impl DemoSys for OrigOrderDemo{
                                 draw_bot_lines(axis.next(),left,&a,c,g);
                                 draw_bot_lines(axis.next(),right,&b,c,g);
 
-                                let ((x1,x2),(y1,y2))=rect.into_inner().get();
+                                let ((x1,x2),(y1,y2))=rect.inner_into::<f64>().get();
                                 let midx = if !axis.is_xaxis(){
                                     x1 + (x2-x1)/2.0
                                 }else{
@@ -195,7 +197,7 @@ impl DemoSys for OrigOrderDemo{
                         }
                     },
                     None=>{
-                        let ((x1,x2),(y1,y2))=rect.into_inner().get();
+                        let ((x1,x2),(y1,y2))=rect.inner_into::<f64>().get();
                         let midx = x1 + (x2-x1)/2.0;
 
                         let midy = y1 + (y2-y1)/2.0;
@@ -230,14 +232,14 @@ impl DemoSys for OrigOrderDemo{
 
         if !check_naive{
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-                let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+                let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0);
             });
         }else{
             let mut res=Vec::new();
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
                 let a=&mut a.inner;
                 let b=&mut b.inner;
-                let _ = duckduckgeo::repel(a,b,0.001,2.0,|a|a.sqrt());
+                let _ = duckduckgeo::repel(a,b,0.001,2.0);
                 let (a,b)=if a.id<b.id{
                     (a,b)
                 }else{
@@ -302,12 +304,12 @@ impl DemoSys for OrigOrderDemo{
 
         
         fn conv(a:u8)->f32{
-            let a:f32=a.as_();
+            let a:f32=a as f32;
             a/256.0
         }
         
         for (bot,cols) in self.bots.iter().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point([bot.inner.pos.x,bot.inner.pos.y],[radius;2]).into_notnan().unwrap();
+            let rect=&axgeom::Rect::from_point([bot.inner.pos.x,bot.inner.pos.y],[radius;2]).inner_into();
             draw_rect_f64n([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
         } 
         
