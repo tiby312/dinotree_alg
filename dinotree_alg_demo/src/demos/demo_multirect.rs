@@ -16,7 +16,7 @@ impl MultiRectDemo{
 
 
 
-        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).
+        let bots:Vec<_>=UniformRandGen::new(*dim).with_radius(5.0,20.0).
             take(500).map(|(pos,radius)|{
             let pos=axgeom::vec2_prim_cast!(pos,i32);
             let radius=axgeom::vec2_prim_cast!(radius,i32);
@@ -36,7 +36,6 @@ impl DemoSys for MultiRectDemo{
         let tree=&mut self.tree;
 
         for bot in tree.get_bots().iter(){
-            //println!("bot={:?}",bot);
             draw_rect_i32([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 

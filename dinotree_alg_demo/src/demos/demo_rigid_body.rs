@@ -7,17 +7,17 @@ use axgeom::Rect;
 
 #[derive(Copy,Clone,Debug)]
 pub struct RigidBody{
-    pub pos:Vector2<f32>,
-    pub push_vec:Vector2<f32>,
+    pub pos:Vec2<f32>,
+    pub push_vec:Vec2<f32>,
 }
 
 impl RigidBody{
-    pub fn new(pos:Vector2<f32>)->RigidBody{
-        let push_vec=Vector2::zero();
+    pub fn new(pos:Vec2<f32>)->RigidBody{
+        let push_vec=vec2same(0.0);
         RigidBody{pos,push_vec}
     }
     pub fn create_loose(&self,radius:f32)->Rect<F32n>{
-        axgeom::Rect::from_point([self.pos.x,self.pos.y],[radius;2]).into_notnan().unwrap()
+        axgeom::Rect::from_point(self.pos,vec2same(radius)).inner_try_into().unwrap()
     }
     pub fn push_away(&mut self,b:&mut Self,radius:f32,max_amount:f32){
         let mut diff=b.pos-self.pos;
@@ -45,7 +45,7 @@ impl RigidBody{
     }
     pub fn apply_push_vec(&mut self){
         self.pos+=self.push_vec;
-        self.push_vec.set_zero();
+        self.push_vec=vec2same(0.0);
     }
 }
 
@@ -82,24 +82,24 @@ pub fn handle_rigid_body(bodies:&mut [RigidBody],ball_size:f32,push_unit:f32,num
 pub struct RigidBodyDemo{
     radius:f32,
     bots:Vec<RigidBody>,
-    dim:[F32n;2]
+    dim:Rect<F32n>
 }
 impl RigidBodyDemo{
-    pub fn new(dim:[F32n;2])->RigidBodyDemo{
-        let dim=[dim[0],dim[1]-100.0];
-        let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
+    pub fn new(dim:Rect<F32n>)->RigidBodyDemo{
         let radius=[2,5];
-        let velocity=[0,1];
-        let bots=create_world_generator(1300,dim2,radius,velocity).enumerate().map(|(_id,ret)|{
-            RigidBody::new(vec2(ret.pos[0],ret.pos[1]))
+        
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
+            take(4000).enumerate().map(|(id,pos)|{
+                RigidBody::new(pos)
         }).collect();
+
  
         RigidBodyDemo{radius:10.0,bots,dim}
     }
 }
 
 impl DemoSys for RigidBodyDemo{
-    fn step(&mut self,cursor:[f32;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         
 
@@ -111,8 +111,8 @@ impl DemoSys for RigidBodyDemo{
             bot.create_loose(radius)
         }).build_par(); 
         
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,[100.0+radius;2]).into_notnan().unwrap(),|b|{
-            let diff=vec2(cursor[0],cursor[1])-b.inner.pos;
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|b|{
+            let diff=cursor.inner_into()-b.inner.pos;
 
             let dis=diff.magnitude();
             if dis<100.0{
@@ -133,12 +133,9 @@ impl DemoSys for RigidBodyDemo{
         
 
         for b in self.bots.iter_mut(){
-            //b.update();
-            //b.aabb=Conv::from_rect(aabb_from_pointf32(b.pos,[radius;2]));
-            let mut k=[b.pos.x,b.pos.y];
-            duckduckgeo::stop_wall(&mut k,self.dim);
-            b.pos.x=k[0];
-            b.pos.y=k[1];
+            
+            duckduckgeo::stop_wall(&mut b.pos,self.dim.inner_into());
+            
         }
 
         /*
@@ -150,8 +147,8 @@ impl DemoSys for RigidBodyDemo{
         */
         
         for bot in self.bots.iter(){
-            let rect=&axgeom::Rect::from_point([bot.pos.x,bot.pos.y],[radius;2]).into_notnan().unwrap();
-            draw_rect_f32n([0.0,1.0,1.0,1.0],rect,c,g);
+            let rect=&axgeom::Rect::from_point(bot.pos,vec2same(radius));
+            draw_rect_f32([0.0,1.0,1.0,1.0],rect,c,g);
         }        
     }
 }

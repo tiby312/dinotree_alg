@@ -130,7 +130,7 @@ impl RaycastDemo{
 
 
 
-        let mut ii=UniformRandGen::new(dim.inner_into()).with_int().with_radius(2,6)
+        let mut ii=UniformRandGen::new(*dim).with_int().with_radius(2,6)
             .take(4000);
 
 

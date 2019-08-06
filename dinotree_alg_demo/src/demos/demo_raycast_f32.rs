@@ -73,13 +73,13 @@ mod ray_f32{
 }
 
 
-pub struct RaycastF64Demo{
+pub struct RaycastF32Demo{
     tree:DinoTree<axgeom::XAXISS,BBox<F32n,()>>,
     dim:Rect<F32n>
 }
-impl RaycastF64Demo{
+impl RaycastF32Demo{
 
-    pub fn new(dim:Rect<F32n>)->RaycastF64Demo{
+    pub fn new(dim:Rect<F32n>)->Self{
         
 
         let bots:Vec<()>=(0..500).map(|a|()).collect();
@@ -92,16 +92,16 @@ impl RaycastF64Demo{
             Rect::from_point(pos,radius).inner_try_into().unwrap()
         }).build_par();
 
-        RaycastF64Demo{tree,dim}
+        Self{tree,dim}
     }
 }
 
-impl DemoSys for RaycastF64Demo{
+impl DemoSys for RaycastF32Demo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let tree=&self.tree;
         //Draw bots
         for bot in tree.get_bots().iter(){
-            draw_rect_f32n([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
     
         { 

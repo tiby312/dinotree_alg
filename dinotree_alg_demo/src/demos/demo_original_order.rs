@@ -35,15 +35,10 @@ impl duckduckgeo::RepelTrait for Bot{
 impl Bot{
     fn update(&mut self){
         self.vel+=self.force;
-
-
         //non linear drag
         self.vel*=0.9;
-
-
         self.pos+=self.vel;
-
-        self.force=vec2(0.0,0.0);
+        self.force=vec2same(0.0);
     }
 }
 
@@ -62,7 +57,7 @@ impl OrigOrderDemo{
 
         let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
             take(num_bot).enumerate().map(|(id,pos)|{
-            let b=Bot{id,pos,vel:vec2(0.0,0.0),force:vec2(0.0,0.0)};
+            let b=Bot{id,pos,vel:vec2same(0.0),force:vec2same(0.0)};
             let r=Rect::from_point(pos,vec2(radius,radius)).inner_try_into().unwrap();
             BBoxMut::new(r,b)
         }).collect();
@@ -80,11 +75,8 @@ impl DemoSys for OrigOrderDemo{
         
         for b in self.bots.iter_mut(){
             b.inner.update();
-            b.aabb=Rect::from_point(b.inner.pos,vec2(radius,radius)).inner_try_into().unwrap();
+            b.aabb=Rect::from_point(b.inner.pos,vec2same(radius)).inner_try_into().unwrap();
         }
-
-
-        
 
         let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
 
@@ -96,7 +88,7 @@ impl DemoSys for OrigOrderDemo{
             });
         }
 
-        let vv=vec2(100.0,100.0).inner_try_into().unwrap();
+        let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
         rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
             let _ =duckduckgeo::repel_one(&mut b.inner,cc,0.001,20.0);
@@ -301,8 +293,8 @@ impl DemoSys for OrigOrderDemo{
         }
         
         for (bot,cols) in self.bots.iter().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point(bot.inner.pos,vec2(radius,radius)).inner_into();
-            draw_rect_f32n([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
+            let rect=&axgeom::Rect::from_point(bot.inner.pos,vec2(radius,radius));
+            draw_rect_f32([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
         } 
         
 

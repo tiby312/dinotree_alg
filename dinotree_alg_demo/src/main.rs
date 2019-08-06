@@ -44,16 +44,16 @@ mod demo_iter{
             let k:Box<DemoSys>=match curr{
 
                 0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                1=>{Box::new(demo_raycast_f64::RaycastF64Demo::new(area))}
+                1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
                 2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
                 3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
                 4=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
                 5=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
+                6=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 
                 /*
                 
                 4=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                7=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 */
                 _=>{unreachable!("Not possible")}
             };

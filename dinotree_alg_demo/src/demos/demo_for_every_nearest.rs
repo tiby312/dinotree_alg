@@ -30,12 +30,9 @@ impl Bot{
 
 
     pub fn update(&mut self){
-        self.vel[0]+=self.acc[0];
-        self.vel[1]+=self.acc[1];
-        self.pos[0]+=self.vel[0];
-        self.pos[1]+=self.vel[1];
-        self.acc[0]=0.0;
-        self.acc[1]=0.0;
+        self.vel+=self.acc;
+        self.pos+=self.vel;
+        self.acc=vec2same(0.0);
     }
 }
 

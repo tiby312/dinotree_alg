@@ -60,10 +60,10 @@ use piston_window::*;
 
 
 
-pub fn draw_rect_f32n(col:[f32;4],r1:&Rect<F32n>,c:&Context,g:&mut G2d){
+pub fn draw_rect_f32(col:[f32;4],r1:&Rect<f32>,c:&Context,g:&mut G2d){
     let ((x1,x2),(y1,y2))=r1.get();        
     {
-        let ((x1,x2),(y1,y2))=((x1.into_inner() as f64,x2.into_inner() as f64),(y1.into_inner() as f64,y2.into_inner() as f64));
+        let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));
            
         let square = [x1,y1,x2-x1,y2-y1];
         rectangle(col, square, c.transform, g);
