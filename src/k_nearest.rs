@@ -37,7 +37,7 @@ pub trait Knearest{
 
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
-    fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D;
+    fn twod_check(&mut self, point:Vec2<Self::N>,bot:&Self::T)->Self::D;
     
 
     ///Return the distance between two objects
@@ -188,10 +188,12 @@ macro_rules! knearest_recc{
             T:HasAabb<Num=N>+'a,
             A: AxisTrait,
             K:Knearest<T=T,N=N>,
-            >(axis:A,stuff:LevelIter<$iterator>,knear:&mut K,point:[K::N;2],res:&mut ClosestCand<'a,K::T,K::D>){
+            >(axis:A,stuff:LevelIter<$iterator>,knear:&mut K,point:Vec2<K::N>,res:&mut ClosestCand<'a,K::T,K::D>){
 
-            let pp=*axgeom::AxisWrapRef(&point).get(axis);
-            let ppother=*axgeom::AxisWrapRef(&point).get(axis.next());
+            //let pp=*axgeom::AxisWrapRef(&point).get(axis);
+            //let ppother=*axgeom::AxisWrapRef(&point).get(axis.next());
+            let pp=*point.get_axis(axis);
+            let ppother=*point.get_axis(axis.next());
 
             let ((_depth,nn),rest)=stuff.next();
 
@@ -319,7 +321,7 @@ mod con{
         //A:AxisTrait+'b,
         V:DinoTreeRefTrait,
         K:Knearest<T=V::Item,N=V::Num>,
-        >(tree:&'b V,point:[V::Num;2],num:usize,mut knear: K)->NearestResult<'b,V::Item,K::D>{
+        >(tree:&'b V,point:Vec2<V::Num>,num:usize,mut knear: K)->NearestResult<'b,V::Item,K::D>{
         let axis=tree.axis();
         let dt = tree.vistr().with_depth(Depth(0));
 
@@ -333,7 +335,7 @@ mod con{
 
     knearest_recc!(Vistr<'a,K::T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T,Unit<'a,T,D>,unit_create);
 
-    pub fn naive<'b,K:Knearest>(bots:impl Iterator<Item=&'b K::T>,point:[K::N;2],num:usize,mut k:K)->Vec<Unit<'b,K::T,K::D>>{
+    pub fn naive<'b,K:Knearest>(bots:impl Iterator<Item=&'b K::T>,point:Vec2<K::N>,num:usize,mut k:K)->Vec<Unit<'b,K::T,K::D>>{
         
         let mut closest=ClosestCand::new(num);
 
@@ -358,7 +360,7 @@ pub use self::mutable::naive_mut;
 pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
-    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=&'b mut K::T>,point:[K::N;2],num:usize,mut k:K)->Vec<UnitMut<'b,K::T,K::D>>{
+    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=&'b mut K::T>,point:Vec2<K::N>,num:usize,mut k:K)->Vec<UnitMut<'b,K::T,K::D>>{
         
         let mut closest=ClosestCand::new(num);
 
@@ -384,7 +386,7 @@ mod mutable{
     pub fn k_nearest_mut<'b,
         V:DinoTreeRefMutTrait,
         K:Knearest<N=V::Num,T=V::Item>,
-        >(tree:&'b mut V,point:[V::Num;2],num:usize,mut knear: K)->NearestResultMut<'b,V::Item,K::D>{ //Vec<UnitMut<'b,T,K::D>>
+        >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,mut knear: K)->NearestResultMut<'b,V::Item,K::D>{ //Vec<UnitMut<'b,T,K::D>>
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
 

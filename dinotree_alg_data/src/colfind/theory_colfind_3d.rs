@@ -4,7 +4,7 @@ use crate::inner_prelude::*;
 #[derive(Copy,Clone)]
 pub struct Bot{
     num:usize,
-    pos:[isize;2]
+    pos:Vec2<isize>
 }
 
 struct Res{
@@ -100,7 +100,7 @@ fn handle_spiral(fb:&mut FigureBuilder){
             let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
             let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{
-                let pos=[pos[0] as isize,pos[1] as isize];
+                //let pos=[pos[0] as isize,pos[1] as isize];
                 Bot{num:0,pos}
             }).collect();
 

@@ -9,26 +9,25 @@ use dinotree_alg;
 #[derive(Copy,Clone)]
 pub struct Bot{
     id:usize, //id used to verify pairs against naive
-    pos:Vector2<f64>,
-    vel:Vector2<f64>,
-    force:Vector2<f64>,
+    pos:Vec2<f32>,
+    vel:Vec2<f32>,
+    force:Vec2<f32>,
 }
 
 impl duckduckgeo::BorderCollideTrait for Bot{
-    type N=f64;
-    fn pos_vel_mut(&mut self)->(&mut Vector2<f64>,&mut Vector2<f64>){
+    type N=f32;
+    fn pos_vel_mut(&mut self)->(&mut Vec2<f32>,&mut Vec2<f32>){
         (&mut self.pos,&mut self.vel)
     }
 }
 
 impl duckduckgeo::RepelTrait for Bot{
-    type N=f64;
-    fn pos(&self)->Vector2<f64>{
+    type N=f32;
+    fn pos(&self)->Vec2<f32>{
         self.pos
     }
-    fn add_force(&mut self,force:Vector2<f64>){
-        self.force.x+=force[0];
-        self.force.y+=force[1];
+    fn add_force(&mut self,force:Vec2<f32>){
+        self.force+=force;
     }
 }
 
@@ -44,35 +43,31 @@ impl Bot{
 
         self.pos+=self.vel;
 
-        self.force=Vector2::zero();
+        self.force=vec2(0.0,0.0);
     }
 }
 
 
 pub struct OrigOrderDemo{
-    radius:f64,
-    bots:Vec<BBoxMut<F64n,Bot>>,
+    radius:f32,
+    bots:Vec<BBoxMut<F32n,Bot>>,
     colors:Vec<[u8;3]>,
-    dim:Vector2<F64n>
+    dim:Rect<F32n>
 }
 impl OrigOrderDemo{
-    pub fn new(dim:Vector2<F64n>)->OrigOrderDemo{
-        let dim2:Vector2<f64>=vec2_inner_into(dim);
-        let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
-
+    pub fn new(dim:Rect<F32n>)->OrigOrderDemo{
+        let num_bot=4000;
 
         let radius=5.0;
-        //let rand_radius=dists::RandomRectBuilder::new(vec2(2.0,2.0),vec2(6.0,6.0));
-        let bots:Vec<_>=dists::uniform_rand::UniformRangeBuilder::new(border).build().
-            take(4000).enumerate().map(|(id,pos)|{
-            let bot=Bot{pos,vel:Vector2::zero(),force:Vector2::zero(),id};
-            let rect=rect_from_point(pos,vec2(radius,radius)).inner_try_into().unwrap();
-            BBoxMut::new(rect,bot)
 
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
+            take(num_bot).enumerate().map(|(id,pos)|{
+            let b=Bot{id,pos,vel:vec2(0.0,0.0),force:vec2(0.0,0.0)};
+            let r=Rect::from_point(pos,vec2(radius,radius)).inner_try_into().unwrap();
+            BBoxMut::new(r,b)
         }).collect();
-
  
-        let colors=ColorGenerator::new().take(4000).collect();
+        let colors=ColorGenerator::new().take(num_bot).collect();
         OrigOrderDemo{radius,bots,colors,dim}
     }
 }
@@ -80,12 +75,12 @@ impl OrigOrderDemo{
 
 
 impl DemoSys for OrigOrderDemo{
-    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let radius=self.radius;
         
         for b in self.bots.iter_mut(){
             b.inner.update();
-            b.aabb=rect_from_point(b.inner.pos,vec2(radius,radius)).inner_try_into().unwrap();
+            b.aabb=Rect::from_point(b.inner.pos,vec2(radius,radius)).inner_try_into().unwrap();
         }
 
 
@@ -93,20 +88,17 @@ impl DemoSys for OrigOrderDemo{
 
         let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
 
-
-        let rect=axgeom::Rect::new(F64n::zero(),self.dim.x,F64n::zero(),self.dim.y);
             
-
         {
-            let rect2=rect.inner_into();
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&rect,|a|{
-                duckduckgeo::collide_with_border(&mut a.inner,&rect2,0.5);
+            let dim2=self.dim.inner_into();
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|a|{
+                duckduckgeo::collide_with_border(&mut a.inner,&dim2,0.5);
             });
         }
 
-        let vv=vec2_inner_try_into(vec2(100.0,100.0)).unwrap();
-        let cc=vec2_inner_into(cursor);
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point([cursor.x,cursor.y],[vv.x,vv.y]),|b|{
+        let vv=vec2(100.0,100.0).inner_try_into().unwrap();
+        let cc=cursor.inner_into();
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
             let _ =duckduckgeo::repel_one(&mut b.inner,cc,0.001,20.0);
         });
         
@@ -119,15 +111,15 @@ impl DemoSys for OrigOrderDemo{
                 g:&'a mut G2d<'b>
             }
             impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
-                type N=F64n;
-                fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F64n,cont:[F64n;2],length:[F64n;2],depth:usize){
+                type N=F32n;
+                fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F32n,cont:[F32n;2],length:[F32n;2],depth:usize){
                     let div=div.into_inner();
                     
 
                     let arr=if axis.is_xaxis(){
-                        [div,length[0].into_inner(),div,length[1].into_inner()]
+                        [div as f64,length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64]
                     }else{
-                        [length[0].into_inner(),div,length[1].into_inner(),div]
+                        [length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64,div as f64]
                     };
 
 
@@ -145,20 +137,20 @@ impl DemoSys for OrigOrderDemo{
                         [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
                     };
 
-                    let square = [x1.into_inner(),y1.into_inner(),w1.into_inner(),w2.into_inner()];
+                    let square = [x1.into_inner() as f64,y1.into_inner() as f64,w1.into_inner() as f64,w2.into_inner() as f64];
                     rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
                 }
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(NotNan::<_>::zero(),self.dim[0],NotNan::<_>::zero(),self.dim[1]));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&self.dim);
         }
 
 
         //draw lines to the bots.
         {
             fn draw_bot_lines<A:axgeom::AxisTrait>
-                (axis:A,stuff:Vistr<BBox<F64n,Bot>>,rect:&axgeom::Rect<F64n>,c:&Context,g:&mut G2d){
+                (axis:A,stuff:Vistr<BBox<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
                 use compt::Visitor;
                 let (nn,rest)=stuff.next();
 
@@ -174,7 +166,7 @@ impl DemoSys for OrigOrderDemo{
                                 draw_bot_lines(axis.next(),left,&a,c,g);
                                 draw_bot_lines(axis.next(),right,&b,c,g);
 
-                                let ((x1,x2),(y1,y2))=rect.inner_into::<f64>().get();
+                                let ((x1,x2),(y1,y2))=rect.inner_into::<f32>().get();
                                 let midx = if !axis.is_xaxis(){
                                     x1 + (x2-x1)/2.0
                                 }else{
@@ -197,7 +189,7 @@ impl DemoSys for OrigOrderDemo{
                         }
                     },
                     None=>{
-                        let ((x1,x2),(y1,y2))=rect.inner_into::<f64>().get();
+                        let ((x1,x2),(y1,y2))=rect.inner_into::<f32>().get();
                         let midx = x1 + (x2-x1)/2.0;
 
                         let midy = y1 + (y2-y1)/2.0;
@@ -211,12 +203,12 @@ impl DemoSys for OrigOrderDemo{
                     let color_delta=1.0/nn.bots.len() as f32;
                     let mut counter=0.0;
                     for b in nn.bots.iter(){
-                        let bx=b.inner.pos[0];
-                        let by=b.inner.pos[1];
+                        let bx=b.inner.pos.x;
+                        let by=b.inner.pos.y;
 
                         line([counter, 0.2, 0.0, 0.3], // black
                              2.0, // radius of line
-                             [midx,midy,bx,by], // [x0, y0, x1,y1] coordinates of line
+                             [midx as f64,midy as f64,bx as f64,by as f64], // [x0, y0, x1,y1] coordinates of line
                              c.transform,
                              g);
 
@@ -225,7 +217,7 @@ impl DemoSys for OrigOrderDemo{
                 }
             }
 
-            draw_bot_lines(tree.axis(),tree.vistr(),&rect,c,g);
+            draw_bot_lines(tree.axis(),tree.vistr(),&self.dim,c,g);
 
         }
 
@@ -309,8 +301,8 @@ impl DemoSys for OrigOrderDemo{
         }
         
         for (bot,cols) in self.bots.iter().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point([bot.inner.pos.x,bot.inner.pos.y],[radius;2]).inner_into();
-            draw_rect_f64n([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
+            let rect=&axgeom::Rect::from_point(bot.inner.pos,vec2(radius,radius)).inner_into();
+            draw_rect_f32n([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
         } 
         
 

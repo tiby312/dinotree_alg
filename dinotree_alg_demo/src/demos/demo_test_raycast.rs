@@ -11,17 +11,17 @@ struct Ray<N>{
 }
 
 pub struct TestRaycastDemo{
-    counter:f64
+    counter:f32
 }
 impl TestRaycastDemo{
-    pub fn new(dim2:[f64;2])->TestRaycastDemo{
+    pub fn new(dim2:[f32;2])->TestRaycastDemo{
         
         TestRaycastDemo{counter:0.0}
     }
 }
 
 impl DemoSys for TestRaycastDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:[f32;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let counter=&mut self.counter;
         let ray={
             let point=[cursor[0] as isize,cursor[1] as isize];
@@ -61,7 +61,7 @@ impl DemoSys for TestRaycastDemo{
             (ppx,ppy)
         };
 
-        let arr=[ray.point[0] as f64,ray.point[1] as f64,ppx as f64,ppy as f64];
+        let arr=[ray.point[0] as f32,ray.point[1] as f32,ppx as f32,ppy as f32];
         line([0.0, 0.0, 0.0, 1.0], // black
              2.0, // radius of line
              arr, // [x0, y0, x1,y1] coordinates of line

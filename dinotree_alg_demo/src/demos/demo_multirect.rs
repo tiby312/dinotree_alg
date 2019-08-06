@@ -4,47 +4,43 @@ use dinotree_alg::rect;
 
 #[derive(Copy,Clone,Debug)]
 struct Bot{
-    radius:Vector2<isize>,
-    pos:Vector2<isize>
+    radius:Vec2<i32>,
+    pos:Vec2<i32>
 }
 
 pub struct MultiRectDemo{
-    tree:DinoTree<axgeom::XAXISS,BBox<isize,Bot>>
+    tree:DinoTree<axgeom::XAXISS,BBox<i32,Bot>>
 }
 impl MultiRectDemo{
-    pub fn new(dim:Vector2<F64n>)->MultiRectDemo{
+    pub fn new(dim:Rect<F32n>)->MultiRectDemo{
 
 
-        let dim2:Vector2<f64>=vec2_inner_into(dim);        
-        let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
 
-
-        let rand_radius=dists::RandomRectBuilder::new(vec2(5.0,5.0),vec2(20.0,20.0));
-        let bots:Vec<_>=dists::uniform_rand::UniformRangeBuilder::new(border).build().
-            take(500).zip(rand_radius).enumerate().map(|(id,(pos,radius))|{
-            let pos=pos.cast().unwrap();
-            let radius=radius.cast().unwrap();
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).
+            take(500).map(|(pos,radius)|{
+            let pos=axgeom::vec2_prim_cast!(pos,i32);
+            let radius=axgeom::vec2_prim_cast!(radius,i32);
             Bot{pos,radius}
         }).collect();
 
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{ rect_from_point(b.pos,b.radius)}).build_par();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_par();
 
         MultiRectDemo{tree}
     }
 }
 
 impl DemoSys for MultiRectDemo{
-    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
         let tree=&mut self.tree;
 
         for bot in tree.get_bots().iter(){
             //println!("bot={:?}",bot);
-            draw_rect_isize([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_i32([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
-        let cc:Vector2<isize>=cursor.cast().unwrap();
+        let cc:Vec2<i32>=vec2_prim_cast!(cursor.inner_into::<f32>(),i32);
         let r1=axgeom::Rect::new(cc.x-100,cc.x+100,cc.y-100,cc.y+100);
         let r2=axgeom::Rect::new(100,400,100,400);
 
@@ -67,16 +63,16 @@ impl DemoSys for MultiRectDemo{
             
             match res{
                 Ok(())=>{
-                    draw_rect_isize([0.0,0.0,0.0,0.3],&r1,c,g);
-                    draw_rect_isize([0.0,0.0,0.0,0.3],&r2,c,g);
+                    draw_rect_i32([0.0,0.0,0.0,0.3],&r1,c,g);
+                    draw_rect_i32([0.0,0.0,0.0,0.3],&r2,c,g);
             
                     for r in to_draw.iter(){
-                        draw_rect_isize([1.0,0.0,0.0,0.3],r.get(),c,g);
+                        draw_rect_i32([1.0,0.0,0.0,0.3],r.get(),c,g);
                     }
                 },
                 Err(_)=>{
-                    draw_rect_isize([1.0,0.0,0.0,0.3],&r1,c,g);
-                    draw_rect_isize([1.0,0.0,0.0,0.3],&r2,c,g);
+                    draw_rect_i32([1.0,0.0,0.0,0.3],&r1,c,g);
+                    draw_rect_i32([1.0,0.0,0.0,0.3],&r2,c,g);
                 }
             }
         }
@@ -84,13 +80,13 @@ impl DemoSys for MultiRectDemo{
 
         
         rect::for_all_intersect_rect(&tree,&r1,|a|{
-            draw_rect_isize([0.0,0.0,1.0,0.3],a.get(),c,g);
+            draw_rect_i32([0.0,0.0,1.0,0.3],a.get(),c,g);
         });
         
         let mut rects=multirect::multi_rect_mut(tree);
         let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
             
-            let arr=[a.inner.pos[0] as f64,a.inner.pos[1] as f64,b.inner.pos[0] as f64,b.inner.pos[1] as f64];
+            let arr=[a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
             line([0.0, 0.0, 0.0, 0.2], // black
                  1.0, // radius of line
                  arr, // [x0, y0, x1,y1] coordinates of line

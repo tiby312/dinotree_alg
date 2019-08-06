@@ -3,7 +3,7 @@ use crate::inner_prelude::*;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:[isize;2],
+    pos:Vec2<isize>,
     num:usize
 }
 
@@ -29,8 +29,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         let s2=s.clone();
 
 
-        let mut bots:Vec<Bot>=s2.take(num_bots).enumerate().map(|(_e,pos)|{
-            let pos=[pos[0] as isize,pos[1] as isize];
+        let mut bots:Vec<Bot>=s2.as_isize().take(num_bots).enumerate().map(|(_e,pos)|{
             Bot{num:0,pos}
         }).collect();
         

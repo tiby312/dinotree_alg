@@ -58,7 +58,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
+                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).inner_try_into().unwrap();
+                k
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -77,7 +78,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                 axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).into_notnan().unwrap()
+                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).inner_try_into().unwrap();
+                k
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -115,7 +117,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                 axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64 ],[5.0,5.0]).into_notnan().unwrap()
+                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64 ],[5.0,5.0]).inner_try_into().unwrap();
+                k
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -134,7 +137,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                 axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]).into_notnan().unwrap()
+                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]).inner_try_into().unwrap();
+                k
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {

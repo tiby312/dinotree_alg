@@ -35,6 +35,10 @@ mod inner_prelude{
     pub use std::time::Duration;
     pub use crate::black_box;
     pub use num_traits::cast::AsPrimitive;
+    pub use axgeom::Rect;
+    pub use axgeom::ordered_float::NotNan;
+    pub use axgeom::Vec2;
+    pub use axgeom::vec2;
 }
 
 

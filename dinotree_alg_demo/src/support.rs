@@ -17,14 +17,18 @@ pub mod prelude{
     pub use duckduckgeo::*;
     pub use duckduckgeo::bot::*;
 
-    pub use cgmath::prelude::*;
-    pub use cgmath::Vector2;
-    pub use cgmath::vec2;
-    pub use duckduckgeo::F64n;
+    pub use duckduckgeo::F32n;
+
+    pub use dists;
+
+    pub use duckduckgeo::array2_inner_into;
+    pub use axgeom::*;
+    pub use dists::uniform_rand::UniformRandGen;
+
 }
 
 
-use duckduckgeo::F64n;
+use duckduckgeo::F32n;
 
 
 
@@ -56,16 +60,16 @@ use piston_window::*;
 
 
 
-pub fn draw_rect_f64n(col:[f32;4],r1:&Rect<F64n>,c:&Context,g:&mut G2d){
+pub fn draw_rect_f32n(col:[f32;4],r1:&Rect<F32n>,c:&Context,g:&mut G2d){
     let ((x1,x2),(y1,y2))=r1.get();        
     {
-        let ((x1,x2),(y1,y2))=((x1.into_inner(),x2.into_inner()),(y1.into_inner(),y2.into_inner()));
+        let ((x1,x2),(y1,y2))=((x1.into_inner() as f64,x2.into_inner() as f64),(y1.into_inner() as f64,y2.into_inner() as f64));
            
         let square = [x1,y1,x2-x1,y2-y1];
         rectangle(col, square, c.transform, g);
     }
 }
-pub fn draw_rect_isize(col:[f32;4],r1:&Rect<isize>,c:&Context,g:&mut G2d){
+pub fn draw_rect_i32(col:[f32;4],r1:&Rect<i32>,c:&Context,g:&mut G2d){
     let ((x1,x2),(y1,y2))=r1.get();        
     {
         let ((x1,x2),(y1,y2))=((x1 as f64,x2 as f64),(y1 as f64,y2 as f64));

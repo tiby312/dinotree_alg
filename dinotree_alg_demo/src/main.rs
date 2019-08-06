@@ -6,17 +6,20 @@ extern crate dinotree;
 extern crate duckduckgeo;
 
 
-use cgmath::Vector2;
-use cgmath::vec2;
+use axgeom::Vec2;
+use axgeom::vec2;
 use num_traits::*;
 use piston_window::*;
+use axgeom::*;
+use axgeom::ordered_float::*;
+
 #[macro_use]
 pub(crate) mod support;
 pub(crate) mod demos;
-use duckduckgeo::F64n;
+use duckduckgeo::F32n;
 
 pub trait DemoSys{
-    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool);
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool);
 }
 
 mod demo_iter{
@@ -28,11 +31,12 @@ mod demo_iter{
         pub fn new()->DemoIter{
             DemoIter(0)
         }
-        pub fn next(&mut self,area:[u32;2])->Box<DemoSys>{
-            let area=vec2(area[0],area[1]).cast().unwrap();
+        pub fn next(&mut self,area:Vec2<u32>)->Box<DemoSys>{
             let curr=self.0;
             
 
+            let area=Rect::new(0.0,area.x as f32,0.0,area.y as f32);
+            let area:Rect<F32n>=area.inner_try_into().unwrap();
 
             if self.0==8{
                 self.0=0
@@ -44,11 +48,11 @@ mod demo_iter{
                 2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
                 3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
                 4=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
+                5=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
                 
                 /*
                 
                 4=>{Box::new(demo_nbody::DemoNbody::new(area))},
-                6=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
                 7=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 */
                 _=>{unreachable!("Not possible")}
@@ -61,9 +65,9 @@ mod demo_iter{
 
 fn main(){
     
-    let area=[1024u32,768];
+    let area=vec2(1024,1024);
 
-    let window = WindowSettings::new("dinotree test",area)
+    let window = WindowSettings::new("dinotree test",[area.x,area.y])
         .exit_on_esc(true)
         .fullscreen(false)
         .resizable(false);
@@ -85,12 +89,14 @@ fn main(){
     println!("Performance suffers from not batching draw calls (piston's built in rectangle drawing primitives are used instead of vertex buffers). These demos are not meant to showcase the performance of the algorithms. See the dinotree_alg_data project for benches.");
 
 
-    let mut cursor:Vector2<F64n>=Vector2::zero();
+    let mut cursor:Vec2<F32n>=vec2(0.0,0.0).inner_try_into().unwrap();
 
     let mut check_naive=false;
     while let Some(e) = window.next() {
         e.mouse_cursor(|x, y| {
-            cursor = vec2(x,y).cast().unwrap();
+            //cursor = vec2(x,y).inner_into::<f32>().inner_try_into::<F32n>().unwrap();
+            cursor.x=NotNan::new(x as f32).unwrap();
+            cursor.y=NotNan::new(y as f32).unwrap();
         });
         if let Some(Button::Keyboard(key)) = e.press_args() {
             if key == Key::N {

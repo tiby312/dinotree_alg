@@ -7,70 +7,66 @@ use duckduckgeo;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:[f64;2],
-    vel:[f64;2],
-    force:[f64;2],
-    wall_move:[Option<(F64n,f64)>;2]
+    pos:Vec2<f32>,
+    vel:Vec2<f32>,
+    force:Vec2<f32>,
+    wall_move:[Option<(F32n,f32)>;2]
 }
 impl duckduckgeo::RepelTrait for Bot{
-    type N=f64;
-    fn pos(&self)->[f64;2]{
+    type N=f32;
+    fn pos(&self)->Vec2<f32>{
         self.pos
     }
-    fn add_force(&mut self,force:[f64;2]){
-        self.force[0]+=force[0];
-        self.force[1]+=force[1];
+    fn add_force(&mut self,force:Vec2<f32>){
+        self.force+=force;
     }
 }
 
 
 impl Bot{
     fn update(&mut self){
-        self.vel[0]+=self.force[0];
-        self.vel[1]+=self.force[1];
-
+        self.vel+=self.force;
         //non linear drag
-        self.vel[0]*=0.9;
-        self.vel[1]*=0.9;
+        self.vel*=0.9;
 
-        self.pos[0]+=self.vel[0];
-        self.pos[1]+=self.vel[1];
-        self.force[0]=0.0;
-        self.force[1]=0.0;
+        self.pos+=self.vel;
+
+        self.force=vec2(0.0,0.0);
     }
 }
 
 #[derive(Copy,Clone)]
-struct Wall(axgeom::Rect<F64n>);
+struct Wall(axgeom::Rect<F32n>);
+
+
 
 
 pub struct IntersectWithDemo{
-    radius:f64,
+    radius:f32,
     bots:Vec<Bot>,
     walls:Vec<Wall>,
-    dim:[F64n;2]
+    dim:Rect<F32n>
 }
 impl IntersectWithDemo{
-    pub fn new(dim:[f64;2])->IntersectWithDemo{
-        let dim2=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[3,5];
-        let velocity=[1,3];
-        let bots=create_world_generator(4000,dim2,radius,velocity).map(|ret|{
-            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],wall_move:[None;2]}
+    pub fn new(dim:Rect<F32n>)->IntersectWithDemo{
+
+
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
+            take(4000).enumerate().map(|(id,pos)|{
+            Bot{pos,vel:vec2(0.0,0.0),force:vec2(0.0,0.0),wall_move:[None;2]}
         }).collect();
 
-        let radius=[10,60];
-        let walls=create_world_generator(40,dim2,radius,velocity).map(|ret|{
-            let rect=axgeom::Rect::from_point(ret.pos,ret.radius).into_notnan().unwrap();
-            Wall(rect)
+        let walls=UniformRandGen::new(dim.inner_into()).with_radius(10.0,60.0).take(40).map(|(pos,radius)|{
+            Wall(Rect::from_point(pos,radius).inner_try_into().unwrap())
         }).collect();
+
 
         IntersectWithDemo{radius:5.0,bots,walls,dim}
     }
 }
 
 impl DemoSys for IntersectWithDemo{
-    fn step(&mut self,cursor:[f64;2],c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         let bots=&mut self.bots;
         let walls=&mut self.walls;
@@ -79,25 +75,25 @@ impl DemoSys for IntersectWithDemo{
             b.update();
             
             if let Some((pos,vel))=b.wall_move[0]{
-                b.pos[0]=pos.into_inner();
-                b.vel[0]=vel;
+                b.pos.x=pos.into_inner();
+                b.vel.x=vel;
             }
 
             if let Some((pos,vel))=b.wall_move[1]{    
-                b.pos[1]=pos.into_inner();
-                b.vel[1]=vel;
+                b.pos.y=pos.into_inner();
+                b.vel.y=vel;
             }
 
             b.wall_move[0]=None;
             b.wall_move[1]=None;
             
-            duckduckgeo::wrap_position(&mut b.pos,self.dim);
+            duckduckgeo::wrap_position(&mut b.pos,self.dim.inner_into());
         }
-        bots[0].pos=cursor;
+        bots[0].pos=cursor.inner_into();
 
 
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{
-           axgeom::Rect::from_point(bot.pos,[radius;2]).into_notnan().unwrap()
+           axgeom::Rect::from_point(bot.pos,vec2(radius,radius)).inner_try_into().unwrap()
         }).build_par(); 
 
         intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|bot,wall|{
@@ -108,44 +104,45 @@ impl DemoSys for IntersectWithDemo{
             let wally=wall.get().get_range(axgeom::YAXISS);
             let vel=bot.inner.vel;
 
-            let ret=match duckduckgeo::collide_with_rect(bot.get(),wall.get()){
+            let ret=match duckduckgeo::collide_with_rect(bot.get().as_ref(),wall.get().as_ref()).unwrap(){
                 duckduckgeo::WallSide::Above=>{
-                    [None,Some((wally.left-radius,-vel[1]*fric))]
+                    [None,Some((wally.left-radius,-vel.y*fric))]
                 },
                 duckduckgeo::WallSide::Below=>{
-                    [None,Some((wally.right+radius,-vel[1]*fric))]
+                    [None,Some((wally.right+radius,-vel.y*fric))]
                 },
                 duckduckgeo::WallSide::LeftOf=>{
-                    [Some((wallx.left-radius,-vel[0]*fric)),None]
+                    [Some((wallx.left-radius,-vel.x*fric)),None]
                 },
                 duckduckgeo::WallSide::RightOf=>{
-                    [Some((wallx.right+radius,-vel[0]*fric)),None]
+                    [Some((wallx.right+radius,-vel.x*fric)),None]
                 }
             };
             bot.inner.wall_move=ret;
         });
 
         /*    
-        let cont=tree.compute_tree_health().collect::<Vec<f64>>();
+        let cont=tree.compute_tree_health().collect::<Vec<f32>>();
         let sum=cont.iter().fold(0.0,|sum,a|sum+a);
         println!("tree health={:?} sum={:?}",cont,sum);
         */
         
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,[100.0;2]).into_notnan().unwrap(),|b|{
+        let cc=cursor.inner_into();
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cc,vec2(100.0,100.0)).inner_try_into().unwrap(),|b|{
             //b.inner.repel_mouse(cursor);
-            let _ =duckduckgeo::repel_one(&mut b.inner,cursor,0.001,20.0,|a|a.sqrt());
+            let _ =duckduckgeo::repel_one(&mut b.inner,cc,0.001,20.0);
         });
         
 
         for wall in walls.iter(){
-            draw_rect_f64n([0.0,0.0,1.0,0.3],&wall.0,c,g);
+            draw_rect_f32n([0.0,0.0,1.0,0.3],&wall.0,c,g);
         }
         for bot in tree.get_bots().iter(){
-            draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_f32n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
  
         colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-            let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0,|a|a.sqrt());
+            let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0);
         });
     
         

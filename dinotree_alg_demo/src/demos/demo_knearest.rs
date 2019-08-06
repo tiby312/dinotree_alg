@@ -1,68 +1,58 @@
 use crate::support::prelude::*;
 use dinotree_alg::k_nearest;
-use duckduckgeo;
-use dists;
 
-use duckduckgeo::array2_inner_into;
-use duckduckgeo::rect_from_point;
 
 #[derive(Copy,Clone)]
 struct Bot{
     id:usize,
-    pos:Vector2<f64>,
-    radius:Vector2<f64>
+    pos:Vec2<f32>,
+    radius:Vec2<f32>
 }
 
 pub struct KnearestDemo{
     _bots:Vec<Bot>,
-    tree:DinoTree<axgeom::XAXISS,BBox<F64n,Bot>>,
-    _dim:Vector2<F64n>
+    tree:DinoTree<XAXISS,BBox<F32n,Bot>>,
+    _dim:Rect<F32n>
 }
+
 impl KnearestDemo{
-    pub fn new(dim:Vector2<F64n>)->KnearestDemo{
+    pub fn new(dim:Rect<F32n>)->KnearestDemo{
 
-        let dim2:Vector2<f64>=vec2_inner_into(dim);
-        let border=axgeom::Rect::new(0.0,dim2.x,0.0,dim2.y);
-
-
-        let rand_radius=dists::RandomRectBuilder::new(vec2(2.0,2.0),vec2(6.0,6.0));
-        let bots:Vec<_>=dists::uniform_rand::UniformRangeBuilder::new(border).build().
-            take(4000).zip(rand_radius).enumerate().map(|(id,(pos,radius))|{
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(2.0,6.0).
+            take(4000).enumerate().map(|(id,(pos,radius))|{
             Bot{id,pos,radius}
         }).collect();
 
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{rect_from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_par();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_par();
         KnearestDemo{_bots:bots,tree,_dim:dim}
     }
 }
 
 impl DemoSys for KnearestDemo{
-    fn step(&mut self,cursor:Vector2<F64n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let tree=&mut self.tree;
 
         for bot in tree.get_bots().iter(){
-            draw_rect_f64n([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_f32n([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
         #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
-        struct DisSqr(F64n);
+        struct DisSqr(F32n);
         struct Kn<'a,'c:'a>{
             c:&'a Context,
             g:&'a mut G2d<'c>,
         };
 
         impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
-            type T=BBox<F64n,Bot>;
-            type N=F64n;
+            type T=BBox<F32n,Bot>;
+            type N=F32n;
             type D=DisSqr;
-            fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                let rect=bot.get().inner_into();
-                let point=array2_inner_into(point);
-
-                draw_rect_f64n([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
+            fn twod_check(&mut self, point:Vec2<Self::N>,bot:&Self::T)->Self::D{
                 
-                let dis=rect.distance_squared_to_point(point);
+                draw_rect_f32n([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
+                
+                let dis=bot.get().as_ref().distance_squared_to_point(point.inner_into());
                 let dis=match dis{
                     Some(dis)=>{
                         dis
@@ -84,8 +74,7 @@ impl DemoSys for KnearestDemo{
                         //If you don't care about a single solution existing, you can simply return zero
                         //for the cases that the point is inside of the rect.
 
-                        let point=vec2(point[0],point[1]);
-                        -(bot.inner.pos-point).magnitude2()
+                        -(bot.inner.pos-point.inner_into()).magnitude2()
                     }
                 };
                 DisSqr(NotNan::new(dis).unwrap())
@@ -119,23 +108,19 @@ impl DemoSys for KnearestDemo{
         
         let vv={
             let kn=Kn{c:&c,g};
-            k_nearest::k_nearest(&tree,[cursor.x,cursor.y],3,kn)
+            k_nearest::k_nearest(&tree,cursor,3,kn)
         };
 
         if check_naive{
             struct Kn2{};
 
             impl k_nearest::Knearest for Kn2{
-                type T=BBox<F64n,Bot>;
-                type N=F64n;
+                type T=BBox<F32n,Bot>;
+                type N=F32n;
                 type D=DisSqr;
-                fn twod_check(&mut self, point:[Self::N;2],bot:&Self::T)->Self::D{
-                    let rect=bot.get().inner_into();
-                    let point=array2_inner_into(point);
+                fn twod_check(&mut self, point:Vec2<Self::N>,bot:&Self::T)->Self::D{
 
-
-                    let dis=rect.distance_squared_to_point(point);
-                    //let dis=duckduckgeo::distance_squared_point_to_rect(point_notnan_to_inner(point),&bot.get().into_inner());
+                    let dis:Option<f32>=bot.get().as_ref().distance_squared_to_point(point.inner_into());
                     let dis=match dis{
                         Some(dis)=>{
                             dis
@@ -143,8 +128,7 @@ impl DemoSys for KnearestDemo{
                         None=>{
                             //IMPORTANT THAT THIS NEGATIVE
                             
-                            let point=vec2(point[0],point[1]);
-                            -(bot.inner.pos-point).magnitude2()
+                            -(bot.inner.pos-point.inner_into()).magnitude2()
                         }
                     };
                     DisSqr(NotNan::new(dis).unwrap())    
@@ -170,7 +154,7 @@ impl DemoSys for KnearestDemo{
         
             let vv2={
                 let kn=Kn2{};
-                k_nearest::naive(tree.get_bots().iter(),[cursor.x,cursor.y],3,kn).into_iter()
+                k_nearest::naive(tree.get_bots().iter(),cursor,3,kn).into_iter()
             };
             
 
@@ -179,7 +163,7 @@ impl DemoSys for KnearestDemo{
                 b.bots.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
                 
                 for (&a,&b) in a.bots.iter().zip(b.bots.iter()){
-                    if a as *const BBox<F64n,Bot> != b as *const BBox<F64n,Bot>{
+                    if a as *const BBox<F32n,Bot> != b as *const BBox<F32n,Bot>{
                         println!("Fail");
                     }    
                 }
@@ -188,12 +172,12 @@ impl DemoSys for KnearestDemo{
                     println!("Fail");
                 }
                 
-                draw_rect_f64n(*color,(a.bots)[0].get(),c,g);
+                draw_rect_f32n(*color,(a.bots)[0].get(),c,g);
             }
         
         }else{
             for (a,color) in vv.zip(cols.iter()){
-                draw_rect_f64n(*color,(a.bots)[0].get(),c,g);
+                draw_rect_f32n(*color,(a.bots)[0].get(),c,g);
             }
         }
     }   
