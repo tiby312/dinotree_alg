@@ -82,12 +82,12 @@ impl RaycastF32Demo{
     pub fn new(dim:Rect<F32n>)->Self{
         
 
-        let bots:Vec<()>=(0..500).map(|a|()).collect();
+        let bots:Vec<()>=(0..500).map(|_|()).collect();
 
         let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).take(500);
 
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_|{
             let (pos,radius)=ii.next().unwrap();
             Rect::from_point(pos,radius).inner_try_into().unwrap()
         }).build_par();
@@ -101,7 +101,7 @@ impl DemoSys for RaycastF32Demo{
         let tree=&self.tree;
         //Draw bots
         for bot in tree.get_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
     
         { 

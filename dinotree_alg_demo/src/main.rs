@@ -8,7 +8,6 @@ extern crate duckduckgeo;
 
 use axgeom::Vec2;
 use axgeom::vec2;
-use num_traits::*;
 use piston_window::*;
 use axgeom::*;
 use axgeom::ordered_float::*;

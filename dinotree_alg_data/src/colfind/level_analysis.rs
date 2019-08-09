@@ -10,7 +10,7 @@ use dinotree_alg::colfind;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:[isize;2],
+    pos:Vec2<isize>,
     num:usize
 }
 
@@ -70,12 +70,12 @@ mod level_counter{
 
 
 struct TheoryRes{
-	grow:f64,
+	grow:f32,
 	rebal:Vec<usize>,
 	query:Vec<usize>
 }
 
-fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<TheoryRes>{
+fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<TheoryRes>{
 	let mut rects=Vec::new();
     for grow in grow_iter{
                
@@ -84,8 +84,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 	    //let num_bots=10_000;
 
 	    let mut bots:Vec<Bot>=s.take(num_bots).enumerate().map(|(_e,pos)|{
-	        let pos=[pos[0] as isize,pos[1] as isize];
-	        Bot{num:0,pos}
+	        Bot{num:0,pos:pos.inner_as()}
 	    }).collect();
 	
 
@@ -96,7 +95,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 
 
 			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
-        		datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
+        		datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
 			}).build_with_splitter_seq(&mut levelc);
 	
 
@@ -129,12 +128,12 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Th
 	rects
 }
 struct BenchRes{
-	grow:f64,
+	grow:f32,
 	rebal:Vec<f64>,
 	query:Vec<f64>
 }
 
-fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<BenchRes>{
+fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<BenchRes>{
 	let mut rects=Vec::new();
     for grow in grow_iter{
                
@@ -143,8 +142,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 	    //let num_bots=10_000;
 
 	    let mut bots:Vec<Bot>=s.take(num_bots).enumerate().map(|(_e,pos)|{
-	        let pos=[pos[0] as isize,pos[1] as isize];
-	        Bot{num:0,pos}
+	        Bot{num:0,pos:pos.inner_as()}
 	    }).collect();
 	    
 	    let mut times1=LevelTimer::new();
@@ -152,7 +150,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f64>)->Vec<Ben
 		
 
 		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
-		        axgeom::Rect::from_point(b.pos,[5,5])  
+		        axgeom::Rect::from_point(b.pos,vec2same(5))  
 		}).build_with_splitter_seq(&mut times1);
 
 		
@@ -198,9 +196,9 @@ pub fn handle(fb:&mut FigureBuilder){
 pub fn handle_bench(fb:&mut FigureBuilder){
 	let num_bots=10000;
 
-    let res1=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f64=a.as_();0.0005+a*0.00001}));
+    let res1=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f32=a.as_();0.0005+a*0.00001}));
 	
-	let res2=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f64=a.as_();0.01+a*0.00002}));
+	let res2=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f32=a.as_();0.01+a*0.00002}));
 
 
     fn draw_graph(title_name:&str,fg:&mut Figure,res:&[BenchRes],rebal:bool,pos:usize){
@@ -245,9 +243,9 @@ pub fn handle_bench(fb:&mut FigureBuilder){
 pub fn handle_theory(fb:&mut FigureBuilder){
 	let num_bots=3000;
 
-    let res1=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f64=a.as_();0.0005+a*0.0001}));
+    let res1=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f32=a.as_();0.0005+a*0.0001}));
 	
-	let res2=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f64=a.as_();0.01+a*0.0002}));
+	let res2=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f32=a.as_();0.01+a*0.0002}));
 
 
     use gnuplot::*;

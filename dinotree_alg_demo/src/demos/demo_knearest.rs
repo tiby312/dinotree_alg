@@ -34,7 +34,7 @@ impl DemoSys for KnearestDemo{
         let tree=&mut self.tree;
 
         for bot in tree.get_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
 
         #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
@@ -50,9 +50,9 @@ impl DemoSys for KnearestDemo{
             type D=DisSqr;
             fn twod_check(&mut self, point:Vec2<Self::N>,bot:&Self::T)->Self::D{
                 
-                draw_rect_f32([0.0,0.0,1.0,0.5],bot.get(),self.c,self.g);
+                draw_rect_f32([0.0,0.0,1.0,0.5],bot.get().as_ref(),self.c,self.g);
                 
-                let dis=bot.get().as_ref().distance_squared_to_point(*point);
+                let dis=bot.get().as_ref().distance_squared_to_point(point.inner_into());
                 let dis=match dis{
                     Some(dis)=>{
                         dis
@@ -74,7 +74,7 @@ impl DemoSys for KnearestDemo{
                         //If you don't care about a single solution existing, you can simply return zero
                         //for the cases that the point is inside of the rect.
 
-                        -(bot.inner.pos-*point).magnitude2()
+                        -(bot.inner.pos-point.inner_into()).magnitude2()
                     }
                 };
                 DisSqr(NotNan::new(dis).unwrap())
@@ -172,12 +172,12 @@ impl DemoSys for KnearestDemo{
                     println!("Fail");
                 }
                 
-                draw_rect_f32(*color,(a.bots)[0].get(),c,g);
+                draw_rect_f32(*color,(a.bots)[0].get().as_ref(),c,g);
             }
         
         }else{
             for (a,color) in vv.zip(cols.iter()){
-                draw_rect_f32(*color,(a.bots)[0].get(),c,g);
+                draw_rect_f32(*color,(a.bots)[0].get().as_ref(),c,g);
             }
         }
     }   

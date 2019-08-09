@@ -51,12 +51,12 @@ impl IntersectWithDemo{
     pub fn new(dim:Rect<F32n>)->IntersectWithDemo{
 
 
-        let bots:Vec<_>=UniformRandGen::new(*dim).
-            take(4000).enumerate().map(|(id,pos)|{
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
+            take(4000).map(|pos|{
             Bot{pos,vel:vec2same(0.0),force:vec2same(0.0),wall_move:[None;2]}
         }).collect();
 
-        let walls=UniformRandGen::new(*dim).with_radius(10.0,60.0).take(40).map(|(pos,radius)|{
+        let walls=UniformRandGen::new(dim.inner_into()).with_radius(10.0,60.0).take(40).map(|(pos,radius)|{
             Wall(Rect::from_point(pos,radius).inner_try_into().unwrap())
         }).collect();
 
@@ -104,7 +104,7 @@ impl DemoSys for IntersectWithDemo{
             let wally=&wall.get().y;
             let vel=bot.inner.vel;
 
-            let ret=match duckduckgeo::collide_with_rect::<f32>(bot.get(),wall.get()).unwrap(){
+            let ret=match duckduckgeo::collide_with_rect::<f32>(bot.get().as_ref(),wall.get().as_ref()).unwrap(){
                 duckduckgeo::WallSide::Above=>{
                     [None,Some((wally.left-radius,-vel.y*fric))]
                 },
@@ -128,10 +128,10 @@ impl DemoSys for IntersectWithDemo{
         
 
         for wall in walls.iter(){
-            draw_rect_f32([0.0,0.0,1.0,0.3],&wall.0,c,g);
+            draw_rect_f32([0.0,0.0,1.0,0.3],wall.0.as_ref(),c,g);
         }
         for bot in tree.get_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
  
         colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {

@@ -2,7 +2,7 @@ use crate::inner_prelude::*;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:[isize;2],
+    pos:Vec2<isize>,
     num:usize
 }
 
@@ -14,7 +14,7 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
     
     let instant=Instant::now();
 
-    let func=|b:&Bot|{axgeom::Rect::from_point(b.pos,[5,5])};
+    let func=|b:&Bot|{axgeom::Rect::from_point(b.pos,vec2same(5))};
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
     colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -37,7 +37,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
 
 
 
-    let func=|b:&Bot|{datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))};
+    let func=|b:&Bot|{datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))};
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,func).with_height(height).build_seq();
 
     colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -57,8 +57,7 @@ pub fn create_bots(num_bots:usize)->Vec<Bot>{
     let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
 
     s.take(num_bots).map(|pos|{
-        let pos=[pos[0] as isize,pos[1] as isize];
-        Bot{num:0,pos}
+        Bot{num:0,pos:pos.inner_as()}
     }).collect()    
 }
 

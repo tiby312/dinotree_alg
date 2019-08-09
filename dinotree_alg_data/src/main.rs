@@ -39,6 +39,7 @@ mod inner_prelude{
     pub use axgeom::ordered_float::NotNan;
     pub use axgeom::Vec2;
     pub use axgeom::vec2;
+    pub use axgeom::vec2same;
 }
 
 

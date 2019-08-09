@@ -9,6 +9,7 @@ struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
 impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
     type T = F::T;
 
+    #[inline(always)]
     fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
         //only check if the opoosite axis intersects.
         //already know they intersect
@@ -42,11 +43,13 @@ pub struct Sweeper<T: HasAabb> {
 }
 
 impl<T:HasAabb> core::default::Default for Sweeper<T>{
+    #[inline(always)]
     fn default()->Sweeper<T>{
         Sweeper::new()
     }
 }
 impl<I: HasAabb> Sweeper<I> {
+    #[inline(always)]
     pub fn new() -> Sweeper<I> {
         Sweeper {
             helper: tools::PreVecMut::new(),
@@ -56,6 +59,7 @@ impl<I: HasAabb> Sweeper<I> {
 
 
     //Bots a sorted along the axis.
+    #[inline(always)]
     pub(crate) fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
@@ -88,6 +92,7 @@ impl<I: HasAabb> Sweeper<I> {
     */
 
 
+    #[inline(always)]
     pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
@@ -104,7 +109,7 @@ impl<I: HasAabb> Sweeper<I> {
     }
     
 
-
+    #[inline(always)]
     pub(crate) fn find_parallel_2d_no_check<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
@@ -114,6 +119,7 @@ impl<I: HasAabb> Sweeper<I> {
     ) {
         self.find_bijective_parallel(axis,(bots1, bots2), clos2);
     }
+
 
     pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
         _axis:A,

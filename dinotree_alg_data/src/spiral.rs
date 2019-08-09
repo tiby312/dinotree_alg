@@ -15,14 +15,14 @@ fn handle1(fb:&mut FigureBuilder){
 
 	let num_bots=10000;
 	let mut rects=Vec::new();
-	for grow in (0..100).map(|a|{let a:f64=a.as_();0.2+a*0.02}){
+	for grow in (0..100).map(|a|{let a:f32=a.as_();0.2+a*0.02}){
 		let s=dists::spiral::Spiral::new([0.0,0.0],17.0,grow);
 
-	    let bots:Vec<[f64;2]>=s.take(num_bots).collect();
+	    let bots:Vec<Vec2<f32>>=s.take(num_bots).collect();
     	
 
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-            axgeom::Rect::from_point(*b,[5.0,5.0]).into_notnan().unwrap()
+            axgeom::Rect::from_point(*b,vec2same(5.0)).inner_try_into::<NotNan<f32>>().unwrap()
         }).build_par();
 
         let mut num_intersection=0;
@@ -55,12 +55,12 @@ fn handle2(fb:&mut FigureBuilder){
 
 
 
-    fn make(grow:f64)->Vec<[f64;2]>{
+    fn make(grow:f32)->Vec<Vec2<f32>>{
   	    let num_bots=1000;
 
     	let s=dists::spiral::Spiral::new([0.0,0.0],17.0,grow);
 
-	    let bots:Vec<[f64;2]>=s.take(num_bots).collect();
+	    let bots:Vec<Vec2<f32>>=s.take(num_bots).collect();
     	bots
     };
 
@@ -70,8 +70,8 @@ fn handle2(fb:&mut FigureBuilder){
 
 
     let a=make(0.1);
-    let ax=a.iter().map(|a|a[0]);
-    let ay=a.iter().map(|a|a[1]);
+    let ax=a.iter().map(|a|a.x);
+    let ay=a.iter().map(|a|a.y);
     
 
 	            
@@ -87,8 +87,8 @@ fn handle2(fb:&mut FigureBuilder){
 
 
     let a=make(0.5);
-    let ax=a.iter().map(|a|a[0]);
-    let ay=a.iter().map(|a|a[1]);
+    let ax=a.iter().map(|a|a.x);
+    let ay=a.iter().map(|a|a.y);
 
 
     fg.axes2d()
@@ -104,8 +104,8 @@ fn handle2(fb:&mut FigureBuilder){
 
 
     let a=make(3.0);
-    let ax=a.iter().map(|a|a[0]);
-    let ay=a.iter().map(|a|a[1]);
+    let ax=a.iter().map(|a|a.x);
+    let ay=a.iter().map(|a|a.y);
 
 
     fg.axes2d()
@@ -122,8 +122,8 @@ fn handle2(fb:&mut FigureBuilder){
 
 
     let a=make(6.0);
-    let ax=a.iter().map(|a|a[0]);
-    let ay=a.iter().map(|a|a[1]);
+    let ax=a.iter().map(|a|a.x);
+    let ay=a.iter().map(|a|a.y);
 
 
     fg.axes2d()

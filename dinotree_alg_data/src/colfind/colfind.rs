@@ -38,7 +38,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
             
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                axgeom::Rect::from_point(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -58,7 +58,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                axgeom::Rect::from_point(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -76,7 +76,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         let c3={
             if num_bots<50000{
                 let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
-                    BBoxDemo::new(axgeom::Rect::from_point(b.pos,[5,5]),*b)
+                    BBoxDemo::new(axgeom::Rect::from_point(b.pos,vec2same(5)),*b)
                 }).collect();
 
 
@@ -101,7 +101,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             
             if num_bots<8000{
                 let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
-                    let rect=axgeom::Rect::from_point(b.pos,[5,5]);
+                    let rect=axgeom::Rect::from_point(b.pos,vec2same(5));
                     BBoxDemo::new(rect,*b)
                 }).collect();
 
@@ -128,7 +128,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
 
             let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                axgeom::Rect::from_point(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_par();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -149,7 +149,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             let instant=Instant::now();
 
             let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{
-                axgeom::Rect::from_point(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_seq();
 
 
@@ -220,8 +220,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
     for num_bots in (0usize..30_000).step_by(500){
         let s2=s.clone();
         let mut bots:Vec<Bot>=s2.take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
+            Bot{num:0,pos:pos.inner_as()}
         }).collect();
         
 
@@ -229,7 +228,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
             let mut counter=datanum::Counter::new();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
-                datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
+                datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
             }).build_seq();
 
 
@@ -250,7 +249,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
                 let mut counter=datanum::Counter::new();
             
                 let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
-                    let rect=axgeom::Rect::from_point(b.pos,[5,5]);
+                    let rect=axgeom::Rect::from_point(b.pos,vec2same(5));
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
@@ -272,7 +271,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
             if num_bots<stop_sweep_at{
                 let mut counter=datanum::Counter::new();
                 let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
-                    let rect=axgeom::Rect::from_point(b.pos,[5,5]);
+                    let rect=axgeom::Rect::from_point(b.pos,vec2same(5));
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
@@ -296,7 +295,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
             let mut counter=datanum::Counter::new();
 
             let mut tree=NotSortedBuilder::new(axgeom::XAXISS,&bots,|b|{
-                datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
+                datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
             }).build_seq();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {

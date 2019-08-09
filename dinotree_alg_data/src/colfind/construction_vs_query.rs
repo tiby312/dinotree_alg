@@ -15,7 +15,7 @@ fn theory(scene:&mut bot::BotScene)->(usize,usize){
     });
 
     tree.apply(&mut scene.bots,|a,b|{
-        b.apply(&a.inner)
+        b.acc=a.inner.acc;
     });
 
     let b=counter.into_inner();
@@ -37,7 +37,7 @@ fn theory_not_sorted(scene:&mut bot::BotScene)->(usize,usize){
     });
 
     tree.0.apply(&mut scene.bots,|a,b|{
-        b.apply(&a.inner)
+        b.acc=a.inner.acc;
     });
 
     let b=counter.into_inner();
@@ -58,7 +58,7 @@ fn bench_seq(scene:&mut bot::BotScene)->(f64,f64){
     });
 
     tree.apply(&mut scene.bots,|a,b|{
-        b.apply(&a.inner)
+         b.acc=a.inner.acc;
     });
 
     let b=instant_to_sec(instant.elapsed());
@@ -79,7 +79,7 @@ fn bench_par(scene:&mut bot::BotScene)->(f64,f64){
     });
 
     tree.apply(&mut scene.bots,|a,b|{
-        b.apply(&a.inner)
+        b.acc=a.inner.acc;
     });
 
     let b=instant_to_sec(instant.elapsed());
@@ -103,7 +103,7 @@ fn bench_not_sorted_seq(scene:&mut bot::BotScene)->(f64,f64){
     });
 
     tree.0.apply(&mut scene.bots,|a,b|{
-        b.apply(&a.inner)
+         b.acc=a.inner.acc;
     });
 
 
@@ -129,7 +129,7 @@ fn bench_not_sorted_par(scene:&mut bot::BotScene)->(f64,f64){
     });
 
     tree.0.apply(&mut scene.bots,|a,b|{
-        b.apply(&a.inner)
+        b.acc=a.inner.acc;
     });
 
     let b=instant_to_sec(instant.elapsed());
@@ -158,7 +158,7 @@ fn handle_num_bots_theory(fb:&mut FigureBuilder){
     fb.finish(fg);
 }
 
-fn handle_num_bots_theory_inner(fg:&mut Figure,grow:f64,counter:u32){
+fn handle_num_bots_theory_inner(fg:&mut Figure,grow:f32,counter:u32){
     #[derive(Debug)]
     struct Record {
         num_bots:usize,
@@ -205,7 +205,7 @@ fn handle_num_bots_bench(fb:&mut FigureBuilder){
     
 }
 
-fn handle_num_bots_bench_inner(fg:&mut Figure,grow:f64,position:u32){
+fn handle_num_bots_bench_inner(fg:&mut Figure,grow:f32,position:u32){
     #[derive(Debug)]
     struct Record {
         num_bots:usize,
@@ -267,7 +267,7 @@ fn handle_grow_bench(fb:&mut FigureBuilder){
 
     #[derive(Debug)]
     struct Record {
-        grow:f64,
+        grow:f32,
         theory: (usize,usize),
         nosort_theory:(usize,usize),
         bench:(f64,f64),
@@ -278,7 +278,7 @@ fn handle_grow_bench(fb:&mut FigureBuilder){
 
     let mut rects:Vec<Record>=Vec::new();
 
-    for grow in (0..200).map(|a|{let a:f64=a.as_();0.1+a*0.005}){
+    for grow in (0..200).map(|a|{let a:f32=a.as_();0.1+a*0.005}){
         
         let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
         
@@ -335,7 +335,7 @@ fn handle_grow_theory(fb:&mut FigureBuilder){
 
     #[derive(Debug)]
     struct Record {
-        grow:f64,
+        grow:f32,
         theory: (usize,usize),
         nosort_theory:(usize,usize),
         bench:(f64,f64),
@@ -346,7 +346,7 @@ fn handle_grow_theory(fb:&mut FigureBuilder){
 
     let mut rects:Vec<Record>=Vec::new();
 
-    for grow in (0..200).map(|a|{let a:f64=a.as_();0.1+a*0.005}){
+    for grow in (0..200).map(|a|{let a:f32=a.as_();0.1+a*0.005}){
         
         let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
 

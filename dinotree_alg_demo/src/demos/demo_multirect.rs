@@ -16,10 +16,10 @@ impl MultiRectDemo{
 
 
 
-        let bots:Vec<_>=UniformRandGen::new(*dim).with_radius(5.0,20.0).
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).
             take(500).map(|(pos,radius)|{
-            let pos=axgeom::vec2_prim_cast!(pos,i32);
-            let radius=axgeom::vec2_prim_cast!(radius,i32);
+            let pos=pos.inner_as();
+            let radius=radius.inner_as();
             Bot{pos,radius}
         }).collect();
 
@@ -39,7 +39,7 @@ impl DemoSys for MultiRectDemo{
             draw_rect_i32([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
 
-        let cc:Vec2<i32>=vec2_prim_cast!(cursor.inner_into::<f32>(),i32);
+        let cc:Vec2<i32>=cursor.inner_into::<f32>().inner_as();
         let r1=axgeom::Rect::new(cc.x-100,cc.x+100,cc.y-100,cc.y+100);
         let r2=axgeom::Rect::new(100,400,100,400);
 

@@ -3,7 +3,7 @@ use crate::inner_prelude::*;
 #[derive(Copy,Clone)]
 pub struct Bot{
     num:usize,
-    pos:[isize;2]
+    pos:Vec2<isize>
 }
 
 
@@ -12,7 +12,7 @@ fn test1(bots:&mut [Bot])->(f64,f64){
     let instant=Instant::now();
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,vec2same(5))  
     }).build_seq();
 
 
@@ -38,7 +38,7 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     let instant=Instant::now();
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,vec2same(5))  
     }).with_height_switch_seq(rebal_height).build_par();
     
 
@@ -70,8 +70,7 @@ pub fn handle(fb:&mut FigureBuilder){
     
 
     let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-        let pos=[pos[0] as isize,pos[1] as isize];
-        Bot{num:0,pos}
+        Bot{num:0,pos:pos.inner_as()}
     }).collect();
 
 

@@ -151,6 +151,7 @@ impl<T:HasAabb,F:FnMut(&mut T,&mut T)> QueryFnMut<T,F>{
 }
 impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for QueryFnMut<T,F>{
     type T=T;
+    #[inline(always)]
     fn collide(&mut self,a:&mut T,b:&mut T){
         self.0(a,b);
     }   
@@ -175,6 +176,8 @@ impl<T:HasAabb,F:Fn(&mut T,&mut T)> QueryFn<T,F>{
 }
 impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for QueryFn<T,F>{
     type T=T;
+
+    #[inline(always)]
     fn collide(&mut self,a:&mut T,b:&mut T){
         self.0(a,b);
     }   

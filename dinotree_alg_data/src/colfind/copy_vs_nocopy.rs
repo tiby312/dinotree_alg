@@ -7,7 +7,7 @@ const ARR_SIZE:usize=4;
 #[derive(Copy,Clone)]
 pub struct Bot{
     num:usize,
-    pos:[isize;2],
+    pos:Vec2<isize>,
     _val:[isize;ARR_SIZE]
 }
 
@@ -28,7 +28,7 @@ fn test1(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,[5,5])).build_seq();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5))).build_seq();
 
     
     colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -73,7 +73,7 @@ fn test3(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,[5,5]) ).build_par();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)) ).build_par();
 
     
     colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -194,7 +194,7 @@ impl Record{
 
 
 
-fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
+fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
     
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
@@ -202,16 +202,14 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     for num_bots in (0..150_000).rev().step_by(2000){
         
         let mut bots2:Vec<BBoxMut<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            let inner=Bot{num:0,pos,_val:[0;ARR_SIZE]};
-            let aabb=axgeom::Rect::from_point(inner.pos,[5,5]);
+            let inner=Bot{num:0,pos:pos.inner_as(),_val:[0;ARR_SIZE]};
+            let aabb=axgeom::Rect::from_point(inner.pos,vec2same(5));
             BBoxMut{aabb,inner}
         }).collect();
         
 
         let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos,_val:[0;ARR_SIZE]}
+            Bot{num:0,pos:pos.inner_as(),_val:[0;ARR_SIZE]}
         }).collect();
 
         let arr=[

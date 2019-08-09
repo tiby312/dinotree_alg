@@ -3,7 +3,7 @@ use crate::inner_prelude::*;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:[isize;2],
+    pos:Vec2<isize>,
     num:usize
 }
 
@@ -30,8 +30,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let s2=s.clone();
 
         let mut bots:Vec<Bot>=s2.take(num_bots).enumerate().map(|(_e,pos)|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{num:0,pos}
+            Bot{num:0,pos:pos.inner_as()}
         }).collect();
         
 
@@ -39,7 +38,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
             
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                axgeom::Rect::from_point(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
@@ -58,7 +57,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).inner_try_into().unwrap();
+                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
             }).build_seq();
 
@@ -78,7 +77,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point([b.pos[0] as f32,b.pos[1] as f32],[5.0,5.0]).inner_try_into().unwrap();
+                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
             }).build_par();
 
@@ -98,7 +97,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
             
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                axgeom::Rect::from_point(b.pos,[5,5])
+                axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
@@ -117,7 +116,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64 ],[5.0,5.0]).inner_try_into().unwrap();
+                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
             }).build_seq();
 
@@ -137,7 +136,7 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
-                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point([b.pos[0] as f64,b.pos[1] as f64],[5.0,5.0]).inner_try_into().unwrap();
+                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
             }).build_par();
 

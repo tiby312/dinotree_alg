@@ -86,10 +86,9 @@ pub struct RigidBodyDemo{
 }
 impl RigidBodyDemo{
     pub fn new(dim:Rect<F32n>)->RigidBodyDemo{
-        let radius=[2,5];
         
         let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
-            take(4000).enumerate().map(|(id,pos)|{
+            take(1000).map(|pos|{
                 RigidBody::new(pos)
         }).collect();
 

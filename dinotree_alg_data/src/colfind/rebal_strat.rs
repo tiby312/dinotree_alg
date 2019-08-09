@@ -4,7 +4,7 @@ use crate::inner_prelude::*;
 #[derive(Copy,Clone)]
 pub struct Bot{
     _num:usize,
-    pos:[isize;2]
+    pos:Vec2<isize>
 }
 
 
@@ -16,7 +16,7 @@ fn test1(bots:&mut [Bot])->f64{
 
     
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,vec2same(5))  
     }).with_bin_strat(BinStrat::Checked).build_par();
     
 
@@ -32,7 +32,7 @@ fn test2(bots:&mut [Bot])->f64{
 
    
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,vec2same(5))  
     }).with_bin_strat(BinStrat::NotChecked).build_par();
     
     
@@ -49,7 +49,7 @@ fn test3(bots:&mut [Bot])->f64{
 
    
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,vec2same(5))  
     }).with_bin_strat(BinStrat::Checked).build_seq();
     
     
@@ -66,7 +66,7 @@ fn test4(bots:&mut [Bot])->f64{
 
    
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,[5,5])  
+        axgeom::Rect::from_point(b.pos,vec2same(5))  
     }).with_bin_strat(BinStrat::NotChecked).build_seq();
     
     
@@ -108,7 +108,7 @@ impl Record{
     }
 }
 
-fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
+fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
     
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
@@ -116,8 +116,7 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f64){
     for num_bots in (0..700_000).step_by(5000){
 
         let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            let pos=[pos[0] as isize,pos[1] as isize];
-            Bot{_num:0,pos}
+            Bot{_num:0,pos:pos.inner_as()}
         }).collect();
 
         let arr=[test1(&mut bots),

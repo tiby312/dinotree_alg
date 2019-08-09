@@ -16,7 +16,7 @@ fn test1(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]))  
+        datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
     }).build_seq();
 
     let mut num_pairs=0;
@@ -36,7 +36,7 @@ fn test2(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
     let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
-        let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]));  
+        let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)));  
         BBoxDemo::new(rect,*b)
     }).collect();
     
@@ -57,7 +57,7 @@ fn test3(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
     let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
-        let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,[5,5]));  
+        let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)));  
         BBoxDemo::new(rect,*b)
     }).collect();
     
@@ -77,7 +77,7 @@ fn test3(bots:&mut [Bot])->Res{
 #[derive(Debug)]
 struct Record {
     num_bots: usize,
-    grow: f64,
+    grow: f32,
     num_pairs:usize,
     z1: usize,
     z2: usize,
@@ -96,12 +96,11 @@ fn handle_spiral(fb:&mut FigureBuilder){
 
     for num_bots in (0..10000).step_by(1000){
 
-        for grow in (0usize..100).map(|a|{let a:f64=a.as_();0.0005+a*0.0001}){//0.001 to 0.002
+        for grow in (0usize..100).map(|a|{let a:f32=a.as_();0.0005+a*0.0001}){//0.001 to 0.002
             let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
             let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{
-                //let pos=[pos[0] as isize,pos[1] as isize];
-                Bot{num:0,pos}
+                Bot{num:0,pos:pos.inner_as()}
             }).collect();
 
             let z1=test1(&mut bots);
@@ -136,7 +135,7 @@ fn handle_spiral_two(fb:&mut FigureBuilder){
     let mut rects=Vec::new();
 
     for num_bots in (0..10000).step_by(1000){
-        for grow in (0..100).map(|a|{let a:f64=a.as_();0.2+a*0.1}){
+        for grow in (0..100).map(|a|{let a:f32=a.as_();0.2+a*0.1}){
             let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
             
@@ -177,17 +176,17 @@ fn handle_spiral_two(fb:&mut FigureBuilder){
 
 fn draw_rects(rects:&mut [Record],fb:&mut FigureBuilder,name1:&str){
     {
-        let x=rects.iter().map(|a|a.num_bots as f64);
+        let x=rects.iter().map(|a|a.num_bots as f32);
         let y=rects.iter().map(|a|a.grow);
-        let z1=rects.iter().map(|a|a.z1 as f64);
-        let z2=rects.iter().map(|a|a.z2 as f64);
+        let z1=rects.iter().map(|a|a.z1 as f32);
+        let z2=rects.iter().map(|a|a.z2 as f32);
 
         
         let (x2,y2,z3)={
 
             let ii=rects.iter().filter(|a|a.z3.is_some());
-            let x=ii.clone().map(|a|a.num_bots as f64);
-            let y=ii.clone().map(|a|a.grow as f64);
+            let x=ii.clone().map(|a|a.num_bots as f32);
+            let y=ii.clone().map(|a|a.grow as f32);
             let z3=ii.clone().map(|a|a.z3.unwrap());
 
             (x,y,z3)

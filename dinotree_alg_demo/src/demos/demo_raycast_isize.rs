@@ -130,7 +130,7 @@ impl RaycastDemo{
 
 
 
-        let mut ii=UniformRandGen::new(*dim).with_int().with_radius(2,6)
+        let mut ii=UniformRandGen::new(dim.inner_into()).with_int().with_radius(2,6)
             .take(4000);
 
 
@@ -139,7 +139,7 @@ impl RaycastDemo{
             Rect::from_point(pos,radius)
         }).build_par();
 
-        let dim:Rect<i32>=dim.inner_cast().unwrap();
+        let dim:Rect<i32>=dim.inner_into::<f32>().inner_as();
         RaycastDemo{tree,counter:0.0,dim}
     }
 }
@@ -150,15 +150,10 @@ impl DemoSys for RaycastDemo{
         let counter=&mut self.counter;
 
         let ray={
-            //let point=[573,161];
-            //let point=[214,388];
-            //println!("cursor={:?}",point);
             *counter+=0.005;         
-            //let dir=[1,0];
-            //let dir=vec2(dir[0] as i32,dir[1] as i32);
-            let point:Vec2<i32>=axgeom::vec2_prim_cast!(cursor.inner_into::<f32>(),i32);;
+            let point:Vec2<i32>=cursor.inner_into::<f32>().inner_as();
             let dir=vec2(counter.cos()*10.0,counter.sin()*10.0);
-            let dir=axgeom::vec2_prim_cast!(dir,i32);
+            let dir=dir.inner_as();
             duckduckgeo::Ray{point,dir}
         };
 
