@@ -9,12 +9,23 @@ use axgeom::Rect;
 pub struct RigidBody{
     pub pos:Vec2<f32>,
     pub push_vec:Vec2<f32>,
+    pub vel:Vec2<f32>,
+    pub acc:Vec2<f32>
+}
+
+
+
+impl duckduckgeo::BorderCollideTrait for RigidBody{
+    type N=f32;
+    fn pos_vel_mut(&mut self)->(&mut Vec2<f32>,&mut Vec2<f32>){
+        (&mut self.pos,&mut self.vel)
+    }
 }
 
 impl RigidBody{
     pub fn new(pos:Vec2<f32>)->RigidBody{
-        let push_vec=vec2same(0.0);
-        RigidBody{pos,push_vec}
+        let a=vec2same(0.0);
+        RigidBody{pos,push_vec:a,vel:a,acc:a}
     }
     pub fn create_loose(&self,radius:f32)->Rect<F32n>{
         axgeom::Rect::from_point(self.pos,vec2same(radius)).inner_try_into().unwrap()
@@ -81,9 +92,7 @@ pub fn handle_rigid_body(dim:Rect<F32n>,bodies:&mut [RigidBody],mut func:impl Fn
 
 
         for b in bodies.iter_mut(){
-            
-            duckduckgeo::stop_wall(&mut b.pos,dim.inner_into());
-            
+            duckduckgeo::collide_with_border(b,dim.as_ref(),0.5);
         }
 
         for body in bodies.iter_mut(){
@@ -111,11 +120,12 @@ pub struct RigidBodyDemo{
 impl RigidBodyDemo{
     pub fn new(dim:Rect<F32n>)->RigidBodyDemo{
         
-        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
+        let mut bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
             take(400).map(|pos|{
                 RigidBody::new(pos)
         }).collect();
 
+        bots[0].vel=vec2(1.,1.);
  
         RigidBodyDemo{radius:10.0,bots,dim}
     }
@@ -131,9 +141,33 @@ impl DemoSys for RigidBodyDemo{
             let rect1=&axgeom::Rect::from_point(a.pos,vec2same(radius));
             let rect2=&axgeom::Rect::from_point(b.pos,vec2same(radius));
             
-            draw_rect_f32([1.0,0.0,0.0,1.0],rect1,c,g);
 
-            draw_rect_f32([1.0,0.0,0.0,1.0],rect2,c,g);
+            let cc=0.5;
+
+            let pos_diff=b.pos-a.pos;
+
+            let pos_diff_norm=pos_diff.normalize_to(1.0);
+
+            let vel_diff=b.vel-a.vel;
+
+            let im1=1.0;
+            let im2=1.0;
+
+            let vn=vel_diff.dot(pos_diff_norm);
+            if vn>0.0{
+                return;
+            }
+
+            let i = (-(1.0 + cc) * vn) / (im1 + im2);
+            let impulse = pos_diff_norm*i;
+
+
+            //draw_rect_f32([1.0,0.0,0.0,1.0],rect1,c,g);
+            //draw_rect_f32([1.0,0.0,0.0,1.0],rect2,c,g);
+
+
+            a.vel-=impulse*im1;
+            b.vel+=impulse*im2;
 
         },self.radius,self.radius*0.2,2);
 
@@ -147,10 +181,13 @@ impl DemoSys for RigidBodyDemo{
 
             let dis=diff.magnitude();
             if dis<100.0{
+                b.inner.acc-=diff*0.01;
+                /*
                 let mag=100.0-dis;
                 if mag>0.0{
                     b.inner.pos-=diff*(mag/dis);    
                 }
+                */
             }
         });
         
@@ -164,8 +201,11 @@ impl DemoSys for RigidBodyDemo{
         
 
         for b in self.bots.iter_mut(){
-            
-            duckduckgeo::stop_wall(&mut b.pos,self.dim.inner_into());
+            b.pos+=b.vel;
+            b.vel+=b.acc;
+            b.acc=vec2same(0.0);
+
+            duckduckgeo::collide_with_border(b,self.dim.as_ref(),0.5);
             
         }
 
