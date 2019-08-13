@@ -42,21 +42,26 @@ pub struct HandleNoSorted<K:ColMulti+Splitter>{
     pub func:K
 }
 impl<K:ColMulti+Splitter>  HandleNoSorted<K>{
+    #[inline(always)]
     pub fn new(func:K)->Self{
         HandleNoSorted{func}
     }
 }
 
 impl<K:ColMulti+Splitter> Splitter for HandleNoSorted<K>{
+    #[inline(always)]
     fn div(&mut self)->Self{
         HandleNoSorted{func:self.func.div()}
     }
+    #[inline(always)]
     fn add(&mut self,a:Self){
         self.func.add(a.func);   
     }
+    #[inline(always)]
     fn node_start(&mut self){
         self.func.node_start();
     }
+    #[inline(always)]
     fn node_end(&mut self){
         self.func.node_start();
     }
@@ -103,20 +108,25 @@ pub struct HandleSorted<K:ColMulti+Splitter>{
     pub func:K
 }
 impl<K:ColMulti+Splitter> HandleSorted<K>{
+    #[inline(always)]
     pub fn new(a:K)->HandleSorted<K>{
         HandleSorted{sweeper:oned::Sweeper::new(),func:a}
     }
 }
 impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
+    #[inline(always)]
     fn div(&mut self)->Self{
         HandleSorted{sweeper:oned::Sweeper::new(),func:self.func.div()}
     }
+    #[inline(always)]
     fn add(&mut self,a:Self){
         self.func.add(a.func);   
     }
+    #[inline(always)]
     fn node_start(&mut self){
         self.func.node_start();
     }
+    #[inline(always)]
     fn node_end(&mut self){
         self.func.node_start();
     }
@@ -127,10 +137,12 @@ impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
 
 impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
     type T=K::T;
+    #[inline(always)]
     fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut [Self::T]){
         let func=&mut self.func;
         self.sweeper.find_2d(axis,bots,func);
     }
+    #[inline(always)]
     fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
         
         let func=&mut self.func;

@@ -10,6 +10,7 @@ struct GoDownRecurser<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait>{
 
 impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
 
+    #[inline(always)]
     fn new(anchor:DestructuredNode<'a,T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,T,NN,B>{
         GoDownRecurser{anchor,sweeper}
     }
@@ -71,6 +72,7 @@ pub struct ColFindRecurser<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Spl
     _p:PhantomData<Syncer<(T,K,S)>>
 }
 impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRecurser<T,K,S>{
+    #[inline(always)]
     pub fn new()->ColFindRecurser<T,K,S>{
         ColFindRecurser{_p:PhantomData}
     }
@@ -145,6 +147,7 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRec
 
 pub struct QueryFnMut<T,F>(F,PhantomData<Syncer<T>>);
 impl<T:HasAabb,F:FnMut(&mut T,&mut T)> QueryFnMut<T,F>{
+    #[inline(always)]
     pub fn new(func:F)->QueryFnMut<T,F>{
         QueryFnMut(func,PhantomData)
     }
@@ -157,19 +160,24 @@ impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for QueryFnMut<T,F>{
     }   
 }
 impl<T,F> Splitter for QueryFnMut<T,F>{
+    #[inline(always)]
     fn div(&mut self)->Self{
         unreachable!()
     }
+    #[inline(always)]
     fn add(&mut self,_:Self){
         unreachable!()
     }
+    #[inline(always)]
     fn node_start(&mut self){}
+    #[inline(always)]
     fn node_end(&mut self){}
 }
 
 
 pub struct QueryFn<T,F>(F,PhantomData<Syncer<T>>);
 impl<T:HasAabb,F:Fn(&mut T,&mut T)> QueryFn<T,F>{
+    #[inline(always)]
     pub fn new(func:F)->QueryFn<T,F>{
         QueryFn(func,PhantomData)
     }
@@ -183,12 +191,16 @@ impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for QueryFn<T,F>{
     }   
 }
 impl<T,F:Clone> Splitter for QueryFn<T,F>{
+    #[inline(always)]
     fn div(&mut self)->Self{
         QueryFn(self.0.clone(),PhantomData)
     }
+    #[inline(always)]
     fn add(&mut self,_:Self){
         
     }
+    #[inline(always)]
     fn node_start(&mut self){}
+    #[inline(always)]
     fn node_end(&mut self){}
 }

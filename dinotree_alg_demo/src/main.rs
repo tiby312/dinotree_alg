@@ -41,14 +41,16 @@ mod demo_iter{
                 self.0=0
             }
             let k:Box<DemoSys>=match curr{
-
-                0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
+                
+                0=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
+                1=>{Box::new(demo_liquid::LiquidDemo::new(area))},
+                
+                //0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
+                //1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
                 2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
                 3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
                 4=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
                 5=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
-                6=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 
                 /*
                 
@@ -64,7 +66,7 @@ mod demo_iter{
 
 fn main(){
     
-    let area=vec2(1024,1024);
+    let area=vec2(640,480);
 
     let window = WindowSettings::new("dinotree test",[area.x,area.y])
         .exit_on_esc(true)

@@ -56,6 +56,7 @@ pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(&mut T,&mut 
 /// ```
 pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(&mut T,&mut T)){  
     ///Sorts the bots.
+    #[inline(always)]
     fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
         let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
@@ -79,6 +80,7 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
     impl<T:HasAabb,F: FnMut(&mut T,&mut T)> ColMulti for Bl<T,F> {
         type T = T;
+        #[inline(always)]
         fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {    
             (self.func)(a, b);
         }
@@ -98,11 +100,13 @@ pub struct NotSortedQueryBuilder<K:NotSortedRefMutTrait>{
 }
 impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K> where K::Item:Send{
 
-
+    #[inline(always)]
     pub fn new(tree:K)->NotSortedQueryBuilder<K>{
         let switch_height=default_level_switch_sequential();
         NotSortedQueryBuilder{switch_height,tree}
     }
+
+    #[inline(always)]
     pub fn query_par(self,func:impl Fn(&mut K::Item,&mut K::Item)+Copy+Send){
         let mut tree=self.tree;
         let b=inner::QueryFn::new(func);
@@ -115,12 +119,14 @@ impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K> where K::Item:Send{
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
     }
 
+    #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(&mut K::Item,&mut K::Item),splitter:&mut impl Splitter){
         let b=inner::QueryFnMut::new(func);        
         let mut sweeper=HandleNoSorted::new(b);
         inner_query_seq_adv_mut_not_sorted(self.tree,splitter,&mut sweeper);
     }    
 
+    #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(&mut K::Item,&mut K::Item)){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleNoSorted::new(b);
@@ -152,6 +158,7 @@ pub struct QueryBuilder<K:DinoTreeRefMutTrait>{
 impl<K:DinoTreeRefMutTrait> QueryBuilder<K> where K::Item: Send{
 
     ///Perform the query in parallel
+    #[inline(always)]
     pub fn query_par(mut self,func:impl Fn(&mut K::Item,&mut K::Item)+Clone+Send){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -168,6 +175,7 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K> where K::Item: Send{
     ///The splitter will split and add at every level.
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
+    #[inline(always)]
     pub fn query_splitter<C:ColMulti<T=K::Item>+Splitter+Send>(mut self,clos:C){
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();
@@ -183,6 +191,7 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K> where K::Item: Send{
 impl<K:DinoTreeRefMutTrait> QueryBuilder<K>{
 
     ///Create the builder.
+    #[inline(always)]
     pub fn new(tree:K)->QueryBuilder<K>{
         let switch_height=dinotree::advanced::default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
@@ -190,12 +199,14 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K>{
 
     ///Choose a custom height at which to switch from parallel to sequential.
     ///If you end up building sequentially, this option is ignored.
+    #[inline(always)]
     pub fn with_switch_height(mut self,height:usize)->Self{
         self.switch_height=height;
         self
     }
     
     ///Perform the query sequentially.
+    #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(&mut K::Item,&mut K::Item)){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -204,6 +215,7 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K>{
     }
 
     ///Perform the query sequentially with a splitter.
+    #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(&mut K::Item,&mut K::Item),splitter:&mut impl Splitter){
 
         let b=inner::QueryFnMut::new(func);
@@ -281,6 +293,7 @@ mod wrap{
     unsafe impl<T> Sync for Wrap<T>{}
     unsafe impl<T:HasAabb> HasAabb for Wrap<T>{
         type Num=T::Num;
+        #[inline(always)]
         fn get(&self)->&Rect<Self::Num>{
             self.0.get()
         }
@@ -294,13 +307,17 @@ mod wrap{
     );
 
     impl<T:Splitter> Splitter for SplitterWrapper<T>{
+        #[inline(always)]
         fn div(&mut self)->Self{
             SplitterWrapper(self.0.div())
         }
+        #[inline(always)]
         fn add(&mut self,a:Self){
             self.0.add(a.0)
         }
+        #[inline(always)]
         fn node_start(&mut self){self.0.node_start()}
+        #[inline(always)]
         fn node_end(&mut self){self.0.node_end()}
     }        
     unsafe impl<T> Send for SplitterWrapper<T>{}
@@ -313,12 +330,14 @@ mod wrap{
 
     impl<T:NodeHandler> NodeHandler for NodeHandlerWrapper<T>{
         type T=Wrap<T::T>;
+        #[inline(always)]
         fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut [Self::T])
         {
             //let bots:&mut [T::T]=unsafe{std::mem::transmute(bots)};
             let bots:&mut [T::T]=unsafe{&mut *(bots as *mut [Wrap<T::T>] as *mut [T::T])};
             self.0.handle_node(axis,bots);
         }
+        #[inline(always)]
         fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,
             anchor:&mut DestructuredNode<Self::T,A>,
             current:&mut DestructuredNodeLeaf<Self::T,B>){
@@ -330,15 +349,19 @@ mod wrap{
         }
     }
     impl<T:NodeHandler+Splitter> Splitter for NodeHandlerWrapper<T>{
+        #[inline(always)]
         fn div(&mut self)->Self{
             NodeHandlerWrapper(self.0.div())
         }
+        #[inline(always)]
         fn add(&mut self,a:Self){
             self.0.add(a.0)
         }
+        #[inline(always)]
         fn node_start(&mut self){
             self.0.node_start();
         }
+        #[inline(always)]
         fn node_end(&mut self){
             self.0.node_end();
         }
