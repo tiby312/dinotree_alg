@@ -75,35 +75,48 @@ impl RigidBody{
     }
 }
 
-pub fn handle_rigid_body(dim:Rect<F32n>,bodies:&mut [RigidBody],mut func:impl FnMut(&mut RigidBody,&mut RigidBody),ball_size:f32,push_rate:f32,num_iteration:usize){
+pub fn handle_rigid_body(
+        dim:&Rect<F32n>,
+        bodies:&mut [RigidBody],
+        ball_size:f32,
+        push_rate:f32,
+        num_rebal:usize,
+        num_query:usize,
+        func:impl Fn(&mut RigidBody,&mut RigidBody)+Sync){
     
+    for _ in 0..num_rebal{        
+        let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate*(num_query as f32))).build_par();
 
-    for _ in 0..num_iteration{        
-        let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate)).build_par();
+        for _ in 0..num_query{
+            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_par(|a,b|{
+                let moved_apart = a.inner.push_away(&mut b.inner,ball_size,push_rate);
+                if moved_apart{
+                    func(&mut a.inner,&mut b.inner);
+                }
+            });    
 
-        dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|a,b|{
-            let moved_apart = a.inner.push_away(&mut b.inner,ball_size,push_rate);
-            if moved_apart{
-                func(&mut a.inner,&mut b.inner);
+
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,|a|{
+                duckduckgeo::collide_with_border(&mut a.inner,dim.as_ref(),0.5);
+            });
+        
+
+            for body in tree.get_bots_mut().iter_mut(){
+                let body=&mut body.inner;
+                let mm=body.push_vec.magnitude();
+                if mm>0.0000001{
+                    if mm>push_rate{
+                        body.push_vec.normalize_to(push_rate);
+                    }
+                    body.apply_push_vec();
+                }
             }
-        });    
+
+        }
 
         tree.apply(bodies,|a,b|*b=a.inner);
 
 
-        for b in bodies.iter_mut(){
-            duckduckgeo::collide_with_border(b,dim.as_ref(),0.5);
-        }
-
-        for body in bodies.iter_mut(){
-            let mm=body.push_vec.magnitude();
-            if mm>0.0000001{
-                if mm>push_rate{
-                    body.push_vec.normalize_to(push_rate);
-                }
-                body.apply_push_vec();
-            }
-        }
     }
 }
 
@@ -137,7 +150,7 @@ impl DemoSys for RigidBodyDemo{
         
 
 
-        handle_rigid_body(self.dim,&mut self.bots,|a,b|{
+        handle_rigid_body(&self.dim,&mut self.bots,self.radius,self.radius*0.2,2,3,|a,b|{
             let rect1=&axgeom::Rect::from_point(a.pos,vec2same(radius));
             let rect2=&axgeom::Rect::from_point(b.pos,vec2same(radius));
             
@@ -169,7 +182,7 @@ impl DemoSys for RigidBodyDemo{
             a.vel-=impulse*im1;
             b.vel+=impulse*im2;
 
-        },self.radius,self.radius*0.2,2);
+        });
 
         
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&self.bots,|bot|{
