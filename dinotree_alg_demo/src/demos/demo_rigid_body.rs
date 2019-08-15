@@ -7,6 +7,7 @@ use axgeom::Rect;
 
 #[derive(Copy,Clone,Debug)]
 pub struct RigidBody{
+    pub old_pos:Vec2<f32>,
     pub pos:Vec2<f32>,
     pub push_vec:Vec2<f32>,
     pub vel:Vec2<f32>,
@@ -25,26 +26,54 @@ impl duckduckgeo::BorderCollideTrait for RigidBody{
 impl RigidBody{
     pub fn new(pos:Vec2<f32>)->RigidBody{
         let a=vec2same(0.0);
-        RigidBody{pos,push_vec:a,vel:a,acc:a}
+        RigidBody{pos,push_vec:a,vel:a,acc:a,old_pos:a}
     }
     pub fn create_loose(&self,radius:f32)->Rect<F32n>{
         axgeom::Rect::from_point(self.pos,vec2same(radius)).inner_try_into().unwrap()
     }
-    pub fn push_away(&mut self,b:&mut Self,radius:f32,max_amount:f32)->bool{
+
+
+    pub fn handle_collision(&mut self,b:&mut RigidBody){
+        let a=self;
+
+        let cc=0.5;
+
+        let pos_diff=b.pos-a.pos;
+
+        let pos_diff_norm=pos_diff.normalize_to(1.0);
+
+        let vel_diff=b.vel-a.vel;
+
+        let im1=1.0;
+        let im2=1.0;
+
+        let vn=vel_diff.dot(pos_diff_norm);
+        if vn>0.0{
+            return;
+        }
+
+        let i = (-(1.0 + cc) * vn) / (im1 + im2);
+        let impulse = pos_diff_norm*i;
+
+        a.vel-=impulse*im1;
+        b.vel+=impulse*im2;
+    }
+
+    pub fn push_away(&mut self,b:&mut Self,radius:f32,max_amount:f32)->Option<f32>{
         let mut diff=b.pos-self.pos;
 
         let dis=diff.magnitude();
 
 
         if dis>=radius*2.0{
-            return false;
+            return None;
         }
 
 
         if dis<0.000001{
             self.push_vec+=vec2(0.01,0.0);
             b.push_vec-=vec2(0.01,0.0);
-            return false;
+            return None;
         }
 
 
@@ -59,7 +88,7 @@ impl RigidBody{
         //let mag=max_amount.min( radius*2.0-dis  );
         if mag<0.0{
             panic!("impossible");
-            return false;
+            return None;
         }
         //let mag=max_amount;
         diff*=mag/dis;
@@ -67,13 +96,39 @@ impl RigidBody{
         self.push_vec-=diff;
         b.push_vec+=diff;
 
-        moved
+        if moved{
+            Some(dis)
+        }else{
+            None
+        }
     }
-    pub fn apply_push_vec(&mut self){
-        self.pos+=self.push_vec;
-        self.push_vec=vec2same(0.0);
+
+
+    pub fn push_away_from_border(&mut self,rect2:&Rect<f32>,push_rate:f32){
+        let a=self;
+        let xx=rect2.get_range(axgeom::XAXISS);
+        let yy=rect2.get_range(axgeom::YAXISS);
+
+
+        let (pos,vel)=&mut a.pos_vel_mut();
+
+        if pos.x<xx.left{
+            pos.x=xx.left;
+        }
+        if pos.x>xx.right{
+            pos.x=xx.right;
+        }
+        if pos.y<yy.left{
+            pos.y=yy.left;
+        }
+        if pos.y>yy.right{
+            pos.y=yy.right;
+        }
     }
+
 }
+
+
 
 pub fn handle_rigid_body(
         dim:&Rect<F32n>,
@@ -82,22 +137,29 @@ pub fn handle_rigid_body(
         push_rate:f32,
         num_rebal:usize,
         num_query:usize,
-        func:impl Fn(&mut RigidBody,&mut RigidBody)+Sync){
-    
+        mut func:impl Fn(&mut RigidBody,&mut RigidBody,f32)+Sync)
+{
+
+    for a in bodies.iter_mut(){
+        a.old_pos=a.pos;
+    }
+
     for _ in 0..num_rebal{        
-        let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate*(num_query as f32))).build_par();
+        let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate*(num_query as f32))).build_seq();
 
         for _ in 0..num_query{
-            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_par(|a,b|{
-                let moved_apart = a.inner.push_away(&mut b.inner,ball_size,push_rate);
-                if moved_apart{
-                    func(&mut a.inner,&mut b.inner);
+            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|a,b|{
+                match a.inner.push_away(&mut b.inner,ball_size,push_rate){
+                    Some(dis)=>{
+                        func(&mut a.inner,&mut b.inner,dis);    
+                    },
+                    _=>{}
                 }
             });    
 
 
             dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,|a|{
-                duckduckgeo::collide_with_border(&mut a.inner,dim.as_ref(),0.5);
+                a.inner.push_away_from_border(dim.as_ref(),push_rate)
             });
         
 
@@ -108,15 +170,21 @@ pub fn handle_rigid_body(
                     if mm>push_rate{
                         body.push_vec.normalize_to(push_rate);
                     }
-                    body.apply_push_vec();
+                    body.pos+=body.push_vec;
+                    body.push_vec=vec2same(0.0);
                 }
             }
-
         }
-
         tree.apply(bodies,|a,b|*b=a.inner);
+    }
 
-
+    for a in bodies.iter_mut(){
+        let mut diff=a.pos-a.old_pos;
+        let mag=diff.magnitude();
+        if diff.magnitude()>0.2{
+            diff=diff.normalize_to(0.2);
+        }
+        a.pos=a.old_pos+diff;
     }
 }
 
@@ -134,13 +202,13 @@ impl RigidBodyDemo{
     pub fn new(dim:Rect<F32n>)->RigidBodyDemo{
         
         let mut bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
-            take(400).map(|pos|{
+            take(4000).map(|pos|{
                 RigidBody::new(pos)
         }).collect();
 
         bots[0].vel=vec2(1.,1.);
  
-        RigidBodyDemo{radius:10.0,bots,dim}
+        RigidBodyDemo{radius:3.0,bots,dim}
     }
 }
 
@@ -148,46 +216,14 @@ impl DemoSys for RigidBodyDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         
-
-
-        handle_rigid_body(&self.dim,&mut self.bots,self.radius,self.radius*0.2,2,3,|a,b|{
-            let rect1=&axgeom::Rect::from_point(a.pos,vec2same(radius));
-            let rect2=&axgeom::Rect::from_point(b.pos,vec2same(radius));
-            
-
-            let cc=0.5;
-
-            let pos_diff=b.pos-a.pos;
-
-            let pos_diff_norm=pos_diff.normalize_to(1.0);
-
-            let vel_diff=b.vel-a.vel;
-
-            let im1=1.0;
-            let im2=1.0;
-
-            let vn=vel_diff.dot(pos_diff_norm);
-            if vn>0.0{
-                return;
-            }
-
-            let i = (-(1.0 + cc) * vn) / (im1 + im2);
-            let impulse = pos_diff_norm*i;
-
-
-            //draw_rect_f32([1.0,0.0,0.0,1.0],rect1,c,g);
-            //draw_rect_f32([1.0,0.0,0.0,1.0],rect2,c,g);
-
-
-            a.vel-=impulse*im1;
-            b.vel+=impulse*im2;
-
+        handle_rigid_body(&self.dim,&mut self.bots,self.radius,self.radius*0.2,2,4,|a,b,dis|{
+            a.handle_collision(b);
         });
 
         
         let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&self.bots,|bot|{
             bot.create_loose(radius)
-        }).build_par(); 
+        }).build_seq(); 
         
         rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|b|{
             let diff=cursor.inner_into()-b.inner.pos;
@@ -195,27 +231,19 @@ impl DemoSys for RigidBodyDemo{
             let dis=diff.magnitude();
             if dis<100.0{
                 b.inner.acc-=diff*0.01;
-                /*
-                let mag=100.0-dis;
-                if mag>0.0{
-                    b.inner.pos-=diff*(mag/dis);    
-                }
-                */
             }
         });
-        
-        /*
-        colfind::QueryBuilder::new(tree.as_ref_mut()).query_par(|a, b| {
-            let _ = duckduckgeo::repel(a,b,0.001,2.0,|a|a.sqrt());
-        });
-        */
         
         tree.apply(&mut self.bots,|b,t|*t=b.inner);
         
 
         for b in self.bots.iter_mut(){
-            b.pos+=b.vel;
+            //b.acc+=vec2(0.0,0.01);
             b.vel+=b.acc;
+            if b.vel.magnitude2()>2.0*2.0{
+                b.vel=b.vel.normalize_to(2.0);
+            }
+            b.pos+=b.vel;
             b.acc=vec2same(0.0);
 
             duckduckgeo::collide_with_border(b,self.dim.as_ref(),0.5);
@@ -232,7 +260,7 @@ impl DemoSys for RigidBodyDemo{
         
         for bot in self.bots.iter(){
             let rect=&axgeom::Rect::from_point(bot.pos,vec2same(radius));
-            draw_rect_f32([0.0,1.0,1.0,0.4],rect,c,g);
+            draw_rect_f32([0.0,1.0,0.0,1.0],rect,c,g);
         }        
     }
 }
