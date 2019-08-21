@@ -61,21 +61,17 @@ impl RigidBody{
 
     pub fn push_away(&mut self,b:&mut Self,radius:f32,max_amount:f32)->Option<f32>{
         let mut diff=b.pos-self.pos;
-
         let dis=diff.magnitude();
-
 
         if dis>=radius*2.0{
             return None;
         }
-
 
         if dis<0.000001{
             self.push_vec+=vec2(0.01,0.0);
             b.push_vec-=vec2(0.01,0.0);
             return None;
         }
-
 
         let fff=radius*2.0-dis+0.0001;
         
@@ -85,12 +81,10 @@ impl RigidBody{
             (false,max_amount)
         };
 
-        //let mag=max_amount.min( radius*2.0-dis  );
         if mag<0.0{
             panic!("impossible");
             return None;
         }
-        //let mag=max_amount;
         diff*=mag/dis;
 
         self.push_vec-=diff;
@@ -180,17 +174,15 @@ pub fn handle_rigid_body(
 
     for a in bodies.iter_mut(){
         let mut diff=a.pos-a.old_pos;
+        
         let mag=diff.magnitude();
         if diff.magnitude()>0.2{
             diff=diff.normalize_to(0.2);
         }
+        
         a.pos=a.old_pos+diff;
     }
 }
-
-
-
-
 
 
 pub struct RigidBodyDemo{
@@ -202,13 +194,13 @@ impl RigidBodyDemo{
     pub fn new(dim:Rect<F32n>)->RigidBodyDemo{
         
         let mut bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
-            take(4000).map(|pos|{
+            take(1000).map(|pos|{
                 RigidBody::new(pos)
         }).collect();
 
         bots[0].vel=vec2(1.,1.);
  
-        RigidBodyDemo{radius:3.0,bots,dim}
+        RigidBodyDemo{radius:6.0,bots,dim}
     }
 }
 
@@ -229,8 +221,8 @@ impl DemoSys for RigidBodyDemo{
             let diff=cursor.inner_into()-b.inner.pos;
 
             let dis=diff.magnitude();
-            if dis<100.0{
-                b.inner.acc-=diff*0.01;
+            if dis<60.0{
+                b.inner.acc-=diff*0.05;
             }
         });
         
@@ -240,9 +232,7 @@ impl DemoSys for RigidBodyDemo{
         for b in self.bots.iter_mut(){
             //b.acc+=vec2(0.0,0.01);
             b.vel+=b.acc;
-            if b.vel.magnitude2()>2.0*2.0{
-                b.vel=b.vel.normalize_to(2.0);
-            }
+            
             b.pos+=b.vel;
             b.acc=vec2same(0.0);
 
@@ -260,7 +250,7 @@ impl DemoSys for RigidBodyDemo{
         
         for bot in self.bots.iter(){
             let rect=&axgeom::Rect::from_point(bot.pos,vec2same(radius));
-            draw_rect_f32([0.0,1.0,0.0,1.0],rect,c,g);
+            draw_rect_f32([0.0,0.0,0.0,1.0],rect,c,g);
         }        
     }
 }

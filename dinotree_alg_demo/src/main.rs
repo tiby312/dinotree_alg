@@ -37,20 +37,18 @@ mod demo_iter{
             let area=Rect::new(0.0,area.x as f32,0.0,area.y as f32);
             let area:Rect<F32n>=area.inner_try_into().unwrap();
 
-            if self.0==8{
-                self.0=0
-            }
             let k:Box<DemoSys>=match curr{
+                0=>{Box::new(demo_grid::GridDemo::new(area))}
                 
-                0=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 1=>{Box::new(demo_liquid::LiquidDemo::new(area))},
                 
-                //0=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                //1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
                 2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
                 3=>{Box::new(demo_raycast_isize::RaycastDemo::new(area))},
                 4=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
                 5=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
+                6=>{Box::new(demo_knearest::KnearestDemo::new(area))},
+                7=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
+                8=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 
                 /*
                 
@@ -59,6 +57,10 @@ mod demo_iter{
                 _=>{unreachable!("Not possible")}
             };
             self.0+=1;
+
+            if self.0==9{
+                self.0=0
+            }
             k
         }
     }
@@ -66,7 +68,7 @@ mod demo_iter{
 
 fn main(){
     
-    let area=vec2(640,480);
+    let area=vec2(1024,768);
 
     let window = WindowSettings::new("dinotree test",[area.x,area.y])
         .exit_on_esc(true)
@@ -94,7 +96,7 @@ fn main(){
 
     let mut check_naive=false;
     while let Some(e) = window.next() {
-        e.mouse_cursor(|x, y| {
+        e.mouse_cursor(|[x, y]| {
             //cursor = vec2(x,y).inner_into::<f32>().inner_try_into::<F32n>().unwrap();
             cursor.x=NotNan::new(x as f32).unwrap();
             cursor.y=NotNan::new(y as f32).unwrap();
@@ -113,7 +115,7 @@ fn main(){
             }
         };
 
-        window.draw_2d(&e, |c, mut g| {
+        window.draw_2d(&e, |c, mut g,_| {
             clear([1.0; 4], g);
             c.view();//trans(500.0,500.0);
             curr.step(cursor,&c,&mut g,check_naive);

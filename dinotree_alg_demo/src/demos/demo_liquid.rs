@@ -26,14 +26,14 @@ impl Liquid{
 
         let dis_sqr=diff.magnitude2();
 
-        if dis_sqr<0.000001{
-            //TODO push them apart instead.
+        if dis_sqr<0.00001{
+            self.acc+=vec2(1.0,0.0);
+            b.acc-=vec2(1.0,0.0);
             return 0.0;
         }
 
 
         if dis_sqr >= (2.*radius)*(2.*radius) {
-            //They not touching (bots are circular).
             return 0.0;
         }
 
@@ -48,8 +48,6 @@ impl Liquid{
         let spring_force_mag=-(d-0.5)*0.02;
 
 
-
-
         let velociy_diff=b.vel-self.vel;
         let damping_ratio=0.0002;
         let spring_dampen=velociy_diff.dot(diff)*(1./dis)*damping_ratio;
@@ -59,13 +57,8 @@ impl Liquid{
 
         self.acc+=spring_force;
         b.acc-=spring_force;
-    
 
-
-
-
-        spring_force_mag
-        
+        spring_force_mag        
     }
 }
 
@@ -124,13 +117,8 @@ impl DemoSys for LiquidDemo{
         
         
         colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-            //let _ = duckduckgeo::repel(a,b,0.001,2.0,|a|a.sqrt());
-
-            let arr = [a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
-
-
-
-            let mag = a.inner.solve(&mut b.inner,radius);
+            //let arr = [a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
+            let _ = a.inner.solve(&mut b.inner,radius);
 
             /*
             let arr=[a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
@@ -166,9 +154,6 @@ impl DemoSys for LiquidDemo{
         
         tree.apply(&mut self.bots,|b,t|*t=b.inner);
         
-
-        //println!("{:?}",self.bots[0].acc);
-
         for b in self.bots.iter_mut(){
             /*
             let arr=[b.pos.x as f64,b.pos.y as f64,(b.pos.x+b.acc.x*500.0) as f64,(b.pos.y+b.acc.y*500.0) as f64];
@@ -188,7 +173,7 @@ impl DemoSys for LiquidDemo{
         
         for bot in self.bots.iter(){
             let rect=&axgeom::Rect::from_point(bot.pos,vec2same(2.0));
-            draw_rect_f32([0.0,1.0,1.0,1.0],rect,c,g);
+            draw_rect_f32([0.0,0.0,0.0,1.0],rect,c,g);
         } 
                
     }

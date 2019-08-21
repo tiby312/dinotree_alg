@@ -1,4 +1,4 @@
-
+pub mod demo_grid;
 pub mod demo_knearest;
 pub mod demo_raycast_f32;
 pub mod demo_multirect;
