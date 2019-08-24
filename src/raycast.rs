@@ -113,7 +113,7 @@ pub enum RayIntersectResult<N> {
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying NumTrait to a minimum
 ///of only needing Ord.
 pub trait RayTrait{
-    type T:HasAabb<Num=Self::N>+Debug;
+    type T:HasAabb<Num=Self::N>;
     type N:NumTrait;
 
     ///Returns the length of ray between its origin, and where it intersects the line provided.
@@ -158,8 +158,7 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 
 macro_rules! raycast{
     ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty)=>{
-        pub use std::dbg;
-
+        
         fn should_handle_rect<R:RayTrait>(closest:&mut Closest<R::T>,rect:&Rect<R::N>,ray:&Ray<R::N>,rtrait:&mut R)->bool{
             match rtrait.compute_distance_to_rect(ray,rect){
                 RayIntersectResult::Hit(val)=>{
@@ -185,11 +184,10 @@ macro_rules! raycast{
             return false;
         } 
 
-        #[derive(Debug)]
-        struct Closest<'a,T:HasAabb+Debug+'a>{
+        struct Closest<'a,T:HasAabb+'a>{
             closest:Option<(SmallVec<[$ref_lifetime;2]>,T::Num)>
         }
-        impl<'a,T:HasAabb+Debug+'a> Closest<'a,T>{
+        impl<'a,T:HasAabb+'a> Closest<'a,T>{
             fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,ray:&Ray<T::Num>,b:$ref_lifetime,raytrait:&mut R){
 
                 let x=match raytrait.compute_distance_to_bot(ray,b){
@@ -275,7 +273,7 @@ macro_rules! raycast{
         fn recc<'a,
             N:NumTrait+'a,
             A: AxisTrait,
-            T: HasAabb<Num=N>+Debug+'a,
+            T: HasAabb<Num=N>+'a,
             R: RayTrait<T=T,N=N>
             >(axis:A,stuff:LevelIter<$iterator>,rect:Rect<N>,blap:&mut Blap<'a,R>){
 
@@ -417,7 +415,7 @@ mod mutable{
 
     pub fn naive_mut<
         'a,A:AxisTrait,
-        T:HasAabb+Debug,
+        T:HasAabb,
         >(bots:&'a mut [T],ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
 
         let mut closest=Closest{closest:None};
@@ -432,8 +430,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,   
         K:DinoTreeRefMutTrait
-        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a mut K::Item;2]>,K::Num)>
-            where <K as dinotree::DinoTreeRefTrait>::Item: std::fmt::Debug{
+        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a mut K::Item;2]>,K::Num)>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
@@ -453,7 +450,7 @@ mod cons{
     use super::*;
     pub fn naive<
         'a,
-        T:HasAabb+Debug,
+        T:HasAabb,
         >(bots:impl Iterator<Item=&'a T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
 
         let mut closest=Closest{closest:None};
@@ -467,11 +464,8 @@ mod cons{
     raycast!(Vistr<'a,T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
     pub fn raycast<
         'a,
-        //'a,A:AxisTrait+'a,
-        //T:HasAabb,
         K:DinoTreeRefTrait
-        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a K::Item;2]>,K::Num)>
-            where <K as dinotree::DinoTreeRefTrait>::Item: std::fmt::Debug{
+        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a K::Item;2]>,K::Num)>{
         
 
         let axis=tree.axis();
