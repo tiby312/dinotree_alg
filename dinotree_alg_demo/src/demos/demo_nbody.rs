@@ -5,6 +5,7 @@ use duckduckgeo;
 use duckduckgeo::GravityTrait;
 use dinotree_alg;
 
+
 #[derive(Copy,Clone)]
 struct NodeMass{
     rect:axgeom::Rect<F32n>,
@@ -42,19 +43,19 @@ impl nbody::NodeMassTraitMut for Bla{
     //gravitate this nodemass with another node mass
     fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No){
         
-        let _ = duckduckgeo::gravitate(a,b,0.0001,0.004,|a|a.sqrt());
+        let _ = duckduckgeo::gravitate(a,b,0.0001,0.004);
     }
 
     //gravitate a bot with a bot
     fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T){
         self.num_pairs_checked+=1;
-        let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+        let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004);
     }
 
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T){
         
-        let _ = duckduckgeo::gravitate(a,&mut b.inner,0.0001,0.004,|a|a.sqrt());
+        let _ = duckduckgeo::gravitate(a,&mut b.inner,0.0001,0.004);
     }
 
 
@@ -66,30 +67,30 @@ impl nbody::NodeMassTraitMut for Bla{
         for i in it{
             let m=i.inner.mass();
             total_mass+=m;
-            total_x+=m*i.inner.pos[0];
-            total_y+=m*i.inner.pos[1];
+            total_x+=m*i.inner.pos.x;
+            total_y+=m*i.inner.pos.y;
         }
         
         let center=if total_mass!=0.0{
-            [total_x/total_mass,
-            total_y/total_mass]
+            vec2(total_x/total_mass,
+            total_y/total_mass)
         }else{
-            [0.0;2]
+            vec2same(0.0)
         };
-        NodeMass{center,mass:total_mass,force:[0.0;2],rect}
+        NodeMass{center,mass:total_mass,force:vec2same(0.0),rect}
     }
 
     fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,a:&'a Self::No,it:I){
 
         if a.mass>0.000_000_1{
 
-            let total_forcex=a.force[0];
-            let total_forcey=a.force[1];
+            let total_forcex=a.force.x;
+            let total_forcey=a.force.y;
 
             for i in it{
                 let forcex=total_forcex*(i.inner.mass/a.mass);
                 let forcey=total_forcey*(i.inner.mass/a.mass);
-                i.inner.apply_force([forcex,forcey]);
+                i.inner.apply_force(vec2(forcex,forcey));
             }
         }
     }
@@ -107,9 +108,9 @@ impl nbody::NodeMassTraitMut for Bla{
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:[f32;2],
-    vel:[f32;2],
-    force:[f32;2],
+    pos:Vec2<f32>,
+    vel:Vec2<f32>,
+    force:Vec2<f32>,
     mass:f32
 }
 impl Bot{
@@ -119,25 +120,20 @@ impl Bot{
         
         let b=self;
 
-        b.pos[0]+=b.vel[0];
-        b.pos[1]+=b.vel[1];
-    
+        b.pos+=b.vel;
         
         //F=MA
         //A=F/M
-        let accx=b.force[0]/b.mass;
-        let accy=b.force[1]/b.mass;
+        let acc=b.force/b.mass;
 
-        b.vel[0]+=accx;
-        b.vel[1]+=accy;            
-
+        b.vel+=acc;
         
 
-        b.force=[0.0;2];
+        b.force=vec2same(0.0);
     }
     fn create_aabb(&self)->axgeom::Rect<F32n>{
         let r=5.0f32.min(self.mass.sqrt()/10.0);
-        axgeom::Rect::from_point(self.pos,[r;2]).into_notnan().unwrap()            
+        axgeom::Rect::from_point(self.pos,vec2same(r)).inner_try_into().unwrap()            
     }
 }
 impl duckduckgeo::GravityTrait for Bot{
@@ -155,19 +151,18 @@ impl duckduckgeo::GravityTrait for Bot{
 
 
 pub struct DemoNbody{
-    dim:[F32n;2],
+    dim:Rect<F32n>,
     bots:Vec<Bot>,
     no_mass_bots:Vec<Bot>,
     max_percentage_error:f32
 }
 impl DemoNbody{
-    pub fn new(dim:[F32n;2])->DemoNbody{
-        let dim1=dim;
-        let dim=&[0,dim[0] as isize,0,dim[1] as isize];
-        let radius=[5,20];
-        let velocity=[1,3];
-        let mut bots:Vec<Bot>=create_world_generator(500,dim,radius,velocity).map(|ret|{
-            Bot{pos:ret.pos,vel:ret.vel,force:[0.0;2],mass:100.0} //used to be 20
+    pub fn new(dim:Rect<F32n>)->DemoNbody{
+        
+
+        let mut bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
+            take(4000).map(|pos|{
+            Bot{mass:100.0,pos,vel:vec2same(0.0),force:vec2same(0.0)}
         }).collect();
 
         //Make one of the bots have a lot of mass.
@@ -175,12 +170,12 @@ impl DemoNbody{
 
         let no_mass_bots:Vec<Bot>=Vec::new();
 
-        DemoNbody{dim:dim1,bots,no_mass_bots,max_percentage_error:0.0}
+        DemoNbody{dim,bots,no_mass_bots,max_percentage_error:0.0}
     }
 }
 
 impl DemoSys for DemoNbody{
-    fn step(&mut self,cursor:[F32n;2],c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         let no_mass_bots=&mut self.no_mass_bots;
         let bots=&mut self.bots;
         
@@ -197,8 +192,7 @@ impl DemoSys for DemoNbody{
         }
         */
 
-
-        let border=axgeom::Rect::new(NotNan::<_>::zero(),self.dim[0],NotNan::<_>::zero(),self.dim[1]);
+        let border=self.dim;
 
         if !check_naive{
             nbody::nbody(&mut tree,&mut Bla{num_pairs_checked:0},border);
@@ -211,7 +205,7 @@ impl DemoSys for DemoNbody{
                 let mut bots2:Vec<BBoxMut<F32n,Bot>>=bots.iter().map(|bot|BBoxMut::new(bot.create_aabb(),*bot)).collect();
                 let mut num_pairs_checked=0;
                 nbody::naive_mut(&mut bots2,|a,b|{
-                    let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004,|a|a.sqrt());
+                    let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004);
                     num_pairs_checked+=1;
                 });
                 //assert_eq!(num_pairs_checked,n_choose_2(bots2.len()));
@@ -221,8 +215,7 @@ impl DemoSys for DemoNbody{
 
             let mut bots3=bots.clone();
             for b in bots3.iter_mut(){
-                b.force[0]=0.0;
-                b.force[1]=0.0;
+                b.force=vec2same(0.0);
             }
             tree.apply(&mut bots3,|b,t|*t=b.inner);
 
@@ -231,12 +224,12 @@ impl DemoSys for DemoNbody{
             
                 for (a,bb) in bots3.iter().zip(bots2.iter()){
                     let b=&bb.inner;
-                    //TODO what is this assertion?
-                    //assert_eq!(a.mass,b.mass);
-                    let dis_sqr1=a.force[0]*a.force[0]+a.force[1]*a.force[1];
-                    let dis_sqr2=b.force[0]*b.force[0]+b.force[1]*b.force[1];
+
+                    let dis_sqr1=a.force.magnitude2();
+                    let dis_sqr2=b.force.magnitude2();
                     let dis1=dis_sqr1.sqrt();
                     let dis2=dis_sqr2.sqrt();
+
                     let acc_dis1=dis1/a.mass;
                     let acc_dis2=dis2/a.mass;
 
@@ -260,14 +253,14 @@ impl DemoSys for DemoNbody{
                 self.max_percentage_error=max_diff.2*100.0;
              
                 let f={
-                    let a:f32=num_pair_alg.as_();
-                    let b:f32=num_pair_naive.as_();
+                    let a:f32=num_pair_alg as f32;
+                    let b:f32=num_pair_naive as f32;
                     a/b
                 };
                 
                 println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",max_diff.0,self.max_percentage_error,f*100.0);
 
-                draw_rect_f32n([1.0,0.0,1.0,1.0],&max_diff.1.aabb,c,g);
+                draw_rect_f32([1.0,0.0,1.0,1.0],max_diff.1.aabb.as_ref(),c,g);
             }
         }
               
@@ -286,24 +279,19 @@ impl DemoSys for DemoNbody{
                 let ub=b.inner.vel;
 
                 //Do perfectly inelastic collision.
-                let vx=(ma*ua[0]+mb*ub[0])/(ma+mb);
-                let vy=(ma*ua[1]+mb*ub[1])/(ma+mb);
+                let vx=(ma*ua.x+mb*ub.x)/(ma+mb);
+                let vy=(ma*ua.y+mb*ub.y)/(ma+mb);
                 assert!(!vx.is_nan()&&!vy.is_nan());
                 a.inner.mass+=b.inner.mass;
                 
-                a.inner.force[0]+=b.inner.force[0];
-                a.inner.force[1]+=b.inner.force[1];
-                a.inner.vel[0]=vx;
-                a.inner.vel[1]=vy;
+                a.inner.force+=b.inner.force;
+                a.inner.vel=vec2(vx,vy);
 
 
                 b.inner.mass=0.0;
-                b.inner.force[0]=0.0;
-                b.inner.force[1]=0.0;
-                b.inner.vel[0]=0.0;
-                b.inner.vel[1]=0.0;
-                b.inner.pos[0]=0.0;
-                b.inner.pos[1]=0.0;
+                b.inner.force=vec2same(0.0);
+                b.inner.vel=vec2same(0.0);
+                b.inner.pos=vec2same(0.0);
             }
         });
 
@@ -319,16 +307,16 @@ impl DemoSys for DemoNbody{
                     
 
                     let arr=if axis.is_xaxis(){
-                        [div,length[0].into_inner(),div,length[1].into_inner()]
+                        [div as f64,length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64]
                     }else{
-                        [length[0].into_inner(),div,length[1].into_inner(),div]
+                        [length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64,div as f64]
                     };
 
 
                     let radius=(1isize.max(5-depth as isize)) as f32;
 
-                    line([0.0, 0.0, 0.0, 0.5], // black
-                         radius, // radius of line
+                    line([0.0, 0.0 , 0.0 , 0.5 ], // black
+                         radius as f64, // radius of line
                          arr, // [x0, y0, x1,y1] coordinates of line
                          self.c.transform,
                          self.g);
@@ -339,7 +327,7 @@ impl DemoSys for DemoNbody{
                         [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
                     };
 
-                    let square = [x1.into_inner(),y1.into_inner(),w1.into_inner(),w2.into_inner()];
+                    let square = [x1.into_inner() as f64,y1.into_inner() as f64,w1.into_inner()as f64,w2.into_inner() as f64];
                     rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
                 
                     
@@ -348,12 +336,12 @@ impl DemoSys for DemoNbody{
             }
 
             let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(&tree,&mut dd,&axgeom::Rect::new(NotNan::<_>::zero(),self.dim[0],NotNan::<_>::zero(),self.dim[1]));
+            dinotree_alg::graphics::draw(&tree,&mut dd,&border);
         }
 
         //Draw bots.
         for bot in tree.get_bots().iter(){
-            draw_rect_f32n([0.0,0.5,0.0,1.0],bot.get(),c,g);
+            draw_rect_f32([0.0,0.5,0.0,1.0],bot.get().as_ref(),c,g);
         }
 
 
@@ -376,16 +364,15 @@ impl DemoSys for DemoNbody{
         //Update bot locations.
         for bot in bots.iter_mut(){
             Bot::handle(bot);  
-            duckduckgeo::wrap_position(&mut bot.pos,self.dim);  
+            duckduckgeo::wrap_position(&mut bot.pos,*self.dim.as_ref());  
         }
 
 
         while let Some(mut b)=no_mass_bots.pop(){
-            b.mass=20.0;                
-            b.pos[0]=cursor[0];
-            b.pos[1]=cursor[1];
-            b.force=[0.0;2];
-            b.vel=[1.0,0.0];
+            b.mass=20.0;     
+            b.pos=cursor.inner_into();
+            b.force=vec2same(0.0);
+            b.vel=vec2(1.0,0.0);
             bots.push(b);
             //break;
         }     
