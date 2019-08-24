@@ -1,6 +1,6 @@
 use crate::support::prelude::*;
 use dinotree_alg::k_nearest;
-
+use std::cell::RefCell;
 
 #[derive(Copy,Clone)]
 struct Bot{
@@ -12,20 +12,20 @@ struct Bot{
 pub struct KnearestDemo{
     _bots:Vec<Bot>,
     tree:DinoTree<XAXISS,BBox<F32n,Bot>>,
-    _dim:Rect<F32n>
+    dim:Rect<F32n>
 }
 
 impl KnearestDemo{
     pub fn new(dim:Rect<F32n>)->KnearestDemo{
 
-        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(2.0,6.0).
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(1.0,4.0).
             take(4000).enumerate().map(|(id,(pos,radius))|{
             Bot{id,pos,radius}
         }).collect();
 
 
         let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_par();
-        KnearestDemo{_bots:bots,tree,_dim:dim}
+        KnearestDemo{_bots:bots,tree,dim}
     }
 }
 
@@ -40,19 +40,25 @@ impl DemoSys for KnearestDemo{
         #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
         struct DisSqr(F32n);
         struct Kn<'a,'c:'a>{
+            draw:bool,
             c:&'a Context,
-            g:&'a mut G2d<'c>,
+            g:RefCell<&'a mut G2d<'c>>,
         };
 
         impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
             type T=BBox<F32n,Bot>;
             type N=F32n;
             type D=DisSqr;
-            fn twod_check(&mut self, point:Vec2<Self::N>,bot:&Self::T)->Self::D{
+
+            fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::D{
+                if self.draw{
+                    draw_rect_f32([0.0,0.0,1.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
+                }
+                self.distance_to_rect(point,bot.get())
+            }
+            fn distance_to_rect(&self, point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::D{
                 
-                draw_rect_f32([0.0,0.0,1.0,0.5],bot.get().as_ref(),self.c,self.g);
-                
-                let dis=bot.get().as_ref().distance_squared_to_point(point.inner_into());
+                let dis=rect.as_ref().distance_squared_to_point(point.inner_into());
                 let dis=match dis{
                     Some(dis)=>{
                         dis
@@ -74,28 +80,11 @@ impl DemoSys for KnearestDemo{
                         //If you don't care about a single solution existing, you can simply return zero
                         //for the cases that the point is inside of the rect.
 
-                        -(bot.inner.pos-point.inner_into()).magnitude2()
+                        0.0
+                        //-(bot.inner.pos-point.inner_into()).magnitude2()
                     }
                 };
                 DisSqr(NotNan::new(dis).unwrap())
-            }
-
-            fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{
-                let p1=p1.into_inner();
-                let p2=p2.into_inner();
-                let diff=p2-p1;
-                DisSqr(NotNan::new(diff*diff).unwrap())
-            }
-
-            //create a range around n.
-            fn create_range(&mut self,b:Self::N,d:Self::D)->[Self::N;2]{
-                if d.0.into_inner()<0.0{
-                    [b,b]
-                }else{
-                    let b=b.into_inner();
-                    let dis=d.0.into_inner().sqrt();
-                    [NotNan::new(b-dis).unwrap(),NotNan::new(b+dis).unwrap()]
-                }
             }
         }
 
@@ -107,53 +96,15 @@ impl DemoSys for KnearestDemo{
         ];
         
         let vv={
-            let kn=Kn{c:&c,g};
-            k_nearest::k_nearest(&tree,cursor,3,kn)
+            let kn=Kn{c:&c,g:RefCell::new(g),draw:true};
+            k_nearest::k_nearest(&tree,cursor,3,kn,self.dim)
         };
 
         if check_naive{
-            struct Kn2{};
-
-            impl k_nearest::Knearest for Kn2{
-                type T=BBox<F32n,Bot>;
-                type N=F32n;
-                type D=DisSqr;
-                fn twod_check(&mut self, point:Vec2<Self::N>,bot:&Self::T)->Self::D{
-
-                    let dis:Option<f32>=bot.get().as_ref().distance_squared_to_point(point.inner_into());
-                    let dis=match dis{
-                        Some(dis)=>{
-                            dis
-                        },
-                        None=>{
-                            //IMPORTANT THAT THIS NEGATIVE
-                            
-                            -(bot.inner.pos-point.inner_into()).magnitude2()
-                        }
-                    };
-                    DisSqr(NotNan::new(dis).unwrap())    
-                }
-
-                fn oned_check(&mut self,p1:Self::N,p2:Self::N)->Self::D{
-                    let p1=p1.into_inner();
-                    let p2=p2.into_inner();
-                    DisSqr(NotNan::new((p2-p1)*(p2-p1)).unwrap())
-                }
-
-                //create a range around n.
-                fn create_range(&mut self,b:Self::N,d:Self::D)->[Self::N;2]{
-                    if d.0.into_inner()<0.0{
-                        [b,b]
-                    }else{
-                        let b=b.into_inner();
-                        let dis=d.0.into_inner().sqrt();
-                        [NotNan::new(b-dis).unwrap(),NotNan::new(b+dis).unwrap()]
-                    }
-                }
-            }
+            
         
             let vv2={
-                let kn=Kn2{};
+                let kn=Kn{c:&c,g:RefCell::new(g),draw:false};
                 k_nearest::naive(tree.get_bots().iter(),cursor,3,kn).into_iter()
             };
             

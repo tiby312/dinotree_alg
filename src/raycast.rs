@@ -294,11 +294,13 @@ macro_rules! raycast{
                     let (rleft,rright) = rect.subdivide(axis,*div);
 
 
-                    let range = match nn.cont{
+                    let range = &match nn.cont{
                         Some(range)=>{
-                            range
+                            *range
                         },
                         None=>{
+                            Range{left:*div,right:*div}
+                            /*
                             let (first,second)=match blap.ray.divider_side(axis,div){
                                 Ordering::Less=>{
                                     ((rleft,left),(rright,right))
@@ -316,6 +318,7 @@ macro_rules! raycast{
                             }
 
                             return;
+                            */
                         }
                     };
 
