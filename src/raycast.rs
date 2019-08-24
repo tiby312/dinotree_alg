@@ -240,13 +240,44 @@ macro_rules! raycast{
         }
 
 
+        struct Blap<'a,R:RayTrait>{
+            rtrait:R,
+            ray:Ray<R::N>,
+            closest:Closest<'a,R::T>
+        }
+        impl<'a,R:RayTrait> Blap<'a,R>{
+            fn should_handle_rect(&mut self,rect:&Rect<R::N>)->bool{
+                match self.rtrait.compute_distance_to_rect(&self.ray,rect){
+                    RayIntersectResult::Hit(val)=>{
+
+                        match self.closest.get_dis(){
+                            Some(dis)=>{
+                                if val<=dis{
+                                    return true;
+                                }        
+                            },
+                            None=>{
+                                return true;
+                                //recc(axis_next,second.0,rtrait,second.1,closest);
+                            }
+                        }   
+                        
+                    },
+                    RayIntersectResult::NoHit=>{
+
+                    }
+                }
+                return false;
+            } 
+        }
+
         //Returns the first object that touches the ray.
         fn recc<'a,
             N:NumTrait+'a,
             A: AxisTrait,
             T: HasAabb<Num=N>+Debug+'a,
             R: RayTrait<T=T,N=N>
-            >(axis:A,stuff:LevelIter<$iterator>,rtrait:&mut R,rect:Rect<N>,ray:&Ray<N>,closest:&mut Closest<'a,T>){
+            >(axis:A,stuff:LevelIter<$iterator>,rect:Rect<N>,blap:&mut Blap<'a,R>){
 
             //dbg!(rect,ray,&closest);
 
@@ -268,7 +299,7 @@ macro_rules! raycast{
                             range
                         },
                         None=>{
-                            let (first,second)=match ray.divider_side(axis,div){
+                            let (first,second)=match blap.ray.divider_side(axis,div){
                                 Ordering::Less=>{
                                     ((rleft,left),(rright,right))
                                 },
@@ -277,11 +308,11 @@ macro_rules! raycast{
                                 }
                             };
                             
-                            if should_handle_rect(closest,&first.0,ray,rtrait){
-                                recc(axis_next,first.1,rtrait,first.0,ray,closest);
+                            if blap.should_handle_rect(&first.0){
+                                recc(axis_next,first.1,first.0,blap);
                             }
-                            if should_handle_rect(closest,&second.0,ray,rtrait){
-                                recc(axis_next,second.1,rtrait,second.0,ray,closest);   
+                            if blap.should_handle_rect(&second.0){
+                                recc(axis_next,second.1,second.0,blap);   
                             }
 
                             return;
@@ -293,66 +324,64 @@ macro_rules! raycast{
                     let rmiddle=make_rect_from_range(axis,range,&rect);
 
 
-                    match ray.range_side(axis,range){
+                    match blap.ray.range_side(axis,range){
                         Ordering::Less=>{
-                            if should_handle_rect(closest,&rleft,ray,rtrait){
-                                recc(axis_next,left,rtrait,rleft,ray,closest);
+                            if blap.should_handle_rect(&rleft){
+                                recc(axis_next,left,rleft,blap);
                             }
                            
 
-                            if should_handle_rect(closest,&rmiddle,ray,rtrait){
+                            if blap.should_handle_rect(&rmiddle){
                                 for b in $get_iter!(nn.bots){
-                                    closest.consider(ray,b,rtrait);
+                                    blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
                                 }
                             }
 
-                            if should_handle_rect(closest,&rright,ray,rtrait){
-                                recc(axis_next,right,rtrait,rright,ray,closest);
+                            if blap.should_handle_rect(&rright){
+                                recc(axis_next,right,rright,blap);
                             }
                         },
                         Ordering::Greater=>{
                             
-                            if should_handle_rect(closest,&rright,ray,rtrait){
-                                recc(axis_next,right,rtrait,rright,ray,closest);
+                            if blap.should_handle_rect(&rright){
+                                recc(axis_next,right,rright,blap);
                             }
                             
-                            if should_handle_rect(closest,&rmiddle,ray,rtrait){
+                            if blap.should_handle_rect(&rmiddle){
                                 for b in $get_iter!(nn.bots){
-                                    closest.consider(ray,b,rtrait);
+                                    blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
                                 }
                             }
 
-                            if should_handle_rect(closest,&rleft,ray,rtrait){
-                                recc(axis_next,left,rtrait,rleft,ray,closest);
+                            if blap.should_handle_rect(&rleft){
+                                recc(axis_next,left,rleft,blap);
                             }
                         },
                         Ordering::Equal=>{
                                     
-                            if should_handle_rect(closest,&rmiddle,ray,rtrait){
+                            if blap.should_handle_rect(&rmiddle){
                                 for b in $get_iter!(nn.bots){
-                                    closest.consider(ray,b,rtrait);
+                                    blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
                                 }
                             }
 
-                            if should_handle_rect(closest,&rleft,ray,rtrait){
-                                recc(axis_next,left,rtrait,rleft,ray,closest);
+                            if blap.should_handle_rect(&rleft){
+                                recc(axis_next,left,rleft,blap);
                             }
                             
-                            if should_handle_rect(closest,&rright,ray,rtrait){
-                                recc(axis_next,right,rtrait,rright,ray,closest);
+                            if blap.should_handle_rect(&rright){
+                                recc(axis_next,right,rright,blap);
                             }
                         }
                     }
 
                 },
                 None=>{
-                    //TODO remove this check
-                    //if should_handle_rect(closest,&rect,ray,rtrait){
-                        //Can't do better here since for leafs, cont is none.
-                        for b in $get_iter!(nn.bots){
-                            closest.consider(ray,b,rtrait);
-                        } 
-                    //}
+                    //Can't do better here since for leafs, cont is none.
+                    for b in $get_iter!(nn.bots){
+                        blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
+                    } 
+                
                 }
             }
         }
@@ -386,12 +415,12 @@ mod mutable{
     pub fn naive_mut<
         'a,A:AxisTrait,
         T:HasAabb+Debug,
-        >(bots:&'a mut [T],ray:&Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(bots:&'a mut [T],ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
         for b in bots.iter_mut(){
-            closest.consider(ray,b,&mut rtrait);
+            closest.consider(&ray,b,&mut rtrait);
         }
 
         closest.closest
@@ -400,7 +429,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,   
         K:DinoTreeRefMutTrait
-        >(tree:&'a mut K,rect:Rect<K::Num>,ray:&Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a mut K::Item;2]>,K::Num)>
+        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a mut K::Item;2]>,K::Num)>
             where <K as dinotree::DinoTreeRefTrait>::Item: std::fmt::Debug{
         
         let axis=tree.axis();
@@ -408,9 +437,10 @@ mod mutable{
 
 
         let mut closest=Closest{closest:None};
-        recc(axis,dt,&mut rtrait,rect,ray,&mut closest);
+        let mut blap=Blap{rtrait,ray,closest};
+        recc(axis,dt,rect,&mut blap);
 
-        closest.closest
+        blap.closest.closest
     }
 }
 
@@ -421,12 +451,12 @@ mod cons{
     pub fn naive<
         'a,
         T:HasAabb+Debug,
-        >(bots:impl Iterator<Item=&'a T>,ray:&Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(bots:impl Iterator<Item=&'a T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
         for b in bots{
-            closest.consider(ray,b,&mut rtrait);
+            closest.consider(&ray,b,&mut rtrait);
         }
         closest.closest
     }
@@ -437,7 +467,7 @@ mod cons{
         //'a,A:AxisTrait+'a,
         //T:HasAabb,
         K:DinoTreeRefTrait
-        >(tree:&'a K,rect:Rect<K::Num>,ray:&Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a K::Item;2]>,K::Num)>
+        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a K::Item;2]>,K::Num)>
             where <K as dinotree::DinoTreeRefTrait>::Item: std::fmt::Debug{
         
 
@@ -446,8 +476,9 @@ mod cons{
 
 
         let mut closest=Closest{closest:None};
-        recc(axis,dt,&mut rtrait,rect,ray,&mut closest);
-        closest.closest
+        let mut blap=Blap{rtrait,ray,closest};
+        recc(axis,dt,rect,&mut blap);
+        blap.closest.closest
     }
 }
 

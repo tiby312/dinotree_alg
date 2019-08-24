@@ -118,7 +118,7 @@ impl DemoSys for RaycastF32DebugDemo{
             
 
             //dbg!("START");
-            let test = match raycast::raycast(&tree,self.dim,&ray,ray_f32::RayT{draw:true,c:&c,g,height,counter:1.0}){
+            let test = match raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g,height,counter:1.0}){
                 Some((mut bots,dis))=>{
                     let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                     k.sort();
@@ -136,7 +136,7 @@ impl DemoSys for RaycastF32DebugDemo{
                 let tree_ref=&tree;
                 
                 
-                let k = match raycast::naive(tree_ref.get_bots().iter(),&ray,ray_f32::RayT{draw:false,c:&c,g,height,counter:1.0}){
+                let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g,height,counter:1.0}){
                     Some((mut bots,dis))=>{
                         let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                         k.sort();

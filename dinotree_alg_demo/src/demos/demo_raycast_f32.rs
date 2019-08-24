@@ -90,7 +90,7 @@ impl DemoSys for RaycastF32Demo{
 
                 
 
-                let res=raycast::raycast(&tree,self.dim,&ray,ray_f32::RayT{c:&c,g});
+                let res=raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;

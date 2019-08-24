@@ -368,8 +368,8 @@ impl DemoSys for DemoNbody{
         }
 
 
-        while let Some(mut b)=no_mass_bots.pop(){
-            b.mass=20.0;     
+        if let Some(mut b)=no_mass_bots.pop(){
+            b.mass=30.0;     
             b.pos=cursor.inner_into();
             b.force=vec2same(0.0);
             b.vel=vec2(1.0,0.0);
