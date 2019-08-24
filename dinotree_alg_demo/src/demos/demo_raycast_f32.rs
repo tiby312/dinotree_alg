@@ -110,6 +110,8 @@ impl DemoSys for RaycastF32Demo{
                 let x=(dir.cos()*20.0) as f32 ;
                 let y=(dir.sin()*20.0) as f32;
 
+                let x=0.0;
+                let y=1.0;
                 let ray={
                     let k=vec2(x,y).inner_try_into().unwrap();
                     duckduckgeo::Ray::new(cursor,k)
