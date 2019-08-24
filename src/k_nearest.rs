@@ -41,6 +41,7 @@ pub trait Knearest{
     
 
     ///Return the distance between two objects
+    //TODO only use this api?
     fn oned_check(&mut self,val1:Self::N,val2:Self::N)->Self::D;
 
     ///Create a range about the point n. This is used to

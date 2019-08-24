@@ -39,14 +39,14 @@ mod demo_iter{
 
             let k:Box<DemoSys>=match curr{
                 0=>{Box::new(demo_raycast_f32_debug::RaycastF32DebugDemo::new(area))}
-                //0=>{Box::new(demo_grid::GridDemo::new(area))}
-                1=>{Box::new(demo_liquid::LiquidDemo::new(area))},
-                2=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
-                3=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
-                4=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
-                5=>{Box::new(demo_knearest::KnearestDemo::new(area))},
-                6=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
+                1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
+                2=>{Box::new(demo_liquid::LiquidDemo::new(area))},
+                3=>{Box::new(demo_multirect::MultiRectDemo::new(area))},
+                4=>{Box::new(demo_original_order::OrigOrderDemo::new(area))},
+                5=>{Box::new(demo_intersect_with::IntersectWithDemo::new(area))},
+                6=>{Box::new(demo_knearest::KnearestDemo::new(area))},
                 7=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
+                8=>{Box::new(demo_grid::GridDemo::new(area))}
                 
                 /*
                 

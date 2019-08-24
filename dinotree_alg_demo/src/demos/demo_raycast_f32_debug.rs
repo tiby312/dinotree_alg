@@ -3,7 +3,7 @@ use dinotree_alg::raycast;
 use dinotree_alg;
 use std;
 use duckduckgeo;
-
+use dinotree_alg::raycast::RayIntersectResult;
 
 //TODO problem with lines are straight up?
 //isize implementation of a ray.
@@ -16,72 +16,47 @@ mod ray_f32{
 
 
     pub struct RayT<'a,'c:'a>{
-        pub ray:duckduckgeo::Ray<F32n>,
         pub c:&'a Context,
         pub g:&'a mut G2d<'c>,
         pub height:usize,
-        pub draw:bool
+        pub draw:bool,
+        pub counter:f32
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
         type T=BBox<F32n,Bot2>;
         type N=F32n;
 
- 
 
-        fn intersects_rect(&self,rect:&axgeom::Rect<Self::N>)->bool{
-            let ray:Ray<f32>=self.ray.inner_into();
-            let rect=rect.inner_into();
-
-            match ray_intersects_box(&ray,&rect){
-                IntersectsBotResult::Hit(_)=>{
-                    true
-                },
-                IntersectsBotResult::NoHit=>{
-                    false
-                },
-                IntersectsBotResult::Inside=>{
-                    true
-                }
-            }
-        }
-        fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&Self::N)->std::cmp::Ordering{
-            if axis.is_xaxis(){
-                self.ray.point.x.cmp(&div)
-            }else{
-                self.ray.point.y.cmp(&div)
-            }
-        }
-  
-        fn compute_distance_to_line<A:axgeom::AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>{
-            let ray:Ray<f32>=self.ray.inner_into();
-            let line:f32=*line;
-            //let ray=duckduckgeo::Ray{point:self.ray.point,dir:self.ray.dir};
-            ray_compute_intersection_tvalue(&ray,axis,line).map(|a|NotNan::new(a).unwrap())
-        }
-
-
-        fn compute_distance_bot(&mut self,rect:&Self::T)->Option<Self::N>{
-            let ray:Ray<f32>=self.ray.inner_into();
-            let rect=rect.get().inner_into();
-
+        fn compute_distance_to_bot(&mut self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
             if self.draw{
-                draw_rect_f32([1.0,0.0,0.0,0.8],&rect,self.c,self.g);
+                let cc=self.counter;
+                draw_rect_f32([1.0,0.0,0.0,cc],bot.get().as_ref(),self.c,self.g);
+                self.counter-=0.0005
             }
+            Self::compute_distance_to_rect(self,ray,bot.get()) 
+        }
+
+        fn compute_distance_to_rect(&mut self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
+            let ray:duckduckgeo::Ray<f32>=Ray{point:ray.point.inner_into(),dir:ray.dir.inner_into()};
+            let rect:&Rect<f32>=rect.as_ref();
+
+            
             let k=ray_intersects_box(&ray,&rect);
             match k{
                 IntersectsBotResult::Hit(val)=>{
-                    Some(val)
+                    RayIntersectResult::Hit(NotNan::new(val).unwrap())
                 },
                 IntersectsBotResult::NoHit=>{
-                    None
+                    RayIntersectResult::NoHit
                 },
                 IntersectsBotResult::Inside=>{
-                    Some(0.0)
+                    RayIntersectResult::Hit(NotNan::new(0.0).unwrap())
+                    
                     //Return none if you do not want results that intersect the ray origin.
                     //None
                 }
-            }.map(|a|NotNan::new(a).unwrap())
+            }
         }
         
     }
@@ -106,7 +81,7 @@ impl RaycastF32DebugDemo{
 
 
 
-        let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(2.0,6.0)
+        let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(1.0,4.0)
             .take(3000);
 
 
@@ -124,12 +99,14 @@ impl DemoSys for RaycastF32DebugDemo{
         let tree=&self.tree;
         let counter=&mut self.counter;
 
-        let ray={
+        let ray:raycast::Ray<F32n>={
             *counter+=0.004;         
             let point:Vec2<f32>=cursor.inner_into::<f32>().inner_as();
+            //*counter=10.0;
             let dir=vec2(counter.cos()*10.0,counter.sin()*10.0);
+
             let dir=dir.inner_as();
-            duckduckgeo::Ray{point,dir}.inner_try_into().unwrap()
+            raycast::Ray{point,dir}.inner_try_into().unwrap()
         };
 
         for bot in tree.get_bots().iter(){
@@ -140,7 +117,8 @@ impl DemoSys for RaycastF32DebugDemo{
             let height=tree.height();
             
 
-            let test = match raycast::raycast(&tree,self.dim,ray_f32::RayT{draw:true,ray,c:&c,g,height}){
+            //dbg!("START");
+            let test = match raycast::raycast(&tree,self.dim,&ray,ray_f32::RayT{draw:true,c:&c,g,height,counter:1.0}){
                 Some((mut bots,dis))=>{
                     let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                     k.sort();
@@ -151,12 +129,14 @@ impl DemoSys for RaycastF32DebugDemo{
                 }
             };
 
+            //dbg!("END");
+
             if check_naive{
 
                 let tree_ref=&tree;
                 
                 
-                let k = match raycast::naive(tree_ref.get_bots().iter(),ray_f32::RayT{draw:false,ray,c:&c,g,height}){
+                let k = match raycast::naive(tree_ref.get_bots().iter(),&ray,ray_f32::RayT{draw:false,c:&c,g,height,counter:1.0}){
                     Some((mut bots,dis))=>{
                         let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                         k.sort();
@@ -183,7 +163,7 @@ impl DemoSys for RaycastF32DebugDemo{
                 }
             }
 
-            let ray:Ray<f32>=ray.inner_into();
+            let ray:raycast::Ray<f32>=ray.inner_into();
             
             let (ppx,ppy)=match test{
                 Some(k)=>{
