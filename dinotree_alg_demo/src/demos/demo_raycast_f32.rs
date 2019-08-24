@@ -20,7 +20,7 @@ mod ray_f32{
         type N=F32n;
 
 
-        fn compute_distance_to_rect(&mut self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
+        fn compute_distance_to_rect(&self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
             let ray:duckduckgeo::Ray<f32>=Ray{point:ray.point.inner_into(),dir:ray.dir.inner_into()};
             let rect:&Rect<f32>=rect.as_ref();
 

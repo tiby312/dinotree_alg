@@ -126,13 +126,13 @@ pub trait RayTrait{
     ///This is where the user can do expensive collision detection on the shape
     ///contains within it's bounding box.
     ///Its default implementation just calles compute_distance_to_rect()
-    fn compute_distance_to_bot(&mut self,ray:&Ray<Self::N>,a:&Self::T)->RayIntersectResult<Self::N>{
+    fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:&Self::T)->RayIntersectResult<Self::N>{
         self.compute_distance_to_rect(ray,a.get())
     }
 
     ///Returns true if the ray intersects with this rectangle.
     ///This function allows as to prune which nodes to visit.
-    fn compute_distance_to_rect(&mut self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>;
+    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>;
 }
 
 

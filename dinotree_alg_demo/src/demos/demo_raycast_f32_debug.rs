@@ -5,6 +5,8 @@ use std;
 use duckduckgeo;
 use dinotree_alg::raycast::RayIntersectResult;
 
+use std::cell::RefCell;
+
 //TODO problem with lines are straight up?
 //isize implementation of a ray.
 mod ray_f32{
@@ -17,10 +19,9 @@ mod ray_f32{
 
     pub struct RayT<'a,'c:'a>{
         pub c:&'a Context,
-        pub g:&'a mut G2d<'c>,
+        pub g:RefCell<&'a mut G2d<'c>>,
         pub height:usize,
         pub draw:bool,
-        pub counter:f32
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
@@ -28,16 +29,14 @@ mod ray_f32{
         type N=F32n;
 
 
-        fn compute_distance_to_bot(&mut self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
+        fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
             if self.draw{
-                let cc=self.counter;
-                draw_rect_f32([1.0,0.0,0.0,cc],bot.get().as_ref(),self.c,self.g);
-                self.counter-=0.0005
+                draw_rect_f32([1.0,0.0,0.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
             }
             Self::compute_distance_to_rect(self,ray,bot.get()) 
         }
 
-        fn compute_distance_to_rect(&mut self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
+        fn compute_distance_to_rect(&self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
             let ray:duckduckgeo::Ray<f32>=Ray{point:ray.point.inner_into(),dir:ray.dir.inner_into()};
             let rect:&Rect<f32>=rect.as_ref();
 
@@ -118,7 +117,7 @@ impl DemoSys for RaycastF32DebugDemo{
             
 
             //dbg!("START");
-            let test = match raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g,height,counter:1.0}){
+            let test = match raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
                 Some((mut bots,dis))=>{
                     let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                     k.sort();
@@ -136,7 +135,7 @@ impl DemoSys for RaycastF32DebugDemo{
                 let tree_ref=&tree;
                 
                 
-                let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g,height,counter:1.0}){
+                let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
                     Some((mut bots,dis))=>{
                         let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                         k.sort();
