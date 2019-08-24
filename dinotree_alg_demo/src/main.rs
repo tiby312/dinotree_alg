@@ -38,7 +38,6 @@ mod demo_iter{
             let area:Rect<F32n>=area.inner_try_into().unwrap();
 
             let k:Box<DemoSys>=match curr{
-                //0=>{Box::new(demo_nbody::DemoNbody::new(area))},
                 0=>{Box::new(demo_raycast_f32_debug::RaycastF32DebugDemo::new(area))}
                 1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
                 2=>{Box::new(demo_liquid::LiquidDemo::new(area))},
@@ -48,16 +47,12 @@ mod demo_iter{
                 6=>{Box::new(demo_knearest::KnearestDemo::new(area))},
                 7=>{Box::new(demo_rigid_body::RigidBodyDemo::new(area))}
                 8=>{Box::new(demo_grid::GridDemo::new(area))}
-                
-                /*
-                
-                
-                */
+                9=>{Box::new(demo_nbody::DemoNbody::new(area))},
                 _=>{unreachable!("Not possible")}
             };
             self.0+=1;
 
-            if self.0==8{
+            if self.0==10{
                 self.0=0
             }
             k
