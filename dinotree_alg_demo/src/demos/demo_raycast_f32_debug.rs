@@ -112,13 +112,31 @@ impl DemoSys for RaycastF32DebugDemo{
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }   
 
-        let k={
-            let height=tree.height();
-            
+    
+        let height=tree.height();
+        
 
-            //dbg!("START");
-            let test = match raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
-                Some((mut bots,dis))=>{
+        //dbg!("START");
+        let test = match raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
+            Some((bots,dis))=>{
+                let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
+                k.sort();
+                Some((k,dis.into_inner()))
+            },
+            None=>{
+                None
+            }
+        };
+
+        //dbg!("END");
+
+        if check_naive{
+
+            let tree_ref=&tree;
+            
+            
+            let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
+                Some((bots,dis))=>{
                     let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                     k.sort();
                     Some((k,dis.into_inner()))
@@ -128,112 +146,94 @@ impl DemoSys for RaycastF32DebugDemo{
                 }
             };
 
-            //dbg!("END");
-
-            if check_naive{
-
-                let tree_ref=&tree;
-                
-                
-                let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
-                    Some((mut bots,dis))=>{
-                        let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
-                        k.sort();
-                        Some((k,dis.into_inner()))
-                    },
-                    None=>{
-                        None
+            match (&test,&k){
+                (Some(a),Some(b))=>{
+                    assert_eq!(a.1,b.1);
+                    for (a,b) in a.0.iter().zip(b.0.iter()){
+                        assert_eq!(a,b);
                     }
+                },
+                (None,None)=>{
+                    //Do nothing
+                },
+                _=>{
+                    panic!("fail");
+                }
+            }
+        }
+
+        let ray:raycast::Ray<f32>=ray.inner_into();
+        
+        let (ppx,ppy)=match test{
+            Some(k)=>{
+                let ppx=ray.point.x+ray.dir.x*k.1;
+                let ppy=ray.point.y+ray.dir.y*k.1;
+                (ppx,ppy)
+            },
+            None=>{
+                let ppx=ray.point.x+ray.dir.x*800.0;
+                let ppy=ray.point.y+ray.dir.y*800.0;
+                (ppx,ppy)
+            }
+        };
+
+        let arr=[ray.point.x as f64,ray.point.y as f64,ppx as f64,ppy as f64];
+        line([0.0, 0.0, 0.0, 1.0], // black
+             2.0, // radius of line
+             arr, // [x0, y0, x1,y1] coordinates of line
+             c.transform,
+             g);
+
+
+        
+        
+        
+        struct Bla<'a,'b:'a>{
+            c:&'a Context,
+            g:&'a mut G2d<'b>
+        }
+        impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
+            type N=F32n;
+            fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F32n,cont:[F32n;2],length:[F32n;2],depth:usize){
+                let div=div.into_inner();
+                let length=[length[0].into_inner(),length[1].into_inner()];
+                let cont=[cont[0].into_inner(),cont[1].into_inner()];
+                
+
+                let arr=if axis.is_xaxis(){
+                    [div as f64,length[0] as f64,div as f64,length[1] as f64]
+                }else{
+                    [length[0] as f64,div as f64,length[1] as f64,div as f64]
                 };
 
-                match (&test,&k){
-                    (Some(a),Some(b))=>{
-                        assert_eq!(a.1,b.1);
-                        for (a,b) in a.0.iter().zip(b.0.iter()){
-                            assert_eq!(a,b);
-                        }
-                    },
-                    (None,None)=>{
-                        //Do nothing
-                    },
-                    _=>{
-                        panic!("fail");
-                    }
-                }
-            }
 
-            let ray:raycast::Ray<f32>=ray.inner_into();
+                let radius=(1isize.max(5-depth as isize)) as f64;
+
+                line([0.0, 0.0, 0.0, 0.5], // black
+                     radius, // radius of line
+                     arr, // [x0, y0, x1,y1] coordinates of line
+                     self.c.transform,
+                     self.g);
+
+                let [x1,y1,w1,w2]=if axis.is_xaxis(){
+                    [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
+                }else{
+                    [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
+                };
+
+                let [x1,y1,w1,w2]=[x1 as f64,y1 as f64,w1 as f64,w2 as f64];
+
+                let square = [x1,y1,w1,w2];
+                rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
             
-            let (ppx,ppy)=match test{
-                Some(k)=>{
-                    let ppx=ray.point.x+ray.dir.x*k.1;
-                    let ppy=ray.point.y+ray.dir.y*k.1;
-                    (ppx,ppy)
-                },
-                None=>{
-                    let ppx=ray.point.x+ray.dir.x*800.0;
-                    let ppy=ray.point.y+ray.dir.y*800.0;
-                    (ppx,ppy)
-                }
-            };
-
-            let arr=[ray.point.x as f64,ray.point.y as f64,ppx as f64,ppy as f64];
-            line([0.0, 0.0, 0.0, 1.0], // black
-                 2.0, // radius of line
-                 arr, // [x0, y0, x1,y1] coordinates of line
-                 c.transform,
-                 g);
-
-        };
-        
-        
-        {
-            struct Bla<'a,'b:'a>{
-                c:&'a Context,
-                g:&'a mut G2d<'b>
-            }
-            impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
-                type N=F32n;
-                fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F32n,cont:[F32n;2],length:[F32n;2],depth:usize){
-                    let div=div.into_inner();
-                    let length=[length[0].into_inner(),length[1].into_inner()];
-                    let cont=[cont[0].into_inner(),cont[1].into_inner()];
-                    
-
-                    let arr=if axis.is_xaxis(){
-                        [div as f64,length[0] as f64,div as f64,length[1] as f64]
-                    }else{
-                        [length[0] as f64,div as f64,length[1] as f64,div as f64]
-                    };
-
-
-                    let radius=(1isize.max(5-depth as isize)) as f64;
-
-                    line([0.0, 0.0, 0.0, 0.5], // black
-                         radius, // radius of line
-                         arr, // [x0, y0, x1,y1] coordinates of line
-                         self.c.transform,
-                         self.g);
-
-                    let [x1,y1,w1,w2]=if axis.is_xaxis(){
-                        [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
-                    }else{
-                        [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
-                    };
-
-                    let [x1,y1,w1,w2]=[x1 as f64,y1 as f64,w1 as f64,w2 as f64];
-
-                    let square = [x1,y1,w1,w2];
-                    rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
                 
-                    
-                    
-                }
+                
             }
-
-            let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(&tree,&mut dd,&self.dim);
         }
+
+        let mut dd=Bla{c:&c,g};
+        dinotree_alg::graphics::draw(&tree,&mut dd,&self.dim);
+    
 
             
 

@@ -3,7 +3,7 @@ use dinotree_alg::k_nearest;
 use std::cell::RefCell;
 use k_nearest::SliceSplitMut;
 use k_nearest::SliceSplit;
-use k_nearest::Unit;
+
 
 #[derive(Copy,Clone)]
 struct Bot{

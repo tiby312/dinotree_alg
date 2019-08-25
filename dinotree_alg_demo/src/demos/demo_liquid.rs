@@ -22,7 +22,7 @@ impl Liquid{
 
 
     pub fn solve(&mut self,b:&mut Self,radius:f32)->f32{
-        let mut diff=b.pos-self.pos;
+        let diff=b.pos-self.pos;
 
         let dis_sqr=diff.magnitude2();
 

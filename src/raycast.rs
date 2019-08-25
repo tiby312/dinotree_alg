@@ -42,7 +42,7 @@
 use crate::inner_prelude::*;
 use core::cmp::Ordering;
 use core::convert::TryFrom;
-use core::fmt::Debug;
+
 
 ///A Ray.
 #[derive(Debug, Copy, Clone)]
@@ -78,15 +78,6 @@ impl<N> Ray<N>{
     }
 }
 impl<N:NumTrait> Ray<N>{
-
-
-    fn divider_side(&self,axis:impl axgeom::AxisTrait,div:&N)->Ordering{
-        if axis.is_xaxis(){
-            self.point.x.cmp(div)
-        }else{
-            self.point.y.cmp(div)
-        }
-    }
 
     fn range_side(&self,axis:impl axgeom::AxisTrait,range:&Range<N>)->Ordering{
         if axis.is_xaxis(){
@@ -159,32 +150,7 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 
 macro_rules! raycast{
     ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty)=>{
-        use alloc::vec::*;
-        fn should_handle_rect<R:RayTrait>(closest:&mut Closest<R::T>,rect:&Rect<R::N>,ray:&Ray<R::N>,rtrait:&mut R)->bool{
-            match rtrait.compute_distance_to_rect(ray,rect){
-                RayIntersectResult::Hit(val)=>{
-
-                    match closest.get_dis(){
-                        Some(dis)=>{
-                            if val<=dis{
-                                return true;
-                            }        
-                        },
-                        None=>{
-                            return true;
-                            //recc(axis_next,second.0,rtrait,second.1,closest);
-                        }
-                    }   
-                    
-                },
-                RayIntersectResult::NoHit=>{
-
-                }
-            }
-
-            return false;
-        } 
-
+        
         struct Closest<'a,T:HasAabb+'a>{
             closest:Option<(Vec<$ref_lifetime>,T::Num)>
         }
@@ -296,25 +262,6 @@ macro_rules! raycast{
                         },
                         None=>{
                             Range{left:*div,right:*div}
-                            /*
-                            let (first,second)=match blap.ray.divider_side(axis,div){
-                                Ordering::Less=>{
-                                    ((rleft,left),(rright,right))
-                                },
-                                _=>{
-                                    ((rright,right),(rleft,left))
-                                }
-                            };
-                            
-                            if blap.should_handle_rect(&first.0){
-                                recc(axis_next,first.1,first.0,blap);
-                            }
-                            if blap.should_handle_rect(&second.0){
-                                recc(axis_next,second.1,second.0,blap);   
-                            }
-
-                            return;
-                            */
                         }
                     };
 
@@ -433,7 +380,7 @@ mod mutable{
         let dt = tree.vistr_mut().with_depth(Depth(0));
 
 
-        let mut closest=Closest{closest:None};
+        let closest=Closest{closest:None};
         let mut blap=Blap{rtrait,ray,closest};
         recc(axis,dt,rect,&mut blap);
 
@@ -462,14 +409,14 @@ mod cons{
     pub fn raycast<
         'a,
         K:DinoTreeRefTrait
-        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<&'a K::Item>,K::Num)>{
+        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<&'a K::Item>,K::Num)>{
         
 
         let axis=tree.axis();
         let dt = tree.vistr().with_depth(Depth(0));
 
 
-        let mut closest=Closest{closest:None};
+        let closest=Closest{closest:None};
         let mut blap=Blap{rtrait,ray,closest};
         recc(axis,dt,rect,&mut blap);
         blap.closest.closest

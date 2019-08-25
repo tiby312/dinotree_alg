@@ -8,20 +8,6 @@ use duckduckgeo::collide_with_rect;
 use duckduckgeo::WallSide;
 
 
-fn div_and_mod(a:usize)->(usize,usize){
-    const ll:usize = core::mem::size_of::<usize>();
-    let d=a / ll ;
-    let r=a % ll;
-    (d,r)
-}
-
-fn get_num_chunks(a:usize)->(usize){
-    let a=div_and_mod(a);
-    if a.1 !=0{a.0+1}else{a.0}
-}
-
-
-
 
 
 #[derive(Debug)]
@@ -180,7 +166,7 @@ impl GridDemo{
 
 
 impl DemoSys for GridDemo{
-    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         
         for b in self.bots.iter_mut(){

@@ -83,7 +83,6 @@ impl RigidBody{
 
         if mag<0.0{
             panic!("impossible");
-            return None;
         }
         diff*=mag/dis;
 
@@ -98,13 +97,13 @@ impl RigidBody{
     }
 
 
-    pub fn push_away_from_border(&mut self,rect2:&Rect<f32>,push_rate:f32){
+    pub fn push_away_from_border(&mut self,rect2:&Rect<f32>,_push_rate:f32){
         let a=self;
         let xx=rect2.get_range(axgeom::XAXISS);
         let yy=rect2.get_range(axgeom::YAXISS);
 
 
-        let (pos,vel)=&mut a.pos_vel_mut();
+        let (pos,_vel)=&mut a.pos_vel_mut();
 
         if pos.x<xx.left{
             pos.x=xx.left;
@@ -131,7 +130,7 @@ pub fn handle_rigid_body(
         push_rate:f32,
         num_rebal:usize,
         num_query:usize,
-        mut func:impl Fn(&mut RigidBody,&mut RigidBody,f32)+Sync)
+        func:impl Fn(&mut RigidBody,&mut RigidBody,f32)+Sync)
 {
 
     for a in bodies.iter_mut(){
@@ -175,7 +174,6 @@ pub fn handle_rigid_body(
     for a in bodies.iter_mut(){
         let mut diff=a.pos-a.old_pos;
         
-        let mag=diff.magnitude();
         if diff.magnitude()>0.2{
             diff=diff.normalize_to(0.2);
         }
@@ -208,7 +206,7 @@ impl DemoSys for RigidBodyDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         
-        handle_rigid_body(&self.dim,&mut self.bots,self.radius,self.radius*0.2,2,4,|a,b,dis|{
+        handle_rigid_body(&self.dim,&mut self.bots,self.radius,self.radius*0.2,2,4,|a,b,_dis|{
             a.handle_collision(b);
         });
 
