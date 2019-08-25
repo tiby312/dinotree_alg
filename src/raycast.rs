@@ -40,7 +40,6 @@
 //!
 
 use crate::inner_prelude::*;
-use smallvec::SmallVec;
 use core::cmp::Ordering;
 use core::convert::TryFrom;
 use core::fmt::Debug;
@@ -136,12 +135,14 @@ pub trait RayTrait{
 }
 
 
-fn new_smallvec<T>(a:T)->SmallVec<[T;2]>{
+
+fn vec_make<T>(a:T)->Vec<T>{
     //Cannot use smallvec! creation macro since T does not implement Copy.
-    let mut b=SmallVec::new();
+    let mut b=Vec::with_capacity(1);
     b.push(a);
     b
 }
+
 
 
 fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
@@ -158,7 +159,7 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 
 macro_rules! raycast{
     ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty)=>{
-        
+        use alloc::vec::*;
         fn should_handle_rect<R:RayTrait>(closest:&mut Closest<R::T>,rect:&Rect<R::N>,ray:&Ray<R::N>,rtrait:&mut R)->bool{
             match rtrait.compute_distance_to_rect(ray,rect){
                 RayIntersectResult::Hit(val)=>{
@@ -185,7 +186,7 @@ macro_rules! raycast{
         } 
 
         struct Closest<'a,T:HasAabb+'a>{
-            closest:Option<(SmallVec<[$ref_lifetime;2]>,T::Num)>
+            closest:Option<(Vec<$ref_lifetime>,T::Num)>
         }
         impl<'a,T:HasAabb+'a> Closest<'a,T>{
             fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,ray:&Ray<T::Num>,b:$ref_lifetime,raytrait:&mut R){
@@ -199,30 +200,27 @@ macro_rules! raycast{
                     },
                 };
 
-                let diff=match self.closest.take(){
+                match self.closest.as_mut(){
                     Some(mut dis)=>{
                         match x.cmp(&dis.1){
                             Ordering::Greater=>{
-                                dis
+                                //dis
                                 //do nothing.
                             },
                             Ordering::Less=>{
-                                
-                                //TODO clear instead of remaking vec??
-                                (new_smallvec(b),x)
+                                dis.0.clear();
+                                dis.0.push(b);
+                                dis.1=x;
                             },
                             Ordering::Equal=>{
                                 dis.0.push(b);
-                                dis
                             }
                         }
                     },
-                    None=>{  
-                        (new_smallvec(b),x)
+                    None=>{
+                        self.closest=Some((vec_make(b),x))  
                     }
                 };
-                self.closest=Some(diff);
-
             }
 
             fn get_dis(&self)->Option<T::Num>{
@@ -416,7 +414,7 @@ mod mutable{
     pub fn naive_mut<
         'a,A:AxisTrait,
         T:HasAabb,
-        >(bots:&'a mut [T],ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a mut T;2]>,T::Num)>{
+        >(bots:&'a mut [T],ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<&'a mut T>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
@@ -426,11 +424,10 @@ mod mutable{
 
         closest.closest
     }
-    //RaycastResultMut<'a,T,T::Num>
     pub fn raycast_mut<
         'a,   
         K:DinoTreeRefMutTrait
-        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a mut K::Item;2]>,K::Num)>{
+        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<&'a mut K::Item>,K::Num)>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
@@ -451,7 +448,7 @@ mod cons{
     pub fn naive<
         'a,
         T:HasAabb,
-        >(bots:impl Iterator<Item=&'a T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(SmallVec<[&'a T;2]>,T::Num)>{
+        >(bots:impl Iterator<Item=&'a T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<&'a T>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
@@ -465,7 +462,7 @@ mod cons{
     pub fn raycast<
         'a,
         K:DinoTreeRefTrait
-        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(SmallVec<[&'a K::Item;2]>,K::Num)>{
+        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,mut rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<&'a K::Item>,K::Num)>{
         
 
         let axis=tree.axis();

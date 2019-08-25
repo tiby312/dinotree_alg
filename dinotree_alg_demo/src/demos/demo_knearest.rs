@@ -1,6 +1,9 @@
 use crate::support::prelude::*;
 use dinotree_alg::k_nearest;
 use std::cell::RefCell;
+use k_nearest::SliceSplitMut;
+use k_nearest::SliceSplit;
+use k_nearest::Unit;
 
 #[derive(Copy,Clone)]
 struct Bot{
@@ -18,8 +21,8 @@ pub struct KnearestDemo{
 impl KnearestDemo{
     pub fn new(dim:Rect<F32n>)->KnearestDemo{
 
-        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(1.0,4.0).
-            take(4000).enumerate().map(|(id,(pos,radius))|{
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(2.0,10.0).
+            take(2000).enumerate().map(|(id,(pos,radius))|{
             Bot{id,pos,radius}
         }).collect();
 
@@ -95,41 +98,64 @@ impl DemoSys for KnearestDemo{
             [0.0,0.0,1.0,0.8]  //blue third closets
         ];
         
-        let vv={
+        let mut vv={
             let kn=Kn{c:&c,g:RefCell::new(g),draw:true};
             k_nearest::k_nearest(&tree,cursor,3,kn,self.dim)
         };
 
+        /*
+        if vv.len()>3{
+            for i in vv.iter(){
+                print!("{:?},",i.mag);    
+            }
+            println!();
+        }
+        */
+
         if check_naive{
             
         
-            let vv2={
+            let mut vv2={
                 let kn=Kn{c:&c,g:RefCell::new(g),draw:false};
-                k_nearest::naive(tree.get_bots().iter(),cursor,3,kn).into_iter()
+                k_nearest::naive(tree.get_bots().iter(),cursor,3,kn)
             };
-            
+        
 
-            for ((mut a,color),mut b) in vv.zip(cols.iter()).zip(vv2){
-                a.bots.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
-                b.bots.sort_unstable_by(|a,b|a.inner.id.cmp(&b.inner.id));
+            assert_eq!(vv.len(),vv2.len());
+
+            let vv_iter=SliceSplitMut::new(&mut vv,|a,b|a.mag==b.mag);
+            let vv2_iter=SliceSplitMut::new(&mut vv2,|a,b|a.mag==b.mag);
+
+            for (a,b) in vv_iter.zip(vv2_iter){
+                a.sort_unstable_by(|a,b|a.bot.inner.id.cmp(&b.bot.inner.id));
+                b.sort_unstable_by(|a,b|a.bot.inner.id.cmp(&b.bot.inner.id));
                 
-                for (&a,&b) in a.bots.iter().zip(b.bots.iter()){
-                    if a as *const BBox<F32n,Bot> != b as *const BBox<F32n,Bot>{
+
+                for (a,b) in a.iter().zip(b.iter()){
+                    assert_eq!(a.mag,b.mag);
+                    if a.bot as *const BBox<F32n,Bot> != b.bot as *const BBox<F32n,Bot>{
                         println!("Fail");
                     }    
                 }
 
-                if a.mag!=b.mag{
-                    println!("Fail");
-                }
+            }
+            /*
+            for ((mut a,color),mut b) in vv.iter().zip(cols.iter()).zip(vv2.iter()){
+                
                 
                 draw_rect_f32(*color,(a.bots)[0].get().as_ref(),c,g);
             }
+            */
         
         }else{
-            for (a,color) in vv.zip(cols.iter()){
-                draw_rect_f32(*color,(a.bots)[0].get().as_ref(),c,g);
+            let vv_iter=SliceSplit::new(&mut vv,|a,b|a.mag==b.mag);
+                        
+            for (a,color) in vv_iter.zip(cols.iter()){
+                for b in a.iter(){
+                    draw_rect_f32(*color,(b.bot).get().as_ref(),c,g);
+                }
             }
+            
         }
     }   
 }
