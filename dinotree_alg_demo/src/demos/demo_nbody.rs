@@ -32,7 +32,7 @@ impl duckduckgeo::GravityTrait for NodeMass{
 struct Bla{
     num_pairs_checked:usize
 }
-impl nbody::NodeMassTraitMut for Bla{
+impl nbody::NodeMassTrait for Bla{
     type T=BBox<F32n,Bot>;
     type No=NodeMass;
 
@@ -41,25 +41,25 @@ impl nbody::NodeMassTraitMut for Bla{
     }
 
     //gravitate this nodemass with another node mass
-    fn handle_node_with_node(&mut self,a:&mut Self::No,b:&mut Self::No){
+    fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No){
         
         let _ = duckduckgeo::gravitate(a,b,0.0001,0.004);
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&mut self,a:&mut Self::T,b:&mut Self::T){
-        self.num_pairs_checked+=1;
+    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
+        //self.num_pairs_checked+=1;
         let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&mut self,a:&mut Self::No,b:&mut Self::T){
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
         
         let _ = duckduckgeo::gravitate(a,&mut b.inner,0.0001,0.004);
     }
 
 
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a mut self,it:I,rect:axgeom::Rect<F32n>)->Self::No{
+    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,rect:axgeom::Rect<F32n>)->Self::No{
         let mut total_x=0.0;
         let mut total_y=0.0;
         let mut total_mass=0.0;
@@ -80,7 +80,7 @@ impl nbody::NodeMassTraitMut for Bla{
         NodeMass{center,mass:total_mass,force:vec2same(0.0),rect}
     }
 
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a mut self,a:&'a Self::No,it:I){
+    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I){
 
         if a.mass>0.000_000_1{
 

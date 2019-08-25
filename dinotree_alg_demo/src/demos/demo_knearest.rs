@@ -40,8 +40,6 @@ impl DemoSys for KnearestDemo{
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
 
-        #[derive(Copy,Clone,Ord,Eq,PartialEq,PartialOrd,Debug)]
-        struct DisSqr(F32n);
         struct Kn<'a,'c:'a>{
             draw:bool,
             c:&'a Context,
@@ -51,15 +49,14 @@ impl DemoSys for KnearestDemo{
         impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
             type T=BBox<F32n,Bot>;
             type N=F32n;
-            type D=DisSqr;
 
-            fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::D{
+            fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::N{
                 if self.draw{
                     draw_rect_f32([0.0,0.0,1.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
                 }
                 self.distance_to_rect(point,bot.get())
             }
-            fn distance_to_rect(&self, point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::D{
+            fn distance_to_rect(&self, point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N{
                 
                 let dis=rect.as_ref().distance_squared_to_point(point.inner_into());
                 let dis=match dis{
@@ -87,7 +84,7 @@ impl DemoSys for KnearestDemo{
                         //-(bot.inner.pos-point.inner_into()).magnitude2()
                     }
                 };
-                DisSqr(NotNan::new(dis).unwrap())
+                NotNan::new(dis).unwrap()
             }
         }
 

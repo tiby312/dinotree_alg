@@ -30,27 +30,25 @@ pub trait Knearest{
     type T:HasAabb<Num=Self::N>;
     type N:NumTrait;
 
-    ///The type of number of minimize based off on.
-    ///For example it can be distance or distance squared.
-    type D:Ord+Copy+core::fmt::Debug;
-
 
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
-    fn distance_to_bot(&self, point:Vec2<Self::N>,bot:&Self::T)->Self::D{
+    fn distance_to_bot(&self, point:Vec2<Self::N>,bot:&Self::T)->Self::N{
         self.distance_to_rect(point,bot.get())
     }
 
-    fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::D;
+    fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N;
 
 }
 
 
 
 
+///Splits a mutable slice into multiple slices
+///The splits occur where the predicate returns false.
 pub struct SliceSplitMut<'a,T,F>{
-    pub arr:Option<&'a mut [T]>,
-    pub func:F
+    arr:Option<&'a mut [T]>,
+    func:F
 }
 impl<'a,T,F:FnMut(&T,&T)->bool> SliceSplitMut<'a,T,F>{
     pub fn new(arr:&'a mut [T],func:F)->SliceSplitMut<'a,T,F>{
@@ -71,9 +69,12 @@ impl<'a,T,F:FnMut(&T,&T)->bool> Iterator for SliceSplitMut<'a,T,F>{
         Some(first)
     }
 }
+
+///Splits a mutable slice into multiple slices
+///The splits occur where the predicate returns false.
 pub struct SliceSplit<'a,T,F>{
-    pub arr:Option<&'a [T]>,
-    pub func:F
+    arr:Option<&'a [T]>,
+    func:F
 }
 impl<'a,T,F:FnMut(&T,&T)->bool> SliceSplit<'a,T,F>{
     pub fn new(arr:&'a [T],func:F)->SliceSplit<'a,T,F>{
@@ -253,7 +254,7 @@ macro_rules! knearest_recc{
         struct Blap<'a,K:Knearest>{
             knear:K,
             point:Vec2<K::N>,
-            closest:ClosestCand<'a,K::T,K::D>
+            closest:ClosestCand<'a,K::T,K::N>
         }
 
         impl<'a,K:Knearest> Blap<'a,K>{
@@ -412,8 +413,7 @@ mod con{
     use super::*;
     pub fn k_nearest<'b,
         V:DinoTreeRefTrait,
-        K:Knearest<T=V::Item,N=V::Num>,
-        >(tree:&'b V,point:Vec2<V::Num>,num:usize,mut knear: K,rect:Rect<K::N>)->Vec<Unit<'b,K::T,K::D>>{
+        >(tree:&'b V,point:Vec2<V::Num>,num:usize,mut knear: impl Knearest<T=V::Item,N=V::Num>,rect:Rect<V::Num>)->Vec<Unit<'b,V::Item,V::Num>>{
         let axis=tree.axis();
         let dt = tree.vistr().with_depth(Depth(0));
 
@@ -426,7 +426,7 @@ mod con{
 
     knearest_recc!(Vistr<'a,K::T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T,Unit<'a,T,D>,unit_create);
 
-    pub fn naive<'b,K:Knearest>(bots:impl Iterator<Item=&'b K::T>,point:Vec2<K::N>,num:usize,mut k:K)->Vec<Unit<'b,K::T,K::D>>{
+    pub fn naive<'b,K:Knearest>(bots:impl Iterator<Item=&'b K::T>,point:Vec2<K::N>,num:usize,mut k:K)->Vec<Unit<'b,K::T,K::N>>{
         
         let mut closest=ClosestCand::new(num);
 
@@ -452,7 +452,7 @@ pub use self::mutable::naive_mut;
 pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
-    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=&'b mut K::T>,point:Vec2<K::N>,num:usize,mut k:K)->Vec<UnitMut<'b,K::T,K::D>>{
+    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=&'b mut K::T>,point:Vec2<K::N>,num:usize,mut k:K)->Vec<UnitMut<'b,K::T,K::N>>{
         
         let mut closest=ClosestCand::new(num);
 
@@ -478,8 +478,7 @@ mod mutable{
 
     pub fn k_nearest_mut<'b,
         V:DinoTreeRefMutTrait,
-        K:Knearest<N=V::Num,T=V::Item>,
-        >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,mut knear: K,rect:Rect<K::N>)->Vec<UnitMut<'b,V::Item,K::D>>{ //Vec<UnitMut<'b,T,K::D>>
+        >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,mut knear: impl Knearest<N=V::Num,T=V::Item>,rect:Rect<V::Num>)->Vec<UnitMut<'b,V::Item,V::Num>>{ //Vec<UnitMut<'b,T,K::D>>
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
 
