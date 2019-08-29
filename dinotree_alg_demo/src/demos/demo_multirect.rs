@@ -9,7 +9,8 @@ struct Bot{
 }
 
 pub struct MultiRectDemo{
-    tree:DinoTree<axgeom::XAXISS,BBox<i32,Bot>>
+    bots:Vec<Bot>
+    //tree:DinoTree<axgeom::XAXISS,BBox<i32,Bot>>
 }
 impl MultiRectDemo{
     pub fn new(dim:Rect<F32n>)->MultiRectDemo{
@@ -24,20 +25,21 @@ impl MultiRectDemo{
         }).collect();
 
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_par();
-
-        MultiRectDemo{tree}
+        
+        MultiRectDemo{bots}
     }
 }
 
 impl DemoSys for MultiRectDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
-        let tree=&mut self.tree;
+        
+        let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_par();
 
         for bot in tree.get_bots().iter(){
             draw_rect_i32([0.0,0.0,0.0,0.3],bot.get(),c,g);
         }
+
 
         let cc:Vec2<i32>=cursor.inner_into::<f32>().inner_as();
         let r1=axgeom::Rect::new(cc.x-100,cc.x+100,cc.y-100,cc.y+100);
@@ -45,7 +47,7 @@ impl DemoSys for MultiRectDemo{
 
         
         {
-            let mut rects=multirect::multi_rect_mut(tree);
+            let mut rects=multirect::multi_rect_mut(&mut tree);
 
 
             let mut to_draw=Vec::new();
@@ -82,7 +84,7 @@ impl DemoSys for MultiRectDemo{
             draw_rect_i32([0.0,0.0,1.0,0.3],a.get(),c,g);
         });
         
-        let mut rects=multirect::multi_rect_mut(tree);
+        let mut rects=multirect::multi_rect_mut(&mut tree);
         let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
             
             let arr=[a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];

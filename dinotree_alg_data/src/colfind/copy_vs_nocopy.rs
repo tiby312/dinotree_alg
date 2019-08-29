@@ -46,7 +46,7 @@ fn test1(bots:&mut [Bot])->f64{
 }
 
 
-fn test2(bots:&mut [BBoxMut<isize,Bot>])->f64{
+fn test2(bots:&mut [BBox<isize,Bot>])->f64{
     
     let instant=Instant::now();
 
@@ -91,7 +91,7 @@ fn test3(bots:&mut [Bot])->f64{
 }
 
 
-fn test4(bots:&mut [BBoxMut<isize,Bot>])->f64{
+fn test4(bots:&mut [BBox<isize,Bot>])->f64{
     
     let instant=Instant::now();
 
@@ -114,7 +114,7 @@ fn test4(bots:&mut [BBoxMut<isize,Bot>])->f64{
 
 
 
-fn test5(bots:&mut [BBoxMut<isize,Bot>])->f64{
+fn test5(bots:&mut [BBox<isize,Bot>])->f64{
     
     let instant=Instant::now();
 
@@ -138,7 +138,7 @@ fn test5(bots:&mut [BBoxMut<isize,Bot>])->f64{
 
 
 
-fn test6(bots:&mut [BBoxMut<isize,Bot>])->f64{
+fn test6(bots:&mut [BBox<isize,Bot>])->f64{
     
     let instant=Instant::now();
 
@@ -206,6 +206,9 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
             let aabb=axgeom::Rect::from_point(inner.pos,vec2same(5));
             BBoxMut{aabb,inner}
         }).collect();
+
+        let bots2=into_bbox_slice(&mut bots2);
+
         
 
         let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
@@ -214,11 +217,11 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
 
         let arr=[
             test1(&mut bots),
-            test2(&mut bots2),
+            test2(bots2),
             test3(&mut bots),
-            test4(&mut bots2),
-            test5(&mut bots2),
-            test6(&mut bots2)];
+            test4(bots2),
+            test5(bots2),
+            test6(bots2)];
 
         let r=Record{num_bots,arr};
         rects.push(r);      

@@ -108,7 +108,7 @@ impl DemoSys for LiquidDemo{
         
 
         
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&self.bots,|bot|{
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|bot|{
             let p=bot.pos;
             let r=radius;
             Rect::new(p.x-r,p.x+r,p.y-r,p.y+r).inner_try_into::<NotNan<f32>>().unwrap()
@@ -141,18 +141,16 @@ impl DemoSys for LiquidDemo{
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
         rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
-            let _ =duckduckgeo::repel_one(&mut b.inner,cc,0.001,100.0);
+            let _ =duckduckgeo::repel_one(b.inner,cc,0.001,100.0);
         });
         
 
         {
             let dim2=self.dim.inner_into();
             dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|a|{
-                duckduckgeo::collide_with_border(&mut a.inner,&dim2,0.5);
+                duckduckgeo::collide_with_border(a.inner,&dim2,0.5);
             });
         }        
-        
-        tree.apply(&mut self.bots,|b,t|*t=b.inner);
         
         for b in self.bots.iter_mut(){
             /*

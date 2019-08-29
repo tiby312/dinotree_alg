@@ -78,7 +78,7 @@ impl DemoSys for OrigOrderDemo{
             b.aabb=Rect::from_point(b.inner.pos,vec2same(radius)).inner_try_into().unwrap();
         }
 
-        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
+        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,into_bbox_slice(&mut self.bots)).build_par(); 
 
             
         {

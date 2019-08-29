@@ -3,20 +3,21 @@ use dinotree_alg::raycast;
 use std;
 use duckduckgeo;
 use dinotree_alg::raycast::RayIntersectResult;
-
+use core::marker::PhantomData;
 mod ray_f32{
     use super::*;
 
     use self::raycast::RayTrait;
     use duckduckgeo;
 
-    pub struct RayT<'a,'c:'a>{
+    pub struct RayT<'a,'b,'c:'a>{
         pub c:&'a Context,
-        pub g:&'a mut G2d<'c>
+        pub g:&'a mut G2d<'c>,
+        pub _p:PhantomData<&'b usize>
     }
 
-    impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBox<F32n,()>;
+    impl<'a,'b,'c:'a> RayTrait for RayT<'a,'b,'c>{
+        type T=BBox<F32n,&'b mut ()>;
         type N=F32n;
 
 
@@ -47,7 +48,8 @@ mod ray_f32{
 
 
 pub struct RaycastF32Demo{
-    tree:DinoTree<axgeom::XAXISS,BBox<F32n,()>>,
+    //tree:DinoTree<axgeom::XAXISS,BBox<F32n,()>>,
+    bots:Vec<Rect<F32n>>,
     dim:Rect<F32n>
 }
 impl RaycastF32Demo{
@@ -55,28 +57,30 @@ impl RaycastF32Demo{
     pub fn new(dim:Rect<F32n>)->Self{
         
 
-        let bots:Vec<()>=(0..500).map(|_|()).collect();
 
-        let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(5.0,10.0).take(500);
-
-
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|_|{
-            let (pos,radius)=ii.next().unwrap();
+        let mut bots=UniformRandGen::new(dim.inner_into()).with_radius(5.0,10.0).take(500).map(|(pos,radius)|{
             Rect::from_point(pos,radius).inner_try_into().unwrap()
-        }).build_par();
+        }).collect();
 
-        Self{tree,dim}
+        Self{bots,dim}
     }
 }
 
 impl DemoSys for RaycastF32Demo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
-        let tree=&self.tree;
+        
         //Draw bots
-        for bot in tree.get_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
+        for bot in self.bots.iter(){
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.as_ref(),c,g);
         }
     
+        let mut vv:Vec<_> = (0..self.bots.len()).map(|_|()).collect();
+        let mut k=self.bots.iter();
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut vv,|a|{
+            *k.next().unwrap()
+        }).build_par();
+
+        
         { 
             for dir in 0..360i32{
                 let dir=dir as f32*(std::f32::consts::PI/180.0);
@@ -90,7 +94,7 @@ impl DemoSys for RaycastF32Demo{
 
                 
 
-                let res=raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{c:&c,g});
+                let res=raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{c:&c,g,_p:PhantomData});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;

@@ -154,10 +154,13 @@ fn main() {
             let mut fb=FigureBuilder::new(folder);
             
             
+            run_test!(&mut fb,colfind::indirection_vs_not::handle_bench);
+            //run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
+            
+            /*
             //done
             run_test!(&mut fb,colfind::construction_vs_query::handle_bench);
             
-            run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
             
             
             run_test!(&mut fb,colfind::colfind::handle_bench);
@@ -171,7 +174,7 @@ fn main() {
             
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb,colfind::height_heur_comparison::handle);
-            
+            */
 
             //nbody::theory::handle(&mut fb);
         },

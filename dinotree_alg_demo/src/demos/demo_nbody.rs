@@ -4,7 +4,7 @@ use dinotree_alg::colfind;
 use duckduckgeo;
 use duckduckgeo::GravityTrait;
 use dinotree_alg;
-
+use core::marker::PhantomData;
 
 #[derive(Copy,Clone)]
 struct NodeMass{
@@ -29,11 +29,12 @@ impl duckduckgeo::GravityTrait for NodeMass{
 
 
 #[derive(Clone,Copy)]
-struct Bla{
-    num_pairs_checked:usize
+struct Bla<'b>{
+    num_pairs_checked:usize,
+    _p:PhantomData<&'b usize>
 }
-impl nbody::NodeMassTrait for Bla{
-    type T=BBox<F32n,Bot>;
+impl<'b> nbody::NodeMassTrait for Bla<'b>{
+    type T=BBox<F32n,&'b mut Bot>;
     type No=NodeMass;
 
     fn get_rect(a:&Self::No)->&axgeom::Rect<F32n>{
@@ -49,13 +50,13 @@ impl nbody::NodeMassTrait for Bla{
     //gravitate a bot with a bot
     fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
         //self.num_pairs_checked+=1;
-        let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.0001,0.004);
+        let _ = duckduckgeo::gravitate(a.inner,b.inner,0.0001,0.004);
     }
 
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
         
-        let _ = duckduckgeo::gravitate(a,&mut b.inner,0.0001,0.004);
+        let _ = duckduckgeo::gravitate(a,b.inner,0.0001,0.004);
     }
 
 
@@ -179,10 +180,13 @@ impl DemoSys for DemoNbody{
         let no_mass_bots=&mut self.no_mass_bots;
         let bots=&mut self.bots;
         
+        let mut bots2:Vec<BBoxMut<F32n,Bot>>=bots.iter().map(|bot|BBoxMut::new(bot.create_aabb(),*bot)).collect();
+        let mut bots3=bots.clone();
+               
         let mut tree={
             //let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2],rect:axgeom::Rect::new(f32n!(0.0),f32n!(0.0),f32n!(0.0),f32n!(0.0))};
 
-            DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{b.create_aabb()}).build_par()
+            DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{b.create_aabb()}).build_par()
         };
         //println!("tree height={:?}",tree.get_height());
 
@@ -195,14 +199,13 @@ impl DemoSys for DemoNbody{
         let border=self.dim;
 
         if !check_naive{
-            nbody::nbody(&mut tree,&mut Bla{num_pairs_checked:0},border);
+            nbody::nbody(&mut tree,&mut Bla{_p:PhantomData,num_pairs_checked:0},border);
         }else{
-            let mut bla=Bla{num_pairs_checked:0};
+            let mut bla=Bla{_p:PhantomData,num_pairs_checked:0};
             nbody::nbody(&mut tree,&mut bla,border);
             let num_pair_alg=bla.num_pairs_checked;
             
             let (bots2,num_pair_naive)={
-                let mut bots2:Vec<BBoxMut<F32n,Bot>>=bots.iter().map(|bot|BBoxMut::new(bot.create_aabb(),*bot)).collect();
                 let mut num_pairs_checked=0;
                 nbody::naive_mut(&mut bots2,|a,b|{
                     let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004);
@@ -213,12 +216,10 @@ impl DemoSys for DemoNbody{
             };
             
 
-            let mut bots3=bots.clone();
             for b in bots3.iter_mut(){
                 b.force=vec2same(0.0);
             }
-            tree.apply(&mut bots3,|b,t|*t=b.inner);
-
+            
             {
                 let mut max_diff=None;
             
@@ -345,7 +346,6 @@ impl DemoSys for DemoNbody{
         }
 
 
-        tree.apply(bots,|b,t|*t=b.inner);
         
         {
             let mut new_bots=Vec::new();

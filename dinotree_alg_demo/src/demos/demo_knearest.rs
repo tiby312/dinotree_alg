@@ -13,8 +13,7 @@ struct Bot{
 }
 
 pub struct KnearestDemo{
-    _bots:Vec<Bot>,
-    tree:DinoTree<XAXISS,BBox<F32n,Bot>>,
+    bots:Vec<Bot>,
     dim:Rect<F32n>
 }
 
@@ -27,27 +26,28 @@ impl KnearestDemo{
         }).collect();
 
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_par();
-        KnearestDemo{_bots:bots,tree,dim}
+        KnearestDemo{bots,dim}
     }
 }
 
 impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
-        let tree=&mut self.tree;
+        
+        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_par();
+        
 
         for bot in tree.get_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
 
-        struct Kn<'a,'c:'a>{
+        struct Kn<'a,'b,'c:'a>{
             draw:bool,
             c:&'a Context,
-            g:RefCell<&'a mut G2d<'c>>,
+            g:RefCell<&'b mut G2d<'c>>,
         };
 
-        impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
-            type T=BBox<F32n,Bot>;
+        impl<'a,'b,'c:'a> k_nearest::Knearest for Kn<'a,'b,'c>{
+            type T=BBox<F32n,&'a mut Bot>;
             type N=F32n;
 
             fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::N{
@@ -130,7 +130,7 @@ impl DemoSys for KnearestDemo{
 
                 for (a,b) in a.iter().zip(b.iter()){
                     assert_eq!(a.mag,b.mag);
-                    if a.bot as *const BBox<F32n,Bot> != b.bot as *const BBox<F32n,Bot>{
+                    if a.bot as *const BBox<F32n,&mut Bot> != b.bot as *const BBox<F32n,&mut Bot>{
                         println!("Fail");
                     }    
                 }

@@ -174,7 +174,8 @@ impl DemoSys for GridDemo{
             b.aabb=Rect::from_point(b.inner.pos,vec2same(radius)).inner_try_into().unwrap();
         }
 
-        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut self.bots).build_par(); 
+        let bots=into_bbox_slice(&mut self.bots);
+        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par(); 
 
             
         {

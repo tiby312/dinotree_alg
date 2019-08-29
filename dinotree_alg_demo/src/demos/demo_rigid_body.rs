@@ -168,7 +168,6 @@ pub fn handle_rigid_body(
                 }
             }
         }
-        tree.apply(bodies,|a,b|*b=a.inner);
     }
 
     for a in bodies.iter_mut(){
@@ -211,7 +210,7 @@ impl DemoSys for RigidBodyDemo{
         });
 
         
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&self.bots,|bot|{
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|bot|{
             bot.create_loose(radius)
         }).build_seq(); 
         
@@ -223,8 +222,6 @@ impl DemoSys for RigidBodyDemo{
                 b.inner.acc-=diff*0.05;
             }
         });
-        
-        tree.apply(&mut self.bots,|b,t|*t=b.inner);
         
 
         for b in self.bots.iter_mut(){
