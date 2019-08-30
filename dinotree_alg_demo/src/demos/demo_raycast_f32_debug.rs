@@ -64,13 +64,11 @@ mod ray_f32{
 
 #[derive(Copy,Clone,Debug)]
 pub struct Bot2{
-    id:usize,
-    rect:Rect<F32n>
+    id:usize
 }
 
 pub struct RaycastF32DebugDemo{
-    //tree:DinoTree<axgeom::XAXISS,BBox<F32n,Bot2>>,
-    bots:Vec<Bot2>,
+    tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot2>,
     counter:f32,
     dim:Rect<F32n>
 }
@@ -78,13 +76,19 @@ impl RaycastF32DebugDemo{
     pub fn new(dim:Rect<F32n>)->RaycastF32DebugDemo{
 
 
+        let mut vv:Vec<_> = (0..3000).map(|id|(Bot2{id})).collect();
+        
+        let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(1.0,4.0).map(|(pos,radius)|{
+            Rect::from_point(pos,radius).inner_try_into().unwrap()
+        });
 
 
-        let mut bots=UniformRandGen::new(dim.inner_into()).with_radius(1.0,4.0).take(3000).enumerate().map(|(id,(pos,radius))|{
-            Bot2{rect:Rect::from_point(pos,radius).inner_try_into().unwrap(),id}
-        }).collect();
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|a|{
+            ii.next().unwrap()
+        }).build_seq();
 
-        RaycastF32DebugDemo{bots,counter:0.0,dim}
+
+        RaycastF32DebugDemo{tree,counter:0.0,dim}
     }
 }
 
@@ -103,21 +107,17 @@ impl DemoSys for RaycastF32DebugDemo{
             raycast::Ray{point,dir}.inner_try_into().unwrap()
         };
 
-        for bot in self.bots.iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
+        for bot in self.tree.as_ref().get_bots().iter(){
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }   
 
 
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|a|{
-            a.rect
-        }).build_par();
-
     
-        let height=tree.height();
+        let height=self.tree.as_ref().height();
         
 
         //dbg!("START");
-        let test = match raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height,_p:PhantomData}){
+        let test = match raycast::raycast(self.tree.as_ref(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height,_p:PhantomData}){
             Some((bots,dis))=>{
                 let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                 k.sort();
@@ -132,7 +132,7 @@ impl DemoSys for RaycastF32DebugDemo{
 
         if check_naive{
 
-            let tree_ref=&tree;
+            let tree_ref=self.tree.as_ref();
             
             
             let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height,_p:PhantomData}){
@@ -232,7 +232,7 @@ impl DemoSys for RaycastF32DebugDemo{
         }
 
         let mut dd=Bla{c:&c,g};
-        dinotree_alg::graphics::draw(&tree,&mut dd,&self.dim);
+        dinotree_alg::graphics::draw(&self.tree.as_ref(),&mut dd,&self.dim);
     
 
             

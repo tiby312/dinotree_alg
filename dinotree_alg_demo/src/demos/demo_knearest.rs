@@ -13,7 +13,7 @@ struct Bot{
 }
 
 pub struct KnearestDemo{
-    bots:Vec<Bot>,
+    tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot>,
     dim:Rect<F32n>
 }
 
@@ -25,15 +25,16 @@ impl KnearestDemo{
             Bot{id,pos,radius}
         }).collect();
 
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_seq();
+        
 
-        KnearestDemo{bots,dim}
+        KnearestDemo{tree,dim}
     }
 }
 
 impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
-        
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_par();
+        let tree=self.tree.as_mut();
         
 
         for bot in tree.get_bots().iter(){

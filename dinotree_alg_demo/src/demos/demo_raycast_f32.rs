@@ -48,21 +48,26 @@ mod ray_f32{
 
 
 pub struct RaycastF32Demo{
-    //tree:DinoTree<axgeom::XAXISS,BBox<F32n,()>>,
-    bots:Vec<Rect<F32n>>,
+    tree:DinoTreeOwned<axgeom::XAXISS,F32n,()>,
     dim:Rect<F32n>
 }
 impl RaycastF32Demo{
 
     pub fn new(dim:Rect<F32n>)->Self{
         
-
-
-        let mut bots=UniformRandGen::new(dim.inner_into()).with_radius(5.0,10.0).take(500).map(|(pos,radius)|{
+        let mut vv:Vec<_> = (0..500).map(|_|()).collect();
+        
+        let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(5.0,10.0).map(|(pos,radius)|{
             Rect::from_point(pos,radius).inner_try_into().unwrap()
-        }).collect();
+        });
 
-        Self{bots,dim}
+
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|a|{
+            ii.next().unwrap()
+        }).build_seq();
+
+
+        Self{tree,dim}
     }
 }
 
@@ -70,16 +75,11 @@ impl DemoSys for RaycastF32Demo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
         //Draw bots
-        for bot in self.bots.iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.as_ref(),c,g);
+        for bot in self.tree.as_ref().get_bots().iter(){
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
     
-        let mut vv:Vec<_> = (0..self.bots.len()).map(|_|()).collect();
-        let mut k=self.bots.iter();
-        let tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut vv,|a|{
-            *k.next().unwrap()
-        }).build_par();
-
+        let tree=self.tree.as_ref();
         
         { 
             for dir in 0..360i32{
