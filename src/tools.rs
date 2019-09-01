@@ -1,14 +1,16 @@
 use core;
 use core::marker::PhantomData;
 use alloc::vec::Vec;
+use dinotree::SlicePin;
+use core::pin::Pin;
 
-pub fn for_every_pair<T>(mut arr:&mut [T],mut func:impl FnMut(&mut T,&mut T)){
+pub fn for_every_pair<T>(mut arr:&mut SlicePin<T>,mut func:impl FnMut(Pin<&mut T>,Pin<&mut T>)){
     loop{
         let temp=arr;
         match temp.split_first_mut(){
-            Some((b1,x))=>{
+            Some((mut b1,x))=>{
                 for b2 in x.iter_mut(){
-                    func(b1,b2);
+                    func(b1.as_mut(),b2);
                 }
                 arr=x;
             },
@@ -54,10 +56,10 @@ impl<T> PreVecMut<T> {
 
     ///Clears the vec and returns a mutable reference to a vec.
     #[inline(always)]
-    pub fn get_empty_vec_mut<'a,'b:'a>(&'a mut self) -> &'a mut Vec<&'b mut T> {
+    pub fn get_empty_vec_mut<'a,'b:'a>(&'a mut self) -> &'a mut Vec<Pin<&'b mut T>> {
         self.vec.clear();
         let v: &mut Vec<Unique<T>> = &mut self.vec;
-        unsafe{&mut *(v as *mut Vec<Unique<T>> as *mut Vec<&'b mut T>)}
+        unsafe{&mut *(v as *mut Vec<Unique<T>> as *mut Vec<Pin<&'b mut T>>)}
     }
 }
 

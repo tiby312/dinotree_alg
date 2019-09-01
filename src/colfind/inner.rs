@@ -146,16 +146,16 @@ impl<T:HasAabb+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRec
 
 
 pub struct QueryFnMut<T,F>(F,PhantomData<Syncer<T>>);
-impl<T:HasAabb,F:FnMut(&mut T,&mut T)> QueryFnMut<T,F>{
+impl<T:HasAabb,F:FnMut(Pin<&mut T>,Pin<&mut T>)> QueryFnMut<T,F>{
     #[inline(always)]
     pub fn new(func:F)->QueryFnMut<T,F>{
         QueryFnMut(func,PhantomData)
     }
 }
-impl<T:HasAabb,F:FnMut(&mut T,&mut T)> ColMulti for QueryFnMut<T,F>{
+impl<T:HasAabb,F:FnMut(Pin<&mut T>,Pin<&mut T>)> ColMulti for QueryFnMut<T,F>{
     type T=T;
     #[inline(always)]
-    fn collide(&mut self,a:&mut T,b:&mut T){
+    fn collide(&mut self,a:Pin<&mut T>,b:Pin<&mut T>){
         self.0(a,b);
     }   
 }
@@ -176,17 +176,17 @@ impl<T,F> Splitter for QueryFnMut<T,F>{
 
 
 pub struct QueryFn<T,F>(F,PhantomData<Syncer<T>>);
-impl<T:HasAabb,F:Fn(&mut T,&mut T)> QueryFn<T,F>{
+impl<T:HasAabb,F:Fn(Pin<&mut T>,Pin<&mut T>)> QueryFn<T,F>{
     #[inline(always)]
     pub fn new(func:F)->QueryFn<T,F>{
         QueryFn(func,PhantomData)
     }
 }
-impl<T:HasAabb,F:Fn(&mut T,&mut T)> ColMulti for QueryFn<T,F>{
+impl<T:HasAabb,F:Fn(Pin<&mut T>,Pin<&mut T>)> ColMulti for QueryFn<T,F>{
     type T=T;
 
     #[inline(always)]
-    fn collide(&mut self,a:&mut T,b:&mut T){
+    fn collide(&mut self,a:Pin<&mut T>,b:Pin<&mut T>){
         self.0(a,b);
     }   
 }

@@ -141,23 +141,23 @@ pub fn handle_rigid_body(
         let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate*(num_query as f32))).build_seq();
 
         for _ in 0..num_query{
-            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|a,b|{
-                match a.inner.push_away(&mut b.inner,ball_size,push_rate){
+            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b|{
+                match a.inner_mut().push_away(b.inner_mut(),ball_size,push_rate){
                     Some(dis)=>{
-                        func(&mut a.inner,&mut b.inner,dis);    
+                        func(a.inner_mut(),b.inner_mut(),dis);    
                     },
                     _=>{}
                 }
             });    
 
 
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,|a|{
-                a.inner.push_away_from_border(dim.as_ref(),push_rate)
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,|mut a|{
+                a.inner_mut().push_away_from_border(dim.as_ref(),push_rate)
             });
         
 
             for body in tree.get_bots_mut().iter_mut(){
-                let body=&mut body.inner;
+                let body=body.inner_mut();
                 let mm=body.push_vec.magnitude();
                 if mm>0.0000001{
                     if mm>push_rate{
@@ -214,12 +214,12 @@ impl DemoSys for RigidBodyDemo{
             bot.create_loose(radius)
         }).build_seq(); 
         
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|b|{
-            let diff=cursor.inner_into()-b.inner.pos;
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|mut b|{
+            let diff=cursor.inner_into()-b.inner().pos;
 
             let dis=diff.magnitude();
             if dis<60.0{
-                b.inner.acc-=diff*0.05;
+                b.inner_mut().acc-=diff*0.05;
             }
         });
         

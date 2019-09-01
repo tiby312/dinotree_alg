@@ -21,7 +21,6 @@
 //!
 //!
 
-
 use crate::inner_prelude::*;
 use core::cmp::Ordering;
 
@@ -29,7 +28,6 @@ use core::cmp::Ordering;
 pub trait Knearest{
     type T:HasAabb<Num=Self::N>;
     type N:NumTrait;
-
 
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
@@ -50,11 +48,15 @@ pub struct SliceSplitMut<'a,T,F>{
     arr:Option<&'a mut [T]>,
     func:F
 }
-impl<'a,T,F:FnMut(&T,&T)->bool> SliceSplitMut<'a,T,F>{
-    pub fn new(arr:&'a mut [T],func:F)->SliceSplitMut<'a,T,F>{
+
+impl<'a,T,F:FnMut(&T,&T)->bool> SliceSplitMut<'a,T,F>
+{
+    pub fn new(arr:&'a mut [T],func:F)->SliceSplitMut<'a,T,F>
+    {
         SliceSplitMut{arr:Some(arr),func}
     }
 }
+
 impl<'a,T,F:FnMut(&T,&T)->bool> Iterator for SliceSplitMut<'a,T,F>{
     type Item=&'a mut [T];
     fn next(&mut self)->Option<Self::Item>{
@@ -157,7 +159,7 @@ pub struct Unit<'a,T:'a,D>{ //:Ord+Copy
 }
 /// Returned by k_nearest_mut
 pub struct UnitMut<'a,T:'a,D>{
-    pub bot:&'a mut T,
+    pub bot:Pin<&'a mut T>,
     pub mag:D
 }
 
@@ -263,7 +265,6 @@ macro_rules! knearest_recc{
             }
         }
         
-
         fn recc<'a,
             N:NumTrait+'a,
             T:HasAabb<Num=N>+'a,
@@ -302,8 +303,9 @@ macro_rules! knearest_recc{
                             }
 
                             if blap.should_traverse_rect(&rmiddle){
-                                for bot in $get_iter!(nn.bots){
-                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,bot);
+                                for bot in $get_iter!(nn.bots)
+                                {
+                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
                                     blap.closest.consider((bot,dis_sqr));
                                 }
                             }
@@ -319,8 +321,9 @@ macro_rules! knearest_recc{
                             }
 
                             if blap.should_traverse_rect(&rmiddle){
-                                for bot in $get_iter!(nn.bots){
-                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,bot);
+                                for bot in $get_iter!(nn.bots)
+                                {
+                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
                                     blap.closest.consider((bot,dis_sqr));
                                 }
                             }
@@ -332,7 +335,7 @@ macro_rules! knearest_recc{
                         Ordering::Equal=>{
                             if blap.should_traverse_rect(&rmiddle){
                                 for bot in $get_iter!(nn.bots){
-                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,bot);
+                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
                                     blap.closest.consider((bot,dis_sqr));
                                 }
                             }
@@ -347,7 +350,7 @@ macro_rules! knearest_recc{
                 },
                 None=>{
                     for bot in $get_iter!(nn.bots){
-                        let dis_sqr=blap.knear.distance_to_bot(blap.point,bot);
+                        let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
                         blap.closest.consider((bot,dis_sqr));
                     }
                 }
@@ -422,13 +425,13 @@ pub use self::mutable::naive_mut;
 pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
-    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=&'b mut K::T>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::T,K::N>>{
-        
+    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=Pin<&'b mut K::T>>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::T,K::N>>{
+
         let mut closest=ClosestCand::new(num);
 
         for b in bots{
             //TODO check aabb first
-            let d=k.distance_to_bot(point,b);
+            let d=k.distance_to_bot(point,&b);
 
             if let Some(dis)= closest.full_and_max_distance(){
                 if d>dis{
@@ -440,20 +443,23 @@ mod mutable{
         }
 
         closest.into_sorted()
-
     }
 
 
-    knearest_recc!(VistrMut<'a,K::T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T,UnitMut<'a,T,D>,unit_mut_create);
+    knearest_recc!(VistrMut<'a,K::T>,*mut T,Pin<&mut T>,get_mut_range_iter,NonLeafDynMut,Pin<&'a mut T>,UnitMut<'a,T,D>,unit_mut_create);
 
     pub fn k_nearest_mut<'b,
         V:DinoTreeRefMutTrait,
         >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,knear: impl Knearest<N=V::Num,T=V::Item>,rect:Rect<V::Num>)->Vec<UnitMut<'b,V::Item,V::Num>>{ //Vec<UnitMut<'b,T,K::D>>
+        
         let axis=tree.axis();
+        
         let dt = tree.vistr_mut().with_depth(Depth(0));
 
         let closest=ClosestCand::new(num);
+        
         let mut blap=Blap{knear,point,closest};
+        
         recc(axis,dt,rect,&mut blap);
      
         blap.closest.into_sorted()

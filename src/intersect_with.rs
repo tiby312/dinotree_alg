@@ -19,24 +19,25 @@ use crate::rect::*;
 ///The two trees could be recursed at the same time to break up the problem.
 pub fn intersect_with_mut<K:DinoTreeRefMutTrait+Send,X:Copy+Send>(
     mut tree:K,
-    b: &mut [X],
+    b: &mut SlicePin<X>,
     mut aabb_create:impl FnMut(&X)->axgeom::Rect<K::Num>,
-    func: impl Fn(&mut K::Item, &mut BBox<K::Num,X>)+Copy+Send,
+    func: impl Fn(Pin<&mut K::Item>, Pin<&mut BBoxRefMut<K::Num,X>>)+Copy+Send,
 ) {
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
     //This way we can paralleliz this function.
-    let mut b2:Vec<_>=b.iter_mut().map(|a|unsafe{BBox::new(aabb_create(a),*a)}).collect();
+    let mut b2:Vec<_>=b.iter_mut().map(|a|BBoxRefMut::new(aabb_create(&a),a)).collect();
 
-    for i in b2.iter_mut() {
+    for mut i in SlicePin::from_slice_mut(&mut b2).iter_mut() {
         let rect=*i.get();
-        for_all_intersect_rect_mut(&mut tree,&rect, |a: &mut K::Item| {
-            func(a,i);
+        for_all_intersect_rect_mut(&mut tree,&rect, |a: Pin<&mut K::Item>| {
+            func(a,i.as_mut());
         });
     }
 
-
+    /*
     for (i,j) in b2.iter().zip_eq(b.iter_mut()){
         *j=i.inner;
     }
+    */
 }

@@ -48,6 +48,7 @@ mod inner_prelude {
     pub use itertools::Itertools;
     pub use axgeom::Vec2;
     pub use axgeom::vec2;
+    pub use core::pin::Pin;
 }
 
 ///Provides functionality to draw the dividers of a dinotree.

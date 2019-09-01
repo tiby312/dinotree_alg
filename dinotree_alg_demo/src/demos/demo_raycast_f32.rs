@@ -10,14 +10,13 @@ mod ray_f32{
     use self::raycast::RayTrait;
     use duckduckgeo;
 
-    pub struct RayT<'a,'b,'c:'a>{
+    pub struct RayT<'a,'c:'a>{
         pub c:&'a Context,
-        pub g:&'a mut G2d<'c>,
-        pub _p:PhantomData<&'b usize>
+        pub g:&'a mut G2d<'c>
     }
 
-    impl<'a,'b,'c:'a> RayTrait for RayT<'a,'b,'c>{
-        type T=BBox<F32n,&'b mut ()>;
+    impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
+        type T=BBoxRef<F32n,()>;
         type N=F32n;
 
 
@@ -94,7 +93,7 @@ impl DemoSys for RaycastF32Demo{
 
                 
 
-                let res=raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{c:&c,g,_p:PhantomData});
+                let res=raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;

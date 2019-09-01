@@ -16,16 +16,15 @@ mod ray_f32{
 
 
 
-    pub struct RayT<'a,'b,'c:'a>{
+    pub struct RayT<'a,'c:'a>{
         pub c:&'a Context,
         pub g:RefCell<&'a mut G2d<'c>>,
         pub height:usize,
-        pub draw:bool,
-        pub _p:PhantomData<&'b usize>
+        pub draw:bool
     }
 
-    impl<'a,'b,'c:'a> RayTrait for RayT<'a,'b,'c>{
-        type T=BBox<F32n,&'b mut Bot2>;
+    impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
+        type T=BBoxRef<F32n,Bot2>;
         type N=F32n;
 
 
@@ -117,9 +116,9 @@ impl DemoSys for RaycastF32DebugDemo{
         
 
         //dbg!("START");
-        let test = match raycast::raycast(self.tree.as_ref(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height,_p:PhantomData}){
+        let test = match raycast::raycast(self.tree.as_ref(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
             Some((bots,dis))=>{
-                let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
+                let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
                 k.sort();
                 Some((k,dis.into_inner()))
             },
@@ -135,9 +134,9 @@ impl DemoSys for RaycastF32DebugDemo{
             let tree_ref=self.tree.as_ref();
             
             
-            let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height,_p:PhantomData}){
+            let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
                 Some((bots,dis))=>{
-                    let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
+                    let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
                     k.sort();
                     Some((k,dis.into_inner()))
                 },

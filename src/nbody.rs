@@ -28,24 +28,24 @@ pub trait NodeMassTrait:Clone{
     fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No);
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T);
+    fn handle_bot_with_bot(&self,a:Pin<&mut Self::T>,b:Pin<&mut Self::T>);
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T);
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:Pin<&mut Self::T>);
 
     fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I);
+    fn apply_to_bots<'a,I:Iterator<Item=Pin<&'a mut Self::T>>> (&'a self,a:&'a Self::No,it:I);
 
     fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
 }
 
 
 ///Naive version simply visits every pair.
-pub fn naive_mut<T>(bots:&mut [T],func:impl FnMut(&mut T,&mut T)){
+pub fn naive_mut<T>(bots:&mut SlicePin<T>,func:impl FnMut(Pin<&mut T>,Pin<&mut T>)){
     tools::for_every_pair(bots,func);
 }
 
@@ -95,8 +95,8 @@ fn buildtree<'a,
                         let (l,r)=rect.subdivide(axis,*div);
 
                         let nodeb={
-                            let i1=left.get_nodes().iter().flat_map(|a|a.get().bots.iter());
-                            let i2=right.get_nodes().iter().flat_map(|a|a.get().bots.iter());
+                            let i1=left.create_wrap().dfs_preorder_iter().flat_map(|a|a.bots.iter());
+                            let i2=right.create_wrap().dfs_preorder_iter().flat_map(|a|a.bots.iter());
                             let i3=nn.bots.iter().chain(i1.chain(i2));
                             ncontext.new(i3,rect)
                         };
@@ -128,8 +128,8 @@ fn apply_tree<
         match rest{
             Some([mut left,mut right])=>{
 
-                let i1=left.as_inner_mut().as_inner_mut().1.get_nodes_mut().iter_mut().flat_map(|a|a.get_mut().bots.iter_mut());
-                let i2=right.as_inner_mut().as_inner_mut().1.get_nodes_mut().iter_mut().flat_map(|a|a.get_mut().bots.iter_mut());
+                let i1=left.as_inner_mut().as_inner_mut().1.create_wrap_mut().dfs_preorder_iter().flat_map(|a|a.bots.iter_mut());
+                let i2=right.as_inner_mut().as_inner_mut().1.create_wrap_mut().dfs_preorder_iter().flat_map(|a|a.bots.iter_mut());
                 let i3=nn.bots.iter_mut().chain(i1.chain(i2));
                 
 
@@ -151,7 +151,7 @@ fn apply_tree<
 //Construct anchor from cont!!!
 struct Anchor<'a,A:AxisTrait,T:HasAabb+'a>{
 	axis:A,
-    range:&'a mut [T],
+    range:&'a mut SlicePin<T>,
     div:T::Num
 }
 
@@ -173,9 +173,9 @@ fn handle_anchor_with_children<'a,
         type T=N::T;
         type AnchorAxis=B;
 
-        fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        fn handle_node<A:AxisTrait>(&mut self,_axis:A,mut b:Pin<&mut N::T>,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
-                self.ncontext.handle_bot_with_bot(i,b);
+                self.ncontext.handle_bot_with_bot(i,b.as_mut());
             }
         }
         fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
@@ -201,9 +201,9 @@ fn handle_anchor_with_children<'a,
         type T=N::T;
         type AnchorAxis=B;
 
-        fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        fn handle_node<A:AxisTrait>(&mut self,_axis:A,mut b:Pin<&mut N::T>,anchor:&mut Anchor<B,Self::T>){
             for i in anchor.range.iter_mut(){
-                self.ncontext.handle_bot_with_bot(i,b);
+                self.ncontext.handle_bot_with_bot(i,b.as_mut());
             }
         }
         fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,anchor:&mut Anchor<B,Self::T>){
@@ -234,7 +234,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
 
 	struct Bo4<'a,B:AxisTrait,N:NodeMassTrait+'a,>{
         _anchor_axis:B,
-        bot:&'a mut N::T,
+        bot:Pin<&'a mut N::T>,
         ncontext:&'a N,
         div:<N::T as HasAabb>::Num
     }
@@ -243,11 +243,11 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	type No=N::No;
         type T=N::T;
         type AnchorAxis=B;
-    	fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut Self::T,_anchor:&mut Anchor<B,Self::T>){
-            self.ncontext.handle_bot_with_bot(self.bot,b);
+    	fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:Pin<&mut Self::T>,_anchor:&mut Anchor<B,Self::T>){
+            self.ncontext.handle_bot_with_bot(self.bot.as_mut(),b);
     	}
     	fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
-    		self.ncontext.handle_node_with_bot(a,self.bot);
+    		self.ncontext.handle_node_with_bot(a,self.bot.as_mut());
     	}
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,_anchor:&mut Anchor<B,Self::T>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
@@ -266,7 +266,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	type No=N::No;
         type T=N::T;
         type AnchorAxis=B;
-        fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:&mut N::T,_anchor:&mut Anchor<B,Self::T>){
+        fn handle_node<A:AxisTrait>(&mut self,_axis:A,b:Pin<&mut N::T>,_anchor:&mut Anchor<B,Self::T>){
             self.ncontext.handle_node_with_bot(self.node,b);
     	}
     	fn handle_node_far_enough<A:AxisTrait>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,Self::T>){
@@ -289,7 +289,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
     	type No=N::No;
         type T=N::T;
         type AnchorAxis=B;
-        fn handle_node<A:AxisTrait>(&mut self,axis:A,b:&mut N::T,anchor:&mut Anchor<B,Self::T>){
+        fn handle_node<A:AxisTrait>(&mut self,axis:A,b:Pin<&mut N::T>,anchor:&mut Anchor<B,Self::T>){
             let r=wrap_mut(&mut self.right);
             let anchor_axis=anchor.axis;
 
@@ -382,7 +382,7 @@ trait Bok2{
     type T:HasAabb;
     type AnchorAxis:AxisTrait;
     fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,misc:&Self::No)->bool;
-    fn handle_node<A:AxisTrait>(&mut self,axis:A,n:&mut Self::T,anchor:&mut Anchor<Self::AnchorAxis,Self::T>);
+    fn handle_node<A:AxisTrait>(&mut self,axis:A,n:Pin<&mut Self::T>,anchor:&mut Anchor<Self::AnchorAxis,Self::T>);
     fn handle_node_far_enough<A:AxisTrait>(&mut self,axis:A,a:&mut Self::No,anchor:&mut Anchor<Self::AnchorAxis,Self::T>);
 
 

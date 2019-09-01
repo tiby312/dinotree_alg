@@ -48,7 +48,7 @@ impl DemoSys for KnearestDemo{
         };
 
         impl<'a,'b,'c:'a> k_nearest::Knearest for Kn<'a,'b,'c>{
-            type T=BBox<F32n,&'a mut Bot>;
+            type T=BBoxRef<F32n,Bot>;
             type N=F32n;
 
             fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::N{
@@ -125,13 +125,13 @@ impl DemoSys for KnearestDemo{
             let vv2_iter=SliceSplitMut::new(&mut vv2,|a,b|a.mag==b.mag);
 
             for (a,b) in vv_iter.zip(vv2_iter){
-                a.sort_unstable_by(|a,b|a.bot.inner.id.cmp(&b.bot.inner.id));
-                b.sort_unstable_by(|a,b|a.bot.inner.id.cmp(&b.bot.inner.id));
+                a.sort_unstable_by(|a,b|a.bot.inner().id.cmp(&b.bot.inner().id));
+                b.sort_unstable_by(|a,b|a.bot.inner().id.cmp(&b.bot.inner().id));
                 
 
                 for (a,b) in a.iter().zip(b.iter()){
                     assert_eq!(a.mag,b.mag);
-                    if a.bot as *const BBox<F32n,&mut Bot> != b.bot as *const BBox<F32n,&mut Bot>{
+                    if a.bot as *const _ != b.bot as *const _{
                         println!("Fail");
                     }    
                 }

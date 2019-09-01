@@ -10,7 +10,7 @@ impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
     type T = F::T;
 
     #[inline(always)]
-    fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
+    fn collide(&mut self, a: Pin<&mut Self::T>, b: Pin<&mut Self::T>) {
         //only check if the opoosite axis intersects.
         //already know they intersect
         let a2 = self.axis.next();
@@ -63,7 +63,7 @@ impl<I: HasAabb> Sweeper<I> {
     pub(crate) fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
-        bots: &mut [F::T],
+        bots: &mut SlicePin<F::T>,
         clos2: &mut F,
     ) {
         let mut b: Bl<A, _> = Bl {
@@ -96,8 +96,8 @@ impl<I: HasAabb> Sweeper<I> {
     pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
-        bots1: &mut [F::T],
-        bots2: &mut [F::T],
+        bots1: &mut SlicePin<F::T>,
+        bots2: &mut SlicePin<F::T>,
         clos2: &mut F,
     ) {
         let mut b: Bl<A, _> = Bl {
@@ -113,8 +113,8 @@ impl<I: HasAabb> Sweeper<I> {
     pub(crate) fn find_parallel_2d_no_check<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
-        bots1: &mut [F::T],
-        bots2: &mut [F::T],
+        bots1: &mut SlicePin<F::T>,
+        bots2: &mut SlicePin<F::T>,
         clos2: &mut F,
     ) {
         self.find_bijective_parallel(axis,(bots1, bots2), clos2);
@@ -123,8 +123,8 @@ impl<I: HasAabb> Sweeper<I> {
 
     pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
         _axis:A,
-        r1: &mut [F::T],
-        r2: &mut [F::T],
+        r1: &mut SlicePin<F::T>,
+        r2: &mut SlicePin<F::T>,
         clos2: &mut F){
         /*
         let mut bots2:&mut Vec<WrapT<I>>=unsafe{&mut *(self.helper2.get_empty_vec_mut() as *mut Vec<&mut I> as *mut Vec<WrapT<I>>)};
@@ -135,10 +135,10 @@ impl<I: HasAabb> Sweeper<I> {
         self.find_parallel_2d_ptr(axis,r1,&mut bots2,clos2);
         */
         
-        for inda in r1.iter_mut() {
-            for indb in r2.iter_mut() {
+        for mut inda in r1.iter_mut() {
+            for mut indb in r2.iter_mut() {
                 if inda.get().intersects_rect(indb.get()){
-                    clos2.collide(inda, indb);
+                    clos2.collide(inda.as_mut(), indb.as_mut());
                 }
             }
         } 
@@ -151,7 +151,7 @@ impl<I: HasAabb> Sweeper<I> {
     fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        collision_botids: &'a mut [I],
+        collision_botids: &'a mut SlicePin<I>,
         func: &mut F,
     ) {
         //    Create a new temporary list called “activeList”.
@@ -170,7 +170,7 @@ impl<I: HasAabb> Sweeper<I> {
 
         let active = self.helper.get_empty_vec_mut();
 
-        for curr_bot in collision_botids.iter_mut() {
+        for mut curr_bot in collision_botids.iter_mut() {
             {
                 {
                     let crr = curr_bot.get().get_range(axis);
@@ -183,7 +183,7 @@ impl<I: HasAabb> Sweeper<I> {
                     //TODO this fails! Okay?
                     //debug_assert!(curr_bot.get().get_range(axis).intersects(that_bot.get().get_range(axis)));
                 
-                    func.collide(curr_bot, that_bot);
+                    func.collide(curr_bot.as_mut(), that_bot.as_mut());
                 }
             }
             active.push(curr_bot);
@@ -197,7 +197,7 @@ impl<I: HasAabb> Sweeper<I> {
     fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        cols: (&mut [I], &mut [I]),
+        cols: (&mut SlicePin<I>, &mut SlicePin<I>),
         func: &mut F,
     ) {
         let mut xs=cols.0.iter_mut().peekable();
@@ -205,7 +205,7 @@ impl<I: HasAabb> Sweeper<I> {
 
         let active_x = self.helper.get_empty_vec_mut();
 
-        for y in ys {
+        for mut y in ys {
             //Add all the x's that are touching the y to the active x.
             for x in xs.peeking_take_while(|x|x.get().get_range(axis).left<=y.get().get_range(axis).right){
                 active_x.push(x);
@@ -224,7 +224,7 @@ impl<I: HasAabb> Sweeper<I> {
                 }
 
                 debug_assert!(x.get().get_range(axis).intersects(y.get().get_range(axis)));
-                func.collide(x, y);
+                func.collide(x.as_mut(), y.as_mut());
             }
         }
     }
@@ -366,7 +366,7 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Rang
 
 //this can have some false positives.
 //but it will still prune a lot of bots.
-pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut [I], range: &Range<I::Num>) -> &'a mut [I] {
+pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut SlicePin<I>, range: &Range<I::Num>) -> &'a mut SlicePin<I> {
     let mut start = 0;
     for (e, i) in arr.iter().enumerate() {
         let rr = i.get().get_range(axis);
@@ -377,7 +377,9 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut [I], rang
     }
 
     let mut end = arr.len();
-    for (e, i) in arr[start..].iter().enumerate() {
+    //for (e, i) in arr[start..].iter().enumerate() {
+    for (e, i) in arr.truncate_start(start).iter().enumerate() {
+    
         let rr = i.get().get_range(axis);
         if rr.left > range.right {
             end = start + e;
@@ -385,5 +387,6 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,arr: &'a mut [I], rang
         }
     }
 
-    &mut arr[start..end]
+    arr.truncate(start,end)
+    //&mut arr[start..end]
 }

@@ -88,7 +88,7 @@ impl DemoSys for MultiRectDemo{
         let mut rects=multirect::multi_rect_mut(self.tree.as_mut());
         let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
             
-            let arr=[a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
+            let arr=[a.inner().pos.x as f64,a.inner().pos.y as f64,b.inner().pos.x as f64,b.inner().pos.y as f64];
             line([0.0, 0.0, 0.0, 0.2], // black
                  1.0, // radius of line
                  arr, // [x0, y0, x1,y1] coordinates of line

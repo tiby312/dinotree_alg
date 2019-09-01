@@ -129,7 +129,7 @@ impl Bot{
 
 pub struct GridDemo{
     radius:f32,
-    bots:Vec<BBoxMut<F32n,Bot>>,
+    bots:Vec<Bot>,
     colors:Vec<[u8;3]>,
     dim:Rect<F32n>,
     grid:GridDim2D
@@ -142,9 +142,7 @@ impl GridDemo{
 
         let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
             take(num_bot).enumerate().map(|(id,pos)|{
-            let b=Bot{id,pos,vel:vec2same(0.0),force:vec2same(0.0)};
-            let r=Rect::from_point(pos,vec2(radius,radius)).inner_try_into().unwrap();
-            BBoxMut::new(r,b)
+            Bot{id,pos,vel:vec2same(0.0),force:vec2same(0.0)}
         }).collect();
  
         let colors=ColorGenerator::new().take(num_bot).collect();
@@ -170,29 +168,29 @@ impl DemoSys for GridDemo{
         let radius=self.radius;
         
         for b in self.bots.iter_mut(){
-            b.inner.update();
-            b.aabb=Rect::from_point(b.inner.pos,vec2same(radius)).inner_try_into().unwrap();
+            b.update();
         }
 
-        let bots=into_bbox_slice(&mut self.bots);
-        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par(); 
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|b|{
+            Rect::from_point(b.pos,vec2same(radius)).inner_try_into().unwrap()
+        }).build_par(); 
 
             
         {
             let dim2=self.dim.inner_into();
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|a|{
-                duckduckgeo::collide_with_border(&mut a.inner,&dim2,0.5);
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|mut a|{
+                duckduckgeo::collide_with_border(a.inner_mut(),&dim2,0.5);
             });
         }
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
-            let _ =duckduckgeo::repel_one(&mut b.inner,cc,0.001,20.0);
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|mut b|{
+            let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
         });
         
-        colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-            let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0);
+        colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
         });
     
         
@@ -205,8 +203,7 @@ impl DemoSys for GridDemo{
                 }
             }
         }
-        tree.into_original();
-        
+
 
         
         fn conv(a:u8)->f32{
@@ -214,18 +211,18 @@ impl DemoSys for GridDemo{
             a/256.0
         }
         
-        for (bot,cols) in self.bots.iter_mut().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point(bot.inner.pos,vec2(radius,radius));
+        for (bot,cols) in tree.get_bots_mut().iter_mut().zip(self.colors.iter()){
+            let rect=&axgeom::Rect::from_point(bot.inner().pos,vec2(radius,radius));
             
 
-            let cols=match self.grid.detect_collision(&bot.inner,radius){
+            let cols=match self.grid.detect_collision(bot.inner(),radius){
                 Some(rr)=>{
 
-                    if let Some(k)=collide_with_rect::<f32>(bot.aabb.as_ref(),&rr){
+                    if let Some(k)=collide_with_rect::<f32>(bot.get().as_ref(),&rr){
                         let wallx=rr.x;
                         let wally=rr.y;
                         let fric=0.5;
-                        let vel=bot.inner.vel;
+                        let vel=bot.inner().vel;
                         let wall_move=match k{
                             WallSide::Above=>{
                                 [None,Some((wally.left-radius,-vel.y*fric))]
@@ -241,7 +238,7 @@ impl DemoSys for GridDemo{
                             }
                         };
 
-                        let bot=&mut bot.inner;
+                        let bot=bot.inner_mut();
                         if let Some((pos,vel))=wall_move[0]{
                             bot.pos.x=pos;
                             bot.vel.x=vel;

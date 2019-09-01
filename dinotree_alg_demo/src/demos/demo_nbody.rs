@@ -29,12 +29,11 @@ impl duckduckgeo::GravityTrait for NodeMass{
 
 
 #[derive(Clone,Copy)]
-struct Bla<'b>{
+struct Bla{
     num_pairs_checked:usize,
-    _p:PhantomData<&'b usize>
 }
-impl<'b> nbody::NodeMassTrait for Bla<'b>{
-    type T=BBox<F32n,&'b mut Bot>;
+impl nbody::NodeMassTrait for Bla{
+    type T=BBoxRef<F32n,Bot>;
     type No=NodeMass;
 
     fn get_rect(a:&Self::No)->&axgeom::Rect<F32n>{
@@ -48,15 +47,15 @@ impl<'b> nbody::NodeMassTrait for Bla<'b>{
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,a:&mut Self::T,b:&mut Self::T){
+    fn handle_bot_with_bot(&self,mut a:Pin<&mut Self::T>,mut b:Pin<&mut Self::T>){
         //self.num_pairs_checked+=1;
-        let _ = duckduckgeo::gravitate(a.inner,b.inner,0.0001,0.004);
+        let _ = duckduckgeo::gravitate(a.inner_mut(),b.inner_mut(),0.0001,0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,b:&mut Self::T){
+    fn handle_node_with_bot(&self,a:&mut Self::No,mut b:Pin<&mut Self::T>){
         
-        let _ = duckduckgeo::gravitate(a,b.inner,0.0001,0.004);
+        let _ = duckduckgeo::gravitate(a,b.inner_mut(),0.0001,0.004);
     }
 
 
@@ -66,10 +65,10 @@ impl<'b> nbody::NodeMassTrait for Bla<'b>{
         let mut total_mass=0.0;
 
         for i in it{
-            let m=i.inner.mass();
+            let m=i.inner().mass();
             total_mass+=m;
-            total_x+=m*i.inner.pos.x;
-            total_y+=m*i.inner.pos.y;
+            total_x+=m*i.inner().pos.x;
+            total_y+=m*i.inner().pos.y;
         }
         
         let center=if total_mass!=0.0{
@@ -81,17 +80,17 @@ impl<'b> nbody::NodeMassTrait for Bla<'b>{
         NodeMass{center,mass:total_mass,force:vec2same(0.0),rect}
     }
 
-    fn apply_to_bots<'a,I:Iterator<Item=&'a mut Self::T>> (&'a self,a:&'a Self::No,it:I){
+    fn apply_to_bots<'a,I:Iterator<Item=Pin<&'a mut Self::T>>> (&'a self,a:&'a Self::No,it:I){
 
         if a.mass>0.000_000_1{
 
             let total_forcex=a.force.x;
             let total_forcey=a.force.y;
 
-            for i in it{
-                let forcex=total_forcex*(i.inner.mass/a.mass);
-                let forcey=total_forcey*(i.inner.mass/a.mass);
-                i.inner.apply_force(vec2(forcex,forcey));
+            for mut i in it{
+                let forcex=total_forcex*(i.inner().mass/a.mass);
+                let forcey=total_forcey*(i.inner().mass/a.mass);
+                i.as_mut().inner_mut().apply_force(vec2(forcex,forcey));
             }
         }
     }
@@ -199,16 +198,16 @@ impl DemoSys for DemoNbody{
         let border=self.dim;
 
         if !check_naive{
-            nbody::nbody(&mut tree,&mut Bla{_p:PhantomData,num_pairs_checked:0},border);
+            nbody::nbody(&mut tree,&mut Bla{num_pairs_checked:0},border);
         }else{
-            let mut bla=Bla{_p:PhantomData,num_pairs_checked:0};
+            let mut bla=Bla{num_pairs_checked:0};
             nbody::nbody(&mut tree,&mut bla,border);
             let num_pair_alg=bla.num_pairs_checked;
             
             let (bots2,num_pair_naive)={
                 let mut num_pairs_checked=0;
-                nbody::naive_mut(&mut bots2,|a,b|{
-                    let _ = duckduckgeo::gravitate(&mut a.inner,&mut b.inner,0.00001,0.004);
+                nbody::naive_mut(SlicePin::from_slice_mut(&mut bots2),|mut a,mut b|{
+                    let _ = duckduckgeo::gravitate(a.inner_mut(),b.inner_mut(),0.00001,0.004);
                     num_pairs_checked+=1;
                 });
                 //assert_eq!(num_pairs_checked,n_choose_2(bots2.len()));
@@ -265,34 +264,34 @@ impl DemoSys for DemoNbody{
             }
         }
               
-        colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-            let (a,b)=if a.inner.mass>b.inner.mass{
-                (a,b)
+        colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            let (a,b)=if a.inner().mass>b.inner().mass{
+                (a.inner_mut(),b.inner_mut())
             }else{
-                (b,a)
+                (b.inner_mut(),a.inner_mut())
             };
 
-            if b.inner.mass!=0.0{
+            if b.mass!=0.0{
                 
-                let ma=a.inner.mass;
-                let mb=b.inner.mass;
-                let ua=a.inner.vel;
-                let ub=b.inner.vel;
+                let ma=a.mass;
+                let mb=b.mass;
+                let ua=a.vel;
+                let ub=b.vel;
 
                 //Do perfectly inelastic collision.
                 let vx=(ma*ua.x+mb*ub.x)/(ma+mb);
                 let vy=(ma*ua.y+mb*ub.y)/(ma+mb);
                 assert!(!vx.is_nan()&&!vy.is_nan());
-                a.inner.mass+=b.inner.mass;
+                a.mass+=b.mass;
                 
-                a.inner.force+=b.inner.force;
-                a.inner.vel=vec2(vx,vy);
+                a.force+=b.force;
+                a.vel=vec2(vx,vy);
 
 
-                b.inner.mass=0.0;
-                b.inner.force=vec2same(0.0);
-                b.inner.vel=vec2same(0.0);
-                b.inner.pos=vec2same(0.0);
+                b.mass=0.0;
+                b.force=vec2same(0.0);
+                b.vel=vec2same(0.0);
+                b.pos=vec2same(0.0);
             }
         });
 

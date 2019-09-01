@@ -157,7 +157,7 @@ macro_rules! raycast{
         impl<'a,T:HasAabb+'a> Closest<'a,T>{
             fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,ray:&Ray<T::Num>,b:$ref_lifetime,raytrait:&mut R){
 
-                let x=match raytrait.compute_distance_to_bot(ray,b){
+                let x=match raytrait.compute_distance_to_bot(ray,&b){
                     RayIntersectResult::Hit(val)=>{
                         val
                     },
@@ -356,12 +356,12 @@ pub use self::mutable::raycast_mut;
 
 mod mutable{
     use super::*;
-    raycast!(VistrMut<'a,T>,*mut T,&mut T,get_mut_range_iter,NonLeafDynMut,&'a mut T);
+    raycast!(VistrMut<'a,T>,*mut T,Pin<&mut T>,get_mut_range_iter,NonLeafDynMut,Pin<&'a mut T>);
 
     pub fn naive_mut<
         'a,A:AxisTrait,
         T:HasAabb,
-        >(bots:&'a mut [T],ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<&'a mut T>,T::Num)>{
+        >(bots:&'a mut SlicePin<T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<Pin<&'a mut T>>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
@@ -374,7 +374,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,   
         K:DinoTreeRefMutTrait
-        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<&'a mut K::Item>,K::Num)>{
+        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<Pin<&'a mut K::Item>>,K::Num)>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));

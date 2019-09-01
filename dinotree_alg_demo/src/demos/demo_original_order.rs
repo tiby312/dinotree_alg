@@ -45,7 +45,7 @@ impl Bot{
 
 pub struct OrigOrderDemo{
     radius:f32,
-    bots:Vec<BBoxMut<F32n,Bot>>,
+    bots:Vec<Bot>,
     colors:Vec<[u8;3]>,
     dim:Rect<F32n>
 }
@@ -57,9 +57,7 @@ impl OrigOrderDemo{
 
         let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
             take(num_bot).enumerate().map(|(id,pos)|{
-            let b=Bot{id,pos,vel:vec2same(0.0),force:vec2same(0.0)};
-            let r=Rect::from_point(pos,vec2(radius,radius)).inner_try_into().unwrap();
-            BBoxMut::new(r,b)
+            Bot{id,pos,vel:vec2same(0.0),force:vec2same(0.0)}
         }).collect();
  
         let colors=ColorGenerator::new().take(num_bot).collect();
@@ -74,24 +72,25 @@ impl DemoSys for OrigOrderDemo{
         let radius=self.radius;
         
         for b in self.bots.iter_mut(){
-            b.inner.update();
-            b.aabb=Rect::from_point(b.inner.pos,vec2same(radius)).inner_try_into().unwrap();
+            b.update();
         }
 
-        let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,into_bbox_slice(&mut self.bots)).build_par(); 
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|b|{
+            Rect::from_point(b.pos,vec2same(radius)).inner_try_into().unwrap()
+        }).build_par(); 
 
             
         {
             let dim2=self.dim.inner_into();
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|a|{
-                duckduckgeo::collide_with_border(&mut a.inner,&dim2,0.5);
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|mut a|{
+                duckduckgeo::collide_with_border(a.inner_mut(),&dim2,0.5);
             });
         }
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
-            let _ =duckduckgeo::repel_one(&mut b.inner,cc,0.001,20.0);
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|mut b|{
+            let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
         });
         
 
@@ -142,7 +141,7 @@ impl DemoSys for OrigOrderDemo{
         //draw lines to the bots.
         {
             fn draw_bot_lines<A:axgeom::AxisTrait>
-                (axis:A,stuff:Vistr<BBox<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
+                (axis:A,stuff:Vistr<BBoxRef<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
                 use compt::Visitor;
                 let (nn,rest)=stuff.next();
 
@@ -195,8 +194,8 @@ impl DemoSys for OrigOrderDemo{
                     let color_delta=1.0/nn.bots.len() as f32;
                     let mut counter=0.0;
                     for b in nn.bots.iter(){
-                        let bx=b.inner.pos.x;
-                        let by=b.inner.pos.y;
+                        let bx=b.inner().pos.x;
+                        let by=b.inner().pos.y;
 
                         line([counter, 0.2, 0.0, 0.3], // black
                              2.0, // radius of line
@@ -215,14 +214,14 @@ impl DemoSys for OrigOrderDemo{
 
 
         if !check_naive{
-            colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-                let _ = duckduckgeo::repel(&mut a.inner,&mut b.inner,0.001,2.0);
+            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+                let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
             });
         }else{
             let mut res=Vec::new();
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-                let a=&mut a.inner;
-                let b=&mut b.inner;
+            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+                let a=a.inner_mut();
+                let b=b.inner_mut();
                 let _ = duckduckgeo::repel(a,b,0.001,2.0);
                 let (a,b)=if a.id<b.id{
                     (a,b)
@@ -236,9 +235,9 @@ impl DemoSys for OrigOrderDemo{
 
             let mut res2=Vec::new();
             
-            colfind::query_naive_mut(tree.get_bots_mut(),|a,b|{
-                let a=&mut a.inner;
-                let b=&mut b.inner;
+            colfind::query_naive_mut(SlicePin::from_slice_mut(tree.get_bots_mut()),|mut a,mut b|{
+                let a=a.inner_mut();
+                let b=b.inner_mut();
                 let (a,b)=if a.id<b.id{
                     (a,b)
                 }else{
@@ -283,9 +282,7 @@ impl DemoSys for OrigOrderDemo{
 
         }
         
-        tree.into_original();
-        
-
+    
         
         fn conv(a:u8)->f32{
             let a:f32=a as f32;
@@ -293,7 +290,7 @@ impl DemoSys for OrigOrderDemo{
         }
         
         for (bot,cols) in self.bots.iter().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point(bot.inner.pos,vec2(radius,radius));
+            let rect=&axgeom::Rect::from_point(bot.pos,vec2(radius,radius));
             draw_rect_f32([conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6],rect,c,g);
         } 
         

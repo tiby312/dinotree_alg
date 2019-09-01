@@ -24,7 +24,8 @@ pub mod prelude{
     pub use duckduckgeo::array2_inner_into;
     pub use axgeom::*;
     pub use dists::uniform_rand::UniformRandGen;
-
+    pub use core::pin::Pin;
+    pub use dinotree::SlicePin;
 }
 
 

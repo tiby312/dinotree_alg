@@ -63,8 +63,8 @@ macro_rules! rect{
 }
 
 
-pub fn for_all_not_in_rect_mut<K:DinoTreeRefMutTrait>(tree:&mut K,rect:&Rect<K::Num>,closure:impl FnMut(&mut K::Item)){
-    fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(&mut T)>(axis:A,it:VistrMut<T>,rect:&Rect<T::Num>,mut closure:F)->F{
+pub fn for_all_not_in_rect_mut<K:DinoTreeRefMutTrait>(tree:&mut K,rect:&Rect<K::Num>,closure:impl FnMut(Pin<&mut K::Item>)){
+    fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(Pin<&mut T>)>(axis:A,it:VistrMut<T>,rect:&Rect<T::Num>,mut closure:F)->F{
         let (nn,rest)=it.next();
         
         //TODO exploit sorted property.
@@ -121,13 +121,13 @@ mod mutable{
     use crate::colfind::oned::get_section_mut;
     use super::*;
 
-    rect!(VistrMut<T>,&mut T,get_section_mut);
+    rect!(VistrMut<T>,Pin<&mut T>,get_section_mut);
     pub fn for_all_intersect_rect_mut<K:DinoTreeRefMutTrait>(
         mut tree: K,
         rect: &Rect<K::Num>,
-        mut closure: impl FnMut(&mut K::Item),
+        mut closure: impl FnMut(Pin<&mut K::Item>),
     ) {
-        let mut f = |a: &mut K::Item| {
+        let mut f = |a: Pin<&mut K::Item>| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
@@ -140,9 +140,9 @@ mod mutable{
     }
 
     pub fn naive_for_all_in_rect_mut<T: HasAabb>(
-        bots: &mut [T],
+        bots: &mut SlicePin<T>,
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(&mut T),
+        mut closure: impl FnMut(Pin<&mut T>),
     ) {
         for b in bots.iter_mut(){
             if rect.contains_rect(b.get()){
@@ -153,9 +153,9 @@ mod mutable{
     }
 
     pub fn naive_for_all_intersect_rect_mut<T: HasAabb>(
-        bots: &mut [T],
+        bots: &mut SlicePin<T>,
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(&mut T),
+        mut closure: impl FnMut(Pin<&mut T>),
     ) {
         for b in bots.iter_mut(){
             if rect.get_intersect_rect(b.get()).is_some(){
@@ -167,9 +167,9 @@ mod mutable{
     pub fn for_all_in_rect_mut<K:DinoTreeRefMutTrait>(
         mut tree: K,
         rect: &Rect<K::Num>,
-        mut closure: impl FnMut(&mut K::Item),
+        mut closure: impl FnMut(Pin<&mut K::Item>),
     ) {
-        let mut f = |a: &mut K::Item | {
+        let mut f = |a: Pin<&mut K::Item> | {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }
