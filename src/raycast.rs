@@ -237,7 +237,7 @@ macro_rules! raycast{
         fn recc<'a,
             N:NumTrait+'a,
             A: AxisTrait,
-            T: HasAabb<Num=N>+'a,
+            T: HasAabbMut<Num=N>+'a,
             R: RayTrait<T=T,N=N>
             >(axis:A,stuff:LevelIter<$iterator>,rect:Rect<N>,blap:&mut Blap<'a,R>){
 
@@ -361,7 +361,7 @@ mod mutable{
     pub fn naive_mut<
         'a,A:AxisTrait,
         T:HasAabb,
-        >(bots:&'a mut SlicePin<T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<Pin<&'a mut T>>,T::Num)>{
+        >(bots:&'a mut ElemSlice<T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<Pin<&'a mut T>>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 

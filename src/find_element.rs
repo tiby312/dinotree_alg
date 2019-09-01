@@ -17,9 +17,9 @@ pub enum Dir{
 ///Used for debugging.
 ///Returns the debugging information of the first bot found that satisfies the predicate.
 ///Returns the depth, as well as the path down the tree taken to get to the node.
-pub fn find_element<K:DinoTreeRefTrait,F:FnMut(&K::Item)->bool>(tree:K,mut func:F) -> Option<(usize,Vec<Dir>)>{
-   fn recc<A:AxisTrait,T:HasAabb,F:FnMut(&T)->bool>(axis:A,func:&mut F,stuff:LevelIter<Vistr<T>>,trail:Vec<Dir>)->Option<(usize,Vec<Dir>)>{
-        let ((depth,nn),rest)=stuff.next();
+pub fn find_element<K:DinoTreeRefTrait,F:FnMut(BBoxRef<K::Num,K::Inner>)->bool>(tree:K,mut func:F) -> Option<(usize,Vec<Dir>)>{
+   fn recc<A:AxisTrait,T:HasAabbMut,F:FnMut(BBoxRef<T::Num,T::Inner>)->bool>(axis:A,func:&mut F,stuff:LevelIter<Vistr<T>>,trail:Vec<Dir>)->Option<(usize,Vec<Dir>)>{
+        let ((depth,mut nn),rest)=stuff.next();
 
 
         for b in nn.bots.iter(){

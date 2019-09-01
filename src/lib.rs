@@ -49,6 +49,7 @@ mod inner_prelude {
     pub use axgeom::Vec2;
     pub use axgeom::vec2;
     pub use core::pin::Pin;
+    
 }
 
 ///Provides functionality to draw the dividers of a dinotree.
@@ -57,30 +58,25 @@ pub mod graphics;
 pub mod colfind;
 
 ///Allows user to intersect the tree with a seperate group of bots.
-pub mod intersect_with;
+//pub mod intersect_with;
 
 ///Contains all k_nearest code.
 pub mod k_nearest;
 
-/*
-///Contains all for_every_nearest code. *Experimental*
-pub mod for_every_nearest;
-*/
-
 ///Contains all nbody code.
-pub mod nbody;
+//pub mod nbody;
 
 ///Contains all raycast code.
-pub mod raycast;
+//pub mod raycast;
 
 ///Contains find element code.
-//pub mod find_element;
+pub mod find_element;
 
 ///Contains rect code.
 pub mod rect;
 
 ///Contains multirect code.
-pub mod multirect;
+//pub mod multirect;
 
 ///Contains misc tools
 mod tools;

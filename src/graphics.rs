@@ -18,7 +18,7 @@ pub fn draw<K:DinoTreeRefTrait,D:DividerDrawer<N=K::Num>>(
     dr:&mut D,
     rect:&Rect<K::Num>
 ) {
-    fn recc<A:AxisTrait,T:HasAabb,D:DividerDrawer<N=T::Num>>
+    fn recc<A:AxisTrait,T:HasAabbMut,D:DividerDrawer<N=T::Num>>
         (axis:A,stuff:LevelIter<Vistr<T>>,dr:&mut D,rect:&Rect<T::Num>){
 
         let ((depth,nn),rest)=stuff.next();

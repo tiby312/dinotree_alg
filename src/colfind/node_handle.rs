@@ -8,13 +8,13 @@ use crate::colfind::oned;
 
 pub struct DestructuredNode<'a,T:HasAabb,AnchorAxis:AxisTrait>{
     pub div:&'a T::Num,
-    pub range:&'a mut SlicePin<T>,
+    pub range:ElemSliceMut<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:AnchorAxis
 }
 
 pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:AxisTrait>{
-    pub range:&'a mut SlicePin<T>,
+    pub range:ElemSliceMut<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:A
 }
@@ -28,7 +28,7 @@ pub trait NodeHandler{
     fn handle_node(
         &mut self,
         axis:impl AxisTrait,
-        bots:&mut SlicePin<Self::T>
+        bots:ElemSliceMut<Self::T>
     );
 
     fn handle_children<A:AxisTrait,B:AxisTrait>(
@@ -69,11 +69,11 @@ impl<K:ColMulti+Splitter> Splitter for HandleNoSorted<K>{
 
 impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
     type T=K::T;
-    fn handle_node(&mut self,_axis:impl AxisTrait,bots:&mut SlicePin<Self::T>){
+    fn handle_node(&mut self,_axis:impl AxisTrait,bots:ElemSliceMut<Self::T>){
         let func=&mut self.func;
         
         tools::for_every_pair(bots,|a,b|{
-            if a.get().intersects_rect(b.get()){
+            if a.rect.intersects_rect(b.rect){
                 func.collide(a,b);
             }
         });
@@ -91,8 +91,8 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
         if res{
             for mut a in current.range.iter_mut(){
                 for mut b in anchor.range.iter_mut(){
-                    if a.get().intersects_rect(b.get()){
-                        func.collide(a.as_mut(),b.as_mut());
+                    if a.rect.intersects_rect(b.rect){
+                        func.collide(a.as_mut(),b);
                     }
                 }
             }
@@ -138,7 +138,7 @@ impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
 impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
     type T=K::T;
     #[inline(always)]
-    fn handle_node(&mut self,axis:impl AxisTrait,bots:&mut SlicePin<Self::T>){
+    fn handle_node(&mut self,axis:impl AxisTrait,bots:ElemSliceMut<Self::T>){
         let func=&mut self.func;
         self.sweeper.find_2d(axis,bots,func);
     }
@@ -148,15 +148,15 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
         let func=&mut self.func;
 
         if !current.axis.is_equal_to(anchor.axis) {
-            let r1 = oned::get_section_mut(anchor.axis,current.range,anchor.cont);
-            let r2 = oned::get_section_mut(current.axis,anchor.range,current.cont);   
+            let r1 = oned::get_section_mut(anchor.axis,current.range.as_mut(),anchor.cont);
+            let r2 = oned::get_section_mut(current.axis,anchor.range.as_mut(),current.cont);   
             self.sweeper.find_perp_2d1(anchor.axis,r1,r2,func);
 
         } else if current.cont.intersects(anchor.cont){
             self.sweeper.find_parallel_2d(
                 current.axis.next(),
-                current.range,
-                anchor.range,
+                current.range.as_mut(),
+                anchor.range.as_mut(),
                 func,
             );
         }

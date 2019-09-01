@@ -166,7 +166,7 @@ pub struct UnitMut<'a,T:'a,D>{
 macro_rules! knearest_recc{
     ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty,$unit:ty,$unit_create:ident)=>{
         
-        struct ClosestCand<'a,T:HasAabb+'a,D:Ord+Copy>{
+        struct ClosestCand<'a,T:HasAabbMut+'a,D:Ord+Copy>{
             //Can have multiple bots with the same mag. So the length could be bigger than num.
             bots:Vec<$unit>,
             //The current number of different distances in the vec
@@ -174,7 +174,7 @@ macro_rules! knearest_recc{
             //The max number of different distances.
             num:usize
         }
-        impl<'a,T:HasAabb+'a,D:Ord+Copy> ClosestCand<'a,T,D>{
+        impl<'a,T:HasAabbMut+'a,D:Ord+Copy> ClosestCand<'a,T,D>{
 
             //First is the closest
             fn into_sorted(self)->Vec<$unit>{
@@ -267,7 +267,7 @@ macro_rules! knearest_recc{
         
         fn recc<'a,
             N:NumTrait+'a,
-            T:HasAabb<Num=N>+'a,
+            T:HasAabbMut<Num=N>+'a,
             A: AxisTrait,
             K:Knearest<T=T,N=N>,
             >(axis:A,stuff:LevelIter<$iterator>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){

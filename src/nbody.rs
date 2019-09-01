@@ -18,7 +18,7 @@ use crate::inner_prelude::*;
 
 
 pub trait NodeMassTrait:Clone{
-    type T:HasAabb+Send;
+    type T:HasAabbMut+Send;
     type No:Copy+Send;
 
     //Returns the bounding rectangle for this node.
@@ -45,7 +45,7 @@ pub trait NodeMassTrait:Clone{
 
 
 ///Naive version simply visits every pair.
-pub fn naive_mut<T>(bots:&mut SlicePin<T>,func:impl FnMut(Pin<&mut T>,Pin<&mut T>)){
+pub fn naive_mut<T:HasAabbMut>(bots:&mut ElemSlice<T>,func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
     tools::for_every_pair(bots,func);
 }
 
@@ -55,7 +55,7 @@ type CombinedVistr<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::Vistr<'a,N,d
 type CombinedVistrMut<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::VistrMut<'a,N,dfs_order::PreOrder>,dinotree::VistrMut<'a,T>>>;
 
 
-fn wrap_mut<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistrMut<'a,N,T>)->CombinedVistrMut<'b,N,T>{
+fn wrap_mut<'a:'b,'b,N,T:HasAabbMut>(bla:&'b mut CombinedVistrMut<'a,N,T>)->CombinedVistrMut<'b,N,T>{
     let depth=bla.depth();
 
     let (a,b)=bla.as_inner_mut().as_inner_mut();
@@ -69,13 +69,13 @@ fn wrap_mut<'a:'b,'b,N,T:HasAabb>(bla:&'b mut CombinedVistrMut<'a,N,T>)->Combine
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
 fn buildtree<'a,
-    T:HasAabb+Send+'a,
+    T:HasAabbMut+Send+'a,
     N:NodeMassTrait<T=T>
     >
     (axis:impl AxisTrait,node:VistrMut<T>,misc_nodes:&mut Vec<N::No>,ncontext:&N,rect:Rect<T::Num>){
 
 
-    fn recc<'a,T:HasAabb+Send+'a,N:NodeMassTrait<T=T>>
+    fn recc<'a,T:HasAabbMut+Send+'a,N:NodeMassTrait<T=T>>
         (axis:impl AxisTrait,stuff:VistrMut<T>,misc_nodes:&mut Vec<N::No>,ncontext:&N,rect:Rect<T::Num>){
         
         let (nn,rest)=stuff.next();
@@ -149,9 +149,9 @@ fn apply_tree<
 
 
 //Construct anchor from cont!!!
-struct Anchor<'a,A:AxisTrait,T:HasAabb+'a>{
+struct Anchor<'a,A:AxisTrait,T:HasAabbMut+'a>{
 	axis:A,
-    range:&'a mut SlicePin<T>,
+    range:&'a mut ElemSlice<T>,
     div:T::Num
 }
 
@@ -379,7 +379,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait+Sync+Send>(join:J,axis:A,it:Co
 
 trait Bok2{
     type No:Copy;
-    type T:HasAabb;
+    type T:HasAabbMut;
     type AnchorAxis:AxisTrait;
     fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::T>,misc:&Self::No)->bool;
     fn handle_node<A:AxisTrait>(&mut self,axis:A,n:Pin<&mut Self::T>,anchor:&mut Anchor<Self::AnchorAxis,Self::T>);
@@ -444,7 +444,7 @@ pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<T=K::Item>+Sync+Send>(mut
 
 
 ///Sequential version.
-pub fn nbody<K:DinoTreeRefMutTrait<Item=N::T,Num=<N::T as HasAabb>::Num>,N:NodeMassTrait+Send+Sync>(mut t1:K,ncontext:&N,rect:Rect<K::Num>){
+pub fn nbody<K:DinoTreeRefMutTrait<Item=N::T,Inner=<N::T as HasAabb>::Inner,Num=<N::T as HasAabb>::Num>,N:NodeMassTrait+Send+Sync>(mut t1:K,ncontext:&N,rect:Rect<K::Num>){
     
     let axis=t1.axis();
     

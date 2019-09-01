@@ -75,7 +75,7 @@ fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 pub fn collide_two_rect_parallel<
     'a,
     K:DinoTreeRefMutTrait,
-    F: FnMut(Pin<&mut K::Item>, Pin<&mut K::Item>),
+    F: FnMut(BBoxRefMut<K::Num,K::Inner>,BBoxRefMut<K::Num,K::Inner>),
 >(
     multi: &mut MultiRectMut<'a,K>,
     axis:impl AxisTrait, //axis to sort under. not neccesarily the same as DinoTree axis
@@ -84,11 +84,11 @@ pub fn collide_two_rect_parallel<
     mut func: F,
 )->Result<(),RectIntersectErr> {
 
-	struct Wr<'a,T:HasAabb+'a>(Pin<&'a mut T>);
-	unsafe impl<'a,T:HasAabb+'a> HasAabb for Wr<'a,T>{
+	struct Wr<'a,T:HasAabbMut+'a>(&'a mut T);
+	unsafe impl<'a,T:HasAabbMut+'a> HasAabb for Wr<'a,T>{
 		type Num=T::Num;
 		fn get(&self)->&Rect<Self::Num>{
-			self.0.get()
+			self.get()
 		}
 	}
 
@@ -110,24 +110,24 @@ pub fn collide_two_rect_parallel<
 
     let mut sweeper = oned::Sweeper::new();
 
-    struct Bl<T:HasAabb,F:FnMut(Pin<&mut T>,Pin<&mut T>)> {
+    struct Bl<T:HasAabbMut,F:FnMut(&mut T,&mut T)> {
         a: F,
         _p:PhantomData<T>
     }
 
-    impl<T:HasAabb,F:FnMut(Pin<&mut T>,Pin<&mut T>)> colfind::ColMulti for Bl<T,F> {
+    impl<T:HasAabbMut,F:FnMut(&mut T,&mut T)> colfind::ColMulti for Bl<T,F> {
         type T = T;
 
-        fn collide(&mut self, a: Pin<&mut Self::T>, b: Pin<&mut Self::T>) {
+        fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
             (self.a)(a,b);
         }
 
     }
 
-    let ff=|mut a:Pin<&mut Wr<K::Item>>,mut b:Pin<&mut Wr<K::Item>>|{
+    let ff=|mut a:&mut Wr<K::Item>,mut b:&mut Wr<K::Item>|{
         func(a.0.as_mut(),b.0.as_mut())
     };
-    sweeper.find_parallel_2d_no_check(axis,SlicePin::from_slice_mut(&mut b1), SlicePin::from_slice_mut(&mut b2), &mut Bl{a:ff,_p:PhantomData});
+    sweeper.find_parallel_2d_no_check(axis,ElemSlice::from_slice_mut(&mut b1), ElemSlice::from_slice_mut(&mut b2), &mut Bl{a:ff,_p:PhantomData});
     Ok(())
 }
 
