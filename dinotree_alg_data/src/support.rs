@@ -3,7 +3,9 @@ use std;
 use std::time::Duration;
 
 use std::time::Instant;
- use dinotree::advanced::Splitter;
+use dinotree::advanced::Splitter;
+
+
  
 fn into_secs(elapsed: std::time::Duration) -> f64 {
     (elapsed.as_secs() as f64) + (f64::from(elapsed.subsec_nanos()) / 1_000_000_000.0)

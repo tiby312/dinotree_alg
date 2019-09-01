@@ -31,14 +31,10 @@ fn test1(bots:&mut [Bot])->f64{
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5))).build_seq();
 
     
-    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
+    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+        a.inner_mut().num+=1;
+        b.inner_mut().num+=1;
     });
-    
-
-    tree.apply(bots,|a,b|*b=a.inner);
-
 
     black_box(tree);
 
@@ -54,7 +50,7 @@ fn test2(bots:&mut [BBox<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_seq();
 
     
-    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -76,15 +72,11 @@ fn test3(bots:&mut [Bot])->f64{
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)) ).build_par();
 
     
-    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
+    colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+        a.inner_mut().num+=1;
+        b.inner_mut().num+=1;
     });
     
-
-    tree.apply(bots,|a,b|*b=a.inner);
-
-
     black_box(tree);
 
     instant_to_sec(instant.elapsed())
@@ -99,7 +91,7 @@ fn test4(bots:&mut [BBox<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par();
 
     
-    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -122,7 +114,7 @@ fn test5(bots:&mut [BBox<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_seq_aux();
 
     
-    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });
@@ -146,7 +138,7 @@ fn test6(bots:&mut [BBox<isize,Bot>])->f64{
     let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par_aux();
 
     
-    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
+    colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
         a.inner.num+=1;
         b.inner.num+=1;
     });

@@ -40,6 +40,8 @@ mod inner_prelude{
     pub use axgeom::Vec2;
     pub use axgeom::vec2;
     pub use axgeom::vec2same;
+    pub use dinotree::SlicePin;
+    pub use core::pin::Pin;
 }
 
 
@@ -148,6 +150,7 @@ fn main() {
             run_test!(&mut fb,colfind::theory_colfind_3d::handle);
         }
         "bench"=>{
+            
             let folder=args[2].clone();
             let path=Path::new(folder.trim_end_matches('/'));
             std::fs::create_dir_all(&path).expect("failed to create directory");
@@ -155,9 +158,9 @@ fn main() {
             
             
             run_test!(&mut fb,colfind::indirection_vs_not::handle_bench);
-            //run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
+            run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
             
-            /*
+            
             //done
             run_test!(&mut fb,colfind::construction_vs_query::handle_bench);
             
@@ -174,7 +177,7 @@ fn main() {
             
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb,colfind::height_heur_comparison::handle);
-            */
+            
 
             //nbody::theory::handle(&mut fb);
         },

@@ -10,12 +10,8 @@ fn theory(scene:&mut bot::BotScene)->(usize,usize){
 
     let a=*counter.get_inner();
     
-    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-        prop.collide(&mut a.inner,&mut b.inner);
-    });
-
-    tree.apply(&mut scene.bots,|a,b|{
-        b.acc=a.inner.acc;
+    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+        prop.collide(a.inner_mut(),b.inner_mut());
     });
 
     let b=counter.into_inner();
@@ -32,13 +28,10 @@ fn theory_not_sorted(scene:&mut bot::BotScene)->(usize,usize){
 
     let a=*counter.get_inner();
     
-    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
-        prop.collide(&mut a.inner,&mut b.inner);
+    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+        prop.collide(a.inner_mut(),b.inner_mut());
     });
 
-    tree.0.apply(&mut scene.bots,|a,b|{
-        b.acc=a.inner.acc;
-    });
 
     let b=counter.into_inner();
     (a,(b-a))
@@ -53,12 +46,8 @@ fn bench_seq(scene:&mut bot::BotScene)->(f64,f64){
 
     let a=instant_to_sec(instant.elapsed());
     
-    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-        prop.collide(&mut a.inner,&mut b.inner);
-    });
-
-    tree.apply(&mut scene.bots,|a,b|{
-         b.acc=a.inner.acc;
+    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+        prop.collide(a.inner_mut(),b.inner_mut());
     });
 
     let b=instant_to_sec(instant.elapsed());
@@ -74,12 +63,8 @@ fn bench_par(scene:&mut bot::BotScene)->(f64,f64){
 
     let a=instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-        prop.collide(&mut a.inner,&mut b.inner);
-    });
-
-    tree.apply(&mut scene.bots,|a,b|{
-        b.acc=a.inner.acc;
+    colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+        prop.collide(a.inner_mut(),b.inner_mut());
     });
 
     let b=instant_to_sec(instant.elapsed());
@@ -98,14 +83,9 @@ fn bench_not_sorted_seq(scene:&mut bot::BotScene)->(f64,f64){
 
     let a=instant_to_sec(instant.elapsed());
     
-    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|a, b| {
-        prop.collide(&mut a.inner,&mut b.inner);
+    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+        prop.collide(a.inner_mut(),b.inner_mut());
     });
-
-    tree.0.apply(&mut scene.bots,|a,b|{
-         b.acc=a.inner.acc;
-    });
-
 
     let b=instant_to_sec(instant.elapsed());
 
@@ -124,12 +104,8 @@ fn bench_not_sorted_par(scene:&mut bot::BotScene)->(f64,f64){
 
     let a=instant_to_sec(instant.elapsed());
     
-    colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|a, b| {
-        prop.collide(&mut a.inner,&mut b.inner);
-    });
-
-    tree.0.apply(&mut scene.bots,|a,b|{
-        b.acc=a.inner.acc;
+    colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+        prop.collide(a.inner_mut(),b.inner_mut());
     });
 
     let b=instant_to_sec(instant.elapsed());

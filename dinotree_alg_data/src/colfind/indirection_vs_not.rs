@@ -45,7 +45,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
 
     let mut records=Vec::new();
 
-    for num_bots in (0..200_000).rev().step_by(500){
+    for num_bots in (0..100_000).rev().step_by(1000){
         let s2=s.clone();
 
 
@@ -72,14 +72,10 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             }).build_seq();
 
     
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
         
-            });
-            
-            tree.apply(&mut bots,|a,b|{
-                b.num=a.inner.num;
             });
 
             instant_to_sec(instant.elapsed())
@@ -103,9 +99,9 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             }).build_seq();
 
     
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-                let a:&mut Bot=unsafe{&mut *(a.inner)};
-                let b:&mut Bot=unsafe{&mut *(b.inner)};
+            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+                let a:&mut Bot=unsafe{&mut *(*a.inner_mut())};
+                let b:&mut Bot=unsafe{&mut *(*b.inner_mut())};
                 a.num+=1;
                 b.num+=1;
         
@@ -137,9 +133,9 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             }).build_seq();
 
     
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-                let a:&mut BBoxMut2<_,_>=unsafe{&mut *(a.inner)};
-                let b:&mut BBoxMut2<_,_>=unsafe{&mut *(b.inner)};
+            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+                let a:&mut BBoxMut2<_,_>=unsafe{&mut *(*a.inner_mut())};
+                let b:&mut BBoxMut2<_,_>=unsafe{&mut *(*b.inner_mut())};
                 a.0.inner.num+=1;
                 b.0.inner.num+=1;
         
@@ -165,7 +161,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut bots2).build_seq();
 
     
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
                 a.0.inner.num+=1;
                 b.0.inner.num+=1;
         
@@ -195,7 +191,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,&mut bots3).build_seq();
 
             
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
                 a.0.inner.num+=1;
                 b.0.inner.num+=1;
             });
@@ -243,7 +239,7 @@ pub fn handle_bench(fb:&mut FigureBuilder){
     let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
     //let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
 
-    let mut fg=fb.build("colfind_bench");
+    let mut fg=fb.build("direct_vs_indirect");
     handle_bench_inner(&s1.clone(),&mut fg,"Direct vs Indirect");
     //handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,0.05)",1);
     

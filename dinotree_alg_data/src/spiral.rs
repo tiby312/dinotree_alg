@@ -18,10 +18,10 @@ fn handle1(fb:&mut FigureBuilder){
 	for grow in (0..100).map(|a|{let a:f32=a.as_();0.2+a*0.02}){
 		let s=dists::spiral::Spiral::new([0.0,0.0],17.0,grow);
 
-	    let bots:Vec<Vec2<f32>>=s.take(num_bots).collect();
+	    let mut bots:Vec<Vec2<f32>>=s.take(num_bots).collect();
     	
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{   
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
             axgeom::Rect::from_point(*b,vec2same(5.0)).inner_try_into::<NotNan<f32>>().unwrap()
         }).build_par();
 

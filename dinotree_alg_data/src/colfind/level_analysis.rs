@@ -94,25 +94,20 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Th
 		    let mut levelc=level_counter::LevelCounter::new(&mut counter);
 
 
-			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
+			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{
         		datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
 			}).build_with_splitter_seq(&mut levelc);
 	
 
 			counter.reset();
 			let mut levelc2=level_counter::LevelCounter::new(&mut counter);
-			colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|a,b|{
-				a.inner.num+=1;
-				b.inner.num+=1;
+			colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|mut a,mut b|{
+				a.inner_mut().num+=1;
+				b.inner_mut().num+=1;
 			},&mut levelc2);
 
 
 		    counter.into_inner();
-
-
-		    tree.apply(&mut bots,|a,b|{
-		        *b=a.inner;
-		    });
 
 
 		    let mut t=TheoryRes{grow,rebal:levelc.into_inner(),query:levelc2.into_inner()};
@@ -149,7 +144,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 
 		
 
-		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&bots,|b|{
+		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{
 		        axgeom::Rect::from_point(b.pos,vec2same(5))  
 		}).build_with_splitter_seq(&mut times1);
 
@@ -158,11 +153,10 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 		let mut times2=LevelTimer::new();
 		//colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
 		
-		colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
+		colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|mut a,mut b|{
+			a.inner_mut().num+=1;b.inner_mut().num+=1
+		},&mut times2);
 		
-	    tree.apply(&mut bots,|a,b|{
-	        *b=a.inner;
-	    });
 
 
 	    let mut t=BenchRes{grow,rebal:times1.into_inner(),query:times2.into_inner()};
