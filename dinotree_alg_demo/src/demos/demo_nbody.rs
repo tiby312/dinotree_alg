@@ -32,7 +32,6 @@ struct Bla{
     num_pairs_checked:usize,
 }
 impl nbody::NodeMassTrait for Bla{
-    type T=BBoxPtr<F32n,Bot>;
     type No=NodeMass;
     type Inner=Bot;
     type Num=F32n;

@@ -1,5 +1,6 @@
 use crate::inner_prelude::*;
 use crate::colfind::ColMulti;
+use dinotree::tools::PreVecMut;
 
 struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
     a: &'a mut F,
@@ -41,7 +42,7 @@ unsafe impl<'a,T:HasAabb> HasAabb for WrapT<'a,T>{
 
 ///Provides 1d collision detection.
 pub struct Sweeper<T: HasAabbMut> {
-    helper: tools::PreVecMut<T::Num,T::Inner>,
+    helper: PreVecMut<T::Num,T::Inner>,
     //helper2: tools::PreVecMut<T>,
 }
 
@@ -55,8 +56,7 @@ impl<I: HasAabbMut> Sweeper<I> {
     #[inline(always)]
     pub fn new() -> Sweeper<I> {
         Sweeper {
-            helper: tools::PreVecMut::new(),
-            //helper2: tools::PreVecMut::new()
+            helper: PreVecMut::new(),
         }
     }
 

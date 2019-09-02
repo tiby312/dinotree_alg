@@ -141,7 +141,7 @@ impl DemoSys for OrigOrderDemo{
         //draw lines to the bots.
         {
             fn draw_bot_lines<A:axgeom::AxisTrait>
-                (axis:A,stuff:Vistr<BBoxPtr<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
+                (axis:A,stuff:Vistr<BBoxMut<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
                 use compt::Visitor;
                 let (nn,rest)=stuff.next();
 

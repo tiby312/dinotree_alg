@@ -2,6 +2,8 @@
 
 use crate::inner_prelude::*;
 
+use dinotree::notsorted::*;
+
 ///Used for the advanced algorithms.
 ///Trait that user implements to handling aabb collisions.
 ///The user supplies a struct that implements this trait instead of just a closure
@@ -128,7 +130,7 @@ impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K> where K::Item:Send{
         let axis=tree.axis();
         let oo=tree.vistr_mut();
         let switch_height=self.switch_height;
-        let par=dinotree::advanced::compute_default_level_switch_sequential(switch_height,oo.height());
+        let par=compute_default_level_switch_sequential(switch_height,oo.height());
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
     }
 
@@ -186,7 +188,7 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K> where K::Item: Send{
         let switch_height=self.switch_height;
         let axis=self.tree.axis();
         let oo=self.tree.vistr_mut();
-        let par=dinotree::advanced::compute_default_level_switch_sequential(switch_height,oo.height());
+        let par=compute_default_level_switch_sequential(switch_height,oo.height());
         ColFindRecurser::new().recurse(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
 
     }
@@ -200,7 +202,7 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K> where K::Item: Send{
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();
 
-        let par=dinotree::advanced::compute_default_level_switch_sequential(self.switch_height,vistr_mut.height());
+        let par=compute_default_level_switch_sequential(self.switch_height,vistr_mut.height());
 
 
         let dt = vistr_mut.with_depth(Depth(0));
@@ -214,7 +216,7 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K>{
     ///Create the builder.
     #[inline(always)]
     pub fn new(tree:K)->QueryBuilder<K>{
-        let switch_height=dinotree::advanced::default_level_switch_sequential();
+        let switch_height=default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
     }
 
