@@ -24,7 +24,7 @@ pub trait NodeMassTrait:Clone{
     type Inner;
 
     //Returns the bounding rectangle for this node.
-    fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
+    fn get_rect(no:&Self::No)->&Rect<Self::Num>;
 
     //gravitate this node mass with another node mass
     fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No);
@@ -35,14 +35,14 @@ pub trait NodeMassTrait:Clone{
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self,a:&mut Self::No,b:BBoxRefMut<Self::Num,Self::Inner>);
 
-    fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough(&self,b:[Self::Num;2])->bool;
 
-    fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
+    fn is_far_enough_half(&self,b:[Self::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
     fn apply_to_bots<'a,I:Iterator<Item=BBoxRefMut<'a,Self::Num,Self::Inner>>> (&'a self,a:&'a Self::No,it:I);
 
-    fn new<'a,I:Iterator<Item=BBoxRef<'a,Self::Num,Self::Inner>>> (&'a self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
+    fn new<'a,I:Iterator<Item=BBoxRef<'a,Self::Num,Self::Inner>>> (&'a self,it:I,rect:Rect<Self::Num>)->Self::No;
 }
 
 
@@ -240,7 +240,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         _anchor_axis:B,
         bot:BBoxRefMut<'a,N::Num,N::Inner>,
         ncontext:&'a N,
-        div:<N::T as HasAabb>::Num
+        div:N::Num
     }
 
     impl<'a,B:AxisTrait,N:NodeMassTrait+'a,> Bok2 for Bo4<'a,B,N>{
@@ -263,7 +263,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait+'a>
         _anchor_axis:B,
         node:&'a mut N::No,
         ncontext:&'a N,
-        div:<N::T as HasAabb>::Num
+        div:N::Num
     }
 
     impl<'a,B:AxisTrait,N:NodeMassTrait+'a> Bok2 for Bo2<'a,B,N>{

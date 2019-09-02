@@ -34,11 +34,11 @@ impl KnearestDemo{
 
 impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
-        let tree=self.tree.as_mut();
+        let mut tree=self.tree.as_mut();
         
 
         for bot in tree.get_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
 
         struct Kn<'a,'b,'c:'a>{
@@ -48,14 +48,15 @@ impl DemoSys for KnearestDemo{
         };
 
         impl<'a,'b,'c:'a> k_nearest::Knearest for Kn<'a,'b,'c>{
-            type T=BBoxRef<F32n,Bot>;
+            //type T=BBoxPtr<F32n,Bot>;
             type N=F32n;
+            type Inner=Bot;
 
-            fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::N{
+            fn distance_to_bot(&self,point:Vec2<Self::N>,bot:BBoxRefMut<Self::N,Self::Inner>)->Self::N{
                 if self.draw{
-                    draw_rect_f32([0.0,0.0,1.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
+                    draw_rect_f32([0.0,0.0,1.0,0.5],bot.rect.as_ref(),self.c,&mut self.g.borrow_mut());
                 }
-                self.distance_to_rect(point,bot.get())
+                self.distance_to_rect(point,bot.rect)
             }
             fn distance_to_rect(&self, point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N{
                 
@@ -96,10 +97,17 @@ impl DemoSys for KnearestDemo{
             [0.0,0.0,1.0,0.8]  //blue third closets
         ];
         
+
+        struct Res{
+            rect:Rect<F32n>,
+            id:usize,
+            mag:F32n
+        }
         let mut vv={
             let kn=Kn{c:&c,g:RefCell::new(g),draw:true};
-            k_nearest::k_nearest(&tree,cursor,3,kn,self.dim)
+            k_nearest::k_nearest_mut(&mut tree,cursor,3,kn,self.dim)
         };
+        let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.rect,id:a.bot.inner.id,mag:a.mag}).collect();
 
         /*
         if vv.len()>3{
@@ -115,8 +123,9 @@ impl DemoSys for KnearestDemo{
         
             let mut vv2={
                 let kn=Kn{c:&c,g:RefCell::new(g),draw:false};
-                k_nearest::naive(tree.get_bots().iter(),cursor,3,kn)
+                k_nearest::naive_mut(tree.get_bots_mut().iter_mut(),cursor,3,kn)
             };
+            let mut vv2:Vec<_>=vv2.drain(..).map(|a|Res{rect:*a.bot.rect,id:a.bot.inner.id,mag:a.mag}).collect();
         
 
             assert_eq!(vv.len(),vv2.len());
@@ -125,13 +134,13 @@ impl DemoSys for KnearestDemo{
             let vv2_iter=SliceSplitMut::new(&mut vv2,|a,b|a.mag==b.mag);
 
             for (a,b) in vv_iter.zip(vv2_iter){
-                a.sort_unstable_by(|a,b|a.bot.inner().id.cmp(&b.bot.inner().id));
-                b.sort_unstable_by(|a,b|a.bot.inner().id.cmp(&b.bot.inner().id));
+                a.sort_unstable_by(|a,b|a.id.cmp(&b.id));
+                b.sort_unstable_by(|a,b|a.id.cmp(&b.id));
                 
 
                 for (a,b) in a.iter().zip(b.iter()){
                     assert_eq!(a.mag,b.mag);
-                    if a.bot as *const _ != b.bot as *const _{
+                    if a.id != b.id{
                         println!("Fail");
                     }    
                 }
@@ -150,7 +159,7 @@ impl DemoSys for KnearestDemo{
                         
             for (a,color) in vv_iter.zip(cols.iter()){
                 for b in a.iter(){
-                    draw_rect_f32(*color,(b.bot).get().as_ref(),c,g);
+                    draw_rect_f32(*color,b.rect.as_ref(),c,g);
                 }
             }
             

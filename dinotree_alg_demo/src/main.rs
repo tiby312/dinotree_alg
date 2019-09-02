@@ -31,6 +31,7 @@ mod demo_iter{
             DemoIter(0)
         }
         pub fn next(&mut self,area:Vec2<u32>)->Box<DemoSys>{
+            
             let curr=self.0;
             
 

@@ -33,8 +33,10 @@ struct Bla{
     num_pairs_checked:usize,
 }
 impl nbody::NodeMassTrait for Bla{
-    type T=BBoxRef<F32n,Bot>;
+    type T=BBoxPtr<F32n,Bot>;
     type No=NodeMass;
+    type Inner=Bot;
+    type Num=F32n;
 
     fn get_rect(a:&Self::No)->&axgeom::Rect<F32n>{
         &a.rect
@@ -47,28 +49,28 @@ impl nbody::NodeMassTrait for Bla{
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,mut a:Pin<&mut Self::T>,mut b:Pin<&mut Self::T>){
+    fn handle_bot_with_bot(&self,mut a:BBoxRefMut<Self::Num,Self::Inner>,mut b:BBoxRefMut<Self::Num,Self::Inner>){
         //self.num_pairs_checked+=1;
-        let _ = duckduckgeo::gravitate(a.inner_mut(),b.inner_mut(),0.0001,0.004);
+        let _ = duckduckgeo::gravitate(a.inner,b.inner,0.0001,0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,mut b:Pin<&mut Self::T>){
+    fn handle_node_with_bot(&self,a:&mut Self::No,mut b:BBoxRefMut<Self::Num,Self::Inner>){
         
-        let _ = duckduckgeo::gravitate(a,b.inner_mut(),0.0001,0.004);
+        let _ = duckduckgeo::gravitate(a,b.inner,0.0001,0.004);
     }
 
 
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,rect:axgeom::Rect<F32n>)->Self::No{
+    fn new<'a,I:Iterator<Item=BBoxRef<'a,Self::Num,Self::Inner>>> (&'a self,it:I,rect:axgeom::Rect<F32n>)->Self::No{
         let mut total_x=0.0;
         let mut total_y=0.0;
         let mut total_mass=0.0;
 
         for i in it{
-            let m=i.inner().mass();
+            let m=i.inner.mass();
             total_mass+=m;
-            total_x+=m*i.inner().pos.x;
-            total_y+=m*i.inner().pos.y;
+            total_x+=m*i.inner.pos.x;
+            total_y+=m*i.inner.pos.y;
         }
         
         let center=if total_mass!=0.0{
@@ -80,7 +82,7 @@ impl nbody::NodeMassTrait for Bla{
         NodeMass{center,mass:total_mass,force:vec2same(0.0),rect}
     }
 
-    fn apply_to_bots<'a,I:Iterator<Item=Pin<&'a mut Self::T>>> (&'a self,a:&'a Self::No,it:I){
+    fn apply_to_bots<'a,I:Iterator<Item=BBoxRefMut<'a,Self::Num,Self::Inner>>> (&'a self,a:&'a Self::No,it:I){
 
         if a.mass>0.000_000_1{
 
@@ -88,9 +90,9 @@ impl nbody::NodeMassTrait for Bla{
             let total_forcey=a.force.y;
 
             for mut i in it{
-                let forcex=total_forcex*(i.inner().mass/a.mass);
-                let forcey=total_forcey*(i.inner().mass/a.mass);
-                i.as_mut().inner_mut().apply_force(vec2(forcex,forcey));
+                let forcex=total_forcex*(i.inner.mass/a.mass);
+                let forcey=total_forcey*(i.inner.mass/a.mass);
+                i.as_mut().inner.apply_force(vec2(forcex,forcey));
             }
         }
     }
@@ -206,8 +208,9 @@ impl DemoSys for DemoNbody{
             
             let (bots2,num_pair_naive)={
                 let mut num_pairs_checked=0;
-                nbody::naive_mut(SlicePin::from_slice_mut(&mut bots2),|mut a,mut b|{
-                    let _ = duckduckgeo::gravitate(a.inner_mut(),b.inner_mut(),0.00001,0.004);
+                let bots2=into_bbox_slice(&mut bots2);
+                nbody::naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(bots2)),|mut a,mut b|{
+                    let _ = duckduckgeo::gravitate(a.inner,b.inner,0.00001,0.004);
                     num_pairs_checked+=1;
                 });
                 //assert_eq!(num_pairs_checked,n_choose_2(bots2.len()));
@@ -260,15 +263,15 @@ impl DemoSys for DemoNbody{
                 
                 println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",max_diff.0,self.max_percentage_error,f*100.0);
 
-                draw_rect_f32([1.0,0.0,1.0,1.0],max_diff.1.aabb.as_ref(),c,g);
+                draw_rect_f32([1.0,0.0,1.0,1.0],max_diff.1.get().rect.as_ref(),c,g);
             }
         }
               
         colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
-            let (a,b)=if a.inner().mass>b.inner().mass{
-                (a.inner_mut(),b.inner_mut())
+            let (a,b)=if a.inner.mass>b.inner.mass{
+                (a.inner,b.inner)
             }else{
-                (b.inner_mut(),a.inner_mut())
+                (b.inner,a.inner)
             };
 
             if b.mass!=0.0{
@@ -341,7 +344,7 @@ impl DemoSys for DemoNbody{
 
         //Draw bots.
         for bot in tree.get_bots().iter(){
-            draw_rect_f32([0.0,0.5,0.0,1.0],bot.get().as_ref(),c,g);
+            draw_rect_f32([0.0,0.5,0.0,1.0],bot.rect.as_ref(),c,g);
         }
 
 

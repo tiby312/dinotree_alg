@@ -38,7 +38,7 @@ impl DemoSys for MultiRectDemo{
         
         
         for bot in self.tree.as_ref().get_bots().iter(){
-            draw_rect_i32([0.0,0.0,0.0,0.3],bot.get(),c,g);
+            draw_rect_i32([0.0,0.0,0.0,0.3],bot.rect,c,g);
         }
 
 
@@ -69,7 +69,7 @@ impl DemoSys for MultiRectDemo{
                     draw_rect_i32([0.0,0.0,0.0,0.3],&r2,c,g);
             
                     for r in to_draw.iter(){
-                        draw_rect_i32([1.0,0.0,0.0,0.3],r.get(),c,g);
+                        draw_rect_i32([1.0,0.0,0.0,0.3],r.rect,c,g);
                     }
                 },
                 Err(_)=>{
@@ -82,13 +82,13 @@ impl DemoSys for MultiRectDemo{
 
         
         rect::for_all_intersect_rect(self.tree.as_ref(),&r1,|a|{
-            draw_rect_i32([0.0,0.0,1.0,0.3],a.get(),c,g);
+            draw_rect_i32([0.0,0.0,1.0,0.3],a.rect,c,g);
         });
         
         let mut rects=multirect::multi_rect_mut(self.tree.as_mut());
         let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
             
-            let arr=[a.inner().pos.x as f64,a.inner().pos.y as f64,b.inner().pos.x as f64,b.inner().pos.y as f64];
+            let arr=[a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
             line([0.0, 0.0, 0.0, 0.2], // black
                  1.0, // radius of line
                  arr, // [x0, y0, x1,y1] coordinates of line

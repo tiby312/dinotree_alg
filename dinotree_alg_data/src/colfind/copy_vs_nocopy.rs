@@ -32,8 +32,8 @@ fn test1(bots:&mut [Bot])->f64{
 
     
     colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-        a.inner_mut().num+=1;
-        b.inner_mut().num+=1;
+        a.inner.num+=1;
+        b.inner.num+=1;
     });
 
     black_box(tree);
@@ -73,8 +73,8 @@ fn test3(bots:&mut [Bot])->f64{
 
     
     colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-        a.inner_mut().num+=1;
-        b.inner_mut().num+=1;
+        a.inner.num+=1;
+        b.inner.num+=1;
     });
     
     black_box(tree);

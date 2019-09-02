@@ -83,14 +83,14 @@ impl DemoSys for OrigOrderDemo{
         {
             let dim2=self.dim.inner_into();
             dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|mut a|{
-                duckduckgeo::collide_with_border(a.inner_mut(),&dim2,0.5);
+                duckduckgeo::collide_with_border(a.inner,&dim2,0.5);
             });
         }
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
         rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|mut b|{
-            let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
+            let _ =duckduckgeo::repel_one(b.inner,cc,0.001,20.0);
         });
         
 
@@ -141,7 +141,7 @@ impl DemoSys for OrigOrderDemo{
         //draw lines to the bots.
         {
             fn draw_bot_lines<A:axgeom::AxisTrait>
-                (axis:A,stuff:Vistr<BBoxRef<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
+                (axis:A,stuff:Vistr<BBoxPtr<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
                 use compt::Visitor;
                 let (nn,rest)=stuff.next();
 
@@ -194,8 +194,8 @@ impl DemoSys for OrigOrderDemo{
                     let color_delta=1.0/nn.bots.len() as f32;
                     let mut counter=0.0;
                     for b in nn.bots.iter(){
-                        let bx=b.inner().pos.x;
-                        let by=b.inner().pos.y;
+                        let bx=b.inner.pos.x;
+                        let by=b.inner.pos.y;
 
                         line([counter, 0.2, 0.0, 0.3], // black
                              2.0, // radius of line
@@ -215,13 +215,13 @@ impl DemoSys for OrigOrderDemo{
 
         if !check_naive{
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
-                let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
+                let _ = duckduckgeo::repel(a.inner,b.inner,0.001,2.0);
             });
         }else{
             let mut res=Vec::new();
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
-                let a=a.inner_mut();
-                let b=b.inner_mut();
+                let a=a.inner;
+                let b=b.inner;
                 let _ = duckduckgeo::repel(a,b,0.001,2.0);
                 let (a,b)=if a.id<b.id{
                     (a,b)
@@ -236,8 +236,8 @@ impl DemoSys for OrigOrderDemo{
             let mut res2=Vec::new();
             
             colfind::query_naive_mut(tree.get_bots_mut(),|mut a,mut b|{
-                let a=a.inner_mut();
-                let b=b.inner_mut();
+                let a=a.inner;
+                let b=b.inner;
                 let (a,b)=if a.id<b.id{
                     (a,b)
                 }else{

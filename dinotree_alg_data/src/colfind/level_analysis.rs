@@ -102,8 +102,8 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Th
 			counter.reset();
 			let mut levelc2=level_counter::LevelCounter::new(&mut counter);
 			colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|mut a,mut b|{
-				a.inner_mut().num+=1;
-				b.inner_mut().num+=1;
+				a.inner.num+=1;
+				b.inner.num+=1;
 			},&mut levelc2);
 
 
@@ -154,7 +154,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 		//colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
 		
 		colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|mut a,mut b|{
-			a.inner_mut().num+=1;b.inner_mut().num+=1
+			a.inner.num+=1;b.inner.num+=1
 		},&mut times2);
 		
 

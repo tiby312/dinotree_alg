@@ -118,9 +118,15 @@ impl<N:NumTrait+Debug,T:Debug> Debug for BBoxDemo<N,T>{
 
 unsafe impl<N:NumTrait,T> HasAabb for BBoxDemo<N,T>{
     type Num=N;
-    fn get(&self)->&Rect<Self::Num>{
-        &self.rect
+    type Inner=T;
+    fn get(&self)->BBoxRef<Self::Num,Self::Inner>{
+        BBoxRef::new(&self.rect,&self.inner)
     }
+}
+unsafe impl<N:NumTrait,T> HasAabbMut for BBoxDemo<N,T>{
+    fn get_mut(&mut self)->BBoxRefMut<Self::Num,Self::Inner>{
+        BBoxRefMut::new(&self.rect,&mut self.inner)
+    }   
 }
 
 

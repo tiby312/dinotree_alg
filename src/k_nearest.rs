@@ -26,7 +26,7 @@ use core::cmp::Ordering;
 
 ///The geometric functions that the user must provide.
 pub trait Knearest{
-    type T:HasAabbMut<Num=Self::N,Inner=Self::Inner>;
+    //type T:HasAabbMut<Num=Self::N,Inner=Self::Inner>;
     type N:NumTrait;
     type Inner;
 
@@ -152,41 +152,43 @@ fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::AxisTrait,range:&Range
 }
 
 
-
+/*
 /// Returned by k_nearest
 pub struct Unit<'a,T:HasAabb,D>{ //:Ord+Copy
     pub bot:BBoxRef<'a,T::Num,T::Inner>,
     pub mag:D
 }
+*/
 /// Returned by k_nearest_mut
-pub struct UnitMut<'a,T:HasAabbMut,D>{
-    pub bot:BBoxRefMut<'a,T::Num,T::Inner>,
+pub struct UnitMut<'a,N:NumTrait,T,D>{
+    pub bot:BBoxRefMut<'a,N,T>,
     pub mag:D
 }
+
 
 //macro_rules! knearest_recc{
 //    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty,$unit:ty,$unit_create:ident)=>{
         
-struct ClosestCand<'a,T:HasAabbMut+'a,D:Ord+Copy>{
+struct ClosestCand<'a,N:NumTrait,T,D:Ord+Copy>{
     //Can have multiple bots with the same mag. So the length could be bigger than num.
-    bots:Vec<UnitMut<'a,T,D>>,
+    bots:Vec<UnitMut<'a,N,T,D>>,
     //The current number of different distances in the vec
     curr_num:usize,
     //The max number of different distances.
     num:usize
 }
-impl<'a,T:HasAabbMut+'a,D:Ord+Copy> ClosestCand<'a,T,D>{
+impl<'a,N:NumTrait,T,D:Ord+Copy> ClosestCand<'a,N,T,D>{
 
     //First is the closest
-    fn into_sorted(self)->Vec<UnitMut<'a,T,D>>{
+    fn into_sorted(self)->Vec<UnitMut<'a,N,T,D>>{
         self.bots
     }
-    fn new(num:usize)->ClosestCand<'a,T,D>{
+    fn new(num:usize)->ClosestCand<'a,N,T,D>{
         let bots=Vec::with_capacity(num);
         ClosestCand{bots,num,curr_num:0}
     }
 
-    fn consider(&mut self,a:(BBoxRefMut<'a,T::Num,T::Inner>,D))->bool{
+    fn consider(&mut self,a:(BBoxRefMut<'a,N,T>,D))->bool{
         //let a=(a.0 as $ptr,a.1);
         let curr_bot=a.0;
         let curr_dis=a.1;
@@ -249,7 +251,7 @@ impl<'a,T:HasAabbMut+'a,D:Ord+Copy> ClosestCand<'a,T,D>{
 struct Blap<'a,K:Knearest>{
     knear:K,
     point:Vec2<K::N>,
-    closest:ClosestCand<'a,K::T,K::N>
+    closest:ClosestCand<'a,K::N,K::Inner,K::N>
 }
 
 impl<'a,K:Knearest> Blap<'a,K>{
@@ -270,8 +272,8 @@ fn recc<'a,
     N:NumTrait+'a,
     T:HasAabbMut<Num=N>+'a,
     A: AxisTrait,
-    K:Knearest<T=T,N=N,Inner=T::Inner>,
-    >(axis:A,stuff:LevelIter<VistrMut<'a,K::T>>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
+    K:Knearest<N=N,Inner=T::Inner>,
+    >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
 
     let ((_depth,mut nn),rest)=stuff.next();
 
@@ -428,7 +430,7 @@ pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
     
-    pub fn naive_mut<'b,K:Knearest+'b>(bots:impl Iterator<Item=BBoxRefMut<'b,K::N,K::Inner>>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::T,K::N>>{
+    pub fn naive_mut<'b,K:Knearest+'b>(bots:impl Iterator<Item=BBoxRefMut<'b,K::N,K::Inner>>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::N,K::Inner,K::N>>{
 
         let mut closest=ClosestCand::new(num);
 
@@ -453,7 +455,7 @@ mod mutable{
 
     pub fn k_nearest_mut<'b,
         V:DinoTreeRefMutTrait,
-        >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,knear: impl Knearest<N=V::Num,T=V::Item,Inner=V::Inner>,rect:Rect<V::Num>)->Vec<UnitMut<'b,V::Item,V::Num>>{ //Vec<UnitMut<'b,T,K::D>>
+        >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,knear: impl Knearest<N=V::Num,Inner=V::Inner>,rect:Rect<V::Num>)->Vec<UnitMut<'b,V::Num,V::Inner,V::Num>>{ //Vec<UnitMut<'b,T,K::D>>
         
         let axis=tree.axis();
         

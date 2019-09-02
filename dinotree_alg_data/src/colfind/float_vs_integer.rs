@@ -45,8 +45,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -61,8 +61,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -77,8 +77,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -93,8 +93,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -108,8 +108,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -124,8 +124,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -140,8 +140,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -156,8 +156,8 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
             instant_to_sec(instant.elapsed())  

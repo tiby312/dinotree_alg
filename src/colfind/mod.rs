@@ -39,7 +39,8 @@ use self::inner::*;
 /// let mut bots = dinotree::advanced::into_bbox_vec(builder.build().take(1000),|a|builder.create_aabb(a));
 /// query_naive_mut(&mut bots,|a,b|a.inner.collide(&mut b.inner));
 /// ```
-pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
+pub fn query_naive_mut<T:HasAabbMut>(bots:&mut [T],mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
+    let bots=ElemSliceMut::new(ElemSlice::from_slice_mut(bots));
     tools::for_every_pair(bots,|a,b|{
         if a.rect.get_intersect_rect(b.rect).is_some(){
             func(a,b);

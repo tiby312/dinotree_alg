@@ -16,8 +16,9 @@ mod ray_f32{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBoxRef<F32n,()>;
+        //type T=BBoxPtr<F32n,()>;
         type N=F32n;
+        type Inner=();
 
 
         fn compute_distance_to_rect(&self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
@@ -75,10 +76,10 @@ impl DemoSys for RaycastF32Demo{
         
         //Draw bots
         for bot in self.tree.as_ref().get_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
     
-        let tree=self.tree.as_ref();
+        let mut tree=self.tree.as_mut();
         
         { 
             for dir in 0..360i32{
@@ -93,7 +94,7 @@ impl DemoSys for RaycastF32Demo{
 
                 
 
-                let res=raycast::raycast(&tree,self.dim,ray,ray_f32::RayT{c:&c,g});
+                let res=raycast::raycast_mut(&mut tree,self.dim,ray,ray_f32::RayT{c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;

@@ -42,8 +42,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             }).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
         
             });
 
@@ -58,8 +58,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             }).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
 
@@ -100,7 +100,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
 
                 let instant=Instant::now();
             
-                colfind::query_naive_mut(SlicePin::from_slice_mut(&mut bb),|mut a,mut b|{
+                colfind::query_naive_mut(&mut bb,|mut a,mut b|{
                     a.inner.num-=1;
                     b.inner.num-=1;
                 });
@@ -125,8 +125,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             }).build_par();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
 
@@ -144,8 +144,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
 
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
 
@@ -220,8 +220,8 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
 
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=2;
-                b.inner_mut().num+=2;
+                a.inner.num+=2;
+                b.inner.num+=2;
             });
             
 
@@ -237,7 +237,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
-                colfind::query_naive_mut(SlicePin::from_slice_mut(&mut bb),|mut a,mut b|{
+                colfind::query_naive_mut(&mut bb,|mut a,mut b|{
                     a.inner.num-=1;
                     b.inner.num-=1;
                 });
@@ -283,8 +283,8 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
             }).build_seq();
 
             colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=2;
-                b.inner_mut().num+=2;
+                a.inner.num+=2;
+                b.inner.num+=2;
             });
             
             counter.into_inner()

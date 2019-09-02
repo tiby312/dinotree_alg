@@ -24,15 +24,16 @@ mod ray_f32{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBoxRef<F32n,Bot2>;
+        //type T=BBoxPtr<F32n,Bot2>;
         type N=F32n;
+        type Inner=Bot2;
 
 
-        fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
+        fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:BBoxRefMut<Self::N,Self::Inner>)->RayIntersectResult<Self::N>{
             if self.draw{
-                draw_rect_f32([1.0,0.0,0.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
+                draw_rect_f32([1.0,0.0,0.0,0.5],bot.rect.as_ref(),self.c,&mut self.g.borrow_mut());
             }
-            Self::compute_distance_to_rect(self,ray,bot.get()) 
+            Self::compute_distance_to_rect(self,ray,bot.rect) 
         }
 
         fn compute_distance_to_rect(&self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
@@ -107,7 +108,7 @@ impl DemoSys for RaycastF32DebugDemo{
         };
 
         for bot in self.tree.as_ref().get_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }   
 
 
@@ -116,9 +117,9 @@ impl DemoSys for RaycastF32DebugDemo{
         
 
         //dbg!("START");
-        let test = match raycast::raycast(self.tree.as_ref(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
+        let test = match raycast::raycast_mut(&mut self.tree.as_mut(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
             Some((bots,dis))=>{
-                let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
+                let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                 k.sort();
                 Some((k,dis.into_inner()))
             },
@@ -131,12 +132,12 @@ impl DemoSys for RaycastF32DebugDemo{
 
         if check_naive{
 
-            let tree_ref=self.tree.as_ref();
+            let tree_ref=self.tree.as_mut();
             
             
-            let k = match raycast::naive(tree_ref.get_bots().iter(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
+            let k = match raycast::naive_mut(tree_ref.get_bots_mut(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
                 Some((bots,dis))=>{
-                    let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
+                    let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                     k.sort();
                     Some((k,dis.into_inner()))
                 },

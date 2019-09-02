@@ -40,8 +40,6 @@ mod inner_prelude{
     pub use axgeom::Vec2;
     pub use axgeom::vec2;
     pub use axgeom::vec2same;
-    pub use dinotree::SlicePin;
-    pub use core::pin::Pin;
 }
 
 

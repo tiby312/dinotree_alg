@@ -15,18 +15,31 @@ struct BBoxMut2<A:NumTrait,B>(BBoxMut<A,B>);
 
 unsafe impl HasAabb for BBoxMut2<isize,Bot>{
     type Num=isize;
-    fn get(&self)->&axgeom::Rect<isize>{
-        &self.0.aabb
+    type Inner=Bot;
+    fn get(&self)->BBoxRef<isize,Bot>{
+        BBoxRef::new(&self.0.aabb,&self.0.inner)
     }
 }
 
 unsafe impl HasAabb for &mut BBoxMut2<isize,Bot>{
     type Num=isize;
-    fn get(&self)->&axgeom::Rect<isize>{
-        &self.0.aabb
+    type Inner=Bot;
+    fn get(&self)->BBoxRef<isize,Bot>{
+        BBoxRef::new(&self.0.aabb,&self.0.inner)
     }
 }
 
+unsafe impl HasAabbMut for BBoxMut2<isize,Bot>{
+    fn get_mut(&mut self)->BBoxRefMut<isize,Bot>{
+        BBoxRefMut::new(&self.0.aabb,&mut self.0.inner)
+    }
+}
+
+unsafe impl HasAabbMut for &mut BBoxMut2<isize,Bot>{
+    fn get_mut(&mut self)->BBoxRefMut<isize,Bot>{
+        BBoxRefMut::new(&self.0.aabb,&mut self.0.inner)
+    }
+}
 
 
 
@@ -73,8 +86,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
 
     
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner_mut().num+=1;
-                b.inner_mut().num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
         
             });
 
@@ -100,8 +113,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
 
     
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                let a:&mut Bot=unsafe{&mut *(*a.inner_mut())};
-                let b:&mut Bot=unsafe{&mut *(*b.inner_mut())};
+                let a:&mut Bot=unsafe{&mut *(*a.inner)};
+                let b:&mut Bot=unsafe{&mut *(*b.inner)};
                 a.num+=1;
                 b.num+=1;
         
@@ -134,8 +147,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
 
     
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                let a:&mut BBoxMut2<_,_>=unsafe{&mut *(*a.inner_mut())};
-                let b:&mut BBoxMut2<_,_>=unsafe{&mut *(*b.inner_mut())};
+                let a:&mut BBoxMut2<_,_>=unsafe{&mut *(*a.inner)};
+                let b:&mut BBoxMut2<_,_>=unsafe{&mut *(*b.inner)};
                 a.0.inner.num+=1;
                 b.0.inner.num+=1;
         
@@ -162,8 +175,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
 
     
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.0.inner.num+=1;
-                b.0.inner.num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
         
             });
             
@@ -192,8 +205,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
 
             
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.0.inner.num+=1;
-                b.0.inner.num+=1;
+                a.inner.num+=1;
+                b.inner.num+=1;
             });
 
 

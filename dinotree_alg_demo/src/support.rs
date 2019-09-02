@@ -25,7 +25,7 @@ pub mod prelude{
     pub use axgeom::*;
     pub use dists::uniform_rand::UniformRandGen;
     pub use core::pin::Pin;
-    pub use dinotree::SlicePin;
+    pub use dinotree::*;
 }
 
 

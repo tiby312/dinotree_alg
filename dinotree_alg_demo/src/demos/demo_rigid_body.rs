@@ -142,9 +142,9 @@ pub fn handle_rigid_body(
 
         for _ in 0..num_query{
             dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b|{
-                match a.inner_mut().push_away(b.inner_mut(),ball_size,push_rate){
+                match a.inner.push_away(b.inner,ball_size,push_rate){
                     Some(dis)=>{
-                        func(a.inner_mut(),b.inner_mut(),dis);    
+                        func(a.inner,b.inner,dis);    
                     },
                     _=>{}
                 }
@@ -152,12 +152,12 @@ pub fn handle_rigid_body(
 
 
             dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,|mut a|{
-                a.inner_mut().push_away_from_border(dim.as_ref(),push_rate)
+                a.inner.push_away_from_border(dim.as_ref(),push_rate)
             });
         
 
             for body in tree.get_bots_mut().iter_mut(){
-                let body=body.inner_mut();
+                let body=body.inner;
                 let mm=body.push_vec.magnitude();
                 if mm>0.0000001{
                     if mm>push_rate{
@@ -215,11 +215,11 @@ impl DemoSys for RigidBodyDemo{
         }).build_seq(); 
         
         rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|mut b|{
-            let diff=cursor.inner_into()-b.inner().pos;
+            let diff=cursor.inner_into()-b.inner.pos;
 
             let dis=diff.magnitude();
             if dis<60.0{
-                b.inner_mut().acc-=diff*0.05;
+                b.inner.acc-=diff*0.05;
             }
         });
         
