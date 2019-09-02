@@ -103,7 +103,7 @@ impl<'a,T,F:FnMut(&T,&T)->bool> Iterator for SliceSplit<'a,T,F>{
 
 
 
-
+/*
 macro_rules! get_range_iter{
     ($range:expr)=>{{
         $range.iter()
@@ -131,7 +131,7 @@ macro_rules! unit_mut_create{
         UnitMut{bot:$a,mag:$b}
     }}
 }
-
+*/
 
 
 fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
@@ -275,7 +275,7 @@ fn recc<'a,
     K:Knearest<N=N,Inner=T::Inner>,
     >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
 
-    let ((_depth,mut nn),rest)=stuff.next();
+    let ((_depth,nn),rest)=stuff.next();
 
     match rest{
         Some([left,right])=>{

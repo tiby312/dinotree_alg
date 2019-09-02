@@ -335,7 +335,7 @@ fn recc<'a,
 //    }
 //}
 
-
+/*
 macro_rules! get_range_iter{
     ($range:expr)=>{{
         $range.iter()
@@ -348,7 +348,7 @@ macro_rules! get_mut_range_iter{
         $range.iter_mut()
     }}
 }
-
+*/
 
 pub use self::mutable::naive_mut;
 pub use self::mutable::raycast_mut;

@@ -41,7 +41,7 @@ unsafe impl<'a,T:HasAabb> HasAabb for WrapT<'a,T>{
 
 ///Provides 1d collision detection.
 pub struct Sweeper<T: HasAabbMut> {
-    helper: tools::PreVecMut<T>,
+    helper: tools::PreVecMut<T::Num,T::Inner>,
     //helper2: tools::PreVecMut<T>,
 }
 
@@ -154,7 +154,7 @@ impl<I: HasAabbMut> Sweeper<I> {
     fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        mut collision_botids: ElemSliceMut<'a,I>,
+        collision_botids: ElemSliceMut<'a,I>,
         func: &mut F,
     ) {
         //    Create a new temporary list called “activeList”.
@@ -200,7 +200,7 @@ impl<I: HasAabbMut> Sweeper<I> {
     fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        mut cols: (ElemSliceMut<I>, ElemSliceMut<I>),
+        cols: (ElemSliceMut<I>, ElemSliceMut<I>),
         func: &mut F,
     ) {
         let mut xs=cols.0.iter_mut().peekable();

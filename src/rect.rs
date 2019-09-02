@@ -65,7 +65,7 @@ macro_rules! rect{
 
 pub fn for_all_not_in_rect_mut<K:DinoTreeRefMutTrait>(tree:&mut K,rect:&Rect<K::Num>,closure:impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
     fn rect_recurse<A:AxisTrait,T:HasAabbMut,F:FnMut(BBoxRefMut<T::Num,T::Inner>)>(axis:A,it:VistrMut<T>,rect:&Rect<T::Num>,mut closure:F)->F{
-        let (mut nn,rest)=it.next();
+        let (nn,rest)=it.next();
         
         //TODO exploit sorted property.
         for a in nn.bots.iter_mut(){

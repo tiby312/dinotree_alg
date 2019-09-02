@@ -8,7 +8,8 @@ use crate::inner_prelude::*;
 ///so that the user may also have the struct implement Splitter.
 pub trait ColMulti{
     type T: HasAabbMut;
-    
+    //type Num:NumTrait;
+    //type Inner;
     fn collide(&mut self,
         a: BBoxRefMut<<Self::T as HasAabb>::Num,<Self::T as HasAabb>::Inner>,
         b: BBoxRefMut<<Self::T as HasAabb>::Num,<Self::T as HasAabb>::Inner>);
@@ -39,8 +40,8 @@ use self::inner::*;
 /// let mut bots = dinotree::advanced::into_bbox_vec(builder.build().take(1000),|a|builder.create_aabb(a));
 /// query_naive_mut(&mut bots,|a,b|a.inner.collide(&mut b.inner));
 /// ```
-pub fn query_naive_mut<T:HasAabbMut>(bots:&mut [T],mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
-    let bots=ElemSliceMut::new(ElemSlice::from_slice_mut(bots));
+pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
+    //let bots=ElemSliceMut::new(ElemSlice::from_slice_mut(bots));
     tools::for_every_pair(bots,|a,b|{
         if a.rect.get_intersect_rect(b.rect).is_some(){
             func(a,b);

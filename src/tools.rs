@@ -1,12 +1,12 @@
 use core;
 use core::marker::PhantomData;
 use alloc::vec::Vec;
-use dinotree::BBoxRefMut;
-use dinotree::*;
+use dinotree::prelude::*;
+
 
 pub fn for_every_pair<T:HasAabbMut>(mut arr:ElemSliceMut<T>,mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
     loop{
-        let mut temp=arr;
+        let temp=arr;
         match temp.split_first_mut(){
             Some((mut b1,mut x))=>{
                 for b2 in x.as_mut().iter_mut(){
@@ -35,19 +35,18 @@ impl<T> Clone for PhantomSendSync<T> {
 
 //They are always send and sync because the only time the vec is used
 //is when it is borrowed for the lifetime.
-unsafe impl<T:HasAabbMut> core::marker::Send for PreVecMut<T> {}
-unsafe impl<T:HasAabbMut> core::marker::Sync for PreVecMut<T> {}
+unsafe impl<N:NumTrait,T> core::marker::Send for PreVecMut<N,T> {}
+unsafe impl<N:NumTrait,T> core::marker::Sync for PreVecMut<N,T> {}
 
 
 
-use dinotree::advanced::Unique;
 ///An vec api to avoid excessive dynamic allocation by reusing a Vec
-pub struct PreVecMut<T:HasAabbMut> {
-    vec:Vec<BBoxRefPtr<T::Num,T::Inner>>
+pub struct PreVecMut<N:NumTrait,T> {
+    vec:Vec<BBoxRefPtr<N,T>>
 }
-impl<T:HasAabbMut> PreVecMut<T> {
+impl<N:NumTrait,T> PreVecMut<N,T> {
     #[inline(always)]
-    pub fn new() -> PreVecMut<T> {
+    pub fn new() -> PreVecMut<N,T> {
         PreVecMut {
             vec:Vec::new()
         }
@@ -55,10 +54,10 @@ impl<T:HasAabbMut> PreVecMut<T> {
 
     ///Clears the vec and returns a mutable reference to a vec.
     #[inline(always)]
-    pub fn get_empty_vec_mut<'a,'b:'a>(&'a mut self) -> &'a mut Vec<BBoxRefMut<'b,T::Num,T::Inner>> {
+    pub fn get_empty_vec_mut<'a,'b:'a>(&'a mut self) -> &'a mut Vec<BBoxRefMut<'b,N,T>> {
         self.vec.clear();
         let v: &mut Vec<_> = &mut self.vec;
-        unsafe{&mut *(v as *mut _ as *mut Vec<BBoxRefMut<'b,T::Num,T::Inner>>)}
+        unsafe{&mut *(v as *mut _ as *mut Vec<BBoxRefMut<'b,N,T>>)}
     }
 }
 

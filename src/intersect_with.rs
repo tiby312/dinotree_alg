@@ -26,7 +26,7 @@ pub fn intersect_with_mut<K:DinoTreeRefMutTrait+Send,X:Copy+Send>(
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
     //This way we can paralleliz this function.
-    let mut b2:Vec<_>=b.iter_mut().map(|a|unsafe{BBoxPtr::new(aabb_create(&a),Unique::new(a).unwrap())}).collect();
+    let mut b2:Vec<_>=b.iter_mut().map(|a|BBoxPtr::new(aabb_create(&a),Unique::new(a).unwrap())).collect();
 
     for mut i in ElemSlice::from_slice_mut(&mut b2).iter_mut() {
         //let rect=*i.get();

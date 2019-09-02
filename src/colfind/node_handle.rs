@@ -90,7 +90,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
             
         if res{
             for mut a in current.range.as_mut().iter_mut(){
-                for mut b in anchor.range.as_mut().iter_mut(){
+                for b in anchor.range.as_mut().iter_mut(){
                     if a.rect.intersects_rect(b.rect){
                         func.collide(a.as_mut(),b);
                     }

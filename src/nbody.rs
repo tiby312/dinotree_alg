@@ -53,8 +53,8 @@ pub fn naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,func:impl FnMut(BBoxRefMut<T
 
 
 use compt::dfs_order;
-type CombinedVistr<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::Vistr<'a,N,dfs_order::PreOrder>,dinotree::VistrMut<'a,T>>>;
-type CombinedVistrMut<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::VistrMut<'a,N,dfs_order::PreOrder>,dinotree::VistrMut<'a,T>>>;
+type CombinedVistr<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::Vistr<'a,N,dfs_order::PreOrder>,VistrMut<'a,T>>>;
+type CombinedVistrMut<'a,N,T> = compt::LevelIter<compt::Zip<dfs_order::VistrMut<'a,N,dfs_order::PreOrder>,VistrMut<'a,T>>>;
 
 
 fn wrap_mut<'a:'b,'b,N,T:HasAabbMut>(bla:&'b mut CombinedVistrMut<'a,N,T>)->CombinedVistrMut<'b,N,T>{
