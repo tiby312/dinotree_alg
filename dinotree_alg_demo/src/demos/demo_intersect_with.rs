@@ -96,7 +96,7 @@ impl DemoSys for IntersectWithDemo{
            axgeom::Rect::from_point(bot.pos,vec2(radius,radius)).inner_try_into().unwrap()
         }).build_par(); 
 
-        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|mut bot,wall|{
+        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|bot,wall|{
             let fric=0.8;
 
 
@@ -122,7 +122,7 @@ impl DemoSys for IntersectWithDemo{
         });
 
         let cc=cursor.inner_into();
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap(),|mut b|{
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap(),|b|{
             let _ =duckduckgeo::repel_one(b.inner,cc,0.001,20.0);
         });
         
@@ -134,7 +134,7 @@ impl DemoSys for IntersectWithDemo{
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
  
-        colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+        colfind::QueryBuilder::new(&mut tree).query_par(| a, b| {
             let _ = duckduckgeo::repel(a.inner,b.inner,0.001,2.0);
         });
     

@@ -100,7 +100,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
 
                 let instant=Instant::now();
             
-                colfind::query_naive_mut(&mut bb,|mut a,mut b|{
+                colfind::query_naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bb)),|mut a,mut b|{
                     a.inner.num-=1;
                     b.inner.num-=1;
                 });
@@ -237,7 +237,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
                     BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
-                colfind::query_naive_mut(&mut bb,|mut a,mut b|{
+                colfind::query_naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bb)),|mut a,mut b|{
                     a.inner.num-=1;
                     b.inner.num-=1;
                 });

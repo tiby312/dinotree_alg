@@ -59,7 +59,7 @@ fn test3(bots:&mut [Bot])->Res{
     
 
     let mut num_pairs=0;
-    colfind::query_naive_mut(&mut bb,|_a, _b| {
+    colfind::query_naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bb)),|_a, _b| {
         num_pairs+=1;
     });
     

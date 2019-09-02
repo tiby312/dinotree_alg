@@ -4,7 +4,6 @@ use dinotree_alg::colfind;
 use duckduckgeo;
 use duckduckgeo::GravityTrait;
 use dinotree_alg;
-use core::marker::PhantomData;
 
 #[derive(Copy,Clone)]
 struct NodeMass{
@@ -49,13 +48,13 @@ impl nbody::NodeMassTrait for Bla{
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,mut a:BBoxRefMut<Self::Num,Self::Inner>,mut b:BBoxRefMut<Self::Num,Self::Inner>){
+    fn handle_bot_with_bot(&self, a:BBoxRefMut<Self::Num,Self::Inner>, b:BBoxRefMut<Self::Num,Self::Inner>){
         //self.num_pairs_checked+=1;
         let _ = duckduckgeo::gravitate(a.inner,b.inner,0.0001,0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,mut b:BBoxRefMut<Self::Num,Self::Inner>){
+    fn handle_node_with_bot(&self,a:&mut Self::No, b:BBoxRefMut<Self::Num,Self::Inner>){
         
         let _ = duckduckgeo::gravitate(a,b.inner,0.0001,0.004);
     }
@@ -181,7 +180,7 @@ impl DemoSys for DemoNbody{
         let no_mass_bots=&mut self.no_mass_bots;
         let bots=&mut self.bots;
         
-        let mut bots2:Vec<BBoxMut<F32n,Bot>>=bots.iter().map(|bot|BBoxMut::new(bot.create_aabb(),*bot)).collect();
+        let mut bots2:Vec<BBox<F32n,Bot>>=bots.iter().map(|bot|BBox::new(bot.create_aabb(),*bot)).collect();
         let mut bots3=bots.clone();
                
         let mut tree={
@@ -208,8 +207,7 @@ impl DemoSys for DemoNbody{
             
             let (bots2,num_pair_naive)={
                 let mut num_pairs_checked=0;
-                let bots2=into_bbox_slice(&mut bots2);
-                nbody::naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(bots2)),|mut a,mut b|{
+                nbody::naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bots2)),|a,b|{
                     let _ = duckduckgeo::gravitate(a.inner,b.inner,0.00001,0.004);
                     num_pairs_checked+=1;
                 });
@@ -267,7 +265,7 @@ impl DemoSys for DemoNbody{
             }
         }
               
-        colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+        colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
             let (a,b)=if a.inner.mass>b.inner.mass{
                 (a.inner,b.inner)
             }else{

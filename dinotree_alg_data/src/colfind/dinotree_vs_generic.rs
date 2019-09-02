@@ -47,7 +47,7 @@ fn test2(bots:&mut [BBox<isize,Bot>])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_seq();
+    let mut tree=DinoTreeGenericBuilder::new(axgeom::XAXISS,bots).build_seq();
 
     
     colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
@@ -88,7 +88,7 @@ fn test4(bots:&mut [BBox<isize,Bot>])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par();
+    let mut tree=DinoTreeGenericBuilder::new(axgeom::XAXISS,bots).build_par();
 
     
     colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
@@ -111,7 +111,7 @@ fn test5(bots:&mut [BBox<isize,Bot>])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_seq_aux();
+    let mut tree=DinoTreeGenericBuilder::new(axgeom::XAXISS,bots).build_seq_aux();
 
     
     colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
@@ -135,7 +135,7 @@ fn test6(bots:&mut [BBox<isize,Bot>])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeNoCopyBuilder::new(axgeom::XAXISS,bots).build_par_aux();
+    let mut tree=DinoTreeGenericBuilder::new(axgeom::XAXISS,bots).build_par_aux();
 
     
     colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
@@ -193,14 +193,11 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
 
     for num_bots in (0..150_000).rev().step_by(2000){
         
-        let mut bots2:Vec<BBoxMut<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
+        let mut bots2:Vec<BBox<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
             let inner=Bot{num:0,pos:pos.inner_as(),_val:[0;ARR_SIZE]};
-            let aabb=axgeom::Rect::from_point(inner.pos,vec2same(5));
-            BBoxMut{aabb,inner}
+            let rect=axgeom::Rect::from_point(inner.pos,vec2same(5));
+            BBox{rect,inner}
         }).collect();
-
-        let bots2=into_bbox_slice(&mut bots2);
-
         
 
         let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
@@ -209,11 +206,11 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
 
         let arr=[
             test1(&mut bots),
-            test2(bots2),
+            test2(&mut bots2),
             test3(&mut bots),
-            test4(bots2),
-            test5(bots2),
-            test6(bots2)];
+            test4(&mut bots2),
+            test5(&mut bots2),
+            test6(&mut bots2)];
 
         let r=Record{num_bots,arr};
         rects.push(r);      

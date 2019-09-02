@@ -141,7 +141,7 @@ pub fn handle_rigid_body(
         let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate*(num_query as f32))).build_seq();
 
         for _ in 0..num_query{
-            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b|{
+            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|a,b|{
                 match a.inner.push_away(b.inner,ball_size,push_rate){
                     Some(dis)=>{
                         func(a.inner,b.inner,dis);    
@@ -151,7 +151,7 @@ pub fn handle_rigid_body(
             });    
 
 
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,|mut a|{
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,| a|{
                 a.inner.push_away_from_border(dim.as_ref(),push_rate)
             });
         
@@ -214,7 +214,7 @@ impl DemoSys for RigidBodyDemo{
             bot.create_loose(radius)
         }).build_seq(); 
         
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|mut b|{
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|b|{
             let diff=cursor.inner_into()-b.inner.pos;
 
             let dis=diff.magnitude();

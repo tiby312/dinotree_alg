@@ -3,7 +3,8 @@ use dinotree_alg::raycast;
 use std;
 use duckduckgeo;
 use dinotree_alg::raycast::RayIntersectResult;
-use core::marker::PhantomData;
+
+
 mod ray_f32{
     use super::*;
 
@@ -55,14 +56,14 @@ impl RaycastF32Demo{
 
     pub fn new(dim:Rect<F32n>)->Self{
         
-        let mut vv:Vec<_> = (0..500).map(|_|()).collect();
+        let vv:Vec<_> = (0..500).map(|_|()).collect();
         
         let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(5.0,10.0).map(|(pos,radius)|{
             Rect::from_point(pos,radius).inner_try_into().unwrap()
         });
 
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|a|{
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|_a|{
             ii.next().unwrap()
         }).build_seq();
 

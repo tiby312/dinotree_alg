@@ -116,7 +116,7 @@ impl DemoSys for LiquidDemo{
         
         
         
-        colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+        colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
             //let arr = [a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
             let _ = a.inner.solve(b.inner,radius);
 
@@ -140,14 +140,14 @@ impl DemoSys for LiquidDemo{
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|mut b|{
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
             let _ =duckduckgeo::repel_one(b.inner,cc,0.001,100.0);
         });
         
 
         {
             let dim2=self.dim.inner_into();
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|mut a|{
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|a|{
                 duckduckgeo::collide_with_border(a.inner,&dim2,0.5);
             });
         }        

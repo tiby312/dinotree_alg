@@ -3,8 +3,7 @@ use std;
 use std::time::Duration;
 
 use std::time::Instant;
-use dinotree::advanced::Splitter;
-
+use dinotree::prelude::*;
 
  
 fn into_secs(elapsed: std::time::Duration) -> f64 {
@@ -93,7 +92,6 @@ pub fn instant_to_sec(elapsed:Duration)->f64{
 }
 
 
-use dinotree::*;
 
 ///Like dinotree_inner::BBox, but with a public constructor
 #[derive(Copy,Clone)]

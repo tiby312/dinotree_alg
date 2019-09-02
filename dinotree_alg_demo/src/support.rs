@@ -7,12 +7,14 @@ pub mod prelude{
     pub(crate) use piston_window;
     pub use ordered_float::NotNan;
     pub use piston_window::*;
+    /*
     pub use dinotree::*;
     pub use dinotree::nocopy::*;
     pub use dinotree::copy::*;
+    */
     pub(crate) use axgeom;
     pub(crate) use crate::support::*;
-    pub use dinotree::BBox;
+    //pub use dinotree::BBox;
     
     pub use duckduckgeo::*;
     pub use duckduckgeo::bot::*;
@@ -24,8 +26,9 @@ pub mod prelude{
     pub use duckduckgeo::array2_inner_into;
     pub use axgeom::*;
     pub use dists::uniform_rand::UniformRandGen;
-    pub use core::pin::Pin;
-    pub use dinotree::*;
+    //pub use core::pin::Pin;
+    //pub use dinotree::*;
+    pub use dinotree::prelude::*;
 }
 
 

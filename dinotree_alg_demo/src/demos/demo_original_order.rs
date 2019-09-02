@@ -82,14 +82,14 @@ impl DemoSys for OrigOrderDemo{
             
         {
             let dim2=self.dim.inner_into();
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|mut a|{
+            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|a|{
                 duckduckgeo::collide_with_border(a.inner,&dim2,0.5);
             });
         }
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|mut b|{
+        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
             let _ =duckduckgeo::repel_one(b.inner,cc,0.001,20.0);
         });
         
@@ -214,12 +214,12 @@ impl DemoSys for OrigOrderDemo{
 
 
         if !check_naive{
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
                 let _ = duckduckgeo::repel(a.inner,b.inner,0.001,2.0);
             });
         }else{
             let mut res=Vec::new();
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
                 let a=a.inner;
                 let b=b.inner;
                 let _ = duckduckgeo::repel(a,b,0.001,2.0);
@@ -235,7 +235,7 @@ impl DemoSys for OrigOrderDemo{
 
             let mut res2=Vec::new();
             
-            colfind::query_naive_mut(tree.get_bots_mut(),|mut a,mut b|{
+            colfind::query_naive_mut(tree.get_bots_mut(),|a, b|{
                 let a=a.inner;
                 let b=b.inner;
                 let (a,b)=if a.id<b.id{

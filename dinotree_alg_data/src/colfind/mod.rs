@@ -7,5 +7,5 @@ pub mod float_vs_integer;
 pub mod level_analysis;
 pub mod parallel_heur_comparison;
 pub mod rebal_strat;
-pub mod copy_vs_nocopy;
+pub mod dinotree_vs_generic;
 pub mod indirection_vs_not;

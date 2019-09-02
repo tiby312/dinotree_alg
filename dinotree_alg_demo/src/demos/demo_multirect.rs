@@ -25,7 +25,7 @@ impl MultiRectDemo{
         }).collect();
 
 
-        let mut tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_seq();
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_seq();
 
 
         MultiRectDemo{tree}

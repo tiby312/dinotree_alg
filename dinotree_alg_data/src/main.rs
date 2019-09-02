@@ -22,11 +22,15 @@ mod inner_prelude{
     pub(crate) use crate::FigureBuilder;
     pub use crate::support::*;
     pub use dinotree_alg::colfind;
+    /*
     pub use dinotree::*;
     pub use dinotree::copy::*;
     pub use dinotree::nocopy::*;
     pub use dinotree::notsorted::*;
     pub use dinotree::advanced::*;
+    */
+    pub use dinotree::prelude::*;
+
     pub(crate) use axgeom;
     pub(crate) use crate::datanum;
     pub use gnuplot::*;
@@ -156,7 +160,7 @@ fn main() {
             
             
             run_test!(&mut fb,colfind::indirection_vs_not::handle_bench);
-            run_test!(&mut fb,colfind::copy_vs_nocopy::handle);
+            run_test!(&mut fb,colfind::dinotree_vs_generic::handle);
             
             
             //done
