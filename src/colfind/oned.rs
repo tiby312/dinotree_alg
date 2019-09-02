@@ -138,8 +138,8 @@ impl<I: HasAabbMut> Sweeper<I> {
         self.find_parallel_2d_ptr(axis,r1,&mut bots2,clos2);
         */
         
-        for mut inda in r1.iter_mut() {
-            for mut indb in r2.iter_mut() {
+        for mut inda in r1.as_mut().iter_mut() {
+            for mut indb in r2.as_mut().iter_mut() {
                 if inda.rect.intersects_rect(indb.rect){
                     clos2.collide(inda.as_mut(), indb.as_mut());
                 }

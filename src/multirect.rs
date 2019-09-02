@@ -28,7 +28,7 @@ pub struct MultiRectMut<'a,K:DinoTreeRefMutTrait> {
 }
 
 impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
-	pub fn for_all_in_rect_mut(&mut self,rect:Rect<K::Num>,mut func:impl FnMut(Pin<&'a mut K::Item>))->Result<(),RectIntersectErr>{
+	pub fn for_all_in_rect_mut(&mut self,rect:Rect<K::Num>,mut func:impl FnMut(BBoxRefMut<'a,K::Num,K::Inner>))->Result<(),RectIntersectErr>{
 		for r in self.rects.iter(){
 			if rect.get_intersect_rect(r).is_some(){
 				return Err(RectIntersectErr);
@@ -37,9 +37,10 @@ impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
 
 		self.rects.push(rect);
 
-		rect::for_all_in_rect_mut(&mut self.tree,&rect,|bbox:Pin<&mut K::Item>|{
+		rect::for_all_in_rect_mut(&mut self.tree,&rect,|bbox:BBoxRefMut<K::Num,K::Inner>|{
 			//This is only safe to do because the user is unable to mutate the bounding box.
-			let bbox:Pin<&'a mut K::Item>=unsafe {core::mem::transmute(bbox)};
+			//let bbox:Pin<&'a mut K::Item>=unsafe {core::mem::transmute(bbox)};
+            let bbox:BBoxRefMut<'a,K::Num,K::Inner>=unsafe{core::mem::transmute(bbox)};
 			func(bbox);
 		});
 
@@ -58,7 +59,7 @@ pub fn multi_rect_mut<'a,K:DinoTreeRefMutTrait>(tree:&'a mut K)->MultiRectMut<'a
 fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
     let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
-        let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
+        let (p1,p2)=(a.get().rect.get_range(axis).left,b.get().rect.get_range(axis).left);
         if p1 > p2 {
             return core::cmp::Ordering::Greater;
         }
@@ -84,13 +85,19 @@ pub fn collide_two_rect_parallel<
     mut func: F,
 )->Result<(),RectIntersectErr> {
 
-	struct Wr<'a,T:HasAabbMut+'a>(&'a mut T);
-	unsafe impl<'a,T:HasAabbMut+'a> HasAabb for Wr<'a,T>{
-		type Num=T::Num;
-		fn get(&self)->&Rect<Self::Num>{
-			self.get()
+	struct Wr<'a,N:NumTrait,T>(BBoxRefMut<'a,N,T>);
+	unsafe impl<'a,N:NumTrait,T> HasAabb for Wr<'a,N,T>{
+		type Num=N;
+        type Inner=T;
+		fn get(&self)->BBoxRef<N,T>{
+            self.0.as_ref()
 		}
 	}
+    unsafe impl<'a,N:NumTrait,T> HasAabbMut for Wr<'a,N,T>{
+        fn get_mut(&mut self)->BBoxRefMut<N,T>{
+            self.0.as_mut()
+        }
+    }
 
 	//let mut multi=multi_rect_mut(tree);
 
@@ -110,24 +117,24 @@ pub fn collide_two_rect_parallel<
 
     let mut sweeper = oned::Sweeper::new();
 
-    struct Bl<T:HasAabbMut,F:FnMut(&mut T,&mut T)> {
+    struct Bl<T:HasAabbMut,F:FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)> {
         a: F,
         _p:PhantomData<T>
     }
 
-    impl<T:HasAabbMut,F:FnMut(&mut T,&mut T)> colfind::ColMulti for Bl<T,F> {
+    impl<T:HasAabbMut,F:FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)> colfind::ColMulti for Bl<T,F> {
         type T = T;
 
-        fn collide(&mut self, a: &mut Self::T, b: &mut Self::T) {
+        fn collide(&mut self, a: BBoxRefMut<T::Num,T::Inner>, b:BBoxRefMut<T::Num,T::Inner>) {
             (self.a)(a,b);
         }
 
     }
 
-    let ff=|mut a:&mut Wr<K::Item>,mut b:&mut Wr<K::Item>|{
-        func(a.0.as_mut(),b.0.as_mut())
+    let ff=|mut a:BBoxRefMut<K::Num,K::Inner>,mut b:BBoxRefMut<K::Num,K::Inner>|{
+        func(a.as_mut(),b.as_mut())
     };
-    sweeper.find_parallel_2d_no_check(axis,ElemSlice::from_slice_mut(&mut b1), ElemSlice::from_slice_mut(&mut b2), &mut Bl{a:ff,_p:PhantomData});
+    sweeper.find_parallel_2d_no_check(axis,ElemSliceMut::new(ElemSlice::from_slice_mut(&mut b1)), ElemSliceMut::new(ElemSlice::from_slice_mut(&mut b2)), &mut Bl{a:ff,_p:PhantomData});
     Ok(())
 }
 

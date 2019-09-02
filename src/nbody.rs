@@ -18,8 +18,10 @@ use crate::inner_prelude::*;
 
 
 pub trait NodeMassTrait:Clone{
-    type T:HasAabbMut+Send;
+    type T:HasAabbMut<Num=Self::Num,Inner=Self::Inner>+Send;
     type No:Copy+Send;
+    type Num:NumTrait;
+    type Inner;
 
     //Returns the bounding rectangle for this node.
     fn get_rect(no:&Self::No)->&Rect<<Self::T as HasAabb>::Num>;
@@ -28,24 +30,24 @@ pub trait NodeMassTrait:Clone{
     fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No);
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,a:Pin<&mut Self::T>,b:Pin<&mut Self::T>);
+    fn handle_bot_with_bot(&self,a:BBoxRefMut<Self::Num,Self::Inner>,b:BBoxRefMut<Self::Num,Self::Inner>);
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,b:Pin<&mut Self::T>);
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:BBoxRefMut<Self::Num,Self::Inner>);
 
     fn is_far_enough(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     fn is_far_enough_half(&self,b:[<Self::T as HasAabb>::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
-    fn apply_to_bots<'a,I:Iterator<Item=Pin<&'a mut Self::T>>> (&'a self,a:&'a Self::No,it:I);
+    fn apply_to_bots<'a,I:Iterator<Item=BBoxRefMut<'a,Self::Num,Self::Inner>>> (&'a self,a:&'a Self::No,it:I);
 
-    fn new<'a,I:Iterator<Item=&'a Self::T>> (&'a self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
+    fn new<'a,I:Iterator<Item=BBoxRef<'a,Self::Num,Self::Inner>>> (&'a self,it:I,rect:Rect<<Self::T as HasAabb>::Num>)->Self::No;
 }
 
 
 ///Naive version simply visits every pair.
-pub fn naive_mut<T:HasAabbMut>(bots:&mut ElemSlice<T>,func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
+pub fn naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
     tools::for_every_pair(bots,func);
 }
 
@@ -70,12 +72,12 @@ fn wrap_mut<'a:'b,'b,N,T:HasAabbMut>(bla:&'b mut CombinedVistrMut<'a,N,T>)->Comb
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
 fn buildtree<'a,
     T:HasAabbMut+Send+'a,
-    N:NodeMassTrait<T=T>
+    N:NodeMassTrait<T=T,Num=T::Num,Inner=T::Inner>
     >
     (axis:impl AxisTrait,node:VistrMut<T>,misc_nodes:&mut Vec<N::No>,ncontext:&N,rect:Rect<T::Num>){
 
 
-    fn recc<'a,T:HasAabbMut+Send+'a,N:NodeMassTrait<T=T>>
+    fn recc<'a,T:HasAabbMut+Send+'a,N:NodeMassTrait<T=T,Num=T::Num,Inner=T::Inner>>
         (axis:impl AxisTrait,stuff:VistrMut<T>,misc_nodes:&mut Vec<N::No>,ncontext:&N,rect:Rect<T::Num>){
         
         let (nn,rest)=stuff.next();
@@ -84,8 +86,9 @@ fn buildtree<'a,
 
                 match nn.div{
                     None=>{
-                        let empty:&[T]=&[];
-                        misc_nodes.push(ncontext.new(empty.iter(),rect));
+                        //let empty=&[];
+                        //misc_nodes.push(ncontext.new(empty.iter(),rect));
+                        
                         //recurse anyway even though there is no divider.
                         //we want to populate this tree entirely.
                         recc(axis.next(),left,misc_nodes,ncontext,rect);    
@@ -423,7 +426,7 @@ trait Bok2{
 
 
 ///Parallel version.
-pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<T=K::Item>+Sync+Send>(mut t1:K,ncontext:&N,rect:Rect<K::Num>) where N::No:Send, K::Item:Send+Copy{
+pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<T=K::Item,Num=K::Num,Inner=K::Inner>+Sync+Send>(mut t1:K,ncontext:&N,rect:Rect<K::Num>) where N::No:Send, K::Item:Send+Copy{
     let axis=t1.axis();
     
     let mut misc_nodes=Vec::new();

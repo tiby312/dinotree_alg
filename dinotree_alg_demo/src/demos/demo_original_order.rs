@@ -235,7 +235,7 @@ impl DemoSys for OrigOrderDemo{
 
             let mut res2=Vec::new();
             
-            colfind::query_naive_mut(SlicePin::from_slice_mut(tree.get_bots_mut()),|mut a,mut b|{
+            colfind::query_naive_mut(tree.get_bots_mut(),|mut a,mut b|{
                 let a=a.inner_mut();
                 let b=b.inner_mut();
                 let (a,b)=if a.id<b.id{

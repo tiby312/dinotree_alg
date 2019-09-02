@@ -9,7 +9,7 @@ pub fn for_every_pair<T:HasAabbMut>(mut arr:ElemSliceMut<T>,mut func:impl FnMut(
         let mut temp=arr;
         match temp.split_first_mut(){
             Some((mut b1,mut x))=>{
-                for b2 in x.iter_mut(){
+                for b2 in x.as_mut().iter_mut(){
                     func(b1.as_mut(),b2);
                 }
                 arr=x;

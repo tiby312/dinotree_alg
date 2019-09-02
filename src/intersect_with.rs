@@ -17,7 +17,7 @@ use crate::rect::*;
 ///But using the api, it is possible to build up a tree using the current trees dividers
 ///to exploit the divide and conquer properties of this problem.
 ///The two trees could be recursed at the same time to break up the problem.
-pub fn intersect_with_mut<K:DinoTreeRefMutTrait+Send,X:Copy+Send>(
+pub fn intersect_with_mut<K:DinoTreeRefMutTrait<Inner=X>+Send,X:Copy+Send>(
     mut tree:K,
     b: &mut [X],
     mut aabb_create:impl FnMut(&X)->axgeom::Rect<K::Num>,
@@ -26,11 +26,11 @@ pub fn intersect_with_mut<K:DinoTreeRefMutTrait+Send,X:Copy+Send>(
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
     //This way we can paralleliz this function.
-    let mut b2:Vec<_>=b.iter_mut().map(|a|BBoxRefMut::new(aabb_create(&a),a)).collect();
+    let mut b2:Vec<_>=b.iter_mut().map(|a|unsafe{BBoxPtr::new(aabb_create(&a),Unique::new(a).unwrap())}).collect();
 
     for mut i in ElemSlice::from_slice_mut(&mut b2).iter_mut() {
-        let rect=*i.get();
-        for_all_intersect_rect_mut(&mut tree,&rect, |a| {
+        //let rect=*i.get();
+        for_all_intersect_rect_mut(&mut tree,i.rect, |a| {
             func(a,i.as_mut());
         });
     }

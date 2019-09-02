@@ -26,13 +26,14 @@ use core::cmp::Ordering;
 
 ///The geometric functions that the user must provide.
 pub trait Knearest{
-    type T:HasAabb<Num=Self::N>;
+    type T:HasAabbMut<Num=Self::N,Inner=Self::Inner>;
     type N:NumTrait;
+    type Inner;
 
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
-    fn distance_to_bot(&self, point:Vec2<Self::N>,bot:&Self::T)->Self::N{
-        self.distance_to_rect(point,bot.get())
+    fn distance_to_bot(&self, point:Vec2<Self::N>,bot:BBoxRefMut<Self::N,Self::Inner>)->Self::N{
+        self.distance_to_rect(point,bot.rect)
     }
 
     fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N;
@@ -153,211 +154,211 @@ fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::AxisTrait,range:&Range
 
 
 /// Returned by k_nearest
-pub struct Unit<'a,T:'a,D>{ //:Ord+Copy
-    pub bot:&'a T,
+pub struct Unit<'a,T:HasAabb,D>{ //:Ord+Copy
+    pub bot:BBoxRef<'a,T::Num,T::Inner>,
     pub mag:D
 }
 /// Returned by k_nearest_mut
-pub struct UnitMut<'a,T:'a,D>{
-    pub bot:Pin<&'a mut T>,
+pub struct UnitMut<'a,T:HasAabbMut,D>{
+    pub bot:BBoxRefMut<'a,T::Num,T::Inner>,
     pub mag:D
 }
 
-macro_rules! knearest_recc{
-    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty,$unit:ty,$unit_create:ident)=>{
+//macro_rules! knearest_recc{
+//    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty,$unit:ty,$unit_create:ident)=>{
         
-        struct ClosestCand<'a,T:HasAabbMut+'a,D:Ord+Copy>{
-            //Can have multiple bots with the same mag. So the length could be bigger than num.
-            bots:Vec<$unit>,
-            //The current number of different distances in the vec
-            curr_num:usize,
-            //The max number of different distances.
-            num:usize
-        }
-        impl<'a,T:HasAabbMut+'a,D:Ord+Copy> ClosestCand<'a,T,D>{
+struct ClosestCand<'a,T:HasAabbMut+'a,D:Ord+Copy>{
+    //Can have multiple bots with the same mag. So the length could be bigger than num.
+    bots:Vec<UnitMut<'a,T,D>>,
+    //The current number of different distances in the vec
+    curr_num:usize,
+    //The max number of different distances.
+    num:usize
+}
+impl<'a,T:HasAabbMut+'a,D:Ord+Copy> ClosestCand<'a,T,D>{
 
-            //First is the closest
-            fn into_sorted(self)->Vec<$unit>{
-                self.bots
-            }
-            fn new(num:usize)->ClosestCand<'a,T,D>{
-                let bots=Vec::with_capacity(num);
-                ClosestCand{bots,num,curr_num:0}
-            }
+    //First is the closest
+    fn into_sorted(self)->Vec<UnitMut<'a,T,D>>{
+        self.bots
+    }
+    fn new(num:usize)->ClosestCand<'a,T,D>{
+        let bots=Vec::with_capacity(num);
+        ClosestCand{bots,num,curr_num:0}
+    }
 
-            fn consider(&mut self,a:($ref_lifetime,D))->bool{
-                //let a=(a.0 as $ptr,a.1);
-                let curr_bot=a.0;
-                let curr_dis=a.1;
+    fn consider(&mut self,a:(BBoxRefMut<'a,T::Num,T::Inner>,D))->bool{
+        //let a=(a.0 as $ptr,a.1);
+        let curr_bot=a.0;
+        let curr_dis=a.1;
 
-                if self.curr_num<self.num{
-                    let arr=&mut self.bots;
-                    
-                    for i in 0..arr.len(){
-                        if curr_dis<arr[i].mag{
-                            let unit=$unit_create!(curr_bot,curr_dis);
-                            arr.insert(i,unit);
-                            self.curr_num+=1;
-                            return true;
-                        }
-                    }
-                    //only way we get here is if the above didnt return.
-                    let unit=$unit_create!(curr_bot,curr_dis);
+        if self.curr_num<self.num{
+            let arr=&mut self.bots;
+            
+            for i in 0..arr.len(){
+                if curr_dis<arr[i].mag{
+                    let unit= UnitMut{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
+                    arr.insert(i,unit);
                     self.curr_num+=1;
-                    arr.push(unit);
-                }else{
-                    let arr=&mut self.bots;
-                    for i in 0..arr.len(){
-                        if curr_dis<arr[i].mag{
-                            let v=arr.pop().unwrap();
-                            loop{
-                                
-                                if arr[arr.len()-1].mag==v.mag{
-                                    arr.pop().unwrap();
-                                }else{
-                                    break;
-                                }
-                            }
-                            let unit=$unit_create!(curr_bot,curr_dis);
-                            arr.insert(i,unit);
+                    return true;
+                }
+            }
+            //only way we get here is if the above didnt return.
+            let unit=UnitMut{bot:curr_bot,mag:curr_dis};
+            self.curr_num+=1;
+            arr.push(unit);
+        }else{
+            let arr=&mut self.bots;
+            for i in 0..arr.len(){
+                if curr_dis<arr[i].mag{
+                    let v=arr.pop().unwrap();
+                    loop{
                         
-                            let max=arr.iter().map(|a|a.mag).max().unwrap();
-                            assert!(max<v.mag);
-                            return true;
-                        }else if curr_dis==arr[i].mag{
-                            let unit=$unit_create!(curr_bot,curr_dis);
-                            arr.insert(i,unit);
-                            return true;
+                        if arr[arr.len()-1].mag==v.mag{
+                            arr.pop().unwrap();
+                        }else{
+                            break;
                         }
                     }
-                }
-                return false;
-            }
-
-            fn full_and_max_distance(&self)->Option<D>{
-                use is_sorted::IsSorted;
-                assert!(IsSorted::is_sorted(&mut self.bots.iter().map(|a|a.mag)));
-                if self.curr_num==self.num{
-                    self.bots.last().map(|a|a.mag)
-                }else{
-                    None
+                    let unit=UnitMut{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
+                    arr.insert(i,unit);
+                
+                    let max=arr.iter().map(|a|a.mag).max().unwrap();
+                    assert!(max<v.mag);
+                    return true;
+                }else if curr_dis==arr[i].mag{
+                    let unit=UnitMut{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
+                    arr.insert(i,unit);
+                    return true;
                 }
             }
         }
+        return false;
+    }
 
-        struct Blap<'a,K:Knearest>{
-            knear:K,
-            point:Vec2<K::N>,
-            closest:ClosestCand<'a,K::T,K::N>
+    fn full_and_max_distance(&self)->Option<D>{
+        use is_sorted::IsSorted;
+        assert!(IsSorted::is_sorted(&mut self.bots.iter().map(|a|a.mag)));
+        if self.curr_num==self.num{
+            self.bots.last().map(|a|a.mag)
+        }else{
+            None
         }
+    }
+}
 
-        impl<'a,K:Knearest> Blap<'a,K>{
-            fn should_traverse_rect(&self,rect:&Rect<K::N>)->bool{
-                if let Some(dis) = self.closest.full_and_max_distance(){
-                    if self.knear.distance_to_rect(self.point,rect)<dis{
-                        true
-                    }else{
-                        false
-                    }
-                }else{
-                    true
-                }
+struct Blap<'a,K:Knearest>{
+    knear:K,
+    point:Vec2<K::N>,
+    closest:ClosestCand<'a,K::T,K::N>
+}
+
+impl<'a,K:Knearest> Blap<'a,K>{
+    fn should_traverse_rect(&self,rect:&Rect<K::N>)->bool{
+        if let Some(dis) = self.closest.full_and_max_distance(){
+            if self.knear.distance_to_rect(self.point,rect)<dis{
+                true
+            }else{
+                false
             }
+        }else{
+            true
         }
-        
-        fn recc<'a,
-            N:NumTrait+'a,
-            T:HasAabbMut<Num=N>+'a,
-            A: AxisTrait,
-            K:Knearest<T=T,N=N>,
-            >(axis:A,stuff:LevelIter<$iterator>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
+    }
+}
 
-            let ((_depth,nn),rest)=stuff.next();
+fn recc<'a,
+    N:NumTrait+'a,
+    T:HasAabbMut<Num=N>+'a,
+    A: AxisTrait,
+    K:Knearest<T=T,N=N,Inner=T::Inner>,
+    >(axis:A,stuff:LevelIter<VistrMut<'a,K::T>>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
 
-            match rest{
-                Some([left,right])=>{
-                    let div=match nn.div{
-                        Some(b)=>b,
-                        None=>return
-                    };
+    let ((_depth,mut nn),rest)=stuff.next();
 
-                    let (rleft,rright) = rect.subdivide(axis,*div);
+    match rest{
+        Some([left,right])=>{
+            let div=match nn.div{
+                Some(b)=>b,
+                None=>return
+            };
 
-
-                    let range=&match nn.cont{
-                        Some(cont)=>{
-                            *cont
-                        },
-                        None=>{
-                            Range{left:*div,right:*div}
-                        }
-                    };
-
-                    let rmiddle=make_rect_from_range(axis,range,&rect);
+            let (rleft,rright) = rect.subdivide(axis,*div);
 
 
-                    match range_side(blap.point,axis,range){
-                        Ordering::Less=>{
-                            if blap.should_traverse_rect(&rleft){
-                                recc(axis.next(),left,rleft,blap);
-                            }
-
-                            if blap.should_traverse_rect(&rmiddle){
-                                for bot in $get_iter!(nn.bots)
-                                {
-                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
-                                    blap.closest.consider((bot,dis_sqr));
-                                }
-                            }
-
-                            if blap.should_traverse_rect(&rright){
-                                recc(axis.next(),right,rright,blap);
-                            }
-                        },
-                        Ordering::Greater=>{
-
-                            if blap.should_traverse_rect(&rright){
-                                recc(axis.next(),right,rright,blap);
-                            }
-
-                            if blap.should_traverse_rect(&rmiddle){
-                                for bot in $get_iter!(nn.bots)
-                                {
-                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
-                                    blap.closest.consider((bot,dis_sqr));
-                                }
-                            }
-                            if blap.should_traverse_rect(&rleft){
-                                recc(axis.next(),left,rleft,blap);
-                            }
-
-                        },
-                        Ordering::Equal=>{
-                            if blap.should_traverse_rect(&rmiddle){
-                                for bot in $get_iter!(nn.bots){
-                                    let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
-                                    blap.closest.consider((bot,dis_sqr));
-                                }
-                            }
-                            if blap.should_traverse_rect(&rright){
-                                recc(axis.next(),right,rright,blap);
-                            }
-                            if blap.should_traverse_rect(&rleft){
-                                recc(axis.next(),left,rleft,blap);
-                            }
-                        }
-                    }
+            let range=&match nn.cont{
+                Some(cont)=>{
+                    *cont
                 },
                 None=>{
-                    for bot in $get_iter!(nn.bots){
-                        let dis_sqr=blap.knear.distance_to_bot(blap.point,&bot);
-                        blap.closest.consider((bot,dis_sqr));
+                    Range{left:*div,right:*div}
+                }
+            };
+
+            let rmiddle=make_rect_from_range(axis,range,&rect);
+
+
+            match range_side(blap.point,axis,range){
+                Ordering::Less=>{
+                    if blap.should_traverse_rect(&rleft){
+                        recc(axis.next(),left,rleft,blap);
+                    }
+
+                    if blap.should_traverse_rect(&rmiddle){
+                        for mut bot in nn.bots.iter_mut()
+                        {
+                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                            blap.closest.consider((bot,dis_sqr));
+                        }
+                    }
+
+                    if blap.should_traverse_rect(&rright){
+                        recc(axis.next(),right,rright,blap);
+                    }
+                },
+                Ordering::Greater=>{
+
+                    if blap.should_traverse_rect(&rright){
+                        recc(axis.next(),right,rright,blap);
+                    }
+
+                    if blap.should_traverse_rect(&rmiddle){
+                        for mut bot in nn.bots.iter_mut()
+                        {
+                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                            blap.closest.consider((bot,dis_sqr));
+                        }
+                    }
+                    if blap.should_traverse_rect(&rleft){
+                        recc(axis.next(),left,rleft,blap);
+                    }
+
+                },
+                Ordering::Equal=>{
+                    if blap.should_traverse_rect(&rmiddle){
+                        for mut bot in nn.bots.iter_mut(){
+                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                            blap.closest.consider((bot,dis_sqr));
+                        }
+                    }
+                    if blap.should_traverse_rect(&rright){
+                        recc(axis.next(),right,rright,blap);
+                    }
+                    if blap.should_traverse_rect(&rleft){
+                        recc(axis.next(),left,rleft,blap);
                     }
                 }
+            }
+        },
+        None=>{
+            for mut bot in nn.bots.iter_mut(){
+                let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                blap.closest.consider((bot,dis_sqr));
             }
         }
     }
 }
+//    }
+//}
 
 
 ///The dinotree's NumTrait does not inherit any kind of arithmetic traits.
@@ -379,7 +380,7 @@ macro_rules! knearest_recc{
 
 
 
-
+/*
 pub use self::con::naive;
 pub use self::con::k_nearest;
 mod con{
@@ -420,18 +421,20 @@ mod con{
     }
 
 }
+*/
 
 pub use self::mutable::naive_mut;
 pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
-    pub fn naive_mut<'b,K:Knearest>(bots:impl Iterator<Item=Pin<&'b mut K::T>>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::T,K::N>>{
+    
+    pub fn naive_mut<'b,K:Knearest+'b>(bots:impl Iterator<Item=BBoxRefMut<'b,K::N,K::Inner>>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::T,K::N>>{
 
         let mut closest=ClosestCand::new(num);
 
-        for b in bots{
+        for mut b in bots{
             //TODO check aabb first
-            let d=k.distance_to_bot(point,&b);
+            let d=k.distance_to_bot(point,b.as_mut());
 
             if let Some(dis)= closest.full_and_max_distance(){
                 if d>dis{
@@ -444,13 +447,13 @@ mod mutable{
 
         closest.into_sorted()
     }
+    
 
-
-    knearest_recc!(VistrMut<'a,K::T>,*mut T,Pin<&mut T>,get_mut_range_iter,NonLeafDynMut,Pin<&'a mut T>,UnitMut<'a,T,D>,unit_mut_create);
+    //knearest_recc!(VistrMut<'a,K::T>,*mut T,BBoxRefMut<T::Num,T::Inner>,get_mut_range_iter,NonLeafDynMut,BBoxRefMut<'a,T::Num,T::Inner>,UnitMut<'a,T,D>,unit_mut_create);
 
     pub fn k_nearest_mut<'b,
         V:DinoTreeRefMutTrait,
-        >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,knear: impl Knearest<N=V::Num,T=V::Item>,rect:Rect<V::Num>)->Vec<UnitMut<'b,V::Item,V::Num>>{ //Vec<UnitMut<'b,T,K::D>>
+        >(tree:&'b mut V,point:Vec2<V::Num>,num:usize,knear: impl Knearest<N=V::Num,T=V::Item,Inner=V::Inner>,rect:Rect<V::Num>)->Vec<UnitMut<'b,V::Item,V::Num>>{ //Vec<UnitMut<'b,T,K::D>>
         
         let axis=tree.axis();
         

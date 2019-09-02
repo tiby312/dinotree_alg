@@ -103,8 +103,9 @@ pub enum RayIntersectResult<N> {
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying NumTrait to a minimum
 ///of only needing Ord.
 pub trait RayTrait{
-    type T:HasAabb<Num=Self::N>;
+    type T:HasAabb<Num=Self::N,Inner=Self::Inner>;
     type N:NumTrait;
+    type Inner;
 
     ///Returns the length of ray between its origin, and where it intersects the line provided.
     ///Returns none if the ray doesnt intersect it.
@@ -116,8 +117,8 @@ pub trait RayTrait{
     ///This is where the user can do expensive collision detection on the shape
     ///contains within it's bounding box.
     ///Its default implementation just calles compute_distance_to_rect()
-    fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:&Self::T)->RayIntersectResult<Self::N>{
-        self.compute_distance_to_rect(ray,a.get())
+    fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:BBoxRefMut<Self::N,Self::Inner>)->RayIntersectResult<Self::N>{
+        self.compute_distance_to_rect(ray,a.rect)
     }
 
     ///Returns true if the ray intersects with this rectangle.
@@ -148,191 +149,191 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 
 
 
-macro_rules! raycast{
-    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty)=>{
+//macro_rules! raycast{
+//    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty)=>{
         
-        struct Closest<'a,T:HasAabb+'a>{
-            closest:Option<(Vec<$ref_lifetime>,T::Num)>
-        }
-        impl<'a,T:HasAabb+'a> Closest<'a,T>{
-            fn consider<R:RayTrait<T=T,N=T::Num>>(&mut self,ray:&Ray<T::Num>,b:$ref_lifetime,raytrait:&mut R){
+struct Closest<'a,T:HasAabb+'a>{
+    closest:Option<(Vec<BBoxRefMut<'a,T::Num,T::Inner>>,T::Num)>
+}
+impl<'a,T:HasAabb+'a> Closest<'a,T>{
+    fn consider<R:RayTrait<T=T,N=T::Num,Inner=T::Inner>>(&mut self,ray:&Ray<T::Num>,mut b:BBoxRefMut<'a,T::Num,T::Inner>,raytrait:&mut R){
 
-                let x=match raytrait.compute_distance_to_bot(ray,&b){
-                    RayIntersectResult::Hit(val)=>{
-                        val
-                    },
-                    RayIntersectResult::NoHit=>{
-                        return;
-                    },
-                };
+        let x=match raytrait.compute_distance_to_bot(ray,b.as_mut()){
+            RayIntersectResult::Hit(val)=>{
+                val
+            },
+            RayIntersectResult::NoHit=>{
+                return;
+            },
+        };
 
-                match self.closest.as_mut(){
-                    Some(mut dis)=>{
-                        match x.cmp(&dis.1){
-                            Ordering::Greater=>{
-                                //dis
-                                //do nothing.
-                            },
-                            Ordering::Less=>{
-                                dis.0.clear();
-                                dis.0.push(b);
-                                dis.1=x;
-                            },
-                            Ordering::Equal=>{
-                                dis.0.push(b);
-                            }
-                        }
+        match self.closest.as_mut(){
+            Some(mut dis)=>{
+                match x.cmp(&dis.1){
+                    Ordering::Greater=>{
+                        //dis
+                        //do nothing.
                     },
-                    None=>{
-                        self.closest=Some((vec_make(b),x))  
+                    Ordering::Less=>{
+                        dis.0.clear();
+                        dis.0.push(b);
+                        dis.1=x;
+                    },
+                    Ordering::Equal=>{
+                        dis.0.push(b);
                     }
-                };
+                }
+            },
+            None=>{
+                self.closest=Some((vec_make(b),x))  
             }
+        };
+    }
 
-            fn get_dis(&self)->Option<T::Num>{
-                match &self.closest{
-                    Some(x)=>{
-                        Some(x.1)
-                    },
-                    None=>{
-                        None
-                    }
-                }
-            }
-        }
-
-
-        struct Blap<'a,R:RayTrait>{
-            rtrait:R,
-            ray:Ray<R::N>,
-            closest:Closest<'a,R::T>
-        }
-        impl<'a,R:RayTrait> Blap<'a,R>{
-            fn should_handle_rect(&mut self,rect:&Rect<R::N>)->bool{
-                match self.rtrait.compute_distance_to_rect(&self.ray,rect){
-                    RayIntersectResult::Hit(val)=>{
-
-                        match self.closest.get_dis(){
-                            Some(dis)=>{
-                                if val<=dis{
-                                    return true;
-                                }        
-                            },
-                            None=>{
-                                return true;
-                                //recc(axis_next,second.0,rtrait,second.1,closest);
-                            }
-                        }   
-                        
-                    },
-                    RayIntersectResult::NoHit=>{
-
-                    }
-                }
-                return false;
-            } 
-        }
-
-        //Returns the first object that touches the ray.
-        fn recc<'a,
-            N:NumTrait+'a,
-            A: AxisTrait,
-            T: HasAabbMut<Num=N>+'a,
-            R: RayTrait<T=T,N=N>
-            >(axis:A,stuff:LevelIter<$iterator>,rect:Rect<N>,blap:&mut Blap<'a,R>){
-
-            //dbg!(rect,ray,&closest);
-
-            let ((_depth,nn),rest)=stuff.next();
-            match rest{
-                Some([left,right])=>{
-                    let axis_next=axis.next();
-
-                    let div=match nn.div{
-                        Some(b)=>b,
-                        None=>return
-                    };
-
-                    let (rleft,rright) = rect.subdivide(axis,*div);
-
-
-                    let range = &match nn.cont{
-                        Some(range)=>{
-                            *range
-                        },
-                        None=>{
-                            Range{left:*div,right:*div}
-                        }
-                    };
-
-
-                    
-                    let rmiddle=make_rect_from_range(axis,range,&rect);
-
-
-                    match blap.ray.range_side(axis,range){
-                        Ordering::Less=>{
-                            if blap.should_handle_rect(&rleft){
-                                recc(axis_next,left,rleft,blap);
-                            }
-                           
-
-                            if blap.should_handle_rect(&rmiddle){
-                                for b in $get_iter!(nn.bots){
-                                    blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
-                                }
-                            }
-
-                            if blap.should_handle_rect(&rright){
-                                recc(axis_next,right,rright,blap);
-                            }
-                        },
-                        Ordering::Greater=>{
-                            
-                            if blap.should_handle_rect(&rright){
-                                recc(axis_next,right,rright,blap);
-                            }
-                            
-                            if blap.should_handle_rect(&rmiddle){
-                                for b in $get_iter!(nn.bots){
-                                    blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
-                                }
-                            }
-
-                            if blap.should_handle_rect(&rleft){
-                                recc(axis_next,left,rleft,blap);
-                            }
-                        },
-                        Ordering::Equal=>{
-                                    
-                            if blap.should_handle_rect(&rmiddle){
-                                for b in $get_iter!(nn.bots){
-                                    blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
-                                }
-                            }
-
-                            if blap.should_handle_rect(&rleft){
-                                recc(axis_next,left,rleft,blap);
-                            }
-                            
-                            if blap.should_handle_rect(&rright){
-                                recc(axis_next,right,rright,blap);
-                            }
-                        }
-                    }
-
-                },
-                None=>{
-                    //Can't do better here since for leafs, cont is none.
-                    for b in $get_iter!(nn.bots){
-                        blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
-                    } 
-                
-                }
+    fn get_dis(&self)->Option<T::Num>{
+        match &self.closest{
+            Some(x)=>{
+                Some(x.1)
+            },
+            None=>{
+                None
             }
         }
     }
 }
+
+
+struct Blap<'a,R:RayTrait>{
+    rtrait:R,
+    ray:Ray<R::N>,
+    closest:Closest<'a,R::T>
+}
+impl<'a,R:RayTrait> Blap<'a,R>{
+    fn should_handle_rect(&mut self,rect:&Rect<R::N>)->bool{
+        match self.rtrait.compute_distance_to_rect(&self.ray,rect){
+            RayIntersectResult::Hit(val)=>{
+
+                match self.closest.get_dis(){
+                    Some(dis)=>{
+                        if val<=dis{
+                            return true;
+                        }        
+                    },
+                    None=>{
+                        return true;
+                        //recc(axis_next,second.0,rtrait,second.1,closest);
+                    }
+                }   
+                
+            },
+            RayIntersectResult::NoHit=>{
+
+            }
+        }
+        return false;
+    } 
+}
+
+//Returns the first object that touches the ray.
+fn recc<'a,
+    N:NumTrait+'a,
+    A: AxisTrait,
+    T: HasAabbMut<Num=N>+'a,
+    R: RayTrait<T=T,N=N,Inner=T::Inner>
+    >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<N>,blap:&mut Blap<'a,R>){
+
+    //dbg!(rect,ray,&closest);
+
+    let ((_depth,nn),rest)=stuff.next();
+    match rest{
+        Some([left,right])=>{
+            let axis_next=axis.next();
+
+            let div=match nn.div{
+                Some(b)=>b,
+                None=>return
+            };
+
+            let (rleft,rright) = rect.subdivide(axis,*div);
+
+
+            let range = &match nn.cont{
+                Some(range)=>{
+                    *range
+                },
+                None=>{
+                    Range{left:*div,right:*div}
+                }
+            };
+
+
+            
+            let rmiddle=make_rect_from_range(axis,range,&rect);
+
+
+            match blap.ray.range_side(axis,range){
+                Ordering::Less=>{
+                    if blap.should_handle_rect(&rleft){
+                        recc(axis_next,left,rleft,blap);
+                    }
+                   
+
+                    if blap.should_handle_rect(&rmiddle){
+                        for b in nn.bots.iter_mut(){
+                            blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
+                        }
+                    }
+
+                    if blap.should_handle_rect(&rright){
+                        recc(axis_next,right,rright,blap);
+                    }
+                },
+                Ordering::Greater=>{
+                    
+                    if blap.should_handle_rect(&rright){
+                        recc(axis_next,right,rright,blap);
+                    }
+                    
+                    if blap.should_handle_rect(&rmiddle){
+                        for b in nn.bots.iter_mut(){
+                            blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
+                        }
+                    }
+
+                    if blap.should_handle_rect(&rleft){
+                        recc(axis_next,left,rleft,blap);
+                    }
+                },
+                Ordering::Equal=>{
+                            
+                    if blap.should_handle_rect(&rmiddle){
+                        for b in nn.bots.iter_mut(){
+                            blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
+                        }
+                    }
+
+                    if blap.should_handle_rect(&rleft){
+                        recc(axis_next,left,rleft,blap);
+                    }
+                    
+                    if blap.should_handle_rect(&rright){
+                        recc(axis_next,right,rright,blap);
+                    }
+                }
+            }
+
+        },
+        None=>{
+            //Can't do better here since for leafs, cont is none.
+            for b in nn.bots.iter_mut(){
+                blap.closest.consider(&blap.ray,b,&mut blap.rtrait);
+            } 
+        
+        }
+    }
+}
+//    }
+//}
 
 
 macro_rules! get_range_iter{
@@ -356,12 +357,12 @@ pub use self::mutable::raycast_mut;
 
 mod mutable{
     use super::*;
-    raycast!(VistrMut<'a,T>,*mut T,Pin<&mut T>,get_mut_range_iter,NonLeafDynMut,Pin<&'a mut T>);
+    //raycast!(VistrMut<'a,T>,*mut T,Pin<&mut T>,get_mut_range_iter,NonLeafDynMut,Pin<&'a mut T>);
 
     pub fn naive_mut<
         'a,A:AxisTrait,
-        T:HasAabb,
-        >(bots:&'a mut ElemSlice<T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<Pin<&'a mut T>>,T::Num)>{
+        T:HasAabbMut,
+        >(bots:&'a mut ElemSlice<T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num,Inner=T::Inner>)->Option<(Vec<BBoxRefMut<'a,T::Num,T::Inner>>,T::Num)>{
 
         let mut closest=Closest{closest:None};
 
@@ -374,7 +375,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,   
         K:DinoTreeRefMutTrait
-        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<Pin<&'a mut K::Item>>,K::Num)>{
+        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num,Inner=K::Inner>)->Option<(Vec<BBoxRefMut<'a,K::Num,K::Inner>>,K::Num)>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
@@ -387,7 +388,7 @@ mod mutable{
         blap.closest.closest
     }
 }
-
+/*
 pub use self::cons::naive;
 pub use self::cons::raycast;
 mod cons{
@@ -422,4 +423,4 @@ mod cons{
         blap.closest.closest
     }
 }
-
+*/
