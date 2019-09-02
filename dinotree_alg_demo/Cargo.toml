@@ -7,12 +7,17 @@ edition = "2018"
 
 [dependencies]
 num-traits = "0.2"
-compt = "1.4.0"
-axgeom = "1.0.5"
-dinotree = "0.2.1"
-duckduckgeo = "0.2.1"
+#compt = "1.4.0"
+compt = {path = "../../compt"}
+#axgeom = "1.0.5"
+axgeom = {path="../../axgeom"}
+dists={path="../../dists"}
+#dinotree = "0.2.1"
+dinotree={path="../../dinotree"}
+duckduckgeo = {path="../../duckduckgeo"}#"0.2.1"
 dinotree_alg = {path=".."}
-new-ordered-float = "1.0.1"
-rand = "0.3"
+ordered-float = "1.0.2"
 rustc-test = "0.3.0"
-piston_window = "0.84.0"
+piston_window = "0.103.0"
+cgmath = "0.17.0"
+bit-vec = "0.6.1"
