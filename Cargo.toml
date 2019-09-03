@@ -15,12 +15,8 @@ rustc-test = "0.3.0"
 
 [dependencies]
 is_sorted = "0.1.1"
-rayon = "1.1.0"
-smallvec = "0.6.10"
 itertools = "0.7.8"
-compt = "1.6.1"
-axgeom = "1.1.1"
-dinotree ="0.4.0"
+dinotree ={path="../dinotree"}
 
 [features]
 #unstable =[]

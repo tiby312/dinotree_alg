@@ -7,18 +7,10 @@ edition = "2018"
 
 [dependencies]
 dinotree_alg = {path=".."}
-num-traits = "0.2"
 dists={path="../../dists"}
 gnuplot = "0.0.27"
-rayon="1.0.3"
-smallvec = "0.6.5"
-
 duckduckgeo = {path="../../duckduckgeo"}
-ordered-float = "1.0.2"
-axgeom = {path="../../axgeom"}
-rustc-test = "0.3.0"
-compt = "1.4.0"
-#dinotree = "0.3.0"
 dinotree = {path="../../dinotree"}
+
 #[profile.release]
 #opt-level = 2
