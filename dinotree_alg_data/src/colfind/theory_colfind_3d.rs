@@ -107,6 +107,8 @@ fn handle_spiral(fb:&mut FigureBuilder){
                 None
             };
 
+            black_box(bots.drain(..).map(|a|a.num).count());
+
             let num_pairs={
                 assert_eq!(z1.num_pairs,z2.num_pairs);
                 if let Some(z3)=&z3{

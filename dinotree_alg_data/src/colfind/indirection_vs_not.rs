@@ -8,7 +8,7 @@ const ARR_SIZE:usize=20;
 pub struct Bot{
     pos:Vec2<isize>,
     num:usize,
-    arr:[usize;ARR_SIZE]
+    _arr:[usize;ARR_SIZE]
 }
 
 struct BBox2<A:NumTrait,B>(BBox<A,B>);
@@ -59,13 +59,13 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
     let mut records=Vec::new();
 
     for num_bots in (0..100_000).rev().step_by(1000){
-        let s2=s.clone();
+        let _s2=s.clone();
 
 
         let a0={
             
             let mut bots2:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-                Bot{pos:pos.inner_as(),num:0,arr:[0;ARR_SIZE]}
+                Bot{pos:pos.inner_as(),num:0,_arr:[0;ARR_SIZE]}
             }).collect();
             
 
@@ -83,14 +83,16 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
                 b.inner.num+=1;
         
             });
-
+black_box(bots2);
             instant_to_sec(instant.elapsed())
+            
+
         };
 
         let a1={
             
             let mut bots2:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-                Bot{pos:pos.inner_as(),num:0,arr:[0;ARR_SIZE]}
+                Bot{pos:pos.inner_as(),num:0,_arr:[0;ARR_SIZE]}
             }).collect();
             
             let mut bots2:Vec<*mut Bot>=bots2.iter_mut().map(|a|a as *mut _).collect();
@@ -105,7 +107,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             }).build_seq();
 
     
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {
                 let a:&mut Bot=unsafe{&mut *(*a.inner)};
                 let b:&mut Bot=unsafe{&mut *(*b.inner)};
                 a.num+=1;
@@ -113,15 +115,17 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
         
             });
             
-
+            black_box(bots2);
             instant_to_sec(instant.elapsed())
+            
+
         };
 
 
         let b0={
             
             let mut bots2:Vec<BBox2<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
-                let inner=Bot{pos:pos.inner_as(),num:0,arr:[0;ARR_SIZE]};
+                let inner=Bot{pos:pos.inner_as(),num:0,_arr:[0;ARR_SIZE]};
                 let rect=axgeom::Rect::from_point(inner.pos,vec2same(5));
                 BBox2(BBox{rect,inner})
             }).collect();
@@ -139,7 +143,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             }).build_seq();
 
     
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {
                 let a:&mut BBox2<_,_>=unsafe{&mut *(*a.inner)};
                 let b:&mut BBox2<_,_>=unsafe{&mut *(*b.inner)};
                 a.0.inner.num+=1;
@@ -147,14 +151,16 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
         
             });
             
-
+black_box(bots2);
             instant_to_sec(instant.elapsed())
+            
+
         };
 
         let c0={
             
             let mut bots2:Vec<BBox2<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
-                let inner=Bot{pos:pos.inner_as(),num:0,arr:[0;ARR_SIZE]};
+                let inner=Bot{pos:pos.inner_as(),num:0,_arr:[0;ARR_SIZE]};
                 let rect=axgeom::Rect::from_point(inner.pos,vec2same(5));
                 BBox2(BBox{rect,inner})
             }).collect();
@@ -167,7 +173,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             let mut tree=DinoTreeGenericBuilder::new(axgeom::XAXISS,&mut bots2).build_seq();
 
     
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(| a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
         
@@ -176,14 +182,17 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
 
             tree.into_original();
 
+            black_box(bots2);
             instant_to_sec(instant.elapsed())
+            
+
         };
 
         let c1={
 
 
             let mut bots2:Vec<BBox2<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
-                let inner=Bot{pos:pos.inner_as(),num:0,arr:[0;ARR_SIZE]};
+                let inner=Bot{pos:pos.inner_as(),num:0,_arr:[0;ARR_SIZE]};
                 let rect=axgeom::Rect::from_point(inner.pos,vec2same(5));
                 BBox2(BBox{rect,inner})
             }).collect();
@@ -197,13 +206,15 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             let mut tree=DinoTreeGenericBuilder::new(axgeom::XAXISS,&mut bots3).build_seq();
 
             
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(| a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
 
+            black_box(bots2);
 
             instant_to_sec(instant.elapsed())
+
         };
 
 
