@@ -1,8 +1,8 @@
-use axgeom::*;
 use std;
-
+use dinotree::axgeom::*;
 
 pub mod prelude{
+
     pub use crate::DemoSys;
     pub(crate) use piston_window;
     pub use ordered_float::NotNan;
@@ -12,7 +12,6 @@ pub mod prelude{
     pub use dinotree::nocopy::*;
     pub use dinotree::copy::*;
     */
-    pub(crate) use axgeom;
     pub(crate) use crate::support::*;
     //pub use dinotree::BBox;
     
@@ -24,7 +23,9 @@ pub mod prelude{
     pub use dists;
 
     pub use duckduckgeo::array2_inner_into;
-    pub use axgeom::*;
+    pub use dinotree::axgeom::*;
+    pub use dinotree::axgeom;
+    pub use dinotree::compt;
     pub use dists::uniform_rand::UniformRandGen;
     //pub use core::pin::Pin;
     //pub use dinotree::*;

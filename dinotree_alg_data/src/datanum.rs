@@ -1,6 +1,6 @@
 
 use std::cmp::Ordering;
-use axgeom::Rect;
+use dinotree::axgeom::Rect;
 use dinotree::NumTrait;
 
 pub struct Counter(usize);

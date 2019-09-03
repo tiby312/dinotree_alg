@@ -15,7 +15,7 @@ fn handle1(fb:&mut FigureBuilder){
 
 	let num_bots=10000;
 	let mut rects=Vec::new();
-	for grow in (0..100).map(|a|{let a:f32=a.as_();0.2+a*0.02}){
+	for grow in (0..100).map(|a|{let a:f32=a as f32;0.2+a*0.02}){
 		let s=dists::spiral::Spiral::new([0.0,0.0],17.0,grow);
 
 	    let mut bots:Vec<Vec2<f32>>=s.take(num_bots).collect();

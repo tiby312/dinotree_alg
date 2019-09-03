@@ -254,7 +254,7 @@ fn handle_grow_bench(fb:&mut FigureBuilder){
 
     let mut rects:Vec<Record>=Vec::new();
 
-    for grow in (0..200).map(|a|{let a:f32=a.as_();0.1+a*0.005}){
+    for grow in (0..200).map(|a|{let a:f32=a as f32;0.1+a*0.005}){
         
         let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
         
@@ -322,7 +322,7 @@ fn handle_grow_theory(fb:&mut FigureBuilder){
 
     let mut rects:Vec<Record>=Vec::new();
 
-    for grow in (0..200).map(|a|{let a:f32=a.as_();0.1+a*0.005}){
+    for grow in (0..200).map(|a|{let a:f32=a as f32;0.1+a*0.005}){
         
         let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
 

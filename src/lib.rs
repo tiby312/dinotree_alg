@@ -16,30 +16,15 @@
 #![no_std]
 
 extern crate alloc;
-extern crate axgeom;
-extern crate compt;
-extern crate rayon;
-extern crate smallvec;
-extern crate dinotree;
-extern crate itertools;
 
-#[cfg(all(feature = "unstable", test))]
-extern crate test;
-
-extern crate is_sorted;
-
-
+use dinotree::compt;
+use dinotree::axgeom;
+use dinotree::rayon;
 
 mod inner_prelude {
 
     pub use alloc::vec::Vec;
-    //pub use dinotree::advanced::*;
-    //pub use dinotree::*;
-    //pub use dinotree::copy::*;
-    //pub use dinotree::nocopy::*;
-    //pub use dinotree::notsorted::*;
-    pub use dinotree::prelude::*;
-    
+    pub use dinotree::prelude::*;    
     pub use compt::LevelIter;
     pub use compt::Depth;
     pub use axgeom::Range;
@@ -84,4 +69,3 @@ pub mod multirect;
 mod tools;
 
 use axgeom::Rect;
-use smallvec::SmallVec;

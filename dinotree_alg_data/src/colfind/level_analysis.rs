@@ -17,7 +17,7 @@ pub struct Bot{
 
 mod level_counter{
 	use crate::datanum;
-	use dinotree::advanced::Splitter;
+	use dinotree::tree::Splitter;
 
 	pub struct LevelCounter{
 		counter:*mut datanum::Counter,
@@ -190,9 +190,9 @@ pub fn handle(fb:&mut FigureBuilder){
 pub fn handle_bench(fb:&mut FigureBuilder){
 	let num_bots=10000;
 
-    let res1=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f32=a.as_();0.0005+a*0.00001}));
+    let res1=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f32=a as f32;0.0005+a*0.00001}));
 	
-	let res2=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f32=a.as_();0.01+a*0.00002}));
+	let res2=handle_inner_bench(num_bots,(0..1000).map(|a|{let a:f32=a as f32;0.01+a*0.00002}));
 
 
     fn draw_graph(title_name:&str,fg:&mut Figure,res:&[BenchRes],rebal:bool,pos:usize){
@@ -237,9 +237,9 @@ pub fn handle_bench(fb:&mut FigureBuilder){
 pub fn handle_theory(fb:&mut FigureBuilder){
 	let num_bots=3000;
 
-    let res1=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f32=a.as_();0.0005+a*0.0001}));
+    let res1=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f32=a as f32;0.0005+a*0.0001}));
 	
-	let res2=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f32=a.as_();0.01+a*0.0002}));
+	let res2=handle_inner_theory(num_bots,(0..100).map(|a|{let a:f32=a as f32;0.01+a*0.0002}));
 
 
     use gnuplot::*;

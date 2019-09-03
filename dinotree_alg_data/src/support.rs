@@ -1,9 +1,9 @@
-use axgeom::*;
+
 use std;
 use std::time::Duration;
 
 use std::time::Instant;
-use dinotree::prelude::*;
+use crate::inner_prelude::*;
 
  
 fn into_secs(elapsed: std::time::Duration) -> f64 {
@@ -85,9 +85,8 @@ pub const COLS:&[&str]=&["blue","green","red","violet","orange","pink","gray","b
 
 
 pub fn instant_to_sec(elapsed:Duration)->f64{
-    use num_traits::cast::AsPrimitive;
-    let secs:f64=elapsed.as_secs().as_();
-    let nano:f64=elapsed.subsec_nanos().as_();
+    let secs:f64=elapsed.as_secs() as f64;
+    let nano:f64=elapsed.subsec_nanos() as f64;
     secs + nano / 1_000_000_000.0      
 }
 

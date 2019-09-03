@@ -92,7 +92,7 @@ fn handle_spiral(fb:&mut FigureBuilder){
 
     for num_bots in (0..10000).step_by(1000){
 
-        for grow in (0usize..100).map(|a|{let a:f32=a.as_();0.0005+a*0.0001}){//0.001 to 0.002
+        for grow in (0usize..100).map(|a|{let a:f32=a as f32;0.0005+a*0.0001}){//0.001 to 0.002
             let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
 
             let mut bots:Vec<Bot>=s.take(num_bots).map(|pos|{

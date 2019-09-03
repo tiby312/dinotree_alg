@@ -1,3 +1,4 @@
+/*
 extern crate compt;
 extern crate axgeom;
 extern crate dinotree_alg;
@@ -7,7 +8,7 @@ extern crate rayon;
 extern crate duckduckgeo;
 extern crate dists;
 extern crate gnuplot;
-
+*/
 
 pub fn black_box<T>(dummy: T) -> T {
     unsafe {
@@ -17,28 +18,27 @@ pub fn black_box<T>(dummy: T) -> T {
     }
 }
 
+
+
 mod inner_prelude{
+    pub use dinotree::dinotree_generic::*;
+    pub use dinotree::notsorted::*;
+
     pub(crate) use duckduckgeo::bot;
     pub(crate) use crate::FigureBuilder;
     pub use crate::support::*;
     pub use dinotree_alg::colfind;
-    /*
-    pub use dinotree::*;
-    pub use dinotree::copy::*;
-    pub use dinotree::nocopy::*;
-    pub use dinotree::notsorted::*;
-    pub use dinotree::advanced::*;
-    */
+
     pub use dinotree::prelude::*;
 
-    pub(crate) use axgeom;
+    pub(crate) use dinotree::axgeom;
     pub(crate) use crate::datanum;
     pub use gnuplot::*;
     pub(crate) use dists;
     pub use std::time::Instant;
     pub use std::time::Duration;
     pub use crate::black_box;
-    pub use num_traits::cast::AsPrimitive;
+    //pub use num_traits::cast::AsPrimitive;
     pub use axgeom::Rect;
     pub use axgeom::ordered_float::NotNan;
     pub use axgeom::Vec2;

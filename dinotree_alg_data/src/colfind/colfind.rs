@@ -1,6 +1,5 @@
 use crate::inner_prelude::*;
 
-
 #[derive(Copy,Clone)]
 pub struct Bot{
     pos:Vec2<isize>,
@@ -53,11 +52,11 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         let c1={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|mut b|{   
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
                 axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_seq();
 
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+            colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -75,7 +74,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
 
                 let instant=Instant::now();
                 
-                colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|mut a,mut b|{
+                colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|a,b|{
                     a.inner.num-=2;
                     b.inner.num-=2;
                 });
@@ -100,7 +99,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
 
                 let instant=Instant::now();
             
-                colfind::query_naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bb)),|mut a,mut b|{
+                colfind::query_naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bb)),| a, b|{
                     a.inner.num-=1;
                     b.inner.num-=1;
                 });
@@ -124,7 +123,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
                 axgeom::Rect::from_point(b.pos,vec2same(5))
             }).build_par();
 
-            colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+            colfind::NotSortedQueryBuilder::new(&mut tree).query_par(| a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });
@@ -143,7 +142,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
             }).build_seq();
 
 
-            colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+            colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(| a, b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
             });

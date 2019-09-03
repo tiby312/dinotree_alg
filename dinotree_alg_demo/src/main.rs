@@ -1,9 +1,14 @@
+/*
 extern crate piston_window;
 extern crate axgeom;
 extern crate dinotree_alg;
 extern crate ordered_float;
 extern crate dinotree;
 extern crate duckduckgeo;
+*/
+use dinotree::axgeom;
+use dinotree::compt;
+
 
 
 use axgeom::Vec2;
