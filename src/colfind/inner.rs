@@ -111,25 +111,28 @@ impl<T:HasAabbMut+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFind
                     
                 let splitter={
                     let splitter2=&mut splitter2;
-                    if !par.should_switch_to_sequential(depth) {
-                        let mut sweeper2=sweeper.div();
-                        
-                        let (sweeper,splitter)={
-                            let sweeper2=&mut sweeper2;
-                            let af = move || {
-                                self.recurse(this_axis.next(),par,sweeper,left,splitter);(sweeper,splitter)
+                    match par.next(depth) {
+                        par::ParResult::Parallel([dleft,dright])=>{
+                            let mut sweeper2=sweeper.div();
+                            
+                            let (sweeper,splitter)={
+                                let sweeper2=&mut sweeper2;
+                                let af = move || {
+                                    self.recurse(this_axis.next(),dleft,sweeper,left,splitter);(sweeper,splitter)
+                                };
+                                let bf = move || {
+                                    self.recurse(this_axis.next(),dright,sweeper2,right,splitter2)
+                                };
+                                rayon::join(af, bf).0
                             };
-                            let bf = move || {
-                                self.recurse(this_axis.next(),par,sweeper2,right,splitter2)
-                            };
-                            rayon::join(af, bf).0
-                        };
-                        sweeper.add(sweeper2);
-                        splitter
-                    } else {
-                        self.recurse(this_axis.next(),par.into_seq(),sweeper,left,splitter);
-                        self.recurse(this_axis.next(),par.into_seq(),sweeper,right,splitter2);
-                        splitter
+                            sweeper.add(sweeper2);
+                            splitter
+                        },
+                        par::ParResult::Sequential([dleft,dright])=>{
+                            self.recurse(this_axis.next(),dleft,sweeper,left,splitter);
+                            self.recurse(this_axis.next(),dright,sweeper,right,splitter2);
+                            splitter 
+                        }
                     }
                 };
 

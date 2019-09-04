@@ -31,9 +31,9 @@ fn test1(bots:&mut [Bot])->Res{
 fn test2(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
-    let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
+    let mut bb:Vec<BBox<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
         let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)));  
-        BBoxDemo::new(rect,*b)
+        BBox::new(rect,*b)
     }).collect();
     
 
@@ -52,9 +52,9 @@ fn test2(bots:&mut [Bot])->Res{
 fn test3(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
-    let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
+    let mut bb:Vec<BBox<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{   
         let rect=datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)));  
-        BBoxDemo::new(rect,*b)
+        BBox::new(rect,*b)
     }).collect();
     
 

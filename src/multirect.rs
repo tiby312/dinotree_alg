@@ -85,14 +85,14 @@ pub fn collide_two_rect_parallel<
 )->Result<(),RectIntersectErr> {
 
 	struct Wr<'a,N:NumTrait,T>(BBoxRefMut<'a,N,T>);
-	unsafe impl<'a,N:NumTrait,T> HasAabb for Wr<'a,N,T>{
+	impl<'a,N:NumTrait,T> HasAabb for Wr<'a,N,T>{
 		type Num=N;
         type Inner=T;
 		fn get(&self)->BBoxRef<N,T>{
             self.0.as_ref()
 		}
 	}
-    unsafe impl<'a,N:NumTrait,T> HasAabbMut for Wr<'a,N,T>{
+    impl<'a,N:NumTrait,T> HasAabbMut for Wr<'a,N,T>{
         fn get_mut(&mut self)->BBoxRefMut<N,T>{
             self.0.as_mut()
         }

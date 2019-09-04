@@ -13,7 +13,7 @@ pub struct Bot{
 
 struct BBox2<A:NumTrait,B>(BBox<A,B>);
 
-unsafe impl HasAabb for BBox2<isize,Bot>{
+impl HasAabb for BBox2<isize,Bot>{
     type Num=isize;
     type Inner=Bot;
     fn get(&self)->BBoxRef<isize,Bot>{
@@ -21,7 +21,7 @@ unsafe impl HasAabb for BBox2<isize,Bot>{
     }
 }
 
-unsafe impl HasAabb for &mut BBox2<isize,Bot>{
+impl HasAabb for &mut BBox2<isize,Bot>{
     type Num=isize;
     type Inner=Bot;
     fn get(&self)->BBoxRef<isize,Bot>{
@@ -29,13 +29,13 @@ unsafe impl HasAabb for &mut BBox2<isize,Bot>{
     }
 }
 
-unsafe impl HasAabbMut for BBox2<isize,Bot>{
+impl HasAabbMut for BBox2<isize,Bot>{
     fn get_mut(&mut self)->BBoxRefMut<isize,Bot>{
         BBoxRefMut::new(&self.0.rect,&mut self.0.inner)
     }
 }
 
-unsafe impl HasAabbMut for &mut BBox2<isize,Bot>{
+impl HasAabbMut for &mut BBox2<isize,Bot>{
     fn get_mut(&mut self)->BBoxRefMut<isize,Bot>{
         BBoxRefMut::new(&self.0.rect,&mut self.0.inner)
     }

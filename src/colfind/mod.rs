@@ -320,7 +320,7 @@ mod wrap{
     pub struct Wrap<T>(T);
     unsafe impl<T> Send for Wrap<T>{}
     unsafe impl<T> Sync for Wrap<T>{}
-    unsafe impl<T:HasAabb> HasAabb for Wrap<T>{
+    impl<T:HasAabb> HasAabb for Wrap<T>{
         type Num=T::Num;
         type Inner=T::Inner;
         #[inline(always)]
@@ -328,7 +328,7 @@ mod wrap{
             self.0.get()
         }
     }
-    unsafe impl<T:HasAabbMut> HasAabbMut for Wrap<T>{
+    impl<T:HasAabbMut> HasAabbMut for Wrap<T>{
         fn get_mut(&mut self)->BBoxRefMut<T::Num,T::Inner>{
             self.0.get_mut()
         }

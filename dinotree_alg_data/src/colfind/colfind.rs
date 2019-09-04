@@ -67,8 +67,8 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         
         let c3={
             if num_bots<50000{
-                let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
-                    BBoxDemo::new(axgeom::Rect::from_point(b.pos,vec2same(5)),*b)
+                let mut bb:Vec<BBox<isize,Bot>>=bots.iter().map(|b|{
+                    BBox::new(axgeom::Rect::from_point(b.pos,vec2same(5)),*b)
                 }).collect();
 
 
@@ -92,9 +92,9 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         let c4={
             
             if num_bots<8000{
-                let mut bb:Vec<BBoxDemo<isize,Bot>>=bots.iter().map(|b|{
+                let mut bb:Vec<BBox<isize,Bot>>=bots.iter().map(|b|{
                     let rect=axgeom::Rect::from_point(b.pos,vec2same(5));
-                    BBoxDemo::new(rect,*b)
+                    BBox::new(rect,*b)
                 }).collect();
 
                 let instant=Instant::now();
@@ -231,9 +231,9 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
             if num_bots<stop_naive_at{
                 let mut counter=datanum::Counter::new();
             
-                let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
+                let mut bb:Vec<BBox<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
                     let rect=axgeom::Rect::from_point(b.pos,vec2same(5));
-                    BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
+                    BBox::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
                 colfind::query_naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bb)),|mut a,mut b|{
@@ -253,9 +253,9 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
         let c3={
             if num_bots<stop_sweep_at{
                 let mut counter=datanum::Counter::new();
-                let mut bb:Vec<BBoxDemo<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
+                let mut bb:Vec<BBox<datanum::DataNum<_>,Bot>>=bots.iter().map(|b|{
                     let rect=axgeom::Rect::from_point(b.pos,vec2same(5));
-                    BBoxDemo::new(datanum::from_rect(&mut counter,rect),*b)
+                    BBox::new(datanum::from_rect(&mut counter,rect),*b)
                 }).collect();
 
                 colfind::query_sweep_mut(axgeom::XAXISS,&mut bb,|mut a,mut b|{

@@ -322,6 +322,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait<Num=T::Num,
     
 }
 
+
 fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait<Num=T::Num,Inner=T::Inner>+Sync+Send,T:HasAabbMut>(join:J,axis:A,it:CombinedVistrMut<N::No,T>,ncontext:&N) where T:Send,N::No:Send{
     
 
@@ -363,15 +364,19 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait<Num=T::Num,Inner=T::Inner>+Syn
             //into two independant ones, and we can do this all over again for the two children.
             //potentially in parlalel.
            
-            if join.should_switch_to_sequential(depth){
-                recc(join.into_seq(),axis.next(),left,ncontext);
-                recc(join.into_seq(),axis.next(),right,ncontext);
-            }else{
-                let mut n2=ncontext.clone();
-                rayon::join(
-                ||recc(join,axis.next(),left,ncontext),
-                ||recc(join,axis.next(),right,&mut n2)
-                );
+            match join.next(depth){
+                par::ParResult::Parallel([dleft,dright])=>{
+                    let mut n2=ncontext.clone();
+                    rayon::join(
+                    ||recc(dleft,axis.next(),left,ncontext),
+                    ||recc(dright,axis.next(),right,&mut n2)
+                    );
+                },
+                par::ParResult::Sequential([dleft,dright])=>{
+
+                    recc(dleft,axis.next(),left,ncontext);
+                    recc(dright,axis.next(),right,ncontext);
+                }
             }
         },
         None=>{
