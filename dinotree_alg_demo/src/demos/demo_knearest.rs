@@ -20,12 +20,12 @@ pub struct KnearestDemo{
 impl KnearestDemo{
     pub fn new(dim:Rect<F32n>)->KnearestDemo{
 
-        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(2.0,10.0).
+        let mut bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(2.0,10.0).
             take(2000).enumerate().map(|(id,(pos,radius))|{
             Bot{id,pos,radius}
         }).collect();
 
-        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_seq();
+        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_seq();
         
 
         KnearestDemo{tree,dim}

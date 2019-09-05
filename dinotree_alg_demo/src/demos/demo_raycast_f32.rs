@@ -56,14 +56,14 @@ impl RaycastF32Demo{
 
     pub fn new(dim:Rect<F32n>)->Self{
         
-        let vv:Vec<_> = (0..500).map(|_|()).collect();
+        let mut vv:Vec<_> = (0..500).map(|_|()).collect();
         
         let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(5.0,10.0).map(|(pos,radius)|{
             Rect::from_point(pos,radius).inner_try_into().unwrap()
         });
 
 
-        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,vv,|_a|{
+        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut vv,|_a|{
             ii.next().unwrap()
         }).build_seq();
 
