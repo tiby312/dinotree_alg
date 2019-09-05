@@ -6,6 +6,7 @@ use duckduckgeo;
 use dinotree_alg::raycast::RayIntersectResult;
 
 use std::cell::RefCell;
+use dinotree::dinotree_direct::*;
 
 
 mod ray_f32{
@@ -68,7 +69,7 @@ pub struct Bot2{
 }
 
 pub struct RaycastF32DebugDemo{
-    tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot2>,
+    tree:DinoTreeDirect<axgeom::XAXISS,F32n,Bot2>,
     counter:f32,
     dim:Rect<F32n>
 }
@@ -83,7 +84,7 @@ impl RaycastF32DebugDemo{
         });
 
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|_a|{
+        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,vv,|_a|{
             ii.next().unwrap()
         }).build_seq();
 
@@ -107,17 +108,17 @@ impl DemoSys for RaycastF32DebugDemo{
             raycast::Ray{point,dir}.inner_try_into().unwrap()
         };
 
-        for bot in self.tree.as_ref().get_bots().iter(){
+        for bot in self.tree.get_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }   
 
 
     
-        let height=self.tree.as_ref().height();
+        let height=self.tree.height();
         
 
         //dbg!("START");
-        let test = match raycast::raycast_mut(&mut self.tree.as_mut(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
+        let test = match raycast::raycast_mut(&mut self.tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
             Some((bots,dis))=>{
                 let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                 k.sort();
@@ -132,10 +133,10 @@ impl DemoSys for RaycastF32DebugDemo{
 
         if check_naive{
 
-            let tree_ref=self.tree.as_mut();
+            let tree_ref=&mut self.tree;
             
             
-            let k = match raycast::naive_mut(tree_ref.get_bots_mut(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
+            let k = match raycast::naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(tree_ref.get_bots_mut())),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
                 Some((bots,dis))=>{
                     let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
                     k.sort();
@@ -232,7 +233,7 @@ impl DemoSys for RaycastF32DebugDemo{
         }
 
         let mut dd=Bla{c:&c,g};
-        dinotree_alg::graphics::draw(&self.tree.as_ref(),&mut dd,&self.dim);
+        dinotree_alg::graphics::draw(&self.tree,&mut dd,&self.dim);
     
 
             

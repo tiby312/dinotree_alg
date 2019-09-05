@@ -430,11 +430,10 @@ pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
     
-    pub fn naive_mut<'b,K:Knearest+'b>(bots:impl Iterator<Item=BBoxRefMut<'b,K::N,K::Inner>>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::N,K::Inner,K::N>>{
-
+    pub fn naive_mut<'b,K:Knearest+'b,T:HasAabbMut<Num=K::N,Inner=K::Inner>>(bots:ElemSliceMut<'b,T>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<'b,K::N,K::Inner,K::N>>{
         let mut closest=ClosestCand::new(num);
 
-        for mut b in bots{
+        for mut b in bots.iter_mut(){
             //TODO check aabb first
             let d=k.distance_to_bot(point,b.as_mut());
 
@@ -450,8 +449,6 @@ mod mutable{
         closest.into_sorted()
     }
     
-
-    //knearest_recc!(VistrMut<'a,K::T>,*mut T,BBoxRefMut<T::Num,T::Inner>,get_mut_range_iter,NonLeafDynMut,BBoxRefMut<'a,T::Num,T::Inner>,UnitMut<'a,T,D>,unit_mut_create);
 
     pub fn k_nearest_mut<'b,
         V:DinoTreeRefMutTrait,

@@ -13,7 +13,7 @@ struct Bot{
 }
 
 pub struct KnearestDemo{
-    tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot>,
+    tree:DinoTreeDirect<axgeom::XAXISS,F32n,Bot>,
     dim:Rect<F32n>
 }
 
@@ -25,7 +25,7 @@ impl KnearestDemo{
             Bot{id,pos,radius}
         }).collect();
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_seq();
+        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_seq();
         
 
         KnearestDemo{tree,dim}
@@ -34,7 +34,7 @@ impl KnearestDemo{
 
 impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
-        let mut tree=self.tree.as_mut();
+        let mut tree=&mut self.tree;
         
 
         for bot in tree.get_bots().iter(){
@@ -123,7 +123,7 @@ impl DemoSys for KnearestDemo{
         
             let mut vv2={
                 let kn=Kn{c:&c,g:RefCell::new(g),draw:false};
-                k_nearest::naive_mut(tree.get_bots_mut().iter_mut(),cursor,3,kn)
+                k_nearest::naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(tree.get_bots_mut())),cursor,3,kn)
             };
             let mut vv2:Vec<_>=vv2.drain(..).map(|a|Res{rect:*a.bot.rect,id:a.bot.inner.id,mag:a.mag}).collect();
         

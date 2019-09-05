@@ -49,7 +49,7 @@ mod ray_f32{
 
 
 pub struct RaycastF32Demo{
-    tree:DinoTreeOwned<axgeom::XAXISS,F32n,()>,
+    tree:DinoTreeDirect<axgeom::XAXISS,F32n,()>,
     dim:Rect<F32n>
 }
 impl RaycastF32Demo{
@@ -63,7 +63,7 @@ impl RaycastF32Demo{
         });
 
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|_a|{
+        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,vv,|_a|{
             ii.next().unwrap()
         }).build_seq();
 
@@ -76,11 +76,11 @@ impl DemoSys for RaycastF32Demo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
         //Draw bots
-        for bot in self.tree.as_ref().get_bots().iter(){
+        for bot in self.tree.get_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
     
-        let mut tree=self.tree.as_mut();
+        let mut tree=&mut self.tree;
         
         { 
             for dir in 0..360i32{
