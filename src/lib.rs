@@ -17,26 +17,17 @@
 
 extern crate alloc;
 
-use dinotree::compt;
-use dinotree::axgeom;
-use dinotree::rayon;
-
 mod inner_prelude {
-
+    pub use dinotree::rayon;
     pub use alloc::vec::Vec;
-    pub use dinotree::prelude::*;    
-    pub use compt::LevelIter;
-    pub use compt::Depth;
-    pub use axgeom::Range;
-    pub use crate::*;
-    pub use compt::Visitor;
-    pub use axgeom::AxisTrait;
+    pub use dinotree::prelude::*;
+    pub use dinotree::axgeom;    
+    pub use dinotree::axgeom::*;
+    pub use dinotree::compt;
+    pub use dinotree::compt::*;
     pub use core::marker::PhantomData;
     pub use itertools::Itertools;
-    pub use axgeom::Vec2;
-    pub use axgeom::vec2;
-    pub use core::pin::Pin;
-    
+    pub(crate) use crate::tools;
 }
 
 ///Provides functionality to draw the dividers of a dinotree.
@@ -66,6 +57,4 @@ pub mod rect;
 pub mod multirect;
 
 ///Contains misc tools
-mod tools;
-
-use axgeom::Rect;
+pub(crate) mod tools;

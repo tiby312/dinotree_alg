@@ -12,6 +12,8 @@
 //!
 use crate::inner_prelude::*;
 use crate::colfind::oned;
+use crate::rect;
+use crate::colfind;
 
 ///Indicates that the user supplied a rectangle
 ///that intersects with a another one previously queries

@@ -10,8 +10,7 @@ use dinotree::notsorted::*;
 ///so that the user may also have the struct implement Splitter.
 pub trait ColMulti{
     type T: HasAabbMut;
-    //type Num:NumTrait;
-    //type Inner;
+
     fn collide(&mut self,
         a: BBoxRefMut<<Self::T as HasAabb>::Num,<Self::T as HasAabb>::Inner>,
         b: BBoxRefMut<<Self::T as HasAabb>::Num,<Self::T as HasAabb>::Inner>);

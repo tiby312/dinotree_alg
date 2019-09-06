@@ -2,7 +2,7 @@ use crate::inner_prelude::*;
 
 
 
-const ARR_SIZE:usize=4;
+const ARR_SIZE:usize=0;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
