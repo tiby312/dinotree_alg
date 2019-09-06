@@ -130,12 +130,7 @@ impl<'a,K:DinoTreeRefTrait>  RectQueryBuilder<'a,K>{
     pub fn for_all_intersect(&self,mut closure: impl Fn(BBoxRef<K::Num,K::Inner>)){
         constant::for_all_intersect_rect(&self.tree,&self.rect,closure);
     }
-    pub fn for_all_not_in(&self,mut closure: impl Fn(BBoxRef<K::Num,K::Inner>)){
-        //TODO finish.
-
-        unimplemented!()
-        //constant::for_all_not_in_rect(self.tree,&self.rect,closure);
-    }
+    
 }
 impl<'a,K:DinoTreeRefMutTrait>  RectQueryBuilder<'a,K>{
     pub fn for_all_in_mut(&mut self, mut closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>)){

@@ -43,6 +43,7 @@ use crate::inner_prelude::*;
 use core::cmp::Ordering;
 use core::convert::TryFrom;
 
+use axgeom::primitive_from::PrimitiveFrom;
 
 ///A Ray.
 #[derive(Debug, Copy, Clone)]
@@ -51,13 +52,22 @@ pub struct Ray<N> {
     pub dir: Vec2<N>,
 }
 
+impl<N:Copy> Ray<N>{
+    #[inline(always)]
+    pub fn inner_as<B:PrimitiveFrom<N>>(&self)->Ray<B>{
+        Ray{point:self.point.inner_as(),dir:self.point.inner_as()}
+    }
+}
 impl<N> Ray<N>{
+    
 
+    #[inline(always)]
     pub fn inner_into<B:From<N>>(self)->Ray<B>{
         let point=self.point.inner_into();
         let dir=self.dir.inner_into();
         Ray{point,dir}
     }
+    #[inline(always)]
     pub fn inner_try_into<B:TryFrom<N>>(self)->Result<Ray<B>,B::Error>{
         let point=self.point.inner_try_into();
         let dir=self.dir.inner_try_into();
@@ -77,8 +87,8 @@ impl<N> Ray<N>{
         }
     }
 }
-impl<N:NumTrait> Ray<N>{
 
+impl<N:NumTrait> Ray<N>{
     fn range_side(&self,axis:impl axgeom::AxisTrait,range:&Range<N>)->Ordering{
         if axis.is_xaxis(){
             range.left_or_right_or_contain(&self.point.x)
@@ -86,7 +96,6 @@ impl<N:NumTrait> Ray<N>{
             range.left_or_right_or_contain(&self.point.y)
         }
     }
-
 }
 
 
