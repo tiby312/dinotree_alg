@@ -92,7 +92,7 @@ impl DemoSys for IntersectWithDemo{
         bots[0].pos=cursor.inner_into();
 
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|bot|{
+        let mut tree=DinoTreeDirectBuilder::new(axgeom::XAXISS,bots,|bot|{
            axgeom::Rect::from_point(bot.pos,vec2(radius,radius)).inner_try_into().unwrap()
         }).build_par(); 
 
@@ -125,7 +125,8 @@ impl DemoSys for IntersectWithDemo{
         rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap(),|b|{
             let _ =duckduckgeo::repel_one(b.inner,cc,0.001,20.0);
         });
-        
+
+
 
         for wall in walls.iter(){
             draw_rect_f32([0.0,0.0,1.0,0.3],wall.0.as_ref(),c,g);
@@ -138,6 +139,7 @@ impl DemoSys for IntersectWithDemo{
             let _ = duckduckgeo::repel(a.inner,b.inner,0.001,2.0);
         });
     
+        tree.into_inner(bots);
         
 
         
