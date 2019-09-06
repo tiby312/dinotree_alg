@@ -1,5 +1,3 @@
-use core;
-use core::marker::PhantomData;
 use dinotree::prelude::*;
 
 
@@ -15,18 +13,6 @@ pub fn for_every_pair<T:HasAabbMut>(mut arr:ElemSliceMut<T>,mut func:impl FnMut(
             },
             None=>break
         }
-    }
-}
-
-
-///A phantom data type that unsafely implements send,sync.
-pub(crate) struct PhantomSendSync<T>(pub PhantomData<T>);
-unsafe impl<T> Send for PhantomSendSync<T> {}
-unsafe impl<T> Sync for PhantomSendSync<T> {}
-impl<T> Copy for PhantomSendSync<T> {}
-impl<T> Clone for PhantomSendSync<T> {
-    fn clone(&self) -> PhantomSendSync<T> {
-        *self
     }
 }
 

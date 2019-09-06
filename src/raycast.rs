@@ -103,7 +103,6 @@ pub enum RayIntersectResult<N> {
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying NumTrait to a minimum
 ///of only needing Ord.
 pub trait RayTrait{
-    //type T:HasAabb<Num=Self::N,Inner=Self::Inner>;
     type N:NumTrait;
     type Inner;
 
@@ -147,11 +146,7 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 
 
 
-
-
-//macro_rules! raycast{
-//    ($iterator:ty,$ptr:ty,$ref:ty,$get_iter:ident,$nonleaf:ident,$ref_lifetime:ty)=>{
-        
+     
 struct Closest<'a,N:NumTrait,T>{
     closest:Option<(Vec<BBoxRefMut<'a,N,T>>,N)>
 }
@@ -236,13 +231,11 @@ impl<'a,R:RayTrait> Blap<'a,R>{
 
 //Returns the first object that touches the ray.
 fn recc<'a,
-    N:NumTrait+'a,
+    N:NumTrait,
     A: AxisTrait,
-    T: HasAabbMut<Num=N>+'a,
+    T: HasAabbMut<Num=N>,
     R: RayTrait<N=N,Inner=T::Inner>
     >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<N>,blap:&mut Blap<'a,R>){
-
-    //dbg!(rect,ray,&closest);
 
     let ((_depth,nn),rest)=stuff.next();
     match rest{
@@ -332,23 +325,7 @@ fn recc<'a,
         }
     }
 }
-//    }
-//}
 
-/*
-macro_rules! get_range_iter{
-    ($range:expr)=>{{
-        $range.iter()
-    }}
-}
-
-
-macro_rules! get_mut_range_iter{
-    ($range:expr)=>{{
-        $range.iter_mut()
-    }}
-}
-*/
 
 pub use self::mutable::naive_mut;
 pub use self::mutable::raycast_mut;
@@ -357,7 +334,6 @@ pub use self::mutable::raycast_mut;
 
 mod mutable{
     use super::*;
-    //raycast!(VistrMut<'a,T>,*mut T,Pin<&mut T>,get_mut_range_iter,NonLeafDynMut,Pin<&'a mut T>);
 
     pub fn naive_mut<
         'a,
@@ -388,39 +364,3 @@ mod mutable{
         blap.closest.closest
     }
 }
-/*
-pub use self::cons::naive;
-pub use self::cons::raycast;
-mod cons{
-    use super::*;
-    pub fn naive<
-        'a,
-        T:HasAabb,
-        >(bots:impl Iterator<Item=&'a T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<T=T,N=T::Num>)->Option<(Vec<&'a T>,T::Num)>{
-
-        let mut closest=Closest{closest:None};
-
-        for b in bots{
-            closest.consider(&ray,b,&mut rtrait);
-        }
-        closest.closest
-    }
-
-    raycast!(Vistr<'a,T>,*const T,&T,get_range_iter,NonLeafDyn,&'a T);
-    pub fn raycast<
-        'a,
-        K:DinoTreeRefTrait
-        >(tree:&'a K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<T=K::Item,N=K::Num>)->Option<(Vec<&'a K::Item>,K::Num)>{
-        
-
-        let axis=tree.axis();
-        let dt = tree.vistr().with_depth(Depth(0));
-
-
-        let closest=Closest{closest:None};
-        let mut blap=Blap{rtrait,ray,closest};
-        recc(axis,dt,rect,&mut blap);
-        blap.closest.closest
-    }
-}
-*/
