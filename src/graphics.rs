@@ -11,6 +11,8 @@ pub trait DividerDrawer{
     fn draw_divider<A:AxisTrait>(&mut self,axis:A,div:Self::N,cont:[Self::N;2],length:[Self::N;2],depth:usize);
 }
 
+
+
 ///Calls the user supplied function on each divider.
 ///Since the leaves do not have dividers, it is not called for the leaves.
 pub fn draw<K:DinoTreeRefTrait,D:DividerDrawer<N=K::Num>>(

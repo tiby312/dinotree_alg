@@ -48,7 +48,7 @@ pub mod nbody;
 pub mod raycast;
 
 ///Contains find element code.
-pub mod find_element;
+//pub mod find_element;
 
 ///Contains rect code.
 pub mod rect;
