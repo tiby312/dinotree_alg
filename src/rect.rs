@@ -221,3 +221,54 @@ mod constant{
     }
 
 }
+
+
+
+
+///Indicates that the user supplied a rectangle
+///that intersects with a another one previously queries
+///in the session.
+#[derive(Debug)]
+pub struct RectIntersectErr;
+
+
+/// If we have two non intersecting rectangles, it is safe to return to the user two sets of mutable references
+/// of the bots strictly inside each rectangle since it is impossible for a bot to belong to both sets.
+///
+/// # Safety
+///
+/// Unsafe code is used.  We unsafely convert the references returned by the rect query
+/// closure to have a longer lifetime.
+/// This allows the user to store mutable references of non intersecting rectangles at the same time. 
+/// If two requested rectangles intersect, an error is returned.
+///
+///Handles a multi rect mut "sessions" within which
+///the user can query multiple non intersecting rectangles.
+pub struct MultiRectMut<'a,K:DinoTreeRefMutTrait> {
+    tree:&'a mut K,
+    rects: Vec<Rect<K::Num>>,
+}
+
+impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
+    pub fn new(tree:&'a mut K)->Self{
+        MultiRectMut{tree,rects:Vec::new()}
+    }
+    pub fn for_all_in_rect_mut(&mut self,rect:Rect<K::Num>,mut func:impl FnMut(BBoxRefMut<'a,K::Num,K::Inner>))->Result<(),RectIntersectErr>{
+        for r in self.rects.iter(){
+            if rect.get_intersect_rect(r).is_some(){
+                return Err(RectIntersectErr);
+            }
+        }
+
+        self.rects.push(rect);
+
+        for_all_in_rect_mut(&mut self.tree,&rect,|bbox:BBoxRefMut<K::Num,K::Inner>|{
+            //This is only safe to do because the user is unable to mutate the bounding box.
+            let bbox:BBoxRefMut<'a,K::Num,K::Inner>=unsafe{core::mem::transmute(bbox)};
+            func(bbox);
+        });
+
+        Ok(())
+    }
+}
+

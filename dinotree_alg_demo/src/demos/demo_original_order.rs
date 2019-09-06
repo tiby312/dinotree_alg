@@ -75,7 +75,7 @@ impl DemoSys for OrigOrderDemo{
             b.update();
         }
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|b|{
+        let mut tree=DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut self.bots,|b|{
             Rect::from_point(b.pos,vec2same(radius)).inner_try_into().unwrap()
         }).build_par(); 
 
@@ -141,7 +141,7 @@ impl DemoSys for OrigOrderDemo{
         //draw lines to the bots.
         {
             fn draw_bot_lines<A:axgeom::AxisTrait>
-                (axis:A,stuff:Vistr<BBoxMut<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
+                (axis:A,stuff:Vistr<BBox<F32n,Bot>>,rect:&axgeom::Rect<F32n>,c:&Context,g:&mut G2d){
                 use compt::Visitor;
                 let (nn,rest)=stuff.next();
 
@@ -235,7 +235,7 @@ impl DemoSys for OrigOrderDemo{
 
             let mut res2=Vec::new();
             
-            colfind::query_naive_mut(tree.get_bots_mut(),|a, b|{
+            colfind::query_naive_mut(ElemSliceMut::from_slice_mut(tree.get_bots_mut()),|a, b|{
                 let a=a.inner;
                 let b=b.inner;
                 let (a,b)=if a.id<b.id{
@@ -282,6 +282,7 @@ impl DemoSys for OrigOrderDemo{
 
         }
         
+        tree.into_inner(&mut self.bots);
     
         
         fn conv(a:u8)->f32{

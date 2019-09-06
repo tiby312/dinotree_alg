@@ -53,8 +53,5 @@ pub mod find_element;
 ///Contains rect code.
 pub mod rect;
 
-///Contains multirect code.
-pub mod multirect;
-
 ///Contains misc tools
 pub(crate) mod tools;

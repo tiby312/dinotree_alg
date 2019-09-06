@@ -92,7 +92,7 @@ impl DemoSys for IntersectWithDemo{
         bots[0].pos=cursor.inner_into();
 
 
-        let mut tree=DinoTreeDirectBuilder::new(axgeom::XAXISS,bots,|bot|{
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|bot|{
            axgeom::Rect::from_point(bot.pos,vec2(radius,radius)).inner_try_into().unwrap()
         }).build_par(); 
 
@@ -138,8 +138,6 @@ impl DemoSys for IntersectWithDemo{
         colfind::QueryBuilder::new(&mut tree).query_par(| a, b| {
             let _ = duckduckgeo::repel(a.inner,b.inner,0.001,2.0);
         });
-    
-        tree.into_inner(bots);
         
 
         

@@ -112,31 +112,11 @@ impl<I: HasAabbMut> Sweeper<I> {
     }
     
 
-    #[inline(always)]
-    pub(crate) fn find_parallel_2d_no_check<A: AxisTrait, F: ColMulti<T=I>>(
-        &mut self,
-        axis:A,
-        bots1: ElemSliceMut<F::T>,
-        bots2: ElemSliceMut<F::T>,
-        clos2: &mut F,
-    ) {
-        self.find_bijective_parallel(axis,(bots1, bots2), clos2);
-    }
-
-
     pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
         _axis:A,
         mut r1: ElemSliceMut<F::T>,
         mut r2: ElemSliceMut<F::T>,
         clos2: &mut F){
-        /*
-        let mut bots2:&mut Vec<WrapT<I>>=unsafe{&mut *(self.helper2.get_empty_vec_mut() as *mut Vec<&mut I> as *mut Vec<WrapT<I>>)};
-        for b in r2.iter_mut().map(|a|WrapT{inner:a}){
-            bots2.push(b);
-        }
-        dinotree::advanced::sweeper_update(axis,&mut bots2);
-        self.find_parallel_2d_ptr(axis,r1,&mut bots2,clos2);
-        */
         
         for mut inda in r1.as_mut().iter_mut() {
             for mut indb in r2.as_mut().iter_mut() {
