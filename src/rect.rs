@@ -125,22 +125,22 @@ impl<'a,K:DinoTreeRefTrait>  RectQueryBuilder<'a,K>{
         RectQueryBuilder{tree,rect}
     }
     pub fn for_all_in(&self,mut closure: impl Fn(BBoxRef<K::Num,K::Inner>)){
-        constant::for_all_in_rect(&self.tree,&self.rect,closure);
+        constant::for_all_in_rect(self.tree,&self.rect,closure);
     }
     pub fn for_all_intersect(&self,mut closure: impl Fn(BBoxRef<K::Num,K::Inner>)){
-        constant::for_all_intersect_rect(&self.tree,&self.rect,closure);
+        constant::for_all_intersect_rect(self.tree,&self.rect,closure);
     }
-    
+
 }
 impl<'a,K:DinoTreeRefMutTrait>  RectQueryBuilder<'a,K>{
     pub fn for_all_in_mut(&mut self, mut closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
-        mutable::for_all_in_rect_mut(&mut self.tree,&self.rect,closure);
+        mutable::for_all_in_rect_mut(self.tree,&self.rect,closure);
     }
     pub fn for_all_intersect_mut(&mut self, mut closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
-        mutable::for_all_intersect_rect_mut(&mut self.tree,&self.rect,closure);
+        mutable::for_all_intersect_rect_mut(self.tree,&self.rect,closure);
     }
     pub fn for_all_not_in_mut(&mut self, mut closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
-        for_all_not_in_rect_mut(&mut self.tree,&self.rect,closure);
+        for_all_not_in_rect_mut(self.tree,&self.rect,closure);
     }
 }
 
@@ -290,7 +290,7 @@ impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
 
         self.rects.push(rect);
 
-        for_all_in_rect_mut(&mut self.tree,&rect,|bbox:BBoxRefMut<K::Num,K::Inner>|{
+        for_all_in_rect_mut(self.tree,&rect,|bbox:BBoxRefMut<K::Num,K::Inner>|{
             //This is only safe to do because the user is unable to mutate the bounding box.
             let bbox:BBoxRefMut<'a,K::Num,K::Inner>=unsafe{core::mem::transmute(bbox)};
             func(bbox);
