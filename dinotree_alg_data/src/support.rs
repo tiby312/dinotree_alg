@@ -79,7 +79,7 @@ impl Splitter for LevelTimer {
 
 
 
-pub const COLS:&[&str]=&["blue","green","red","violet","orange","pink","gray","brown","black"];
+pub const COLS:&[&str]=&["blue","green","red","violet","orange","brown","gray","black","pink"];
 
 
 

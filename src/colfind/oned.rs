@@ -124,7 +124,7 @@ impl<I: HasAabbMut> Sweeper<I> {
                 {
                     let crr = curr_bot.rect.get_range(axis);
                     //change this to do retain and then iter
-                    active.retain(|that_bot|that_bot.rect.get_range(axis).right >= crr.left);
+                    active.retain(|that_bot|that_bot.rect.get_range(axis).right > crr.left);
                 }
 
                 for that_bot in active.iter_mut() {
@@ -161,14 +161,14 @@ impl<I: HasAabbMut> Sweeper<I> {
             }
             
             //Prune all the x's that are no longer touching the y.
-            active_x.retain(|x| x.rect.get_range(axis).right >= y.rect.get_range(axis).left);
+            active_x.retain(|x| x.rect.get_range(axis).right > y.rect.get_range(axis).left);
 
             //So at this point some of the x's could actualy not intersect y.
             //These are the x's that are to the complete right of y.
             //So to handle collisions, we want to make sure to not hit these.
             //That is why we have that condition to break out of the below loop
             for x in active_x.iter_mut() {
-                if x.rect.get_range(axis).left>y.rect.get_range(axis).right{
+                if x.rect.get_range(axis).left>=y.rect.get_range(axis).right{
                     break;
                 }
 

@@ -2,7 +2,7 @@ use crate::inner_prelude::*;
 
 
 
-const ARR_SIZE:usize=0;
+const ARR_SIZE:usize=4;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
@@ -111,7 +111,7 @@ fn test6(bots:&mut [BBox<isize,Bot>])->f64{
     let instant=Instant::now();
 
    
-    let mut tree=DinoTreeIndirectBuilder::new(axgeom::XAXISS,bots).build_seq();
+    let mut tree=DinoTreeIndirectBuilder::new(axgeom::XAXISS,bots).build_par();
 
     
     colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
@@ -127,7 +127,7 @@ fn test6(bots:&mut [BBox<isize,Bot>])->f64{
 
 
 pub fn handle(fb:&mut FigureBuilder){ 
-    handle_num_bots(fb,1.0);
+    handle_num_bots(fb,0.1);
 }
 
 

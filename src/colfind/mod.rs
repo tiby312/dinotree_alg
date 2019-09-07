@@ -26,7 +26,7 @@ pub trait ColMulti{
 ///Naive algorithm.
 pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
     tools::for_every_pair(bots,|a,b|{
-        if a.rect.get_intersect_rect(b.rect).is_some(){
+        if a.rect.intersects_rect(b.rect){
             func(a,b);
         }
     });

@@ -1,21 +1,12 @@
 //! ## Overview
-//! This crate provides some useful 2d space querying algorithms that you can perform on a dinotree.
-//! Checkout the inner demo project to see how all these algorithms can be used.
 //!
-//! ## Testing
-//!
-//! Simply testing for correctness doesnt mean the algorithms are working as expected. 
-//! The dinotree_alg_data inner project measures the performance of a lot of these algorithms to give an even better feel that they are working
-//! as anticipated. 
-//!
-//! ## Analysis
-//! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
-//!
+//! This crate provides some useful 2D space querying algorithms that you can perform on a dinotree.
+//! Checkout the inner demo and data projects to see how all these algorithms can be used.
 //!
 //! ## Unsafety
 //!
-//! The `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
-//! that belong to rectangle regions that don't intersect.
+//! `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
+//! that belong to rectangle regions that don't intersect at the same time.
 //!
 
 #![no_std]
@@ -35,6 +26,16 @@ mod inner_prelude {
     pub use core::marker::PhantomData;
     pub use itertools::Itertools;
     pub(crate) use crate::tools;
+}
+
+pub mod prelude{
+    pub use crate::graphics::*;
+    pub use crate::colfind::*;
+    pub use crate::intersect_with::*;
+    pub use crate::k_nearest::*;
+    pub use crate::nbody::*;
+    pub use crate::raycast::*;
+    pub use crate::rect::*;
 }
 
 ///Provides functionality to draw the dividers of a dinotree.
