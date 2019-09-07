@@ -33,16 +33,10 @@
 //! We also don't have have to worry about overflow and underflow problems of providing a rectangle that 
 //! just barely fits into the number type.
 //! 
-//! # Safety
-//!
-//! There is no unsafety in this module.
-//!
-//!
 
 use crate::inner_prelude::*;
 use core::cmp::Ordering;
 use core::convert::TryFrom;
-
 use axgeom::primitive_from::PrimitiveFrom;
 
 ///A Ray.
@@ -136,12 +130,6 @@ pub trait RayTrait{
 
 
 
-fn vec_make<T>(a:T)->Vec<T>{
-    //Cannot use smallvec! creation macro since T does not implement Copy.
-    let mut b=Vec::with_capacity(1);
-    b.push(a);
-    b
-}
 
 
 
@@ -189,7 +177,7 @@ impl<'a,N:NumTrait,T> Closest<'a,N,T>{
                 }
             },
             None=>{
-                self.closest=Some((vec_make(b),x))  
+                self.closest=Some((vec[b],x))  
             }
         };
     }
@@ -225,7 +213,6 @@ impl<'a,R:RayTrait> Blap<'a,R>{
                     },
                     None=>{
                         return true;
-                        //recc(axis_next,second.0,rtrait,second.1,closest);
                     }
                 }   
                 

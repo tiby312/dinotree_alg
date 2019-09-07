@@ -1,8 +1,3 @@
-//!
-//! # Unsafety
-//! 
-//! There is no unsafe code.
-//!
 use crate::inner_prelude::*;
 
 ///Trait user must implement.

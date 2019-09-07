@@ -5,10 +5,7 @@
 //! for_all_intersect_rect is similar, but will return all bots who are inside as well as all bots whose aabb's intersect the rect.
 //! The user is allowed to hold on to the mutable references returned for as long as the tree itself is mutably borrowed.
 //!
-//! # Safety
-//!
-//! There is no unsafe code in this module.
-//!
+
 use crate::inner_prelude::*;
 
 

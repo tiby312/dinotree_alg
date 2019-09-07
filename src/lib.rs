@@ -11,10 +11,16 @@
 //! ## Analysis
 //! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
 //!
+//!
+//! ## Unsafety
+//!
+//! The `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
+//! that belong to rectangle regions that don't intersect.
+//!
 
 #![no_std]
-//#![cfg_attr(not(feature="std"), no_std)]
-//#[cfg(all(feature="alloc", not(feature="std")))]
+
+#[macro_use]
 extern crate alloc;
 
 

@@ -10,15 +10,10 @@
 //! a rectangle within which the nbody simulation will take place. So the simulation is only designed to work
 //! in a finite area.
 //!
-//! # Safety
-//!
-//! There is unsafe code to reuse code between sequential and parallel versions.
-//!
 use crate::inner_prelude::*;
 
 
 pub trait NodeMassTrait:Clone{
-    //type T:HasAabbMut<Num=Self::Num,Inner=Self::Inner>+Send;
     type No:Copy+Send;
     type Num:NumTrait;
     type Inner;
@@ -436,7 +431,7 @@ trait Bok2{
 
 
 ///Parallel version.
-pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<Num=K::Num,Inner=K::Inner>+Sync+Send>(mut t1:&mut K,ncontext:&N,rect:Rect<K::Num>) where N::No:Send, K::Item:Send+Copy{
+pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<Num=K::Num,Inner=K::Inner>+Sync+Send>(t1:&mut K,ncontext:&N,rect:Rect<K::Num>) where N::No:Send, K::Item:Send+Copy{
     let axis=t1.axis();
     
     let mut misc_nodes=Vec::new();
@@ -457,7 +452,7 @@ pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<Num=K::Num,Inner=K::Inner
 
 
 ///Sequential version.
-pub fn nbody<K:DinoTreeRefMutTrait<Inner=N::Inner,Num=N::Num>,N:NodeMassTrait+Send+Sync>(mut t1:&mut K,ncontext:&N,rect:Rect<K::Num>) where K::Item:Send+Sync{
+pub fn nbody<K:DinoTreeRefMutTrait<Inner=N::Inner,Num=N::Num>,N:NodeMassTrait+Send+Sync>(t1:&mut K,ncontext:&N,rect:Rect<K::Num>) where K::Item:Send+Sync{
     
     let axis=t1.axis();
     

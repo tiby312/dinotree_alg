@@ -88,12 +88,11 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K> where K::Item:Send+S
     pub fn query_par(self,func:impl Fn(
                     BBoxRefMut<K::Num,K::Inner>,
             BBoxRefMut<K::Num,K::Inner>)+Copy+Send+Sync){
-        let mut tree=self.tree;
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleNoSorted::new(b);
 
-        let axis=tree.axis();
-        let oo=tree.vistr_mut();
+        let axis=self.tree.axis();
+        let oo=self.tree.vistr_mut();
         let switch_height=self.switch_height;
         let par=compute_default_level_switch_sequential(switch_height,oo.height());
         ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
@@ -110,7 +109,7 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
     }
 
     #[inline(always)]
-    pub fn query_with_splitter_seq(mut self,func:impl FnMut(
+    pub fn query_with_splitter_seq(self,func:impl FnMut(
                     BBoxRefMut<K::Num,K::Inner>,
             BBoxRefMut<K::Num,K::Inner>),splitter:&mut impl Splitter){
         let b=inner::QueryFnMut::new(func);        
@@ -123,7 +122,7 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
     }    
 
     #[inline(always)]
-    pub fn query_seq(mut self,func:impl FnMut(
+    pub fn query_seq(self,func:impl FnMut(
         BBoxRefMut<K::Num,K::Inner>,
         BBoxRefMut<K::Num,K::Inner>)){
         let b=inner::QueryFnMut::new(func);
@@ -147,7 +146,7 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K> where K::Item: Send+Sync{
 
     ///Perform the query in parallel
     #[inline(always)]
-    pub fn query_par(mut self,func:impl Fn(
+    pub fn query_par(self,func:impl Fn(
             BBoxRefMut<K::Num,K::Inner>,
             BBoxRefMut<K::Num,K::Inner>
         )+Clone+Send+Sync){
@@ -168,7 +167,7 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K> where K::Item: Send+Sync{
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
     #[inline(always)]
-    pub fn query_splitter_par<C:ColMulti<T=K::Item>+Splitter+Send+Sync>(mut self,clos:C){
+    pub fn query_splitter_par<C:ColMulti<T=K::Item>+Splitter+Send+Sync>(self,clos:C){
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();
 
@@ -201,7 +200,7 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
     
     ///Perform the query sequentially.
     #[inline(always)]
-    pub fn query_seq(mut self,func:impl FnMut(
+    pub fn query_seq(self,func:impl FnMut(
         BBoxRefMut<K::Num,K::Inner>,
         BBoxRefMut<K::Num,K::Inner>
         )){
@@ -217,7 +216,7 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
 
     ///Perform the query sequentially with a splitter.
     #[inline(always)]
-    pub fn query_with_splitter_seq(mut self,func:impl FnMut(
+    pub fn query_with_splitter_seq(self,func:impl FnMut(
         BBoxRefMut<K::Num,K::Inner>,
         BBoxRefMut<K::Num,K::Inner>),splitter:&mut impl Splitter){
 

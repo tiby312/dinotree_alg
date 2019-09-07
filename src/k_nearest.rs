@@ -15,11 +15,6 @@
 //! For trees that use floating point bounding boxes, ties will be extremely rare in a lot of cases, so each Unit
 //! will likely only have one bot inside of it.
 //!
-//! # Safety
-//!
-//! There is no unsafe code in this module
-//!
-//!
 
 use crate::inner_prelude::*;
 use core::cmp::Ordering;
