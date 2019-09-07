@@ -177,7 +177,6 @@ impl<I: HasAabbMut> Sweeper<I> {
             }
         }
     }
-
 }
 
 
