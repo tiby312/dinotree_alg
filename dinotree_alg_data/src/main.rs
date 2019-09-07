@@ -152,7 +152,7 @@ fn main() {
             
             run_test!(&mut fb,colfind::dinotree_direct_indirect::handle);
             
-            /*
+            
             //done
             run_test!(&mut fb,colfind::construction_vs_query::handle_bench);
             
@@ -170,7 +170,7 @@ fn main() {
 
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb,colfind::height_heur_comparison::handle);
-            */
+            
 
             //nbody::theory::handle(&mut fb);
         },
