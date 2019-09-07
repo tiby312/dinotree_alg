@@ -1,5 +1,5 @@
 use crate::support::prelude::*;
-use dinotree_alg::rect;
+use dinotree_alg::rect::*;
 use duckduckgeo;
 use dinotree_alg;
 
@@ -151,7 +151,7 @@ pub fn handle_rigid_body(
             });    
 
 
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,dim,| a|{
+            RectQueryMutBuilder::new(&mut tree,dim).for_all_not_in_mut(| a|{
                 a.inner.push_away_from_border(dim.as_ref(),push_rate)
             });
         
@@ -214,7 +214,7 @@ impl DemoSys for RigidBodyDemo{
             bot.create_loose(radius)
         }).build_seq(); 
         
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|b|{
+        RectQueryMutBuilder::new(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap())).for_all_in_mut(|b|{
             let diff=cursor.inner_into()-b.inner.pos;
 
             let dis=diff.magnitude();

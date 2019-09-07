@@ -1,5 +1,5 @@
 use crate::support::prelude::*;
-use dinotree_alg::rect;
+use dinotree_alg::rect::*;
 use duckduckgeo;
 use dinotree_alg;
 use dinotree_alg::colfind;
@@ -140,14 +140,14 @@ impl DemoSys for LiquidDemo{
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|b|{
+        RectQueryMutBuilder::new(&mut tree,&axgeom::Rect::from_point(cursor,vv)).for_all_in_mut(|b|{
             let _ =duckduckgeo::repel_one(b.inner,cc,0.001,100.0);
         });
         
 
         {
             let dim2=self.dim.inner_into();
-            dinotree_alg::rect::for_all_not_in_rect_mut(&mut tree,&self.dim,|a|{
+            RectQueryMutBuilder::new(&mut tree,&self.dim).for_all_not_in_mut(|a|{
                 duckduckgeo::collide_with_border(a.inner,&dim2,0.5);
             });
         }        

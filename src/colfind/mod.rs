@@ -77,12 +77,12 @@ pub fn query_sweep_mut<T:HasAabbMut>(axis:impl AxisTrait,bots:&mut [T],func:impl
 
 
 ///Builder for a query on a NotSorted Dinotree.
-pub struct NotSortedQueryBuilder<K:NotSortedRefMutTrait>{
+pub struct NotSortedQueryBuilder<'a,K:NotSortedRefMutTrait>{
     switch_height:usize,
-    tree:K
+    tree:&'a mut K
 }
 
-impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K> where K::Item:Send+Sync{
+impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K> where K::Item:Send+Sync{
 
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
@@ -101,10 +101,10 @@ impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K> where K::Item:Send+Sync{
 
 }
 
-impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K>{
+impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
 
     #[inline(always)]
-    pub fn new(tree:K)->NotSortedQueryBuilder<K>{
+    pub fn new(tree:&'a mut K)->NotSortedQueryBuilder<'a,K>{
         let switch_height=default_level_switch_sequential();
         NotSortedQueryBuilder{switch_height,tree}
     }
@@ -138,12 +138,12 @@ impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K>{
 
 
 ///Builder for a query on a DinoTree.
-pub struct QueryBuilder<K:DinoTreeRefMutTrait>{
+pub struct QueryBuilder<'a,K:DinoTreeRefMutTrait>{
     switch_height:usize,
-    tree:K
+    tree:&'a mut K
 }
 
-impl<K:DinoTreeRefMutTrait> QueryBuilder<K> where K::Item: Send+Sync{
+impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K> where K::Item: Send+Sync{
 
     ///Perform the query in parallel
     #[inline(always)]
@@ -182,11 +182,11 @@ impl<K:DinoTreeRefMutTrait> QueryBuilder<K> where K::Item: Send+Sync{
 }
 
 
-impl<K:DinoTreeRefMutTrait> QueryBuilder<K>{
+impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
 
     ///Create the builder.
     #[inline(always)]
-    pub fn new(tree:K)->QueryBuilder<K>{
+    pub fn new(tree:&'a mut K)->QueryBuilder<'a,K>{
         let switch_height=default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
     }

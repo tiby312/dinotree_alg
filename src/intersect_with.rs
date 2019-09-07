@@ -18,7 +18,7 @@ use crate::rect::*;
 ///to exploit the divide and conquer properties of this problem.
 ///The two trees could be recursed at the same time to break up the problem.
 pub fn intersect_with_mut<K:DinoTreeRefMutTrait,X>(
-    mut tree:K,
+    mut tree:&mut K,
     b: &mut [X],
     mut aabb_create:impl FnMut(&X)->axgeom::Rect<K::Num>,
     func: impl Fn(BBoxRefMut<K::Num,K::Inner>,BBoxRefMut<K::Num,X>),
@@ -30,7 +30,7 @@ pub fn intersect_with_mut<K:DinoTreeRefMutTrait,X>(
 
     for mut i in ElemSlice::from_slice_mut(&mut b2).iter_mut() {
         
-        RectQueryBuilder::new(&mut tree,i.rect).for_all_intersect_mut(|a| {
+        RectQueryMutBuilder::new(tree,i.rect).for_all_intersect_mut(|a| {
             func(a,i.as_mut());
         });
     }

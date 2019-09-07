@@ -1,8 +1,4 @@
 use dinotree::axgeom;
-use dinotree::compt;
-
-
-
 use axgeom::Vec2;
 use axgeom::vec2;
 use piston_window::*;

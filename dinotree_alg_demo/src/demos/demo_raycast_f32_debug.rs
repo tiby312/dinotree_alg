@@ -4,9 +4,7 @@ use dinotree_alg;
 use std;
 use duckduckgeo;
 use dinotree_alg::raycast::RayIntersectResult;
-
 use std::cell::RefCell;
-use dinotree::dinotree_direct::*;
 
 
 mod ray_f32{

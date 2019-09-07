@@ -1,6 +1,6 @@
 use crate::support::prelude::*;
 use dinotree_alg::colfind;
-use dinotree_alg::rect;
+use dinotree_alg::rect::*;
 use dinotree_alg::intersect_with;
 use duckduckgeo;
 
@@ -122,7 +122,7 @@ impl DemoSys for IntersectWithDemo{
         });
 
         let cc=cursor.inner_into();
-        rect::for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap(),|b|{
+        RectQueryMutBuilder::new(&mut tree,&axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap()).for_all_in_mut(|b|{
             let _ =duckduckgeo::repel_one(b.inner,cc,0.001,20.0);
         });
 

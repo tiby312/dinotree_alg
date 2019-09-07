@@ -34,7 +34,7 @@ impl KnearestDemo{
 
 impl DemoSys for KnearestDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
-        let mut tree=&mut self.tree;
+        let tree=&mut self.tree;
         
 
         for bot in tree.get_bots().iter(){
@@ -105,7 +105,7 @@ impl DemoSys for KnearestDemo{
         }
         let mut vv={
             let kn=Kn{c:&c,g:RefCell::new(g),draw:true};
-            k_nearest::k_nearest_mut(&mut tree,cursor,3,kn,self.dim)
+            k_nearest::k_nearest_mut(tree,cursor,3,kn,self.dim)
         };
         let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.rect,id:a.bot.inner.id,mag:a.mag}).collect();
 

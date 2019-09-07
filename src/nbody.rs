@@ -436,7 +436,7 @@ trait Bok2{
 
 
 ///Parallel version.
-pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<Num=K::Num,Inner=K::Inner>+Sync+Send>(mut t1:K,ncontext:&N,rect:Rect<K::Num>) where N::No:Send, K::Item:Send+Copy{
+pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<Num=K::Num,Inner=K::Inner>+Sync+Send>(mut t1:&mut K,ncontext:&N,rect:Rect<K::Num>) where N::No:Send, K::Item:Send+Copy{
     let axis=t1.axis();
     
     let mut misc_nodes=Vec::new();
@@ -457,7 +457,7 @@ pub fn nbody_par<K:DinoTreeRefMutTrait,N:NodeMassTrait<Num=K::Num,Inner=K::Inner
 
 
 ///Sequential version.
-pub fn nbody<K:DinoTreeRefMutTrait<Inner=N::Inner,Num=N::Num>,N:NodeMassTrait+Send+Sync>(mut t1:K,ncontext:&N,rect:Rect<K::Num>) where K::Item:Send+Sync{
+pub fn nbody<K:DinoTreeRefMutTrait<Inner=N::Inner,Num=N::Num>,N:NodeMassTrait+Send+Sync>(mut t1:&mut K,ncontext:&N,rect:Rect<K::Num>) where K::Item:Send+Sync{
     
     let axis=t1.axis();
     

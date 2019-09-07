@@ -80,7 +80,7 @@ impl DemoSys for RaycastF32Demo{
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
     
-        let mut tree=&mut self.tree;
+        let tree=&mut self.tree;
         
         { 
             for dir in 0..360i32{
@@ -95,7 +95,7 @@ impl DemoSys for RaycastF32Demo{
 
                 
 
-                let res=raycast::raycast_mut(&mut tree,self.dim,ray,ray_f32::RayT{c:&c,g});
+                let res=raycast::raycast_mut(tree,self.dim,ray,ray_f32::RayT{c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;

@@ -1,6 +1,5 @@
 use crate::support::prelude::*;
-use dinotree_alg::multirect;
-use dinotree_alg::rect;
+use dinotree_alg::rect::*;
 
 #[derive(Copy,Clone,Debug)]
 struct Bot{
@@ -9,7 +8,6 @@ struct Bot{
 }
 
 pub struct MultiRectDemo{
-    //bots:Vec<Bot>
     tree:DinoTreeDirect<axgeom::XAXISS,i32,Bot>
 }
 impl MultiRectDemo{
@@ -48,7 +46,7 @@ impl DemoSys for MultiRectDemo{
 
         
         {
-            let mut rects=multirect::multi_rect_mut(&mut self.tree);
+            let mut rects=MultiRectMut::new(&mut self.tree);
 
 
             let mut to_draw=Vec::new();
@@ -81,10 +79,11 @@ impl DemoSys for MultiRectDemo{
         
 
         
-        rect::for_all_intersect_rect(&self.tree,&r1,|a|{
+        RectQueryBuilder::new(&self.tree,&r1).for_all_intersect(|a|{
             draw_rect_i32([0.0,0.0,1.0,0.3],a.rect,c,g);
         });
         
+        /* TODO do something else here
         let mut rects=multirect::multi_rect_mut(&mut self.tree);
         let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
             
@@ -95,7 +94,8 @@ impl DemoSys for MultiRectDemo{
                  c.transform,
                  g);
         });
-        
+        */
+
 
         
    }
