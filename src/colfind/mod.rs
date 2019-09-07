@@ -34,7 +34,6 @@ pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BB
 
 
 ///Sweep and prune algorithm.
-///Naive algorithm.
 pub fn query_sweep_mut<T:HasAabbMut>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){  
     ///Sorts the bots.
     #[inline(always)]

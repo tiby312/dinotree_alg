@@ -86,7 +86,7 @@ impl DemoSys for KnearestDemo{
                         //-(bot.inner.pos-point.inner_into()).magnitude2()
                     }
                 };
-                NotNan::new(dis).unwrap()
+                f32n(dis)
             }
         }
 

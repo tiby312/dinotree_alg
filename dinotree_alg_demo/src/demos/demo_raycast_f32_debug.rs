@@ -43,18 +43,18 @@ mod ray_f32{
             let k=ray_intersects_box(&ray,&rect);
             match k{
                 IntersectsBotResult::Hit(val)=>{
-                    RayIntersectResult::Hit(NotNan::new(val).unwrap())
+                    RayIntersectResult::Hit(val)
                 },
                 IntersectsBotResult::NoHit=>{
                     RayIntersectResult::NoHit
                 },
                 IntersectsBotResult::Inside=>{
-                    RayIntersectResult::Hit(NotNan::new(0.0).unwrap())
+                    RayIntersectResult::Hit(0.0)
                     
                     //Return none if you do not want results that intersect the ray origin.
                     //None
                 }
-            }
+            }.inner_try_into().unwrap()
         }
         
     }

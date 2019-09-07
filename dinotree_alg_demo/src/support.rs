@@ -56,6 +56,12 @@ impl Iterator for ColorGenerator{
     }
 }
 
+use duckduckgeo::F32n;
+use ordered_float::NotNan;
+pub fn f32n(a:f32)->F32n{
+    NotNan::new(a).unwrap()
+}
+
 
 
 

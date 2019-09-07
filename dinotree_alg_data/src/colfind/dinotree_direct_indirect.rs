@@ -2,19 +2,21 @@ use crate::inner_prelude::*;
 
 
 
-const ARR_SIZE:usize=4;
+pub trait TestTrait:Copy+Send+Sync{}
+impl<T:Copy+Send+Sync> TestTrait for T{}
+
 
 #[derive(Copy,Clone)]
-pub struct Bot{
+pub struct Bot<T>{
     num:usize,
     pos:Vec2<isize>,
-    _val:[isize;ARR_SIZE]
+    _val:T
 }
 
 
 
 
-fn test1(bots:&mut [Bot])->f64{
+fn test1<T:TestTrait>(bots:&mut [Bot<T>])->f64{
     
     let instant=Instant::now();
 
@@ -32,7 +34,7 @@ fn test1(bots:&mut [Bot])->f64{
     instant_to_sec(instant.elapsed())
 }
 
-fn test2(bots:&mut [Bot])->f64{
+fn test2<T:TestTrait>(bots:&mut [Bot<T>])->f64{
     
     let instant=Instant::now();
 
@@ -51,7 +53,7 @@ fn test2(bots:&mut [Bot])->f64{
 }
 
 
-fn test3(bots:&mut Vec<Bot>)->f64{
+fn test3<T:TestTrait>(bots:&mut Vec<Bot<T>>)->f64{
     
     let instant=Instant::now();
 
@@ -70,7 +72,7 @@ fn test3(bots:&mut Vec<Bot>)->f64{
 }
 
 
-fn test4(bots:&mut Vec<Bot>)->f64{
+fn test4<T:TestTrait>(bots:&mut Vec<Bot<T>>)->f64{
     
     let instant=Instant::now();
 
@@ -89,7 +91,7 @@ fn test4(bots:&mut Vec<Bot>)->f64{
 }
 
 
-fn test5(bots:&mut [BBox<isize,Bot>])->f64{
+fn test5<T:TestTrait>(bots:&mut [BBox<isize,Bot<T>>])->f64{
     
     let instant=Instant::now();
 
@@ -106,7 +108,7 @@ fn test5(bots:&mut [BBox<isize,Bot>])->f64{
 }
 
 
-fn test6(bots:&mut [BBox<isize,Bot>])->f64{
+fn test6<T:TestTrait>(bots:&mut [BBox<isize,Bot<T>>])->f64{
     
     let instant=Instant::now();
 
@@ -123,11 +125,17 @@ fn test6(bots:&mut [BBox<isize,Bot>])->f64{
 }
 
 
-
-
-
 pub fn handle(fb:&mut FigureBuilder){ 
-    handle_num_bots(fb,0.1);
+    handle_num_bots(fb,0.1,[0u8;8],"8 bytes");
+    handle_num_bots(fb,0.1,[0u8;32],"32 bytes");
+    handle_num_bots(fb,0.1,[0u8;128],"128 bytes");
+    handle_num_bots(fb,0.1,[0u8;256],"256 bytes");
+
+
+    handle_num_bots(fb,0.01,[0u8;128],"128 bytes");
+    handle_num_bots(fb,1.0,[0u8;128],"128 bytes");
+    
+    
 }
 
 
@@ -137,11 +145,11 @@ struct Record {
     arr:[f64;6]    
 }
 impl Record{
-    fn draw(records:&[Record],fg:&mut Figure){
+    fn draw(records:&[Record],fg:&mut Figure,grow:f32,name:&str){
         const NAMES:&[&str]=&["Dinotree Seq","Dinotree Par","Direct Seq","Direct Par","Indirect Seq","Indirect Par"];
         {
             let k=fg.axes2d()
-                .set_title(&"Dinotree vs Direct vs Indirect".to_string(), &[])
+                .set_title(&format!("Dinotree vs Direct vs Indirect with grow {} and {}",grow,name), &[])
                 .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
                 .set_x_label("Number of Elements", &[])
                 .set_y_label("Number of Comparisons", &[]);
@@ -157,22 +165,22 @@ impl Record{
 
 
 
-fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
+fn handle_num_bots<T:TestTrait>(fb:&mut FigureBuilder,grow:f32,val:T,name:&str){
     
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
-    for num_bots in (0..150_000).rev().step_by(200){
+    for num_bots in (0..100_000).rev().step_by(800){
         
-        let mut bots2:Vec<BBox<isize,Bot>>=s.clone().take(num_bots).map(|pos|{
-            let inner=Bot{num:0,pos:pos.inner_as(),_val:[0;ARR_SIZE]};
+        let mut bots2:Vec<BBox<isize,Bot<T>>>=s.clone().take(num_bots).map(|pos|{
+            let inner=Bot{num:0,pos:pos.inner_as(),_val:val};
             let rect=axgeom::Rect::from_point(inner.pos,vec2same(5));
             BBox{rect,inner}
         }).collect();
         
 
-        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            Bot{num:0,pos:pos.inner_as(),_val:[0;ARR_SIZE]}
+        let mut bots:Vec<Bot<T>>=s.clone().take(num_bots).map(|pos|{
+            Bot{num:0,pos:pos.inner_as(),_val:val.clone()}
         }).collect();
 
         let arr=[
@@ -187,9 +195,9 @@ fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
         rects.push(r);      
     }
 
-    let mut fg= fb.build(&format!("dinotree_direct_indirect{}",grow));
+    let mut fg= fb.build(&format!("dinotree_direct_indirect_{}_{}",grow,name));
     
-    Record::draw(&rects,&mut fg);
+    Record::draw(&rects,&mut fg,grow,name);
     
     fb.finish(fg);
 }

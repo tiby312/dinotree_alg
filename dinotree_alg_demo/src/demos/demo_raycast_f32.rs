@@ -3,82 +3,98 @@ use dinotree_alg::raycast;
 use std;
 use duckduckgeo;
 use dinotree_alg::raycast::RayIntersectResult;
+use self::raycast::RayTrait;
 
-
-mod ray_f32{
-    use super::*;
-
-    use self::raycast::RayTrait;
-    use duckduckgeo;
-
-    pub struct RayT<'a,'c:'a>{
-        pub c:&'a Context,
-        pub g:&'a mut G2d<'c>
-    }
-
-    impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        //type T=BBoxPtr<F32n,()>;
-        type N=F32n;
-        type Inner=();
-
-
-        fn compute_distance_to_rect(&self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
-            let ray:duckduckgeo::Ray<f32>=Ray{point:ray.point.inner_into(),dir:ray.dir.inner_into()};
-            let rect:&Rect<f32>=rect.as_ref();
-
-            
-            let k=ray_intersects_box(&ray,&rect);
-            match k{
-                IntersectsBotResult::Hit(val)=>{
-                    RayIntersectResult::Hit(NotNan::new(val).unwrap())
-                },
-                IntersectsBotResult::NoHit=>{
-                    RayIntersectResult::NoHit
-                },
-                IntersectsBotResult::Inside=>{
-                    RayIntersectResult::Hit(NotNan::new(0.0).unwrap())
-                    
-                    //Return none if you do not want results that intersect the ray origin.
-                    //None
-                }
-            }
-        }
-        
-    }
+struct RayT<'a,'c:'a>{
+    pub radius:f32,
+    pub c:&'a Context,
+    pub g:&'a mut G2d<'c>
 }
 
 
+
+impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
+    type N=F32n;
+    type Inner=Bot;
+
+
+    fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:BBoxRefMut<F32n,Bot>)->RayIntersectResult<Self::N>{
+        let ray:duckduckgeo::Ray<f32>=Ray{point:ray.point.inner_into(),dir:ray.dir.inner_into()};
+        
+        match ray_intersects_circle(&ray,bot.inner.center,self.radius){
+            IntersectsBotResult::Hit(val)=>{
+                RayIntersectResult::Hit(val)
+            },
+            IntersectsBotResult::NoHit=>{
+                RayIntersectResult::NoHit
+            },
+            IntersectsBotResult::Inside=>{
+                RayIntersectResult::Hit(0.0)
+                
+                //Return none if you do not want results that intersect the ray origin.
+                //None
+            }
+        }.inner_try_into().unwrap()
+    }
+    fn compute_distance_to_rect(&self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
+        let ray:duckduckgeo::Ray<f32>=Ray{point:ray.point.inner_into(),dir:ray.dir.inner_into()};
+        let rect:&Rect<f32>=rect.as_ref();
+
+        
+        let k=ray_intersects_box(&ray,&rect);
+        match k{
+            IntersectsBotResult::Hit(val)=>{
+                RayIntersectResult::Hit(val)
+            },
+            IntersectsBotResult::NoHit=>{
+                RayIntersectResult::NoHit
+            },
+            IntersectsBotResult::Inside=>{
+                RayIntersectResult::Hit(0.0)
+                //Return none if you do not want results that intersect the ray origin.
+                //None
+            }
+        }.inner_try_into().unwrap()
+    }
+    
+}
+
+
+#[derive(Copy,Clone)]
+struct Bot{
+    center:Vec2<f32>
+}
+
 pub struct RaycastF32Demo{
-    tree:DinoTreeDirect<axgeom::XAXISS,F32n,()>,
-    dim:Rect<F32n>
+    tree:DinoTreeDirect<axgeom::XAXISS,F32n,Bot>,
+    dim:Rect<F32n>,
+    radius:f32
 }
 impl RaycastF32Demo{
 
     pub fn new(dim:Rect<F32n>)->Self{
         
-        let mut vv:Vec<_> = (0..500).map(|_|()).collect();
-        
-        let mut ii=UniformRandGen::new(dim.inner_into()).with_radius(5.0,10.0).map(|(pos,radius)|{
-            Rect::from_point(pos,radius).inner_try_into().unwrap()
-        });
+        let radius=20.0;
+        let mut vv=UniformRandGen::new(dim.inner_into()).map(|center|Bot{center}).take(100).collect();
 
-
-        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut vv,|_a|{
-            ii.next().unwrap()
+        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut vv,|a|{
+            Rect::from_point(a.center,vec2same(radius)).inner_try_into().unwrap()
         }).build_seq();
 
 
-        Self{tree,dim}
+        Self{tree,dim,radius}
     }
 }
 
 impl DemoSys for RaycastF32Demo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
+        
         //Draw bots
         for bot in self.tree.get_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
+        
     
         let tree=&mut self.tree;
         
@@ -95,7 +111,7 @@ impl DemoSys for RaycastF32Demo{
 
                 
 
-                let res=raycast::raycast_mut(tree,self.dim,ray,ray_f32::RayT{c:&c,g});
+                let res=raycast::raycast_mut(tree,self.dim,ray,RayT{radius:self.radius,c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;

@@ -101,6 +101,37 @@ pub enum RayIntersectResult<N> {
     NoHit
 }
 
+impl<N> RayIntersectResult<N>{
+    pub fn inner_into<K:From<N>>(self)->RayIntersectResult<K>{
+        use RayIntersectResult::*;
+        match self{
+            Hit(k)=>{
+                Hit(K::from(k))
+            },
+            NoHit=>{
+                NoHit
+            }
+        }
+    }
+    pub fn inner_try_into<K:TryFrom<N>>(self)->Result<RayIntersectResult<K>,K::Error>{
+        use RayIntersectResult::*;
+        match self{
+            Hit(k)=>{
+                match K::try_from(k){
+                    Ok(k)=>{
+                        Ok(Hit(k))
+                    },
+                    Err(k)=>{
+                        Err(k)
+                    }
+                }
+            },
+            NoHit=>{
+                Ok(NoHit)
+            }
+        }
+    }
+}
 
 ///This is the trait that defines raycast specific geometric functions that are needed by this raytracing algorithm.
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying NumTrait to a minimum
