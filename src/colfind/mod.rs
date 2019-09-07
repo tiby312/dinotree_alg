@@ -24,16 +24,6 @@ pub trait ColMulti{
 
 
 ///Naive algorithm.
-/// # Examples
-///
-/// ```
-/// use dinotree_sample::SampleBuilder;
-/// use dinotree_alg::colfind::query_naive_mut;
-///
-/// let mut builder=SampleBuilder::new();
-/// let mut bots = dinotree::advanced::into_bbox_vec(builder.build().take(1000),|a|builder.create_aabb(a));
-/// query_naive_mut(&mut bots,|a,b|a.inner.collide(&mut b.inner));
-/// ```
 pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
     tools::for_every_pair(bots,|a,b|{
         if a.rect.get_intersect_rect(b.rect).is_some(){
@@ -45,17 +35,6 @@ pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BB
 
 ///Sweep and prune algorithm.
 ///Naive algorithm.
-/// # Examples
-///
-/// ```
-/// use axgeom;
-/// use dinotree_sample::SampleBuilder;
-/// use dinotree_alg::colfind::query_sweep_mut;
-///
-/// let mut builder=SampleBuilder::new();
-/// let mut bots = dinotree::advanced::into_bbox_vec(builder.build().take(1000),|a|builder.create_aabb(a));
-/// query_sweep_mut(axgeom::XAXISS,&mut bots,|a,b|a.inner.collide(&mut b.inner));
-/// ```
 pub fn query_sweep_mut<T:HasAabbMut>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){  
     ///Sorts the bots.
     #[inline(always)]
@@ -159,19 +138,6 @@ impl<K:NotSortedRefMutTrait> NotSortedQueryBuilder<K>{
 
 
 ///Builder for a query on a DinoTree.
-/// # Examples
-///
-/// ```
-/// use axgeom;
-/// use dinotree_sample::SampleBuilder;
-/// use dinotree::copy::DinoTreeBuilder;
-/// use dinotree_alg::colfind::QueryBuilder;
-///
-/// let builder = SampleBuilder::new();
-/// let mut bots:Vec<_>= builder.build().take(1000).collect();
-/// let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_seq();
-/// QueryBuilder::new(&mut tree).query_seq(|a,b|a.inner.collide(&mut b.inner));
-/// ```
 pub struct QueryBuilder<K:DinoTreeRefMutTrait>{
     switch_height:usize,
     tree:K

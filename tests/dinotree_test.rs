@@ -1,7 +1,7 @@
 //!
 //! Some misc tests. Most tests can be found in the dinotree_alg_data project.
 //!
-
+/*
 extern crate dinotree;
 extern crate dinotree_alg;
 extern crate axgeom;
@@ -145,3 +145,4 @@ fn test_empty() {
 
 }
 
+*/

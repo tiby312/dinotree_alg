@@ -12,10 +12,11 @@
 //! Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project, for a writeup of the design and analysis of the algorithms in this project.
 //!
 
-
 #![no_std]
-
+//#![cfg_attr(not(feature="std"), no_std)]
+//#[cfg(all(feature="alloc", not(feature="std")))]
 extern crate alloc;
+
 
 mod inner_prelude {
     pub use dinotree::rayon;
