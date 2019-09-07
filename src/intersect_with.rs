@@ -29,15 +29,10 @@ pub fn intersect_with_mut<K:DinoTreeRefMutTrait,X>(
     let mut b2:Vec<_>=b.iter_mut().map(|a|BBoxMut::new(aabb_create(&a),a)).collect();
 
     for mut i in ElemSlice::from_slice_mut(&mut b2).iter_mut() {
-        //let rect=*i.get();
-        for_all_intersect_rect_mut(&mut tree,i.rect, |a| {
+        
+        RectQueryBuilder::new(&mut tree,i.rect).for_all_intersect_mut(|a| {
             func(a,i.as_mut());
         });
     }
 
-    /*
-    for (i,j) in b2.iter().zip_eq(b.iter_mut()){
-        *j=i.inner;
-    }
-    */
 }

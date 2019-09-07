@@ -25,25 +25,10 @@ impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
     }
 }
 
-/*
-#[repr(transparent)]
-pub struct WrapT<'a,T:HasAabb+'a>{
-    pub inner:&'a mut T
-}
-
-unsafe impl<'a,T:HasAabb> HasAabb for WrapT<'a,T>{
-    type Num=T::Num;
-    fn get(&self)->&axgeom::Rect<T::Num>{
-        self.inner.get()
-    }
-}
-*/
-
 
 ///Provides 1d collision detection.
 pub struct Sweeper<T: HasAabbMut> {
     helper: PreVecMut<T::Num,T::Inner>,
-    //helper2: tools::PreVecMut<T>,
 }
 
 impl<T:HasAabbMut> core::default::Default for Sweeper<T>{
@@ -75,25 +60,6 @@ impl<I: HasAabbMut> Sweeper<I> {
         };
         self.find(axis,bots, &mut b);
     }
-
-
-    /*
-    pub(crate) fn find_parallel_2d_ptr<A: AxisTrait, F: ColMulti<T=I>>(
-        &mut self,
-        axis:A,
-        bots1: &mut [F::T],
-        bots2: &mut [WrapT<F::T>],
-        clos2: &mut F,
-    ) {
-        let mut b: Bl<A, _> = Bl {
-            a: clos2,
-            axis
-        };
-
-        self.find_bijective_parallel_ptr(axis,(bots1, bots2), &mut b);
-    }
-    */
-
 
     #[inline(always)]
     pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(

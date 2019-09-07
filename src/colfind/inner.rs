@@ -63,20 +63,15 @@ impl<'a,T:HasAabbMut,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
 
 
 
-struct Syncer<T:?Sized>(T);
-unsafe impl<T:?Sized> Sync for Syncer<T>{}
 
 
 
-pub struct ColFindRecurser<T:HasAabbMut+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send>{
-    _p:PhantomData<Syncer<(T,K,S)>>
+pub struct ColFindRecurser<T:HasAabbMut,K:Splitter,S:NodeHandler<T=T>+Splitter>{
+    _p:PhantomData<(T,K,S)>
 }
-impl<T:HasAabbMut+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFindRecurser<T,K,S>{
-    #[inline(always)]
-    pub fn new()->ColFindRecurser<T,K,S>{
-        ColFindRecurser{_p:PhantomData}
-    }
-    pub fn recurse<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<T>>,splitter:&mut K){
+impl<T:HasAabbMut+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=T>+Splitter+Send+Sync> ColFindRecurser<T,K,S>{
+
+    pub fn recurse_par<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<T>>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
@@ -118,19 +113,19 @@ impl<T:HasAabbMut+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFind
                             let (sweeper,splitter)={
                                 let sweeper2=&mut sweeper2;
                                 let af = move || {
-                                    self.recurse(this_axis.next(),dleft,sweeper,left,splitter);(sweeper,splitter)
+                                    self.recurse_par(this_axis.next(),dleft,sweeper,left,splitter);(sweeper,splitter)
                                 };
                                 let bf = move || {
-                                    self.recurse(this_axis.next(),dright,sweeper2,right,splitter2)
+                                    self.recurse_par(this_axis.next(),dright,sweeper2,right,splitter2)
                                 };
                                 rayon::join(af, bf).0
                             };
                             sweeper.add(sweeper2);
                             splitter
                         },
-                        par::ParResult::Sequential([dleft,dright])=>{
-                            self.recurse(this_axis.next(),dleft,sweeper,left,splitter);
-                            self.recurse(this_axis.next(),dright,sweeper,right,splitter2);
+                        par::ParResult::Sequential(_)=>{
+                            self.recurse_seq(this_axis.next(),sweeper,left,splitter);
+                            self.recurse_seq(this_axis.next(),sweeper,right,splitter2);
                             splitter 
                         }
                     }
@@ -146,9 +141,66 @@ impl<T:HasAabbMut+Send,K:Splitter+Send,S:NodeHandler<T=T>+Splitter+Send> ColFind
     }
 }
 
+impl<T:HasAabbMut,K:Splitter,S:NodeHandler<T=T>+Splitter> ColFindRecurser<T,K,S>{
+    #[inline(always)]
+    pub fn new()->ColFindRecurser<T,K,S>{
+        ColFindRecurser{_p:PhantomData}
+    }
 
 
-pub struct QueryFnMut<T,F>(F,PhantomData<Syncer<T>>);
+    pub fn recurse_seq<A:AxisTrait>(&self,this_axis:A,sweeper:&mut S,m:LevelIter<VistrMut<T>>,splitter:&mut K){
+
+        sweeper.node_start();
+        splitter.node_start();
+
+        let((_depth,mut nn),rest)=m.next();
+
+        sweeper.handle_node(this_axis.next(),nn.bots.as_mut());
+                    
+        match rest{
+            Some([mut left,mut right])=>{
+                let div=match nn.div{
+                    Some(d)=>d,
+                    None=>{
+                        sweeper.node_end();
+                        splitter.node_end();
+                        return;
+                    }
+                };
+                
+                if let Some(cont)=nn.cont{
+                    let nn=DestructuredNode{range:nn.bots,cont,div,axis:this_axis};
+                    {
+                        let left=left.as_inner_mut().create_wrap_mut();
+                        let right=right.as_inner_mut().create_wrap_mut();
+                        let mut g=GoDownRecurser::new(nn,sweeper);
+                        g.go_down(this_axis.next(), left);
+                        g.go_down(this_axis.next(), right);
+                    }
+                }
+
+                let mut splitter2=splitter.div();
+                    
+                let splitter={
+                    let splitter2=&mut splitter2;       
+                    self.recurse_seq(this_axis.next(),sweeper,left,splitter);
+                    self.recurse_seq(this_axis.next(),sweeper,right,splitter2);
+                    splitter 
+                };
+
+                splitter.add(splitter2);
+            },
+            None=>{
+                sweeper.node_end();
+                splitter.node_end();
+            }
+        }
+    }
+}
+
+
+
+pub struct QueryFnMut<T,F>(F,PhantomData<T>);
 impl<T:HasAabbMut,F:FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)> QueryFnMut<T,F>{
     #[inline(always)]
     pub fn new(func:F)->QueryFnMut<T,F>{
@@ -179,7 +231,7 @@ impl<T,F> Splitter for QueryFnMut<T,F>{
 }
 
 
-pub struct QueryFn<T,F>(F,PhantomData<Syncer<T>>);
+pub struct QueryFn<T,F>(F,PhantomData<T>);
 impl<T:HasAabbMut,F:Fn(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)> QueryFn<T,F>{
     #[inline(always)]
     pub fn new(func:F)->QueryFn<T,F>{
