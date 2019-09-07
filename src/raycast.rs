@@ -177,7 +177,7 @@ impl<'a,N:NumTrait,T> Closest<'a,N,T>{
                 }
             },
             None=>{
-                self.closest=Some((vec[b],x))  
+                self.closest=Some((vec![b],x))  
             }
         };
     }
