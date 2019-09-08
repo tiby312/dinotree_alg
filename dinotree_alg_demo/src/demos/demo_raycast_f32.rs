@@ -89,7 +89,6 @@ impl RaycastF32Demo{
 impl DemoSys for RaycastF32Demo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
-        
         //Draw bots
         for bot in self.tree.get_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);

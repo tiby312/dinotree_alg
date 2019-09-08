@@ -106,7 +106,13 @@ macro_rules! run_test {
 }
 
 
-fn main() {
+fn main(){
+    use dinotree::rayon;
+    println!("Launching with 4 threads.");
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(4).build().unwrap();
+    pool.install(blag);
+}
+fn blag() {
 
     //to run program to generate android bench data.
     //build armv7-linux-androideabi
@@ -152,7 +158,7 @@ fn main() {
             
             
             run_test!(&mut fb,colfind::dinotree_direct_indirect::handle);
-            /*
+            
             run_test!(&mut fb,colfind::colfind::handle_bench);
             
             //done
@@ -172,7 +178,7 @@ fn main() {
 
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb,colfind::height_heur_comparison::handle);
-            */
+            
 
             //nbody::theory::handle(&mut fb);
         },

@@ -149,7 +149,7 @@ pub trait RayTrait{
     ///The expensive collision detection
     ///This is where the user can do expensive collision detection on the shape
     ///contains within it's bounding box.
-    ///Its default implementation just calles compute_distance_to_rect()
+    ///Its default implementation just calls compute_distance_to_rect()
     fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:BBoxRefMut<Self::N,Self::Inner>)->RayIntersectResult<Self::N>{
         self.compute_distance_to_rect(ray,a.rect)
     }
