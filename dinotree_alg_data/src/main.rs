@@ -106,13 +106,10 @@ macro_rules! run_test {
 }
 
 
-fn main(){
+fn main() {
     use dinotree::rayon;
-    println!("Launching with 4 threads.");
-    let pool = rayon::ThreadPoolBuilder::new().num_threads(4).build().unwrap();
-    pool.install(blag);
-}
-fn blag() {
+    rayon::ThreadPoolBuilder::new().num_threads(num_cpus::get_physical()).build_global().unwrap();
+
 
     //to run program to generate android bench data.
     //build armv7-linux-androideabi

@@ -55,7 +55,10 @@ mod demo_iter{
 }
 
 fn main(){
-    
+    use dinotree::rayon;
+    rayon::ThreadPoolBuilder::new().num_threads(num_cpus::get_physical()).build_global().unwrap();
+
+
     let area=vec2(1024,768);
 
     let window = WindowSettings::new("dinotree test",[area.x,area.y])

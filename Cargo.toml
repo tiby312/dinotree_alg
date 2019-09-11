@@ -1,6 +1,6 @@
 [package]
 name = "dinotree_alg"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 description = "Dinotree algorithms"
 license = "MIT/Apache-2.0"
@@ -16,7 +16,7 @@ rustc-test = "0.3.0"
 [dependencies]
 is_sorted = "0.1.1"
 itertools = "0.8.0"
-dinotree ={path="../dinotree"}
+dinotree ="0.4.4"
 
 [features]
 #unstable =[]
