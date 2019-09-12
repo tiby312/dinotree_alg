@@ -292,8 +292,7 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,mut arr: ProtectedBBox
     }
 
     let mut end = arr.as_ref().len();
-    //for (e, i) in arr[start..].iter().enumerate() {
-    for (e, i) in arr.as_mut().truncate_start(start).iter().enumerate() {
+    for (e, i) in arr.as_mut().truncate_from(start..).iter().enumerate() {
     
         let rr = i.get().get_range(axis);
         if rr.left > range.right {
@@ -302,6 +301,5 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,mut arr: ProtectedBBox
         }
     }
 
-    arr.truncate(start,end)
-    //&mut arr[start..end]
+    arr.truncate(start..end)
 }
