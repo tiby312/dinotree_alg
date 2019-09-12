@@ -8,13 +8,13 @@ use crate::colfind::oned;
 
 pub struct DestructuredNode<'a,T:HasAabb,AnchorAxis:AxisTrait>{
     pub div:&'a T::Num,
-    pub range:ElemSliceMut<'a,T>,
+    pub range:ProtectedBBoxSlice<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:AnchorAxis
 }
 
 pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:AxisTrait>{
-    pub range:ElemSliceMut<'a,T>,
+    pub range:ProtectedBBoxSlice<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:A
 }
@@ -28,7 +28,7 @@ pub trait NodeHandler{
     fn handle_node(
         &mut self,
         axis:impl AxisTrait,
-        bots:ElemSliceMut<Self::T>
+        bots:ProtectedBBoxSlice<Self::T>
     );
 
     fn handle_children<A:AxisTrait,B:AxisTrait>(
@@ -69,11 +69,11 @@ impl<K:ColMulti+Splitter> Splitter for HandleNoSorted<K>{
 
 impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
     type T=K::T;
-    fn handle_node(&mut self,_axis:impl AxisTrait,bots:ElemSliceMut<Self::T>){
+    fn handle_node(&mut self,_axis:impl AxisTrait,bots:ProtectedBBoxSlice<Self::T>){
         let func=&mut self.func;
         
         tools::for_every_pair(bots,|a,b|{
-            if a.rect.intersects_rect(b.rect){
+            if a.get().intersects_rect(b.get()){
                 func.collide(a,b);
             }
         });
@@ -90,9 +90,9 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
             
         if res{
             for mut a in current.range.as_mut().iter_mut(){
-                for b in anchor.range.as_mut().iter_mut(){
-                    if a.rect.intersects_rect(b.rect){
-                        func.collide(a.as_mut(),b);
+                for mut b in anchor.range.as_mut().iter_mut(){
+                    if a.get().intersects_rect(b.get()){
+                        func.collide(a.as_mut(),b.as_mut());
                     }
                 }
             }
@@ -138,7 +138,7 @@ impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
 impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
     type T=K::T;
     #[inline(always)]
-    fn handle_node(&mut self,axis:impl AxisTrait,bots:ElemSliceMut<Self::T>){
+    fn handle_node(&mut self,axis:impl AxisTrait,bots:ProtectedBBoxSlice<Self::T>){
         let func=&mut self.func;
         self.sweeper.find_2d(axis,bots,func);
     }

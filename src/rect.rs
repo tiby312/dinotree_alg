@@ -14,7 +14,7 @@ macro_rules! rect{
     ($iterator:ty,$colsingle:ty,$get_section:ident)=>{     
         fn rect_recurse<
             A: AxisTrait,
-            T: HasAabbMut,
+            T: HasAabb,
             F: FnMut($colsingle),
         >(
             this_axis: A,
@@ -60,13 +60,13 @@ macro_rules! rect{
 }
 
 
-fn for_all_not_in_rect_mut<K:DinoTreeRefMutTrait>(tree:&mut K,rect:&Rect<K::Num>,closure:impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
-    fn rect_recurse<A:AxisTrait,T:HasAabbMut,F:FnMut(BBoxRefMut<T::Num,T::Inner>)>(axis:A,it:VistrMut<T>,rect:&Rect<T::Num>,mut closure:F)->F{
+fn for_all_not_in_rect_mut<K:DinoTreeRefMutTrait>(tree:&mut K,rect:&Rect<K::Num>,closure:impl FnMut(ProtectedBBox<K::Item>)){
+    fn rect_recurse<A:AxisTrait,T:HasAabb,F:FnMut(ProtectedBBox<T>)>(axis:A,it:VistrMut<T>,rect:&Rect<T::Num>,mut closure:F)->F{
         let (nn,rest)=it.next();
         
         //TODO exploit sorted property.
         for a in nn.bots.iter_mut(){
-            if !rect.contains_rect(a.rect){
+            if !rect.contains_rect(a.get()){
                 closure(a);
             }
         }
@@ -109,36 +109,36 @@ pub use self::mutable::naive_for_all_in_rect_mut;
 
 pub struct RectQueryBuilder<'a,K:DinoTreeRefTrait>{
     tree:&'a K,
-    rect:&'a Rect<K::Num>
+    rect:Rect<K::Num>
 }
 impl<'a,K:DinoTreeRefTrait>  RectQueryBuilder<'a,K>{
-    pub fn new(tree:&'a K,rect:&'a Rect<K::Num>)->Self{
+    pub fn new(tree:&'a K,rect:Rect<K::Num>)->Self{
         RectQueryBuilder{tree,rect}
     }
-    pub fn for_all_in(&self,closure: impl FnMut(BBoxRef<K::Num,K::Inner>)){
+    pub fn for_all_in(&self,closure: impl FnMut(&K::Item)){
         constant::for_all_in_rect(self.tree,&self.rect,closure);
     }
-    pub fn for_all_intersect(&self,closure: impl FnMut(BBoxRef<K::Num,K::Inner>)){
+    pub fn for_all_intersect(&self,closure: impl FnMut(&K::Item)){
         constant::for_all_intersect_rect(self.tree,&self.rect,closure);
     }
 
 }
 pub struct RectQueryMutBuilder<'a,K:DinoTreeRefMutTrait>{
     tree:&'a mut K,
-    rect:&'a Rect<K::Num>
+    rect:Rect<K::Num>
 }
 
 impl<'a,K:DinoTreeRefMutTrait>  RectQueryMutBuilder<'a,K>{
-    pub fn new(tree:&'a mut K,rect:&'a Rect<K::Num>)->Self{
+    pub fn new(tree:&'a mut K,rect:Rect<K::Num>)->Self{
         RectQueryMutBuilder{tree,rect}
     }
-    pub fn for_all_in_mut(&mut self, closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
+    pub fn for_all_in_mut(&mut self, closure: impl FnMut(ProtectedBBox<K::Item>)){
         mutable::for_all_in_rect_mut(self.tree,&self.rect,closure);
     }
-    pub fn for_all_intersect_mut(&mut self, closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
+    pub fn for_all_intersect_mut(&mut self, closure: impl FnMut(ProtectedBBox<K::Item>)){
         mutable::for_all_intersect_rect_mut(self.tree,&self.rect,closure);
     }
-    pub fn for_all_not_in_mut(&mut self, closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>)){
+    pub fn for_all_not_in_mut(&mut self, closure: impl FnMut(ProtectedBBox<K::Item>)){
         for_all_not_in_rect_mut(self.tree,&self.rect,closure);
     }
 }
@@ -150,19 +150,18 @@ impl<'a,K:DinoTreeRefMutTrait> core::convert::From<RectQueryMutBuilder<'a,K>> fo
 }
 
 
-
 mod mutable{
     use crate::colfind::oned::get_section_mut;
     use super::*;
 
-    rect!(VistrMut<T>,BBoxRefMut<T::Num,T::Inner>,get_section_mut);
+    rect!(VistrMut<T>,ProtectedBBox<T>,get_section_mut);
     pub fn for_all_intersect_rect_mut<K:DinoTreeRefMutTrait>(
         tree: &mut K,
         rect: &Rect<K::Num>,
-        mut closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>),
+        mut closure: impl FnMut(ProtectedBBox<K::Item>),
     ) {
-        let mut f = |a: BBoxRefMut<K::Num,K::Inner>| {
-            if rect.get_intersect_rect(a.rect).is_some() {
+        let mut f = |a: ProtectedBBox<K::Item>| {
+            if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
         };
@@ -173,26 +172,29 @@ mod mutable{
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
-    pub fn naive_for_all_in_rect_mut<T: HasAabbMut>(
-        bots: &mut ElemSlice<T>,
+    pub fn naive_for_all_in_rect_mut<T: HasAabb>(
+        bots: &mut [T],
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(BBoxRefMut<T::Num,T::Inner>),
+        mut closure: impl FnMut(ProtectedBBox<T>),
     ) {
+        let bots = ProtectedBBoxSlice::new(bots);
+
         for b in bots.iter_mut(){
-            if rect.contains_rect(b.rect){
+            if rect.contains_rect(b.get()){
                 closure(b);
             }
         }
 
     }
 
-    pub fn naive_for_all_intersect_rect_mut<T: HasAabbMut>(
-        bots: &mut ElemSlice<T>,
+    pub fn naive_for_all_intersect_rect_mut<T: HasAabb>(
+        bots: &mut [T],
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(BBoxRefMut<T::Num,T::Inner>),
+        mut closure: impl FnMut(ProtectedBBox<T>),
     ) {
+        let bots = ProtectedBBoxSlice::new(bots);
         for b in bots.iter_mut(){
-            if rect.get_intersect_rect(b.rect).is_some(){
+            if rect.get_intersect_rect(b.get()).is_some(){
                 closure(b);
             }
         }
@@ -201,10 +203,10 @@ mod mutable{
     pub fn for_all_in_rect_mut<K:DinoTreeRefMutTrait>(
         tree: &mut K,
         rect: &Rect<K::Num>,
-        mut closure: impl FnMut(BBoxRefMut<K::Num,K::Inner>),
+        mut closure: impl FnMut(ProtectedBBox<K::Item>),
     ) {
-        let mut f = |a: BBoxRefMut<K::Num,K::Inner> | {
-            if rect.contains_rect(a.rect) {
+        let mut f = |a: ProtectedBBox<K::Item> | {
+            if rect.contains_rect(a.get()) {
                 closure(a);
             }
         };
@@ -214,20 +216,21 @@ mod mutable{
     }
 
 }
+
 mod constant{
 
     use crate::colfind::oned::get_section;
     use super::*;
-    rect!(Vistr<T>,BBoxRef<T::Num,T::Inner>,get_section);
+    rect!(Vistr<T>,&T,get_section);
     
     pub fn for_all_intersect_rect<K:DinoTreeRefTrait>(
         tree:&K,
         rect: &Rect<K::Num>,
-        mut closure: impl FnMut(BBoxRef<K::Num,K::Inner>),
+        mut closure: impl FnMut(&K::Item),
     ) {
         
-        let mut f = |a: BBoxRef<K::Num,K::Inner>| {
-            if rect.get_intersect_rect(a.rect).is_some() {
+        let mut f = |a: &K::Item| {
+            if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
         };
@@ -239,11 +242,11 @@ mod constant{
     pub fn for_all_in_rect<K:DinoTreeRefTrait>(
         tree:&K,
         rect: &Rect<K::Num>,
-        mut closure: impl FnMut(BBoxRef<K::Num,K::Inner>),
+        mut closure: impl FnMut(&K::Item),
     ) {
         
-        let mut f = |a: BBoxRef<K::Num,K::Inner>| {
-            if rect.contains_rect(a.rect) {
+        let mut f = |a: &K::Item| {
+            if rect.contains_rect(a.get()) {
                 closure(a);
             }
         };
@@ -286,7 +289,7 @@ impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
     pub fn new(tree:&'a mut K)->Self{
         MultiRectMut{tree,rects:Vec::new()}
     }
-    pub fn for_all_in_rect_mut(&mut self,rect:Rect<K::Num>,mut func:impl FnMut(BBoxRefMut<'a,K::Num,K::Inner>))->Result<(),RectIntersectErr>{
+    pub fn for_all_in_rect_mut(&mut self,rect:Rect<K::Num>,mut func:impl FnMut(ProtectedBBox<'a,K::Item>))->Result<(),RectIntersectErr>{
         for r in self.rects.iter(){
             if rect.get_intersect_rect(r).is_some(){
                 return Err(RectIntersectErr);
@@ -295,13 +298,14 @@ impl<'a,K:DinoTreeRefMutTrait> MultiRectMut<'a,K>{
 
         self.rects.push(rect);
 
-        RectQueryMutBuilder::new(self.tree,&rect).for_all_in_mut(|bbox:BBoxRefMut<K::Num,K::Inner>|{
+        RectQueryMutBuilder::new(self.tree,rect).for_all_in_mut(|bbox:ProtectedBBox<K::Item>|{
             //This is only safe to do because the user is unable to mutate the bounding box.
-            let bbox:BBoxRefMut<'a,K::Num,K::Inner>=unsafe{core::mem::transmute(bbox)};
+            let bbox:ProtectedBBox<'a,K::Item>=unsafe{core::mem::transmute(bbox)};
             func(bbox);
         });
 
         Ok(())
     }
 }
+
 

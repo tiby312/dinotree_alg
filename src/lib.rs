@@ -28,6 +28,25 @@ mod inner_prelude {
     pub(crate) use crate::tools;
 }
 
+
+///aabb broadphase collision detection
+pub mod colfind;
+
+///Provides functionality to draw the dividers of a dinotree.
+pub mod graphics;
+
+///Contains all k_nearest code.
+pub mod k_nearest;
+
+
+///Contains all raycast code.
+pub mod raycast;
+
+///Allows user to intersect the tree with a seperate group of bots.
+pub mod intersect_with;
+
+
+///Prelude for convenience
 pub mod prelude{
     pub use crate::graphics::*;
     pub use crate::colfind::*;
@@ -38,22 +57,17 @@ pub mod prelude{
     pub use crate::rect::*;
 }
 
-///Provides functionality to draw the dividers of a dinotree.
-pub mod graphics;
 
-pub mod colfind;
 
-///Allows user to intersect the tree with a seperate group of bots.
-pub mod intersect_with;
 
-///Contains all k_nearest code.
-pub mod k_nearest;
+
+
+
+
 
 ///Contains all nbody code.
 pub mod nbody;
 
-///Contains all raycast code.
-pub mod raycast;
 
 ///Contains rect code.
 pub mod rect;

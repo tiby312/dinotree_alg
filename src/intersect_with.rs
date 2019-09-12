@@ -16,16 +16,16 @@ pub fn intersect_with_mut<K:DinoTreeRefMutTrait,X>(
     tree:&mut K,
     b: &mut [X],
     mut aabb_create:impl FnMut(&X)->axgeom::Rect<K::Num>,
-    func: impl Fn(BBoxRefMut<K::Num,K::Inner>,BBoxRefMut<K::Num,X>),
+    func: impl Fn(ProtectedBBox<K::Item>,ProtectedBBox<BBoxMut<K::Num,X>>),
 ) {
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
     //This way we can paralleliz this function.
     let mut b2:Vec<_>=b.iter_mut().map(|a|BBoxMut::new(aabb_create(&a),a)).collect();
 
-    for mut i in ElemSlice::from_slice_mut(&mut b2).iter_mut() {
+    for mut i in ProtectedBBoxSlice::new(&mut b2).iter_mut() {
         
-        RectQueryMutBuilder::new(tree,i.rect).for_all_intersect_mut(|a| {
+        RectQueryMutBuilder::new(tree,*i.get()).for_all_intersect_mut(|a| {
             func(a,i.as_mut());
         });
     }

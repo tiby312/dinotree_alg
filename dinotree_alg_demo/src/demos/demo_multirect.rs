@@ -67,7 +67,7 @@ impl DemoSys for MultiRectDemo{
                     draw_rect_i32([0.0,0.0,0.0,0.3],&r2,c,g);
             
                     for r in to_draw.iter(){
-                        draw_rect_i32([1.0,0.0,0.0,0.3],r.rect,c,g);
+                        draw_rect_i32([1.0,0.0,0.0,0.3],r.get(),c,g);
                     }
                 },
                 Err(_)=>{
@@ -79,8 +79,8 @@ impl DemoSys for MultiRectDemo{
         
 
         
-        RectQueryBuilder::new(&self.tree,&r1).for_all_intersect(|a|{
-            draw_rect_i32([0.0,0.0,1.0,0.3],a.rect,c,g);
+        RectQueryBuilder::new(&self.tree,r1).for_all_intersect(|a|{
+            draw_rect_i32([0.0,0.0,1.0,0.3],a.get(),c,g);
         });
         
         /* TODO do something else here

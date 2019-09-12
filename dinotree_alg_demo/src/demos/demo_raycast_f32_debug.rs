@@ -23,16 +23,16 @@ mod ray_f32{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        //type T=BBoxPtr<F32n,Bot2>;
+        type T=BBox<F32n,Bot2>;
         type N=F32n;
-        type Inner=Bot2;
+        //type Inner=Bot2;
 
 
-        fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:BBoxRefMut<Self::N,Self::Inner>)->RayIntersectResult<Self::N>{
+        fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
             if self.draw{
-                draw_rect_f32([1.0,0.0,0.0,0.5],bot.rect.as_ref(),self.c,&mut self.g.borrow_mut());
+                draw_rect_f32([1.0,0.0,0.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
             }
-            Self::compute_distance_to_rect(self,ray,bot.rect) 
+            Self::compute_distance_to_rect(self,ray,bot.get()) 
         }
 
         fn compute_distance_to_rect(&self,ray:&raycast::Ray<Self::N>,rect:&Rect<Self::N>)->RayIntersectResult<Self::N>{
@@ -118,7 +118,7 @@ impl DemoSys for RaycastF32DebugDemo{
         //dbg!("START");
         let test = match raycast::raycast_mut(&mut self.tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
             Some((bots,dis))=>{
-                let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
+                let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
                 k.sort();
                 Some((k,dis.into_inner()))
             },
@@ -134,9 +134,9 @@ impl DemoSys for RaycastF32DebugDemo{
             let tree_ref=&mut self.tree;
             
             
-            let k = match raycast::naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(tree_ref.get_bots_mut())),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
+            let k = match raycast::naive_mut(tree_ref.get_bots_mut(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
                 Some((bots,dis))=>{
-                    let mut k:Vec<_>=bots.iter().map(|a|a.inner.id).collect();
+                    let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
                     k.sort();
                     Some((k,dis.into_inner()))
                 },

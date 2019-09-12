@@ -96,15 +96,15 @@ impl DemoSys for IntersectWithDemo{
            axgeom::Rect::from_point(bot.pos,vec2(radius,radius)).inner_try_into().unwrap()
         }).build_par(); 
 
-        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|bot,wall|{
+        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|mut bot,mut wall|{
             let fric=0.8;
 
 
-            let wallx=&wall.rect.x;
-            let wally=&wall.rect.y;
-            let vel=bot.inner.vel;
+            let wallx=&wall.get().x;
+            let wally=&wall.get().y;
+            let vel=bot.inner().vel;
 
-            let ret=match duckduckgeo::collide_with_rect::<f32>(bot.rect.as_ref(),wall.rect.as_ref()).unwrap(){
+            let ret=match duckduckgeo::collide_with_rect::<f32>(bot.get().as_ref(),wall.get().as_ref()).unwrap(){
                 duckduckgeo::WallSide::Above=>{
                     [None,Some((wally.left-radius,-vel.y*fric))]
                 },
@@ -118,12 +118,12 @@ impl DemoSys for IntersectWithDemo{
                     [Some((wallx.right+radius,-vel.x*fric)),None]
                 }
             };
-            bot.inner.wall_move=ret;
+            bot.inner_mut().wall_move=ret;
         });
 
         let cc=cursor.inner_into();
-        RectQueryMutBuilder::new(&mut tree,&axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap()).for_all_in_mut(|b|{
-            let _ =duckduckgeo::repel_one(b.inner,cc,0.001,20.0);
+        RectQueryMutBuilder::new(&mut tree,axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap()).for_all_in_mut(|mut b|{
+            let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
         });
 
 
@@ -135,8 +135,8 @@ impl DemoSys for IntersectWithDemo{
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
  
-        colfind::QueryBuilder::new(&mut tree).query_par(| a, b| {
-            let _ = duckduckgeo::repel(a.inner,b.inner,0.001,2.0);
+        colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+            let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
         });
         
 

@@ -31,6 +31,7 @@ mod demo_iter{
             let area=Rect::new(0.0,area.x as f32,0.0,area.y as f32);
             let area:Rect<F32n>=area.inner_try_into().unwrap();
 
+            
             let k:Box<DemoSys>=match curr{
                 0=>{Box::new(demo_raycast_f32_debug::RaycastF32DebugDemo::new(area))}
                 1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
@@ -50,6 +51,8 @@ mod demo_iter{
                 self.0=0
             }
             k
+            
+            
         }
     }
 }

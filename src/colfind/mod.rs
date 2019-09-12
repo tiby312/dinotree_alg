@@ -15,18 +15,19 @@ use self::inner::*;
 ///The user supplies a struct that implements this trait instead of just a closure
 ///so that the user may also have the struct implement Splitter.
 pub trait ColMulti{
-    type T: HasAabbMut;
+    type T: HasAabb;
 
     fn collide(&mut self,
-        a: BBoxRefMut<<Self::T as HasAabb>::Num,<Self::T as HasAabb>::Inner>,
-        b: BBoxRefMut<<Self::T as HasAabb>::Num,<Self::T as HasAabb>::Inner>);
+        a: ProtectedBBox<Self::T>,
+        b: ProtectedBBox<Self::T>);
 }
 
 
 ///Naive algorithm.
-pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){
+pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+    let bots=ProtectedBBoxSlice::new(bots);
     tools::for_every_pair(bots,|a,b|{
-        if a.rect.intersects_rect(b.rect){
+        if a.get().intersects_rect(b.get()){
             func(a,b);
         }
     });
@@ -34,13 +35,13 @@ pub fn query_naive_mut<T:HasAabbMut>(bots:ElemSliceMut<T>,mut func:impl FnMut(BB
 
 
 ///Sweep and prune algorithm.
-pub fn query_sweep_mut<T:HasAabbMut>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)){  
+pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){  
     ///Sorts the bots.
     #[inline(always)]
     fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
         let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
-            let (p1,p2)=(a.get().rect.get_range(axis).left,b.get().rect.get_range(axis).left);
+            let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
             if p1 > p2 {
                 return core::cmp::Ordering::Greater;
             }
@@ -53,22 +54,23 @@ pub fn query_sweep_mut<T:HasAabbMut>(axis:impl AxisTrait,bots:&mut [T],func:impl
     sweeper_update(axis,bots);
 
 
-    struct Bl<T:HasAabb,F: FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)> {
+    struct Bl<T:HasAabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> {
         func: F,
         _p:PhantomData<T>
     }
 
-    impl<T:HasAabbMut,F: FnMut(BBoxRefMut<T::Num,T::Inner>,BBoxRefMut<T::Num,T::Inner>)> ColMulti for Bl<T,F> {
+    impl<T:HasAabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for Bl<T,F> {
         type T = T;
         #[inline(always)]
-        fn collide(&mut self, a: BBoxRefMut<T::Num,T::Inner>, b: BBoxRefMut<T::Num,T::Inner>) {    
+        fn collide(&mut self, a: ProtectedBBox<T>, b: ProtectedBBox<T>) {    
             (self.func)(a, b);
         }
        
     }
 
     let mut s=oned::Sweeper::new();
-    s.find_2d(axis,ElemSliceMut::new(ElemSlice::from_slice_mut(bots)),&mut Bl{func,_p:PhantomData});
+    let bots=ProtectedBBoxSlice::new(bots);
+    s.find_2d(axis,bots,&mut Bl{func,_p:PhantomData});
 }
 
 
@@ -85,8 +87,8 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K> where K::Item:Send+S
 
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
-                    BBoxRefMut<K::Num,K::Inner>,
-            BBoxRefMut<K::Num,K::Inner>)+Copy+Send+Sync){
+                    ProtectedBBox<K::Item>,
+            ProtectedBBox<K::Item>)+Copy+Send+Sync){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -109,8 +111,8 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
 
     #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
-                    BBoxRefMut<K::Num,K::Inner>,
-            BBoxRefMut<K::Num,K::Inner>),splitter:&mut impl Splitter){
+                    ProtectedBBox<K::Item>,
+            ProtectedBBox<K::Item>),splitter:&mut impl Splitter){
         let b=inner::QueryFnMut::new(func);        
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -122,8 +124,8 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
 
     #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(
-        BBoxRefMut<K::Num,K::Inner>,
-        BBoxRefMut<K::Num,K::Inner>)){
+        ProtectedBBox<K::Item>,
+        ProtectedBBox<K::Item>)){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -146,8 +148,8 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K> where K::Item: Send+Sync{
     ///Perform the query in parallel
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
-            BBoxRefMut<K::Num,K::Inner>,
-            BBoxRefMut<K::Num,K::Inner>
+            ProtectedBBox<K::Item>,
+            ProtectedBBox<K::Item>
         )+Clone+Send+Sync){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -200,8 +202,8 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
     ///Perform the query sequentially.
     #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(
-        BBoxRefMut<K::Num,K::Inner>,
-        BBoxRefMut<K::Num,K::Inner>
+        ProtectedBBox<K::Item>,
+        ProtectedBBox<K::Item>
         )){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -216,8 +218,8 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
     ///Perform the query sequentially with a splitter.
     #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
-        BBoxRefMut<K::Num,K::Inner>,
-        BBoxRefMut<K::Num,K::Inner>),splitter:&mut impl Splitter){
+        ProtectedBBox<K::Item>,
+        ProtectedBBox<K::Item>),splitter:&mut impl Splitter){
 
         let b=inner::QueryFnMut::new(func);
         

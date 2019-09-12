@@ -7,18 +7,20 @@ struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
     axis:A,
 }
 
+
+
 impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
     type T = F::T;
 
     #[inline(always)]
     fn collide(&mut self,
-        a:BBoxRefMut<<F::T as HasAabb>::Num,<F::T as HasAabb>::Inner>,
-        b:BBoxRefMut<<F::T as HasAabb>::Num,<F::T as HasAabb>::Inner>)
+        a:ProtectedBBox<Self::T>,
+        b:ProtectedBBox<Self::T>)
     {
         //only check if the opoosite axis intersects.
         //already know they intersect
         let a2 = self.axis.next();
-        if a.rect.get_range(a2).intersects(b.rect.get_range(a2))
+        if a.get().get_range(a2).intersects(b.get().get_range(a2))
         {
             self.a.collide(a, b);
         }
@@ -27,17 +29,17 @@ impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
 
 
 ///Provides 1d collision detection.
-pub struct Sweeper<T: HasAabbMut> {
-    helper: PreVecMut<T::Num,T::Inner>,
+pub struct Sweeper<T: HasAabb> {
+    helper: PreVecMut<T>,
 }
 
-impl<T:HasAabbMut> core::default::Default for Sweeper<T>{
+impl<T:HasAabb> core::default::Default for Sweeper<T>{
     #[inline(always)]
     fn default()->Sweeper<T>{
         Sweeper::new()
     }
 }
-impl<I: HasAabbMut> Sweeper<I> {
+impl<I: HasAabb> Sweeper<I> {
     #[inline(always)]
     pub fn new() -> Sweeper<I> {
         Sweeper {
@@ -51,7 +53,7 @@ impl<I: HasAabbMut> Sweeper<I> {
     pub(crate) fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
-        bots: ElemSliceMut<F::T>,
+        bots: ProtectedBBoxSlice<F::T>,
         clos2: &mut F,
     ) {
         let mut b: Bl<A, _> = Bl {
@@ -65,8 +67,8 @@ impl<I: HasAabbMut> Sweeper<I> {
     pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
-        bots1: ElemSliceMut<F::T>,
-        bots2: ElemSliceMut<F::T>,
+        bots1: ProtectedBBoxSlice<F::T>,
+        bots2: ProtectedBBoxSlice<F::T>,
         clos2: &mut F,
     ) {
         let mut b: Bl<A, _> = Bl {
@@ -80,13 +82,13 @@ impl<I: HasAabbMut> Sweeper<I> {
 
     pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
         _axis:A,
-        mut r1: ElemSliceMut<F::T>,
-        mut r2: ElemSliceMut<F::T>,
+        mut r1: ProtectedBBoxSlice<F::T>,
+        mut r2: ProtectedBBoxSlice<F::T>,
         clos2: &mut F){
         
         for mut inda in r1.as_mut().iter_mut() {
             for mut indb in r2.as_mut().iter_mut() {
-                if inda.rect.intersects_rect(indb.rect){
+                if inda.get().intersects_rect(indb.get()){
                     clos2.collide(inda.as_mut(), indb.as_mut());
                 }
             }
@@ -100,7 +102,7 @@ impl<I: HasAabbMut> Sweeper<I> {
     fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        collision_botids: ElemSliceMut<'a,I>,
+        mut collision_botids: ProtectedBBoxSlice<'a,I>,
         func: &mut F,
     ) {
         //    Create a new temporary list called “activeList”.
@@ -122,9 +124,9 @@ impl<I: HasAabbMut> Sweeper<I> {
         for mut curr_bot in collision_botids.iter_mut() {
             {
                 {
-                    let crr = curr_bot.rect.get_range(axis);
+                    let crr = curr_bot.get().get_range(axis);
                     //change this to do retain and then iter
-                    active.retain(|that_bot|that_bot.rect.get_range(axis).right > crr.left);
+                    active.retain(|that_bot|that_bot.get().get_range(axis).right > crr.left);
                 }
 
                 for that_bot in active.iter_mut() {
@@ -146,7 +148,7 @@ impl<I: HasAabbMut> Sweeper<I> {
     fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        cols: (ElemSliceMut<I>, ElemSliceMut<I>),
+        mut cols: (ProtectedBBoxSlice<I>, ProtectedBBoxSlice<I>),
         func: &mut F,
     ) {
         let mut xs=cols.0.iter_mut().peekable();
@@ -156,23 +158,23 @@ impl<I: HasAabbMut> Sweeper<I> {
 
         for mut y in ys {
             //Add all the x's that are touching the y to the active x.
-            for x in xs.peeking_take_while(|x|x.rect.get_range(axis).left<=y.rect.get_range(axis).right){
+            for x in xs.peeking_take_while(|x|x.get().get_range(axis).left<=y.get().get_range(axis).right){
                 active_x.push(x);
             }
             
             //Prune all the x's that are no longer touching the y.
-            active_x.retain(|x| x.rect.get_range(axis).right > y.rect.get_range(axis).left);
+            active_x.retain(|x| x.get().get_range(axis).right > y.get().get_range(axis).left);
 
             //So at this point some of the x's could actualy not intersect y.
             //These are the x's that are to the complete right of y.
             //So to handle collisions, we want to make sure to not hit these.
             //That is why we have that condition to break out of the below loop
             for x in active_x.iter_mut() {
-                if x.rect.get_range(axis).left>=y.rect.get_range(axis).right{
+                if x.get().get_range(axis).left>=y.get().get_range(axis).right{
                     break;
                 }
 
-                debug_assert!(x.rect.get_range(axis).intersects(y.rect.get_range(axis)));
+                debug_assert!(x.get().get_range(axis).intersects(y.get().get_range(axis)));
                 func.collide(x.as_mut(), y.as_mut());
             }
         }
@@ -255,10 +257,10 @@ fn test_parallel(){
 
 //this can have some false positives.
 //but it will still prune a lot of bots.
-pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a ElemSlice<I>, range: &Range<I::Num>) -> &'a ElemSlice<I> {
+pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Range<I::Num>) -> &'a [I] {
     let mut start = 0;
     for (e, i) in arr.iter().enumerate() {
-        let rr = i.rect.get_range(axis);
+        let rr = i.get().get_range(axis);
         if rr.right >= range.left {
             start = e;
             break;
@@ -266,8 +268,34 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a ElemSlice<I>, ran
     }
 
     let mut end = arr.len();
-    for (e, i) in arr.truncate_start(start).iter().enumerate() {
-        let rr = i.rect.get_range(axis);
+    for (e, i) in arr[start..].iter().enumerate() {
+        let rr = i.get().get_range(axis);
+        if rr.left > range.right {
+            end = start + e;
+            break;
+        }
+    }
+
+    &arr[start..end]
+}
+
+//this can have some false positives.
+//but it will still prune a lot of bots.
+pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,mut arr: ProtectedBBoxSlice<'a,I>, range: &Range<I::Num>) -> ProtectedBBoxSlice<'a,I> {
+    let mut start = 0;
+    for (e, i) in arr.as_ref().iter().enumerate() {
+        let rr = i.get().get_range(axis);
+        if rr.right >= range.left {
+            start = e;
+            break;
+        }
+    }
+
+    let mut end = arr.as_ref().len();
+    //for (e, i) in arr[start..].iter().enumerate() {
+    for (e, i) in arr.as_mut().truncate_start(start).iter().enumerate() {
+    
+        let rr = i.get().get_range(axis);
         if rr.left > range.right {
             end = start + e;
             break;
@@ -275,31 +303,5 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a ElemSlice<I>, ran
     }
 
     arr.truncate(start,end)
-}
-
-//this can have some false positives.
-//but it will still prune a lot of bots.
-pub fn get_section_mut<'a,I:HasAabbMut, A: AxisTrait>(axis:A,mut arr: ElemSliceMut<'a,I>, range: &Range<I::Num>) -> ElemSliceMut<'a,I> {
-    let mut start = 0;
-    for (e, i) in arr.iter().enumerate() {
-        let rr = i.rect.get_range(axis);
-        if rr.right >= range.left {
-            start = e;
-            break;
-        }
-    }
-
-    let mut end = arr.len();
-    //for (e, i) in arr[start..].iter().enumerate() {
-    for (e, i) in arr.as_mut().truncate_start_mut(start).iter().enumerate() {
-    
-        let rr = i.rect.get_range(axis);
-        if rr.left > range.right {
-            end = start + e;
-            break;
-        }
-    }
-
-    arr.truncate_mut(start,end)
     //&mut arr[start..end]
 }

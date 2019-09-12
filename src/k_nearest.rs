@@ -21,13 +21,13 @@ use core::cmp::Ordering;
 
 ///The geometric functions that the user must provide.
 pub trait Knearest{
+    type T:HasAabb<Num=Self::N>;
     type N:NumTrait;
-    type Inner;
-
+    
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
-    fn distance_to_bot(&self, point:Vec2<Self::N>,bot:BBoxRefMut<Self::N,Self::Inner>)->Self::N{
-        self.distance_to_rect(point,bot.rect)
+    fn distance_to_bot(&self, point:Vec2<Self::N>,bot:&Self::T)->Self::N{
+        self.distance_to_rect(point,bot.get())
     }
 
     fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N;
@@ -115,32 +115,32 @@ fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::AxisTrait,range:&Range
 }
 
 /// Returned by k_nearest_mut
-pub struct UnitMut<'a,N:NumTrait,T>{
-    pub bot:BBoxRefMut<'a,N,T>,
-    pub mag:N
+pub struct UnitMut<'a,T:HasAabb>{
+    pub bot:ProtectedBBox<'a,T>,
+    pub mag:T::Num
 }
 
 
-struct ClosestCand<'a,N:NumTrait,T>{
+struct ClosestCand<'a,T:HasAabb>{
     //Can have multiple bots with the same mag. So the length could be bigger than num.
-    bots:Vec<UnitMut<'a,N,T>>,
+    bots:Vec<UnitMut<'a,T>>,
     //The current number of different distances in the vec
     curr_num:usize,
     //The max number of different distances.
     num:usize
 }
-impl<'a,N:NumTrait,T> ClosestCand<'a,N,T>{
+impl<'a,T:HasAabb> ClosestCand<'a,T>{
 
     //First is the closest
-    fn into_sorted(self)->Vec<UnitMut<'a,N,T>>{
+    fn into_sorted(self)->Vec<UnitMut<'a,T>>{
         self.bots
     }
-    fn new(num:usize)->ClosestCand<'a,N,T>{
+    fn new(num:usize)->ClosestCand<'a,T>{
         let bots=Vec::with_capacity(num);
         ClosestCand{bots,num,curr_num:0}
     }
 
-    fn consider(&mut self,a:(BBoxRefMut<'a,N,T>,N))->bool{
+    fn consider(&mut self,a:(ProtectedBBox<'a,T>,T::Num))->bool{
         //let a=(a.0 as $ptr,a.1);
         let curr_bot=a.0;
         let curr_dis=a.1;
@@ -189,7 +189,7 @@ impl<'a,N:NumTrait,T> ClosestCand<'a,N,T>{
         return false;
     }
 
-    fn full_and_max_distance(&self)->Option<N>{
+    fn full_and_max_distance(&self)->Option<T::Num>{
         use is_sorted::IsSorted;
         assert!(IsSorted::is_sorted(&mut self.bots.iter().map(|a|a.mag)));
         if self.curr_num==self.num{
@@ -203,7 +203,7 @@ impl<'a,N:NumTrait,T> ClosestCand<'a,N,T>{
 struct Blap<'a,K:Knearest>{
     knear:K,
     point:Vec2<K::N>,
-    closest:ClosestCand<'a,K::N,K::Inner>
+    closest:ClosestCand<'a,K::T>
 }
 
 impl<'a,K:Knearest> Blap<'a,K>{
@@ -221,13 +221,12 @@ impl<'a,K:Knearest> Blap<'a,K>{
 }
 
 fn recc<'a,
-    N:NumTrait,
-    T:HasAabbMut<Num=N>,
+    T:HasAabb,
     A: AxisTrait,
-    K:Knearest<N=N,Inner=T::Inner>,
+    K:Knearest<N=T::Num,T=T>,
     >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
 
-    let ((_depth,nn),rest)=stuff.next();
+    let ((_depth,mut nn),rest)=stuff.next();
 
     match rest{
         Some([left,right])=>{
@@ -260,7 +259,7 @@ fn recc<'a,
                     if blap.should_traverse_rect(&rmiddle){
                         for mut bot in nn.bots.iter_mut()
                         {
-                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                             blap.closest.consider((bot,dis_sqr));
                         }
                     }
@@ -278,7 +277,7 @@ fn recc<'a,
                     if blap.should_traverse_rect(&rmiddle){
                         for mut bot in nn.bots.iter_mut()
                         {
-                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                             blap.closest.consider((bot,dis_sqr));
                         }
                     }
@@ -290,7 +289,7 @@ fn recc<'a,
                 Ordering::Equal=>{
                     if blap.should_traverse_rect(&rmiddle){
                         for mut bot in nn.bots.iter_mut(){
-                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                            let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                             blap.closest.consider((bot,dis_sqr));
                         }
                     }
@@ -305,7 +304,7 @@ fn recc<'a,
         },
         None=>{
             for mut bot in nn.bots.iter_mut(){
-                let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_mut());
+                let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                 blap.closest.consider((bot,dis_sqr));
             }
         }
@@ -382,12 +381,14 @@ pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
     
-    pub fn naive_mut<K:Knearest,T:HasAabbMut<Num=K::N,Inner=K::Inner>>(bots:ElemSliceMut<T>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<K::N,K::Inner>>{
+    pub fn naive_mut<K:Knearest<T=T,N=T::Num>,T:HasAabb>(bots:&mut [T],point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<K::T>>{
+        let bots=ProtectedBBoxSlice::new(bots);
+
         let mut closest=ClosestCand::new(num);
 
         for mut b in bots.iter_mut(){
 
-            let d=k.distance_to_bot(point,b.as_mut());
+            let d=k.distance_to_bot(point,b.as_ref());
 
             if let Some(dis)= closest.full_and_max_distance(){
                 if d>dis{
@@ -404,7 +405,7 @@ mod mutable{
 
     pub fn k_nearest_mut<
         V:DinoTreeRefMutTrait,
-        >(tree:&mut V,point:Vec2<V::Num>,num:usize,knear: impl Knearest<N=V::Num,Inner=V::Inner>,rect:Rect<V::Num>)->Vec<UnitMut<V::Num,V::Inner>>{
+        >(tree:&mut V,point:Vec2<V::Num>,num:usize,knear: impl Knearest<N=V::Num,T=V::Item>,rect:Rect<V::Num>)->Vec<UnitMut<V::Item>>{
         
         let axis=tree.axis();
         

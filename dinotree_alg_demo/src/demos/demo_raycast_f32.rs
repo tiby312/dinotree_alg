@@ -15,13 +15,13 @@ struct RayT<'a,'c:'a>{
 
 impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
     type N=F32n;
-    type Inner=Bot;
+    type T=BBox<F32n,Bot>;
 
 
-    fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:BBoxRefMut<F32n,Bot>)->RayIntersectResult<Self::N>{
+    fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
         let ray:duckduckgeo::Ray<f32>=Ray{point:ray.point.inner_into(),dir:ray.dir.inner_into()};
         
-        match ray_intersects_circle(&ray,bot.inner.center,self.radius){
+        match ray_intersects_circle(&ray,bot.inner().center,self.radius){
             IntersectsBotResult::Hit(val)=>{
                 RayIntersectResult::Hit(val)
             },

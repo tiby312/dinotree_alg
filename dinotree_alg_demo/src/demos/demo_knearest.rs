@@ -48,15 +48,15 @@ impl DemoSys for KnearestDemo{
         };
 
         impl<'a,'b,'c:'a> k_nearest::Knearest for Kn<'a,'b,'c>{
-            //type T=BBoxPtr<F32n,Bot>;
+            type T=BBox<F32n,Bot>;
             type N=F32n;
-            type Inner=Bot;
+            //type Inner=Bot;
 
-            fn distance_to_bot(&self,point:Vec2<Self::N>,bot:BBoxRefMut<Self::N,Self::Inner>)->Self::N{
+            fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::N{
                 if self.draw{
-                    draw_rect_f32([0.0,0.0,1.0,0.5],bot.rect.as_ref(),self.c,&mut self.g.borrow_mut());
+                    draw_rect_f32([0.0,0.0,1.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
                 }
-                self.distance_to_rect(point,bot.rect)
+                self.distance_to_rect(point,bot.get())
             }
             fn distance_to_rect(&self, point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N{
                 
@@ -107,7 +107,7 @@ impl DemoSys for KnearestDemo{
             let kn=Kn{c:&c,g:RefCell::new(g),draw:true};
             k_nearest::k_nearest_mut(tree,cursor,3,kn,self.dim)
         };
-        let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.rect,id:a.bot.inner.id,mag:a.mag}).collect();
+        let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.get(),id:a.bot.inner().id,mag:a.mag}).collect();
 
         /*
         if vv.len()>3{
@@ -123,9 +123,9 @@ impl DemoSys for KnearestDemo{
         
             let mut vv2={
                 let kn=Kn{c:&c,g:RefCell::new(g),draw:false};
-                k_nearest::naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(tree.get_bots_mut())),cursor,3,kn)
+                k_nearest::naive_mut(tree.get_bots_mut(),cursor,3,kn)
             };
-            let mut vv2:Vec<_>=vv2.drain(..).map(|a|Res{rect:*a.bot.rect,id:a.bot.inner.id,mag:a.mag}).collect();
+            let mut vv2:Vec<_>=vv2.drain(..).map(|a|Res{rect:*a.bot.get(),id:a.bot.inner().id,mag:a.mag}).collect();
         
 
             assert_eq!(vv.len(),vv2.len());

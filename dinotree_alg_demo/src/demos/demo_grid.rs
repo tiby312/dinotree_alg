@@ -178,19 +178,19 @@ impl DemoSys for GridDemo{
             
         {
             let dim2=self.dim.inner_into();
-            RectQueryMutBuilder::new(&mut tree,&self.dim).for_all_not_in_mut(|a|{
-                duckduckgeo::collide_with_border(a.inner,&dim2,0.5);
+            RectQueryMutBuilder::new(&mut tree,self.dim).for_all_not_in_mut(|mut a|{
+                duckduckgeo::collide_with_border(a.inner_mut(),&dim2,0.5);
             });
         }
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
-        RectQueryMutBuilder::new(&mut tree,&axgeom::Rect::from_point(cursor,vv)).for_all_in_mut(|b|{
-            let _ =duckduckgeo::repel_one(b.inner,cc,0.001,20.0);
+        RectQueryMutBuilder::new(&mut tree,axgeom::Rect::from_point(cursor,vv)).for_all_in_mut(|mut b|{
+            let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
         });
         
-        colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
-            let _ = duckduckgeo::repel(a.inner,b.inner,0.001,2.0);
+        colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+            let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
         });
     
         
@@ -211,18 +211,18 @@ impl DemoSys for GridDemo{
             a/256.0
         }
         
-        for (bot,cols) in tree.get_bots_mut().iter_mut().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point(bot.inner.pos,vec2(radius,radius));
+        for (mut bot,cols) in tree.get_bots_mut().iter_mut().zip(self.colors.iter()){
+            let rect=&axgeom::Rect::from_point(bot.inner().pos,vec2(radius,radius));
             
 
-            let cols=match self.grid.detect_collision(bot.inner,radius){
+            let cols=match self.grid.detect_collision(bot.inner_mut(),radius){
                 Some(rr)=>{
 
-                    if let Some(k)=collide_with_rect::<f32>(bot.rect.as_ref(),&rr){
+                    if let Some(k)=collide_with_rect::<f32>(bot.get().as_ref(),&rr){
                         let wallx=rr.x;
                         let wally=rr.y;
                         let fric=0.5;
-                        let vel=bot.inner.vel;
+                        let vel=bot.inner().vel;
                         let wall_move=match k{
                             WallSide::Above=>{
                                 [None,Some((wally.left-radius,-vel.y*fric))]
@@ -238,7 +238,7 @@ impl DemoSys for GridDemo{
                             }
                         };
 
-                        let bot=bot.inner;
+                        let bot=bot.inner_mut();
                         if let Some((pos,vel))=wall_move[0]{
                             bot.pos.x=pos;
                             bot.vel.x=vel;

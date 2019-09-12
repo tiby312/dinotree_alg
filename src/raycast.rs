@@ -138,7 +138,7 @@ impl<N> RayIntersectResult<N>{
 ///of only needing Ord.
 pub trait RayTrait{
     type N:NumTrait;
-    type Inner;
+    type T:HasAabb<Num=Self::N>;
 
     ///Returns the length of ray between its origin, and where it intersects the line provided.
     ///Returns none if the ray doesnt intersect it.
@@ -150,8 +150,8 @@ pub trait RayTrait{
     ///This is where the user can do expensive collision detection on the shape
     ///contains within it's bounding box.
     ///Its default implementation just calls compute_distance_to_rect()
-    fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:BBoxRefMut<Self::N,Self::Inner>)->RayIntersectResult<Self::N>{
-        self.compute_distance_to_rect(ray,a.rect)
+    fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:&Self::T)->RayIntersectResult<Self::N>{
+        self.compute_distance_to_rect(ray,a.get())
     }
 
     ///Returns true if the ray intersects with this rectangle.
@@ -175,13 +175,13 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 
 
      
-struct Closest<'a,N:NumTrait,T>{
-    closest:Option<(Vec<BBoxRefMut<'a,N,T>>,N)>
+struct Closest<'a,T:HasAabb>{
+    closest:Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>
 }
-impl<'a,N:NumTrait,T> Closest<'a,N,T>{
-    fn consider<R:RayTrait<N=N,Inner=T>>(&mut self,ray:&Ray<N>,mut b:BBoxRefMut<'a,N,T>,raytrait:&mut R){
+impl<'a,T:HasAabb> Closest<'a,T>{
+    fn consider<R:RayTrait<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>,mut b:ProtectedBBox<'a,T>,raytrait:&mut R){
 
-        let x=match raytrait.compute_distance_to_bot(ray,b.as_mut()){
+        let x=match raytrait.compute_distance_to_bot(ray,b.as_ref()){
             RayIntersectResult::Hit(val)=>{
                 val
             },
@@ -213,7 +213,7 @@ impl<'a,N:NumTrait,T> Closest<'a,N,T>{
         };
     }
 
-    fn get_dis(&self)->Option<N>{
+    fn get_dis(&self)->Option<T::Num>{
         match &self.closest{
             Some(x)=>{
                 Some(x.1)
@@ -229,7 +229,7 @@ impl<'a,N:NumTrait,T> Closest<'a,N,T>{
 struct Blap<'a,R:RayTrait>{
     rtrait:R,
     ray:Ray<R::N>,
-    closest:Closest<'a,R::N,R::Inner>
+    closest:Closest<'a,R::T>
 }
 impl<'a,R:RayTrait> Blap<'a,R>{
     fn should_handle_rect(&mut self,rect:&Rect<R::N>)->bool{
@@ -258,11 +258,10 @@ impl<'a,R:RayTrait> Blap<'a,R>{
 
 //Returns the first object that touches the ray.
 fn recc<'a,
-    N:NumTrait,
     A: AxisTrait,
-    T: HasAabbMut<Num=N>,
-    R: RayTrait<N=N,Inner=T::Inner>
-    >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<N>,blap:&mut Blap<'a,R>){
+    T: HasAabb,
+    R: RayTrait<N=T::Num,T=T>
+    >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<T::Num>,blap:&mut Blap<'a,R>){
 
     let ((_depth,nn),rest)=stuff.next();
     match rest{
@@ -364,9 +363,9 @@ mod mutable{
 
     pub fn naive_mut<
         'a,
-        T:HasAabbMut,
-        >(bots:ElemSliceMut<'a,T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<N=T::Num,Inner=T::Inner>)->Option<(Vec<BBoxRefMut<'a,T::Num,T::Inner>>,T::Num)>{
-
+        T:HasAabb,
+        >(bots:&'a mut [T],ray:Ray<T::Num>,mut rtrait:impl RayTrait<N=T::Num,T=T>)->Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>{
+        let bots=ProtectedBBoxSlice::new(bots);
         let mut closest=Closest{closest:None};
 
         for b in bots.iter_mut(){
@@ -378,7 +377,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,   
         K:DinoTreeRefMutTrait
-        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<N=K::Num,Inner=K::Inner>)->Option<(Vec<BBoxRefMut<'a,K::Num,K::Inner>>,K::Num)>{
+        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<N=K::Num,T=K::Item>)->Option<(Vec<ProtectedBBox<'a,K::Item>>,K::Num)>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
