@@ -62,7 +62,7 @@ macro_rules! rect{
 }
 
 
-fn for_all_not_in_rect_mut<A:AxisTrait,N:NodeTrait>(tree:&mut DinoTree<A,N>,rect:&Rect<N::Num>,closure:impl FnMut(ProtectedBBox<N::T>)){
+pub fn for_all_not_in_rect_mut<A:AxisTrait,N:NodeTrait>(tree:&mut DinoTree<A,N>,rect:&Rect<N::Num>,closure:impl FnMut(ProtectedBBox<N::T>)){
     fn rect_recurse<A:AxisTrait,N:NodeTrait,F:FnMut(ProtectedBBox<N::T>)>(axis:A,it:VistrMut<N>,rect:&Rect<N::Num>,mut closure:F)->F{
         let (nn,rest)=it.next();
         let nn=nn.get_mut();

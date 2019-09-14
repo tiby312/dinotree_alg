@@ -80,9 +80,9 @@ impl RaycastF32DebugDemo{
         });
 
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|_a|{
+        let tree = create_owned(axgeom::XAXISS,vv,|_a|{
             ii.next().unwrap()
-        }).build_seq();
+        },|axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
 
 
         RaycastF32DebugDemo{tree,counter:0.0,dim}
@@ -110,11 +110,11 @@ impl DemoSys for RaycastF32DebugDemo{
 
 
     
-        let height=self.tree.height();
+        let height=self.tree.get_height();
         
 
         //dbg!("START");
-        let test = match raycast::raycast_mut(&mut self.tree,self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
+        let test = match raycast::raycast_mut(self.tree.get_mut(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
             Some((bots,dis))=>{
                 let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
                 k.sort();
@@ -229,7 +229,7 @@ impl DemoSys for RaycastF32DebugDemo{
         }
 
         let mut dd=Bla{c:&c,g};
-        dinotree_alg::graphics::draw(&self.tree,&mut dd,&self.dim);
+        dinotree_alg::graphics::draw(self.tree.get(),&mut dd,&self.dim);
     
 
             

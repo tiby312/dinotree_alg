@@ -171,39 +171,42 @@ impl DemoSys for GridDemo{
             b.update();
         }
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|b|{
+        let mut k=create_bbox_mut(&mut self.bots,|b|{
             Rect::from_point(b.pos,vec2same(radius)).inner_try_into().unwrap()
-        }).build_par(); 
+        });
 
-            
         {
-            let dim2=self.dim.inner_into();
-            RectQueryMutBuilder::new(&mut tree,self.dim).for_all_not_in_mut(|mut a|{
-                duckduckgeo::collide_with_border(a.inner_mut(),&dim2,0.5);
-            });
-        }
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut k).build_par(); 
 
-        let vv=vec2same(100.0).inner_try_into().unwrap();
-        let cc=cursor.inner_into();
-        RectQueryMutBuilder::new(&mut tree,axgeom::Rect::from_point(cursor,vv)).for_all_in_mut(|mut b|{
-            let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
-        });
+                
+            {
+                let dim2=self.dim.inner_into();
+                for_all_not_in_rect_mut(&mut tree,&self.dim,|mut a|{
+                    duckduckgeo::collide_with_border(a.inner_mut(),&dim2,0.5);
+                });
+            }
+
+            let vv=vec2same(100.0).inner_try_into().unwrap();
+            let cc=cursor.inner_into();
+            for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|mut b|{
+                let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
+            });
+            
+            colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+                let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
+            });
         
-        colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-            let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
-        });
-    
-        
-        for i in 0..self.grid.xdim(){
-            for j in 0..self.grid.ydim(){
-                if self.grid.get(i,j){
-                    let rect=self.grid.get_rect(i,j);
-                    let cols=[0.0,0.0,0.0,0.4];
-                    draw_rect_f32(cols,&rect,c,g);
+            
+            for i in 0..self.grid.xdim(){
+                for j in 0..self.grid.ydim(){
+                    if self.grid.get(i,j){
+                        let rect=self.grid.get_rect(i,j);
+                        let cols=[0.0,0.0,0.0,0.4];
+                        draw_rect_f32(cols,&rect,c,g);
+                    }
                 }
             }
         }
-
 
         
         fn conv(a:u8)->f32{
@@ -211,7 +214,7 @@ impl DemoSys for GridDemo{
             a/256.0
         }
         
-        for (mut bot,cols) in tree.get_aabb_bots_mut().iter_mut().zip(self.colors.iter()){
+        for (mut bot,cols) in k.iter_mut().zip(self.colors.iter()){
             let rect=&axgeom::Rect::from_point(bot.inner().pos,vec2(radius,radius));
             
 

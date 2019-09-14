@@ -91,53 +91,57 @@ impl DemoSys for IntersectWithDemo{
         }
         bots[0].pos=cursor.inner_into();
 
-
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|bot|{
-           axgeom::Rect::from_point(bot.pos,vec2(radius,radius)).inner_try_into().unwrap()
-        }).build_par(); 
-
-        intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|mut bot,mut wall|{
-            let fric=0.8;
-
-
-            let wallx=&wall.get().x;
-            let wally=&wall.get().y;
-            let vel=bot.inner().vel;
-
-            let ret=match duckduckgeo::collide_with_rect::<f32>(bot.get().as_ref(),wall.get().as_ref()).unwrap(){
-                duckduckgeo::WallSide::Above=>{
-                    [None,Some((wally.left-radius,-vel.y*fric))]
-                },
-                duckduckgeo::WallSide::Below=>{
-                    [None,Some((wally.right+radius,-vel.y*fric))]
-                },
-                duckduckgeo::WallSide::LeftOf=>{
-                    [Some((wallx.left-radius,-vel.x*fric)),None]
-                },
-                duckduckgeo::WallSide::RightOf=>{
-                    [Some((wallx.right+radius,-vel.x*fric)),None]
-                }
-            };
-            bot.inner_mut().wall_move=ret;
+        let mut k=create_bbox_mut(bots,|b|{
+            Rect::from_point(b.pos,vec2same(radius)).inner_try_into().unwrap()
         });
 
-        let cc=cursor.inner_into();
-        RectQueryMutBuilder::new(&mut tree,axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap()).for_all_in_mut(|mut b|{
-            let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
-        });
+        {
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut k).build_par(); 
+
+            intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|mut bot,mut wall|{
+                let fric=0.8;
 
 
+                let wallx=&wall.get().x;
+                let wally=&wall.get().y;
+                let vel=bot.inner().vel;
+
+                let ret=match duckduckgeo::collide_with_rect::<f32>(bot.get().as_ref(),wall.get().as_ref()).unwrap(){
+                    duckduckgeo::WallSide::Above=>{
+                        [None,Some((wally.left-radius,-vel.y*fric))]
+                    },
+                    duckduckgeo::WallSide::Below=>{
+                        [None,Some((wally.right+radius,-vel.y*fric))]
+                    },
+                    duckduckgeo::WallSide::LeftOf=>{
+                        [Some((wallx.left-radius,-vel.x*fric)),None]
+                    },
+                    duckduckgeo::WallSide::RightOf=>{
+                        [Some((wallx.right+radius,-vel.x*fric)),None]
+                    }
+                };
+                bot.inner_mut().wall_move=ret;
+            });
+
+            let cc=cursor.inner_into();
+            for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cc,vec2same(100.0)).inner_try_into().unwrap(),|mut b|{
+                let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,20.0);
+            });
+
+            colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+                let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
+            });
+
+        }
 
         for wall in walls.iter(){
             draw_rect_f32([0.0,0.0,1.0,0.3],wall.0.as_ref(),c,g);
         }
-        for bot in tree.get_aabb_bots().iter(){
+        for bot in k.iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
  
-        colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-            let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
-        });
+        
         
 
         

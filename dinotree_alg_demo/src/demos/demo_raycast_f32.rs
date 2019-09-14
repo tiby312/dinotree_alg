@@ -77,9 +77,9 @@ impl RaycastF32Demo{
         let radius=20.0;
         let mut vv=UniformRandGen::new(dim.inner_into()).map(|center|Bot{center}).take(100).collect();
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|a|{
+        let tree = create_owned(axgeom::XAXISS,vv,|a|{
             Rect::from_point(a.center,vec2same(radius)).inner_try_into().unwrap()
-        }).build_seq();
+        },|axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
 
 
         Self{tree,dim,radius}
@@ -110,7 +110,7 @@ impl DemoSys for RaycastF32Demo{
 
                 
 
-                let res=raycast::raycast_mut(tree,self.dim,ray,RayT{radius:self.radius,c:&c,g});
+                let res=raycast::raycast_mut(tree.get_mut(),self.dim,ray,RayT{radius:self.radius,c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;

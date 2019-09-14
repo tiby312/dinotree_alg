@@ -26,14 +26,16 @@ impl duckduckgeo::GravityTrait for NodeMass{
     }
 }
 
+use core::marker::PhantomData;
 
 #[derive(Clone,Copy)]
-struct Bla{
+struct Bla<'a>{
     num_pairs_checked:usize,
+    _p:PhantomData<&'a usize>
 }
-impl nbody::NodeMassTrait for Bla{
+impl<'b> nbody::NodeMassTrait for Bla<'b>{
     type No=NodeMass;
-    type Item=BBoxPtr<F32n,Bot>;
+    type Item=BBoxMut<'b,F32n,Bot>;
     type Num=F32n;
 
     fn get_rect(a:&Self::No)->&axgeom::Rect<F32n>{
@@ -181,166 +183,173 @@ impl DemoSys for DemoNbody{
         
         let mut bots2:Vec<BBox<F32n,Bot>>=bots.iter().map(|bot|BBox::new(bot.create_aabb(),*bot)).collect();
         let mut bots3=bots.clone();
+
                
-        let mut tree={
-            //let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2],rect:axgeom::Rect::new(f32n!(0.0),f32n!(0.0),f32n!(0.0),f32n!(0.0))};
+        let mut k=create_bbox_mut(bots,|b|{
+            b.create_aabb()
+        });
 
-            DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{b.create_aabb()}).build_par()
-        };
-        //println!("tree height={:?}",tree.get_height());
+        {
+            let mut tree={
+                //let n=NodeMass{center:[0.0;2],mass:0.0,force:[0.0;2],rect:axgeom::Rect::new(f32n!(0.0),f32n!(0.0),f32n!(0.0),f32n!(0.0))};
 
-        /*
-        fn n_choose_2(n:usize)->usize{
-            ((n-1)*n)/2
-        }
-        */
-
-        let border=self.dim;
-
-        if !check_naive{
-            nbody::nbody(&mut tree,&mut Bla{num_pairs_checked:0},border);
-        }else{
-            let mut bla=Bla{num_pairs_checked:0};
-            nbody::nbody(&mut tree,&mut bla,border);
-            let num_pair_alg=bla.num_pairs_checked;
-            
-            let (bots2,num_pair_naive)={
-                let mut num_pairs_checked=0;
-                nbody::naive_mut(&mut bots2,|mut a,mut b|{
-                    let _ = duckduckgeo::gravitate(a.inner_mut(),b.inner_mut(),0.00001,0.004);
-                    num_pairs_checked+=1;
-                });
-                //assert_eq!(num_pairs_checked,n_choose_2(bots2.len()));
-                (bots2,num_pairs_checked)
+                DinoTreeBuilder::new(axgeom::XAXISS,&mut k).build_par()
             };
-            
+            //println!("tree height={:?}",tree.get_height());
 
-            for b in bots3.iter_mut(){
-                b.force=vec2same(0.0);
+            /*
+            fn n_choose_2(n:usize)->usize{
+                ((n-1)*n)/2
             }
-            
-            {
-                let mut max_diff=None;
-            
-                for (a,bb) in bots3.iter().zip(bots2.iter()){
-                    let b=&bb.inner;
+            */
 
-                    let dis_sqr1=a.force.magnitude2();
-                    let dis_sqr2=b.force.magnitude2();
-                    let dis1=dis_sqr1.sqrt();
-                    let dis2=dis_sqr2.sqrt();
+            let border=self.dim;
 
-                    let acc_dis1=dis1/a.mass;
-                    let acc_dis2=dis2/a.mass;
+            if !check_naive{
+                nbody::nbody(&mut tree,&mut Bla{num_pairs_checked:0,_p:PhantomData},border);
+            }else{
+                let mut bla=Bla{num_pairs_checked:0,_p:PhantomData};
+                nbody::nbody(&mut tree,&mut bla,border);
+                let num_pair_alg=bla.num_pairs_checked;
+                
+                let (bots2,num_pair_naive)={
+                    let mut num_pairs_checked=0;
+                    nbody::naive_mut(&mut bots2,|mut a,mut b|{
+                        let _ = duckduckgeo::gravitate(a.inner_mut(),b.inner_mut(),0.00001,0.004);
+                        num_pairs_checked+=1;
+                    });
+                    //assert_eq!(num_pairs_checked,n_choose_2(bots2.len()));
+                    (bots2,num_pairs_checked)
+                };
+                
 
-                    let diff=(acc_dis1-acc_dis2).abs();
-                    
-                    
-                    let error:f32=(acc_dis2-acc_dis1).abs()/acc_dis2;
-                                
-                    match max_diff{
-                        None=>{
-                            max_diff=Some((diff,bb,error))
-                        },
-                        Some(max)=>{
-                            if diff>max.0{
+                for b in bots3.iter_mut(){
+                    b.force=vec2same(0.0);
+                }
+                
+                {
+                    let mut max_diff=None;
+                
+                    for (a,bb) in bots3.iter().zip(bots2.iter()){
+                        let b=&bb.inner;
+
+                        let dis_sqr1=a.force.magnitude2();
+                        let dis_sqr2=b.force.magnitude2();
+                        let dis1=dis_sqr1.sqrt();
+                        let dis2=dis_sqr2.sqrt();
+
+                        let acc_dis1=dis1/a.mass;
+                        let acc_dis2=dis2/a.mass;
+
+                        let diff=(acc_dis1-acc_dis2).abs();
+                        
+                        
+                        let error:f32=(acc_dis2-acc_dis1).abs()/acc_dis2;
+                                    
+                        match max_diff{
+                            None=>{
                                 max_diff=Some((diff,bb,error))
+                            },
+                            Some(max)=>{
+                                if diff>max.0{
+                                    max_diff=Some((diff,bb,error))
+                                }
                             }
                         }
                     }
+                    let max_diff=max_diff.unwrap();
+                    self.max_percentage_error=max_diff.2*100.0;
+                 
+                    let f={
+                        let a:f32=num_pair_alg as f32;
+                        let b:f32=num_pair_naive as f32;
+                        a/b
+                    };
+                    
+                    println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",max_diff.0,self.max_percentage_error,f*100.0);
+
+                    draw_rect_f32([1.0,0.0,1.0,1.0],max_diff.1.get().as_ref(),c,g);
                 }
-                let max_diff=max_diff.unwrap();
-                self.max_percentage_error=max_diff.2*100.0;
-             
-                let f={
-                    let a:f32=num_pair_alg as f32;
-                    let b:f32=num_pair_naive as f32;
-                    a/b
+            }
+                  
+            colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+                let (a,b)=if a.inner().mass>b.inner().mass{
+                    (a.inner_mut(),b.inner_mut())
+                }else{
+                    (b.inner_mut(),a.inner_mut())
                 };
-                
-                println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",max_diff.0,self.max_percentage_error,f*100.0);
 
-                draw_rect_f32([1.0,0.0,1.0,1.0],max_diff.1.get().as_ref(),c,g);
-            }
-        }
-              
-        colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-            let (a,b)=if a.inner().mass>b.inner().mass{
-                (a.inner_mut(),b.inner_mut())
-            }else{
-                (b.inner_mut(),a.inner_mut())
-            };
-
-            if b.mass!=0.0{
-                
-                let ma=a.mass;
-                let mb=b.mass;
-                let ua=a.vel;
-                let ub=b.vel;
-
-                //Do perfectly inelastic collision.
-                let vx=(ma*ua.x+mb*ub.x)/(ma+mb);
-                let vy=(ma*ua.y+mb*ub.y)/(ma+mb);
-                assert!(!vx.is_nan()&&!vy.is_nan());
-                a.mass+=b.mass;
-                
-                a.force+=b.force;
-                a.vel=vec2(vx,vy);
-
-
-                b.mass=0.0;
-                b.force=vec2same(0.0);
-                b.vel=vec2same(0.0);
-                b.pos=vec2same(0.0);
-            }
-        });
-
-        if check_naive{
-            struct Bla<'a,'b:'a>{
-                c:&'a Context,
-                g:&'a mut G2d<'b>
-            }
-            impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
-                type N=F32n;
-                fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F32n,cont:[F32n;2],length:[F32n;2],depth:usize){
-                    let div=div.into_inner();
+                if b.mass!=0.0{
                     
+                    let ma=a.mass;
+                    let mb=b.mass;
+                    let ua=a.vel;
+                    let ub=b.vel;
 
-                    let arr=if axis.is_xaxis(){
-                        [div as f64,length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64]
-                    }else{
-                        [length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64,div as f64]
-                    };
-
-
-                    let radius=(1isize.max(5-depth as isize)) as f32;
-
-                    line([0.0, 0.0 , 0.0 , 0.5 ], // black
-                         radius as f64, // radius of line
-                         arr, // [x0, y0, x1,y1] coordinates of line
-                         self.c.transform,
-                         self.g);
-
-                    let [x1,y1,w1,w2]=if axis.is_xaxis(){
-                        [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
-                    }else{
-                        [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
-                    };
-
-                    let square = [x1.into_inner() as f64,y1.into_inner() as f64,w1.into_inner()as f64,w2.into_inner() as f64];
-                    rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
-                
+                    //Do perfectly inelastic collision.
+                    let vx=(ma*ua.x+mb*ub.x)/(ma+mb);
+                    let vy=(ma*ua.y+mb*ub.y)/(ma+mb);
+                    assert!(!vx.is_nan()&&!vy.is_nan());
+                    a.mass+=b.mass;
                     
-                    
+                    a.force+=b.force;
+                    a.vel=vec2(vx,vy);
+
+
+                    b.mass=0.0;
+                    b.force=vec2same(0.0);
+                    b.vel=vec2same(0.0);
+                    b.pos=vec2same(0.0);
                 }
+            });
+
+            if check_naive{
+                struct Bla<'a,'b:'a>{
+                    c:&'a Context,
+                    g:&'a mut G2d<'b>
+                }
+                impl<'a,'b:'a> dinotree_alg::graphics::DividerDrawer for Bla<'a,'b>{
+                    type N=F32n;
+                    fn draw_divider<A:axgeom::AxisTrait>(&mut self,axis:A,div:F32n,cont:[F32n;2],length:[F32n;2],depth:usize){
+                        let div=div.into_inner();
+                        
+
+                        let arr=if axis.is_xaxis(){
+                            [div as f64,length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64]
+                        }else{
+                            [length[0].into_inner() as f64,div as f64,length[1].into_inner() as f64,div as f64]
+                        };
+
+
+                        let radius=(1isize.max(5-depth as isize)) as f32;
+
+                        line([0.0, 0.0 , 0.0 , 0.5 ], // black
+                             radius as f64, // radius of line
+                             arr, // [x0, y0, x1,y1] coordinates of line
+                             self.c.transform,
+                             self.g);
+
+                        let [x1,y1,w1,w2]=if axis.is_xaxis(){
+                            [cont[0],length[0],cont[1]-cont[0],length[1]-length[0]]
+                        }else{
+                            [length[0],cont[0],length[1]-length[0],cont[1]-cont[0]]
+                        };
+
+                        let square = [x1.into_inner() as f64,y1.into_inner() as f64,w1.into_inner()as f64,w2.into_inner() as f64];
+                        rectangle([0.0,1.0,1.0,0.2], square, self.c.transform, self.g);
+                    
+                        
+                        
+                    }
+                }
+
+                let mut dd=Bla{c:&c,g};
+                dinotree_alg::graphics::draw(&tree,&mut dd,&border);
             }
 
-            let mut dd=Bla{c:&c,g};
-            dinotree_alg::graphics::draw(&tree,&mut dd,&border);
         }
-
         //Draw bots.
-        for bot in tree.get_aabb_bots().iter(){
+        for bot in k.iter(){
             draw_rect_f32([0.0,0.5,0.0,1.0],bot.rect.as_ref(),c,g);
         }
 

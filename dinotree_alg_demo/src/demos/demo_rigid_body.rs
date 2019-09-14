@@ -138,7 +138,14 @@ pub fn handle_rigid_body(
     }
 
     for _ in 0..num_rebal{        
-        let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,bodies,|a|a.create_loose(ball_size+push_rate*(num_query as f32))).build_seq();
+        let mut k=create_bbox_mut(bodies,|a|{
+            a.create_loose(ball_size+push_rate*(num_query as f32))
+        });
+
+        let k2:&mut [BBoxMut<F32n,RigidBody>]=unsafe{&mut *(&mut k as &mut [_] as *mut [_])};
+
+
+        let mut tree=DinoTreeBuilder::new(axgeom::YAXISS,&mut k).build_seq();
 
         for _ in 0..num_query{
             dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b|{
@@ -151,12 +158,13 @@ pub fn handle_rigid_body(
             });    
 
 
-            RectQueryMutBuilder::new(&mut tree,*dim).for_all_not_in_mut(|mut a|{
+            for_all_not_in_rect_mut(&mut tree,dim,|mut a|{
                 a.inner_mut().push_away_from_border(dim.as_ref(),push_rate)
             });
         
 
-            for mut body in tree.get_aabb_bots_mut().iter_mut(){
+            //for mut body in tree.get_aabb_bots_mut().iter_mut(){
+            for mut body in k2.iter_mut(){
                 let body=body.inner_mut();
                 let mm=body.push_vec.magnitude();
                 if mm>0.0000001{
@@ -210,11 +218,13 @@ impl DemoSys for RigidBodyDemo{
         });
 
         
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|bot|{
+        let mut k=create_bbox_mut(&mut self.bots,|bot|{
             bot.create_loose(radius)
-        }).build_seq(); 
+        });
+
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut k).build_seq(); 
         
-        RectQueryMutBuilder::new(&mut tree,axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap())).for_all_in_mut(|mut b|{
+        for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vec2same(100.0+radius).inner_try_into().unwrap()),|mut b|{
             let diff=cursor.inner_into()-b.inner().pos;
 
             let dis=diff.magnitude();

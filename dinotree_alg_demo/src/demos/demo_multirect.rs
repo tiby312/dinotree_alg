@@ -23,7 +23,7 @@ impl MultiRectDemo{
         }).collect();
 
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_seq();
+        let tree = create_owned(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)},|axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
 
 
         MultiRectDemo{tree}
@@ -46,7 +46,7 @@ impl DemoSys for MultiRectDemo{
 
         
         {
-            let mut rects=MultiRectMut::new(&mut self.tree);
+            let mut rects=MultiRectMut::new(self.tree.get_mut());
 
 
             let mut to_draw=Vec::new();
@@ -79,7 +79,7 @@ impl DemoSys for MultiRectDemo{
         
 
         
-        RectQueryBuilder::new(&self.tree,r1).for_all_intersect(|a|{
+        for_all_intersect_rect(self.tree.get(),&r1,|a|{
             draw_rect_i32([0.0,0.0,1.0,0.3],a.get(),c,g);
         });
         

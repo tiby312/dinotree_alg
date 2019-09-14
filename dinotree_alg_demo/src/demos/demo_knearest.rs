@@ -25,7 +25,11 @@ impl KnearestDemo{
             Bot{id,pos,radius}
         }).collect();
 
-        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,bots,|bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()}).build_seq();
+        let tree = create_owned(
+            axgeom::XAXISS,
+            bots,
+            |bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()},
+            |axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
         
 
         KnearestDemo{tree,dim}
@@ -41,13 +45,13 @@ impl DemoSys for KnearestDemo{
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
 
-        struct Kn<'a,'b,'c:'a>{
+        struct Kn<'a,'c:'a>{
             draw:bool,
             c:&'a Context,
-            g:RefCell<&'b mut G2d<'c>>,
+            g:RefCell<&'a mut G2d<'c>>,
         };
 
-        impl<'a,'b,'c:'a> k_nearest::Knearest for Kn<'a,'b,'c>{
+        impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
             type T=BBoxPtr<F32n,Bot>;
             type N=F32n;
             //type Inner=Bot;
@@ -105,7 +109,7 @@ impl DemoSys for KnearestDemo{
         }
         let mut vv={
             let kn=Kn{c:&c,g:RefCell::new(g),draw:true};
-            k_nearest::k_nearest_mut(tree,cursor,3,kn,self.dim)
+            k_nearest::k_nearest_mut(tree.get_mut(),cursor,3,kn,self.dim)
         };
         let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.get(),id:a.bot.inner().id,mag:a.mag}).collect();
 

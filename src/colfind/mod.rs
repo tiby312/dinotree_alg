@@ -6,7 +6,6 @@ pub(crate) mod oned;
 
 
 use crate::inner_prelude::*;
-use dinotree::notsorted::*;
 use self::node_handle::*;
 use self::inner::*;
 
@@ -91,11 +90,11 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N
             ProtectedBBox<N::T>)+Copy+Send+Sync){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleNoSorted::new(b);
-
+        let height=self.tree.get_height();
         let axis=self.tree.axis();
         let oo=self.tree.vistr_mut();
         let switch_height=self.switch_height;
-        let par=compute_default_level_switch_sequential(switch_height,oo.height());
+        let par=compute_default_level_switch_sequential(switch_height,height);
         ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
     }
 
@@ -154,10 +153,11 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleSorted::new(b);
 
+        let height=self.tree.get_height();
         let switch_height=self.switch_height;
         let axis=self.tree.axis();
         let oo=self.tree.vistr_mut();
-        let par=compute_default_level_switch_sequential(switch_height,oo.height());
+        let par=compute_default_level_switch_sequential(switch_height,height);
         ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
 
     }
@@ -170,9 +170,10 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send
     #[inline(always)]
     pub fn query_splitter_par<C:ColMulti<T=N::T>+Splitter+Send+Sync>(self,clos:C){
         let axis=self.tree.axis();
+        let height=self.tree.get_height();
         let vistr_mut=self.tree.vistr_mut();
 
-        let par=compute_default_level_switch_sequential(self.switch_height,vistr_mut.height());
+        let par=compute_default_level_switch_sequential(self.switch_height,height);
 
 
         let dt = vistr_mut.with_depth(Depth(0));

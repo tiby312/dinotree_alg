@@ -106,13 +106,13 @@ impl DemoSys for LiquidDemo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         let radius=self.radius;
         
-
-        
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut self.bots,|bot|{
+        let mut k=create_bbox_mut(&mut self.bots,|bot|{
             let p=bot.pos;
             let r=radius;
             Rect::new(p.x-r,p.x+r,p.y-r,p.y+r).inner_try_into::<NotNan<f32>>().unwrap()
-        }).build_par(); 
+        });
+        
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut k).build_par(); 
         
         
         
@@ -140,14 +140,14 @@ impl DemoSys for LiquidDemo{
 
         let vv=vec2same(100.0).inner_try_into().unwrap();
         let cc=cursor.inner_into();
-        RectQueryMutBuilder::new(&mut tree,axgeom::Rect::from_point(cursor,vv)).for_all_in_mut(|mut b|{
+        for_all_in_rect_mut(&mut tree,&axgeom::Rect::from_point(cursor,vv),|mut b|{
             let _ =duckduckgeo::repel_one(b.inner_mut(),cc,0.001,100.0);
         });
         
 
         {
             let dim2=self.dim.inner_into();
-            RectQueryMutBuilder::new(&mut tree,self.dim).for_all_not_in_mut(|mut a|{
+            for_all_not_in_rect_mut(&mut tree,&self.dim,|mut a|{
                 duckduckgeo::collide_with_border(a.inner_mut(),&dim2,0.5);
             });
         }        
