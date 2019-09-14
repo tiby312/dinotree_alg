@@ -23,10 +23,8 @@ mod ray_f32{
     }
 
     impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
-        type T=BBox<F32n,Bot2>;
+        type T=BBoxPtr<F32n,Bot2>;
         type N=F32n;
-        //type Inner=Bot2;
-
 
         fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
             if self.draw{
@@ -67,7 +65,7 @@ pub struct Bot2{
 }
 
 pub struct RaycastF32DebugDemo{
-    tree:DinoTreeDirect<axgeom::XAXISS,F32n,Bot2>,
+    tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot2>,
     counter:f32,
     dim:Rect<F32n>
 }
@@ -82,7 +80,7 @@ impl RaycastF32DebugDemo{
         });
 
 
-        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut vv,|_a|{
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|_a|{
             ii.next().unwrap()
         }).build_seq();
 
@@ -106,7 +104,7 @@ impl DemoSys for RaycastF32DebugDemo{
             raycast::Ray{point,dir}.inner_try_into().unwrap()
         };
 
-        for bot in self.tree.get_bots().iter(){
+        for bot in self.tree.get_aabb_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }   
 
@@ -134,7 +132,7 @@ impl DemoSys for RaycastF32DebugDemo{
             let tree_ref=&mut self.tree;
             
             
-            let k = match raycast::naive_mut(tree_ref.get_bots_mut(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
+            let k = match raycast::naive_mut(tree_ref.get_aabb_bots_mut(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
                 Some((bots,dis))=>{
                     let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
                     k.sort();

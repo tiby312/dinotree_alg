@@ -259,11 +259,13 @@ impl<'a,R:RayTrait> Blap<'a,R>{
 //Returns the first object that touches the ray.
 fn recc<'a,
     A: AxisTrait,
-    T: HasAabb,
-    R: RayTrait<N=T::Num,T=T>
-    >(axis:A,stuff:LevelIter<VistrMut<'a,T>>,rect:Rect<T::Num>,blap:&mut Blap<'a,R>){
+    //T: HasAabb,
+    N:NodeTrait,
+    R: RayTrait<N=N::Num,T=N::T>
+    >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<N::Num>,blap:&mut Blap<'a,R>){
 
     let ((_depth,nn),rest)=stuff.next();
+    let nn=nn.get_mut();
     match rest{
         Some([left,right])=>{
             let axis_next=axis.next();
@@ -364,8 +366,7 @@ mod mutable{
     pub fn naive_mut<
         'a,
         T:HasAabb,
-        >(bots:&'a mut [T],ray:Ray<T::Num>,mut rtrait:impl RayTrait<N=T::Num,T=T>)->Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>{
-        let bots=ProtectedBBoxSlice::new(bots);
+        >(bots:ProtectedBBoxSlice<'a,T>,ray:Ray<T::Num>,mut rtrait:impl RayTrait<N=T::Num,T=T>)->Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>{
         let mut closest=Closest{closest:None};
 
         for b in bots.iter_mut(){
@@ -376,8 +377,9 @@ mod mutable{
     }
     pub fn raycast_mut<
         'a,   
-        K:DinoTreeRefMutTrait
-        >(tree:&'a mut K,rect:Rect<K::Num>,ray:Ray<K::Num>,rtrait:impl RayTrait<N=K::Num,T=K::Item>)->Option<(Vec<ProtectedBBox<'a,K::Item>>,K::Num)>{
+        A:AxisTrait,
+        N:NodeTrait
+        >(tree:&'a mut DinoTree<A,N>,rect:Rect<N::Num>,ray:Ray<N::Num>,rtrait:impl RayTrait<N=N::Num,T=N::T>)->Option<(Vec<ProtectedBBox<'a,N::T>>,N::Num)>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));

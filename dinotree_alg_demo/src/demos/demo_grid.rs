@@ -211,7 +211,7 @@ impl DemoSys for GridDemo{
             a/256.0
         }
         
-        for (mut bot,cols) in tree.get_bots_mut().iter_mut().zip(self.colors.iter()){
+        for (mut bot,cols) in tree.get_aabb_bots_mut().iter_mut().zip(self.colors.iter()){
             let rect=&axgeom::Rect::from_point(bot.inner().pos,vec2(radius,radius));
             
 

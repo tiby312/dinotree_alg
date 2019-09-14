@@ -78,17 +78,17 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
 
 
 ///Builder for a query on a NotSorted Dinotree.
-pub struct NotSortedQueryBuilder<'a,K:NotSortedRefMutTrait>{
+pub struct NotSortedQueryBuilder<'a,A:AxisTrait,N:NodeTrait>{
     switch_height:usize,
-    tree:&'a mut K
+    tree:&'a mut NotSorted<A,N>
 }
 
-impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K> where K::Item:Send+Sync{
+impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N::T:Send+Sync{
 
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
-                    ProtectedBBox<K::Item>,
-            ProtectedBBox<K::Item>)+Copy+Send+Sync){
+                    ProtectedBBox<N::T>,
+            ProtectedBBox<N::T>)+Copy+Send+Sync){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -101,18 +101,18 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K> where K::Item:Send+S
 
 }
 
-impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
+impl<'a,A:AxisTrait,N:NodeTrait> NotSortedQueryBuilder<'a,A,N>{
 
     #[inline(always)]
-    pub fn new(tree:&'a mut K)->NotSortedQueryBuilder<'a,K>{
+    pub fn new(tree:&'a mut NotSorted<A,N>)->NotSortedQueryBuilder<'a,A,N>{
         let switch_height=default_level_switch_sequential();
         NotSortedQueryBuilder{switch_height,tree}
     }
 
     #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
-                    ProtectedBBox<K::Item>,
-            ProtectedBBox<K::Item>),splitter:&mut impl Splitter){
+                    ProtectedBBox<N::T>,
+            ProtectedBBox<N::T>),splitter:&mut impl Splitter){
         let b=inner::QueryFnMut::new(func);        
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -124,8 +124,8 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
 
     #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(
-        ProtectedBBox<K::Item>,
-        ProtectedBBox<K::Item>)){
+        ProtectedBBox<N::T>,
+        ProtectedBBox<N::T>)){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -138,18 +138,18 @@ impl<'a,K:NotSortedRefMutTrait> NotSortedQueryBuilder<'a,K>{
 
 
 ///Builder for a query on a DinoTree.
-pub struct QueryBuilder<'a,K:DinoTreeRefMutTrait>{
+pub struct QueryBuilder<'a,A:AxisTrait,N:NodeTrait>{
     switch_height:usize,
-    tree:&'a mut K
+    tree:&'a mut DinoTree<A,N>
 }
 
-impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K> where K::Item: Send+Sync{
+impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send+Sync{
 
     ///Perform the query in parallel
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
-            ProtectedBBox<K::Item>,
-            ProtectedBBox<K::Item>
+            ProtectedBBox<N::T>,
+            ProtectedBBox<N::T>
         )+Clone+Send+Sync){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -168,7 +168,7 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K> where K::Item: Send+Sync{
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
     #[inline(always)]
-    pub fn query_splitter_par<C:ColMulti<T=K::Item>+Splitter+Send+Sync>(self,clos:C){
+    pub fn query_splitter_par<C:ColMulti<T=N::T>+Splitter+Send+Sync>(self,clos:C){
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();
 
@@ -182,11 +182,11 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K> where K::Item: Send+Sync{
 }
 
 
-impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
+impl<'a,A:AxisTrait,N:NodeTrait> QueryBuilder<'a,A,N>{
 
     ///Create the builder.
     #[inline(always)]
-    pub fn new(tree:&'a mut K)->QueryBuilder<'a,K>{
+    pub fn new(tree:&'a mut DinoTree<A,N>)->QueryBuilder<'a,A,N>{
         let switch_height=default_level_switch_sequential();
         QueryBuilder{switch_height,tree}
     }
@@ -202,8 +202,8 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
     ///Perform the query sequentially.
     #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(
-        ProtectedBBox<K::Item>,
-        ProtectedBBox<K::Item>
+        ProtectedBBox<N::T>,
+        ProtectedBBox<N::T>
         )){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -218,8 +218,8 @@ impl<'a,K:DinoTreeRefMutTrait> QueryBuilder<'a,K>{
     ///Perform the query sequentially with a splitter.
     #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
-        ProtectedBBox<K::Item>,
-        ProtectedBBox<K::Item>),splitter:&mut impl Splitter){
+        ProtectedBBox<N::T>,
+        ProtectedBBox<N::T>),splitter:&mut impl Splitter){
 
         let b=inner::QueryFnMut::new(func);
         

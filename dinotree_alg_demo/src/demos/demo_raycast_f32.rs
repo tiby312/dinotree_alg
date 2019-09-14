@@ -15,7 +15,7 @@ struct RayT<'a,'c:'a>{
 
 impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
     type N=F32n;
-    type T=BBox<F32n,Bot>;
+    type T=BBoxPtr<F32n,Bot>;
 
 
     fn compute_distance_to_bot(&self,ray:&raycast::Ray<Self::N>,bot:&Self::T)->RayIntersectResult<Self::N>{
@@ -66,7 +66,7 @@ struct Bot{
 }
 
 pub struct RaycastF32Demo{
-    tree:DinoTreeDirect<axgeom::XAXISS,F32n,Bot>,
+    tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot>,
     dim:Rect<F32n>,
     radius:f32
 }
@@ -77,7 +77,7 @@ impl RaycastF32Demo{
         let radius=20.0;
         let mut vv=UniformRandGen::new(dim.inner_into()).map(|center|Bot{center}).take(100).collect();
 
-        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut vv,|a|{
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,vv,|a|{
             Rect::from_point(a.center,vec2same(radius)).inner_try_into().unwrap()
         }).build_seq();
 
@@ -90,7 +90,7 @@ impl DemoSys for RaycastF32Demo{
     fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
         
         //Draw bots
-        for bot in self.tree.get_bots().iter(){
+        for bot in self.tree.get_aabb_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
         

@@ -15,6 +15,7 @@
 extern crate alloc;
 
 
+
 mod inner_prelude {
     pub use dinotree::rayon;
     pub use alloc::vec::Vec;
@@ -47,6 +48,7 @@ pub mod intersect_with;
 
 
 ///Prelude for convenience
+/*
 pub mod prelude{
     pub use crate::graphics::*;
     pub use crate::colfind::*;
@@ -57,7 +59,7 @@ pub mod prelude{
     pub use crate::rect::*;
 }
 
-
+*/
 
 
 

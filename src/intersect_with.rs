@@ -12,11 +12,11 @@ use crate::rect::*;
 ///But using the api, it is possible to build up a tree using the current trees dividers
 ///to exploit the divide and conquer properties of this problem.
 ///The two trees could be recursed at the same time to break up the problem.
-pub fn intersect_with_mut<K:DinoTreeRefMutTrait,X>(
-    tree:&mut K,
+pub fn intersect_with_mut<A:AxisTrait,N:NodeTrait,X>(
+    tree:&mut DinoTree<A,N>,
     b: &mut [X],
-    mut aabb_create:impl FnMut(&X)->axgeom::Rect<K::Num>,
-    func: impl Fn(ProtectedBBox<K::Item>,ProtectedBBox<BBoxMut<K::Num,X>>),
+    mut aabb_create:impl FnMut(&X)->axgeom::Rect<N::Num>,
+    func: impl Fn(ProtectedBBox<N::T>,ProtectedBBox<BBoxMut<N::Num,X>>),
 ) {
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
@@ -25,7 +25,8 @@ pub fn intersect_with_mut<K:DinoTreeRefMutTrait,X>(
 
     for mut i in ProtectedBBoxSlice::new(&mut b2).iter_mut() {
         
-        RectQueryMutBuilder::new(tree,*i.get()).for_all_intersect_mut(|a| {
+        let (rect,i)=i.get_aabb_and_self();
+        for_all_intersect_rect_mut(tree,rect,|a| {
             func(a,i.as_mut());
         });
     }

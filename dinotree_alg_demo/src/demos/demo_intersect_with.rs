@@ -131,7 +131,7 @@ impl DemoSys for IntersectWithDemo{
         for wall in walls.iter(){
             draw_rect_f32([0.0,0.0,1.0,0.3],wall.0.as_ref(),c,g);
         }
-        for bot in tree.get_bots().iter(){
+        for bot in tree.get_aabb_bots().iter(){
             draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
         }
  

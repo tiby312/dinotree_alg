@@ -2,16 +2,16 @@ use crate::inner_prelude::*;
 use super::node_handle::*;
 use super::*;
 
-
-struct GoDownRecurser<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait>{
-    anchor:DestructuredNode<'a,T,B>,
+//TODO improve this.
+struct GoDownRecurser<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait>{
+    anchor:DestructuredNode<'a,N::T,B>,
     sweeper:&'a mut NN
 }
 
-impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
+impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait> GoDownRecurser<'a,N,NN,B>{
 
     #[inline(always)]
-    fn new(anchor:DestructuredNode<'a,T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,T,NN,B>{
+    fn new(anchor:DestructuredNode<'a,N::T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,N,NN,B>{
         GoDownRecurser{anchor,sweeper}
     }
 
@@ -20,11 +20,11 @@ impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
     >(
         &mut self,
         this_axis: A,
-        m: VistrMut<T>,
+        m: VistrMut<N>,
     ) {
         let anchor_axis=self.anchor.axis;
         let (nn,rest)=m.next();
-
+        let nn=nn.get_mut();
         match rest{
             Some([left,right])=>{
                 let div=match nn.div{
@@ -66,18 +66,18 @@ impl<'a,T:HasAabb,NN:NodeHandler<T=T>,B:AxisTrait> GoDownRecurser<'a,T,NN,B>{
 
 
 
-pub struct ColFindRecurser<T:HasAabb,K:Splitter,S:NodeHandler<T=T>+Splitter>{
-    _p:PhantomData<(T,K,S)>
+pub struct ColFindRecurser<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter>{
+    _p:PhantomData<(N,K,S)>
 }
-impl<T:HasAabb+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=T>+Splitter+Send+Sync> ColFindRecurser<T,K,S>{
+impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+Send+Sync> ColFindRecurser<N,K,S>{
 
-    pub fn recurse_par<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<T>>,splitter:&mut K){
+    pub fn recurse_par<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<N>>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
 
         let((depth,mut nn),rest)=m.next();
-
+        let mut nn=nn.get_mut();
         sweeper.handle_node(this_axis.next(),nn.bots.as_mut());
                     
         match rest{
@@ -141,19 +141,20 @@ impl<T:HasAabb+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=T>+Splitter+Send+S
     }
 }
 
-impl<T:HasAabb,K:Splitter,S:NodeHandler<T=T>+Splitter> ColFindRecurser<T,K,S>{
+impl<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,S>{
     #[inline(always)]
-    pub fn new()->ColFindRecurser<T,K,S>{
+    pub fn new()->ColFindRecurser<N,K,S>{
         ColFindRecurser{_p:PhantomData}
     }
 
 
-    pub fn recurse_seq<A:AxisTrait>(&self,this_axis:A,sweeper:&mut S,m:LevelIter<VistrMut<T>>,splitter:&mut K){
+    pub fn recurse_seq<A:AxisTrait>(&self,this_axis:A,sweeper:&mut S,m:LevelIter<VistrMut<N>>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
 
         let((_depth,mut nn),rest)=m.next();
+        let mut nn=nn.get_mut();
 
         sweeper.handle_node(this_axis.next(),nn.bots.as_mut());
                     

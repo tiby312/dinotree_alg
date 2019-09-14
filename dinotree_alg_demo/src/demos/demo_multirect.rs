@@ -8,7 +8,7 @@ struct Bot{
 }
 
 pub struct MultiRectDemo{
-    tree:DinoTreeDirect<axgeom::XAXISS,i32,Bot>
+    tree:DinoTreeOwned<axgeom::XAXISS,i32,Bot>
 }
 impl MultiRectDemo{
     pub fn new(dim:Rect<F32n>)->MultiRectDemo{
@@ -23,7 +23,7 @@ impl MultiRectDemo{
         }).collect();
 
 
-        let tree = DinoTreeDirectBuilder::new(axgeom::XAXISS,&mut bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_seq();
+        let tree = DinoTreeOwnedBuilder::new(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)}).build_seq();
 
 
         MultiRectDemo{tree}
@@ -35,7 +35,7 @@ impl DemoSys for MultiRectDemo{
         
         
         
-        for bot in self.tree.get_bots().iter(){
+        for bot in self.tree.get_aabb_bots().iter(){
             draw_rect_i32([0.0,0.0,0.0,0.3],&bot.rect,c,g);
         }
 

@@ -340,7 +340,7 @@ impl DemoSys for DemoNbody{
         }
 
         //Draw bots.
-        for bot in tree.get_bots().iter(){
+        for bot in tree.get_aabb_bots().iter(){
             draw_rect_f32([0.0,0.5,0.0,1.0],bot.rect.as_ref(),c,g);
         }
 
