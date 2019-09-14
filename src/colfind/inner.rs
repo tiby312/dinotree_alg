@@ -23,7 +23,7 @@ impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait> GoDownRecurser<'a,N,NN,B
         m: VistrMut<N>,
     ) {
         let anchor_axis=self.anchor.axis;
-        let (nn,rest)=m.next();
+        let (mut nn,rest)=m.next();
         let nn=nn.get_mut();
         match rest{
             Some([left,right])=>{
