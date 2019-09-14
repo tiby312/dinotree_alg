@@ -20,7 +20,7 @@ pub struct KnearestDemo{
 impl KnearestDemo{
     pub fn new(dim:Rect<F32n>)->KnearestDemo{
 
-        let mut bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(2.0,10.0).
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(2.0,10.0).
             take(2000).enumerate().map(|(id,(pos,radius))|{
             Bot{id,pos,radius}
         }).collect();

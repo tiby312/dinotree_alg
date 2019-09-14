@@ -75,7 +75,7 @@ impl RaycastF32Demo{
     pub fn new(dim:Rect<F32n>)->Self{
         
         let radius=20.0;
-        let mut vv=UniformRandGen::new(dim.inner_into()).map(|center|Bot{center}).take(100).collect();
+        let vv=UniformRandGen::new(dim.inner_into()).map(|center|Bot{center}).take(100).collect();
 
         let tree = create_owned(axgeom::XAXISS,vv,|a|{
             Rect::from_point(a.center,vec2same(radius)).inner_try_into().unwrap()

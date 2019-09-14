@@ -23,7 +23,7 @@ impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait> GoDownRecurser<'a,N,NN,B
         m: VistrMut<N>,
     ) {
         let anchor_axis=self.anchor.axis;
-        let (mut nn,rest)=m.next();
+        let (nn,rest)=m.next();
         let nn=nn.get_mut();
         match rest{
             Some([left,right])=>{
@@ -76,7 +76,7 @@ impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+S
         sweeper.node_start();
         splitter.node_start();
 
-        let((depth,mut nn),rest)=m.next();
+        let((depth, nn),rest)=m.next();
         let mut nn=nn.get_mut();
         sweeper.handle_node(this_axis.next(),nn.bots.as_mut());
                     
@@ -153,7 +153,7 @@ impl<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,
         sweeper.node_start();
         splitter.node_start();
 
-        let((_depth,mut nn),rest)=m.next();
+        let((_depth, nn),rest)=m.next();
         let mut nn=nn.get_mut();
 
         sweeper.handle_node(this_axis.next(),nn.bots.as_mut());

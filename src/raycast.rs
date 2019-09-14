@@ -179,7 +179,7 @@ struct Closest<'a,T:HasAabb>{
     closest:Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>
 }
 impl<'a,T:HasAabb> Closest<'a,T>{
-    fn consider<R:RayTrait<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>,mut b:ProtectedBBox<'a,T>,raytrait:&mut R){
+    fn consider<R:RayTrait<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>, b:ProtectedBBox<'a,T>,raytrait:&mut R){
 
         let x=match raytrait.compute_distance_to_bot(ray,b.as_ref()){
             RayIntersectResult::Hit(val)=>{

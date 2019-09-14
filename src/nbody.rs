@@ -330,7 +330,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait<Num=J::Num,
 fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Send,F:NodeTrait+Send+Sync>(join:J,axis:A,it:CombinedVistrMut<N::No,F>,ncontext:&N) where F::T:Send,N::No:Send{
     
 
-    let ((depth,(_,mut nn)),rest)=it.next();
+    let ((depth,(_, nn)),rest)=it.next();
     let mut nn=nn.get_mut();
     match rest{
         Some([mut left,mut right])=>{

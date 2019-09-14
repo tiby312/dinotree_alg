@@ -98,7 +98,7 @@ impl DemoSys for IntersectWithDemo{
         {
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut k).build_par(); 
 
-            intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|mut bot,mut wall|{
+            intersect_with::intersect_with_mut(&mut tree,walls,|wall|{wall.0},|mut bot,wall|{
                 let fric=0.8;
 
 

@@ -8,7 +8,7 @@ use dinotree_alg;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    id:usize, //id used to verify pairs against naive
+    _id:usize, //id used to verify pairs against naive
     pos:Vec2<f32>,
     vel:Vec2<f32>,
     force:Vec2<f32>,
@@ -57,7 +57,7 @@ impl OrigOrderDemo{
 
         let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).
             take(num_bot).enumerate().map(|(id,pos)|{
-            Bot{id,pos,vel:vec2same(0.0),force:vec2same(0.0)}
+            Bot{_id:id,pos,vel:vec2same(0.0),force:vec2same(0.0)}
         }).collect();
  
         let colors=ColorGenerator::new().take(num_bot).collect();

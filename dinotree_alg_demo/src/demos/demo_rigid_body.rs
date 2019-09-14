@@ -164,7 +164,7 @@ pub fn handle_rigid_body(
         
 
             //for mut body in tree.get_aabb_bots_mut().iter_mut(){
-            for mut body in k2.iter_mut(){
+            for body in k2.iter_mut(){
                 let body=body.inner_mut();
                 let mm=body.push_vec.magnitude();
                 if mm>0.0000001{

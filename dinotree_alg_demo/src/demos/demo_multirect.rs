@@ -15,7 +15,7 @@ impl MultiRectDemo{
 
 
 
-        let mut bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).
+        let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).
             take(200).map(|(pos,radius)|{
             let pos=pos.inner_as();
             let radius=radius.inner_as();

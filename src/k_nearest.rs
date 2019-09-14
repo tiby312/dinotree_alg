@@ -227,7 +227,7 @@ fn recc<'a,
     K:Knearest<N=N::Num,T=N::T>,
     >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
 
-    let ((_depth,mut nn),rest)=stuff.next();
+    let ((_depth, nn),rest)=stuff.next();
     let nn=nn.get_mut();
     match rest{
         Some([left,right])=>{
@@ -258,7 +258,7 @@ fn recc<'a,
                     }
 
                     if blap.should_traverse_rect(&rmiddle){
-                        for mut bot in nn.bots.iter_mut()
+                        for bot in nn.bots.iter_mut()
                         {
                             let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                             blap.closest.consider((bot,dis_sqr));
@@ -276,7 +276,7 @@ fn recc<'a,
                     }
 
                     if blap.should_traverse_rect(&rmiddle){
-                        for mut bot in nn.bots.iter_mut()
+                        for bot in nn.bots.iter_mut()
                         {
                             let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                             blap.closest.consider((bot,dis_sqr));
@@ -289,7 +289,7 @@ fn recc<'a,
                 },
                 Ordering::Equal=>{
                     if blap.should_traverse_rect(&rmiddle){
-                        for mut bot in nn.bots.iter_mut(){
+                        for bot in nn.bots.iter_mut(){
                             let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                             blap.closest.consider((bot,dis_sqr));
                         }
@@ -304,7 +304,7 @@ fn recc<'a,
             }
         },
         None=>{
-            for mut bot in nn.bots.iter_mut(){
+            for bot in nn.bots.iter_mut(){
                 let dis_sqr=blap.knear.distance_to_bot(blap.point,bot.as_ref());
                 blap.closest.consider((bot,dis_sqr));
             }
@@ -387,7 +387,7 @@ mod mutable{
 
         let mut closest=ClosestCand::new(num);
 
-        for mut b in bots.iter_mut(){
+        for b in bots.iter_mut(){
 
             let d=k.distance_to_bot(point,b.as_ref());
 

@@ -214,7 +214,7 @@ impl DemoSys for GridDemo{
             a/256.0
         }
         
-        for (mut bot,cols) in k.iter_mut().zip(self.colors.iter()){
+        for (bot,cols) in k.iter_mut().zip(self.colors.iter()){
             let rect=&axgeom::Rect::from_point(bot.inner().pos,vec2(radius,radius));
             
 

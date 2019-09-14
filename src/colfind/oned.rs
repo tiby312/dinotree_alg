@@ -102,7 +102,7 @@ impl<I: HasAabb> Sweeper<I> {
     fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        mut collision_botids: ProtectedBBoxSlice<'a,I>,
+        collision_botids: ProtectedBBoxSlice<'a,I>,
         func: &mut F,
     ) {
         //    Create a new temporary list called “activeList”.
@@ -148,7 +148,7 @@ impl<I: HasAabb> Sweeper<I> {
     fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        mut cols: (ProtectedBBoxSlice<I>, ProtectedBBoxSlice<I>),
+        cols: (ProtectedBBoxSlice<I>, ProtectedBBoxSlice<I>),
         func: &mut F,
     ) {
         let mut xs=cols.0.iter_mut().peekable();
