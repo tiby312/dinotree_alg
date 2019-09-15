@@ -14,115 +14,128 @@ pub struct Bot<T>{
 }
 
 
+#[derive(Copy,Clone,Debug)]
+pub struct TestResult{
+    rebal:f64,
+    query:f64
+}
 
 
-fn test1<T:TestTrait>(bots:&mut [Bot<T>])->f64{
-    
+fn test_seq<T:HasAabb>(bots:&mut [T],func:impl Fn(ProtectedBBox<T>,ProtectedBBox<T>))->TestResult{
     let instant=Instant::now();
 
-   
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5))).build_seq();
-
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq();
     
+    let rebal=instant_to_sec(instant.elapsed());
+
     colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
+        func(a,b);
     });
 
     black_box(tree);
 
-    instant_to_sec(instant.elapsed())
-}
+    let total = instant_to_sec(instant.elapsed());
 
-fn test2<T:TestTrait>(bots:&mut [Bot<T>])->f64{
-    
+    TestResult{rebal,query:total-rebal}
+}
+fn test_par<T:HasAabb+Send+Sync>(bots:&mut [T],func:impl Fn(ProtectedBBox<T>,ProtectedBBox<T>)+Send+Sync)->TestResult{
     let instant=Instant::now();
 
-   
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)) ).build_par();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_par();
+    
+    let rebal=instant_to_sec(instant.elapsed());
 
-    
     colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
+        func(a,b);
     });
-    
+
     black_box(tree);
 
-    instant_to_sec(instant.elapsed())
+    let total = instant_to_sec(instant.elapsed());
+
+    TestResult{rebal,query:total-rebal}
 }
 
 
-fn test3<T:TestTrait>(bots:&mut Vec<Bot<T>>)->f64{
+
+#[derive(Copy,Clone,Debug)]
+pub struct CompleteTestResult{
+    direct_seq:TestResult,
+    direct_par:TestResult,
     
-    let instant=Instant::now();
-
-   
-    let mut tree=DinoTreeDirectBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5))).build_seq();
-
+    indirect_seq:TestResult,
+    indirect_par:TestResult,
     
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
-    });
-
-    tree.into_inner(bots);
-
-    instant_to_sec(instant.elapsed())
+    default_seq:TestResult,
+    default_par:TestResult
+}
+impl CompleteTestResult{
+    fn into_arr(self)->[TestResult;6]{
+        [self.direct_seq,self.direct_par,self.indirect_seq,self.indirect_par,self.default_seq,self.default_par]
+    }
 }
 
-
-fn test4<T:TestTrait>(bots:&mut Vec<Bot<T>>)->f64{
+fn complete_test<T:TestTrait>(bots:&mut [Bot<T>])->CompleteTestResult{
+    let aabb_make=|b:&Bot<T>|axgeom::Rect::from_point(b.pos,vec2same(5));
     
-    let instant=Instant::now();
-
-   
-    let mut tree=DinoTreeDirectBuilder::new(axgeom::XAXISS,bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5))).build_par();
+    
+    let (direct_seq,direct_par) = {
+        let mut direct:Vec<_>=bots.iter().map(|a|BBox::new(aabb_make(a),*a)).collect();
+        
+        let collide=|mut b:ProtectedBBox<BBox<isize,Bot<T>>>,mut c:ProtectedBBox<BBox<isize,Bot<T>>>|{
+            b.inner_mut().num+=1;
+            c.inner_mut().num+=1;
+        };
 
     
-    colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
-    });
+        (
+            test_seq(&mut direct,collide),
+            test_par(&mut direct,collide)
+        )
+    };
 
-    tree.into_inner(bots);
+    let (indirect_seq,indirect_par) = {
+        let mut direct:Vec<_>=bots.iter().map(|a|BBox::new(aabb_make(a),*a)).collect();
+        let mut indirect:Vec<_>=direct.iter_mut().map(|a|BBoxIndirect::new(a)).collect();
 
-    instant_to_sec(instant.elapsed())
+    
+        let collide=|mut b:ProtectedBBox<BBoxIndirect<BBox<isize,Bot<T>>>>,mut c:ProtectedBBox<BBoxIndirect<BBox<isize,Bot<T>>>>|{
+            b.inner_mut().num+=1;
+            c.inner_mut().num+=1;
+        };
+
+        (
+            test_seq(&mut indirect,collide),
+            test_par(&mut indirect,collide)
+        )
+    };
+    let (default_seq,default_par) = {
+        let mut default=create_bbox_mut(bots,aabb_make);
+
+
+        let collide=|mut b:ProtectedBBox<BBoxMut<isize,Bot<T>>>,mut c:ProtectedBBox<BBoxMut<isize,Bot<T>>>|{
+            b.inner_mut().num+=1;
+            c.inner_mut().num+=1;
+        };
+
+    
+        (
+            test_seq(&mut default,collide),
+            test_par(&mut default,collide)
+        )
+
+    };
+
+    CompleteTestResult{
+        direct_seq,
+        direct_par,
+        indirect_seq,
+        indirect_par,
+        default_seq,
+        default_par
+    }
 }
 
-
-fn test5<T:TestTrait>(bots:&mut [BBox<isize,Bot<T>>])->f64{
-    
-    let instant=Instant::now();
-
-   
-    let mut tree=DinoTreeIndirectBuilder::new(axgeom::XAXISS,bots).build_seq();
-
-    
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
-    });
-
-    instant_to_sec(instant.elapsed())
-}
-
-
-fn test6<T:TestTrait>(bots:&mut [BBox<isize,Bot<T>>])->f64{
-    
-    let instant=Instant::now();
-
-   
-    let mut tree=DinoTreeIndirectBuilder::new(axgeom::XAXISS,bots).build_par();
-
-    
-    colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-        a.inner.num+=1;
-        b.inner.num+=1;
-    });
-
-    instant_to_sec(instant.elapsed())
-}
 
 
 pub fn handle(fb:&mut FigureBuilder){ 
@@ -139,14 +152,15 @@ pub fn handle(fb:&mut FigureBuilder){
 }
 
 
+
 #[derive(Debug)]
 struct Record {
     num_bots:usize,
-    arr:[f64;6]    
+    arr:CompleteTestResult    
 }
 impl Record{
-    fn draw(records:&[Record],fg:&mut Figure,grow:f32,name:&str){
-        const NAMES:&[&str]=&["Dinotree Seq","Dinotree Par","Direct Seq","Direct Par","Indirect Seq","Indirect Par"];
+    fn draw(records:&[Record],fg:&mut Figure,grow:f32,name:&str,func:impl Fn(TestResult)->f64){
+        const NAMES:&[&str]=&["direct seq","direct par","indirect seq","indirect par","default seq","default par"];
         {
             let k=fg.axes2d()
                 .set_title(&format!("Dinotree vs Direct vs Indirect with grow {} and {}",grow,name), &[])
@@ -156,7 +170,7 @@ impl Record{
 
             let x=records.iter().map(|a|a.num_bots);
             for index in 0..6{
-                let y=records.iter().map(|a|a.arr[index]);
+                let y=records.iter().map(|a|func(a.arr.into_arr()[index]));
                 k.lines(x.clone(),y,&[Caption(NAMES[index]),Color(COLS[index]),LineWidth(1.0)]);
             }
         }
@@ -170,34 +184,27 @@ fn handle_num_bots<T:TestTrait>(fb:&mut FigureBuilder,grow:f32,val:T,name:&str){
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
-    for num_bots in (0..100_000).rev().step_by(800){
+    for num_bots in (0..40_000).rev().step_by(500){
         
-        let mut bots2:Vec<BBox<isize,Bot<T>>>=s.clone().take(num_bots).map(|pos|{
-            let inner=Bot{num:0,pos:pos.inner_as(),_val:val};
-            let rect=axgeom::Rect::from_point(inner.pos,vec2same(5));
-            BBox{rect,inner}
-        }).collect();
-        
-
         let mut bots:Vec<Bot<T>>=s.clone().take(num_bots).map(|pos|{
             Bot{num:0,pos:pos.inner_as(),_val:val.clone()}
         }).collect();
 
-        let arr=[
-            test1(&mut bots),
-            test2(&mut bots),
-            test3(&mut bots),
-            test4(&mut bots),
-            test5(&mut bots2),
-            test6(&mut bots2)];
 
-        let r=Record{num_bots,arr};
+        let r=Record{num_bots,arr:complete_test(&mut bots)};
         rects.push(r);      
     }
 
-    let mut fg= fb.build(&format!("dinotree_direct_indirect_{}_{}",grow,name));
-    
-    Record::draw(&rects,&mut fg,grow,name);
-    
+
+    let mut fg= fb.build(&format!("dinotree_direct_indirect_rebal_{}_{}",grow,name));
+    Record::draw(&rects,&mut fg,grow,name,|a|a.rebal);
     fb.finish(fg);
+
+
+    let mut fg= fb.build(&format!("dinotree_direct_indirect_query_{}_{}",grow,name));
+    Record::draw(&rects,&mut fg,grow,name,|a|a.query);
+    fb.finish(fg);
+
+
 }
+

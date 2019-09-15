@@ -66,7 +66,7 @@ pub fn handle(fb:&mut FigureBuilder){
     }).collect();
 
 
-    let height=compute_tree_height_heuristic(num_bots);
+    let height=compute_tree_height_heuristic(num_bots,DEFAULT_NUMBER_ELEM_PER_NODE);
     
     let mut rebals=Vec::new();
     for rebal_height in (0..height).flat_map(|a|std::iter::repeat(a).take(16)){

@@ -135,7 +135,7 @@ fn handle_lowest(fb:&mut FigureBuilder){
         let heur={
             let mut vec=Vec::new();
             for num_bots in its.clone(){
-                let height=compute_tree_height_heuristic(num_bots);
+                let height=compute_tree_height_heuristic(num_bots,DEFAULT_NUMBER_ELEM_PER_NODE);
                 vec.push((num_bots,height));
             }
             vec

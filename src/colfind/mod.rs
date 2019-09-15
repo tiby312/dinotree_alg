@@ -94,7 +94,9 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N
         let axis=self.tree.axis();
         let oo=self.tree.vistr_mut();
         let switch_height=self.switch_height;
-        let par=compute_default_level_switch_sequential(switch_height,height);
+        
+        let par=dinotree::par::compute_level_switch_sequential(switch_height,height);
+        
         ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
     }
 
@@ -104,7 +106,7 @@ impl<'a,A:AxisTrait,N:NodeTrait> NotSortedQueryBuilder<'a,A,N>{
 
     #[inline(always)]
     pub fn new(tree:&'a mut NotSorted<A,N>)->NotSortedQueryBuilder<'a,A,N>{
-        let switch_height=default_level_switch_sequential();
+        let switch_height=dinotree::par::SWITCH_SEQUENTIAL_DEFAULT;
         NotSortedQueryBuilder{switch_height,tree}
     }
 
@@ -157,7 +159,7 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send
         let switch_height=self.switch_height;
         let axis=self.tree.axis();
         let oo=self.tree.vistr_mut();
-        let par=compute_default_level_switch_sequential(switch_height,height);
+        let par=dinotree::par::compute_level_switch_sequential(switch_height,height);
         ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
 
     }
@@ -173,7 +175,7 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send
         let height=self.tree.get_height();
         let vistr_mut=self.tree.vistr_mut();
 
-        let par=compute_default_level_switch_sequential(self.switch_height,height);
+        let par=dinotree::par::compute_level_switch_sequential(self.switch_height,height);
 
 
         let dt = vistr_mut.with_depth(Depth(0));
@@ -188,7 +190,7 @@ impl<'a,A:AxisTrait,N:NodeTrait> QueryBuilder<'a,A,N>{
     ///Create the builder.
     #[inline(always)]
     pub fn new(tree:&'a mut DinoTree<A,N>)->QueryBuilder<'a,A,N>{
-        let switch_height=default_level_switch_sequential();
+        let switch_height=dinotree::par::SWITCH_SEQUENTIAL_DEFAULT;
         QueryBuilder{switch_height,tree}
     }
 

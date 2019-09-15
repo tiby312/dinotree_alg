@@ -451,8 +451,8 @@ pub fn nbody_par<A:AxisTrait,J:NodeTrait+Send+Sync,N:NodeMassTrait<Num=J::Num,It
     let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
     {
-        let k=default_level_switch_sequential();
-        let par=compute_default_level_switch_sequential(k,t1.get_height());
+        let k=dinotree::par::SWITCH_SEQUENTIAL_DEFAULT;
+        let par=dinotree::par::compute_level_switch_sequential(k,t1.get_height());
 
         let d=misc_tree.vistr_mut().zip(t1.vistr_mut()).with_depth(Depth(0));
         recc(par,axis,d,ncontext);    
