@@ -15,9 +15,8 @@ fn test1(bots:&mut [Bot])->f64{
     let instant=Instant::now();
 
     
-    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,vec2same(5))  
-    }).with_bin_strat(BinStrat::Checked).build_par();
+    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::Checked).build_par();
     
 
     black_box(tree);
@@ -30,10 +29,8 @@ fn test2(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-   
-    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,vec2same(5))  
-    }).with_bin_strat(BinStrat::NotChecked).build_par();
+    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));   
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::NotChecked).build_par();
     
     
     black_box(tree);
@@ -47,10 +44,8 @@ fn test3(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-   
-    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,vec2same(5))  
-    }).with_bin_strat(BinStrat::Checked).build_seq();
+    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));      
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::Checked).build_seq();
     
     
     black_box(tree);
@@ -64,10 +59,8 @@ fn test4(bots:&mut [Bot])->f64{
     
     let instant=Instant::now();
 
-   
-    let tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
-        axgeom::Rect::from_point(b.pos,vec2same(5))  
-    }).with_bin_strat(BinStrat::NotChecked).build_seq();
+    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));         
+    let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::NotChecked).build_seq();
     
     
 
