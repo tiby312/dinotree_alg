@@ -15,9 +15,11 @@ struct Res{
 fn test1(bots:&mut [Bot])->Res{
     let mut counter=datanum::Counter::new();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let mut bots = create_bbox_mut(bots,|b|{
         datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
-    }).build_seq();
+    });
+
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots).build_seq();
 
     let mut num_pairs=0;
 
@@ -59,7 +61,7 @@ fn test3(bots:&mut [Bot])->Res{
     
 
     let mut num_pairs=0;
-    colfind::query_naive_mut(ElemSliceMut::new(ElemSlice::from_slice_mut(&mut bb)),|_a, _b| {
+    colfind::query_naive_mut(&mut bb,|_a, _b| {
         num_pairs+=1;
     });
     

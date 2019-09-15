@@ -21,9 +21,11 @@ fn handle1(fb:&mut FigureBuilder){
 	    let mut bots:Vec<Vec2<f32>>=s.take(num_bots).collect();
     	
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+        let mut bb=create_bbox_mut(&mut bots,|b|{
             axgeom::Rect::from_point(*b,vec2same(5.0)).inner_try_into::<NotNan<f32>>().unwrap()
-        }).build_par();
+        });
+
+        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_par();
 
         let mut num_intersection=0;
         colfind::QueryBuilder::new(&mut tree).query_seq(|_a, _b| {

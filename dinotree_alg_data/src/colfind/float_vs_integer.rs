@@ -40,13 +40,15 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_integer={
             let instant=Instant::now();
             
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 axgeom::Rect::from_point(b.pos.inner_as::<i32>(),vec2same(5))
-            }).build_seq();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -56,13 +58,15 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_i64={
             let instant=Instant::now();
             
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 axgeom::Rect::from_point(b.pos.inner_as::<i64>(),vec2same(5))
-            }).build_seq();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -71,14 +75,17 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_float={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
-            }).build_seq();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -87,14 +94,16 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_float_par={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
-            }).build_par();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -103,13 +112,15 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_integer_par={
             let instant=Instant::now();
             
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 axgeom::Rect::from_point(b.pos.inner_as::<i32>(),vec2same(5))
-            }).build_par();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -119,13 +130,15 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_i64_par={
             let instant=Instant::now();
             
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 axgeom::Rect::from_point(b.pos.inner_as::<i64>(),vec2same(5))
-            }).build_par();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -134,14 +147,16 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_f64={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
-            }).build_seq();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_seq();
 
             colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())
@@ -150,14 +165,16 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_f64_par={
             let instant=Instant::now();
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{   
+            let mut bb=create_bbox_mut(&mut bots,|b|{
                 let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
                 k
-            }).build_par();
+            });
+
+            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_par();
 
             colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-                a.inner.num+=1;
-                b.inner.num+=1;
+                a.inner_mut().num+=1;
+                b.inner_mut().num+=1;
             });
 
             instant_to_sec(instant.elapsed())  

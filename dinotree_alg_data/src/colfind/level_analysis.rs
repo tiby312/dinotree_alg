@@ -93,17 +93,18 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Th
 
 		    let mut levelc=level_counter::LevelCounter::new(&mut counter);
 
+		    let mut bb=create_bbox_mut(&mut bots,|b|{
+				datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
+		    });
 
-			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{
-        		datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
-			}).build_with_splitter_seq(&mut levelc);
+			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_with_splitter_seq(&mut levelc);
 	
 
 			counter.reset();
 			let mut levelc2=level_counter::LevelCounter::new(&mut counter);
 			colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|mut a,mut b|{
-				a.inner.num+=1;
-				b.inner.num+=1;
+				a.inner_mut().num+=1;
+				b.inner_mut().num+=1;
 			},&mut levelc2);
 
 
@@ -111,7 +112,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Th
 
 
 		    let mut t=TheoryRes{grow,rebal:levelc.into_inner(),query:levelc2.into_inner()};
-		    let height=tree.height();
+		    let height=tree.get_height();
 
 		    grow_to_fit(&mut t.rebal,height);
 			grow_to_fit(&mut t.query,height);
@@ -143,10 +144,11 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 	    let mut times1=LevelTimer::new();
 
 		
+	    let mut bb=create_bbox_mut(&mut bots,|b|{
+        	axgeom::Rect::from_point(b.pos,vec2same(5))  
+	    });
 
-		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|b|{
-		        axgeom::Rect::from_point(b.pos,vec2same(5))  
-		}).build_with_splitter_seq(&mut times1);
+		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_with_splitter_seq(&mut times1);
 
 		
 
@@ -154,13 +156,14 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 		//colfind::QueryBuilder::new(tree.as_ref_mut()).query_with_splitter_seq(|a,b|{a.inner.num+=1;b.inner.num+=1},&mut times2);
 		
 		colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(|mut a,mut b|{
-			a.inner.num+=1;b.inner.num+=1
+			a.inner_mut().num+=1;
+			b.inner_mut().num+=1
 		},&mut times2);
 		
 
 
 	    let mut t=BenchRes{grow,rebal:times1.into_inner(),query:times2.into_inner()};
-	    let height=tree.height();
+	    let height=tree.get_height();
 	    
 	    grow_to_fit(&mut t.rebal,height);
 		grow_to_fit(&mut t.query,height);

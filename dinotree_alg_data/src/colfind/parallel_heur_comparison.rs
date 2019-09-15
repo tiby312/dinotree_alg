@@ -11,17 +11,19 @@ fn test1(bots:&mut [Bot])->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let mut bb=create_bbox_mut(bots,|b|{
         axgeom::Rect::from_point(b.pos,vec2same(5))  
-    }).build_seq();
+    });
+
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_seq();
 
 
     let a=instant_to_sec(instant.elapsed());
     
 
     colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-        a.inner.num+=2;
-        b.inner.num+=2;
+        a.inner_mut().num+=2;
+        b.inner_mut().num+=2;
     });
 
     let b=instant_to_sec(instant.elapsed());
@@ -33,15 +35,16 @@ fn test3(bots:&mut [Bot],rebal_height:usize,query_height:usize)->(f64,f64){
     
     let instant=Instant::now();
 
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots,|b|{
+    let mut bb=create_bbox_mut(bots,|b|{
         axgeom::Rect::from_point(b.pos,vec2same(5))  
-    }).with_height_switch_seq(rebal_height).build_par();
+    });
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_height_switch_seq(rebal_height).build_par();
     
     let a=instant_to_sec(instant.elapsed());
     
     colfind::QueryBuilder::new(&mut tree).with_switch_height(query_height).query_par(|mut a,mut b|{
-        a.inner.num+=1;
-        b.inner.num+=1;
+        a.inner_mut().num+=1;
+        b.inner_mut().num+=1;
     });
 
     let b=instant_to_sec(instant.elapsed());
