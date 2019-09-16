@@ -58,7 +58,6 @@ mod demo_iter{
 }
 
 fn main(){
-    use dinotree::rayon;
     rayon::ThreadPoolBuilder::new().num_threads(num_cpus::get_physical()).build_global().unwrap();
 
 
@@ -82,7 +81,7 @@ fn main(){
 
     
     println!("Press \"N\" to go to the next example");
-    println!("Press \"C\" to turn off verification against naive algorithms.");
+    //println!("Press \"C\" to turn off verification against naive algorithms.");
     println!("Performance suffers from not batching draw calls (piston's built in rectangle drawing primitives are used instead of vertex buffers). These demos are not meant to showcase the performance of the algorithms. See the dinotree_alg_data project for benches.");
 
 
@@ -99,13 +98,17 @@ fn main(){
             if key == Key::N {
                 curr=demo_iter.next(area);
             }
+
             if key == Key::C{
+                unimplemented!();
+                /*
                 check_naive= !check_naive;
                 if check_naive{
                     println!("Naive checking is on. Some demo's will now check the tree algorithm against a naive non tree version");
                 }else{
                     println!("Naive checking is off.");
                 }
+                */
             }
         };
 

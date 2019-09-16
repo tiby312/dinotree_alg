@@ -80,9 +80,9 @@ impl RaycastF32DebugDemo{
         });
 
 
-        let tree = create_owned(axgeom::XAXISS,vv,|_a|{
+        let tree = create_owned_par(axgeom::XAXISS,vv,|_a|{
             ii.next().unwrap()
-        },|axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
+        });
 
 
         RaycastF32DebugDemo{tree,counter:0.0,dim}
@@ -105,7 +105,7 @@ impl DemoSys for RaycastF32DebugDemo{
         };
 
         for bot in self.tree.get_aabb_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }   
 
 

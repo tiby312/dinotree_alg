@@ -23,7 +23,7 @@ impl MultiRectDemo{
         }).collect();
 
 
-        let tree = create_owned(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)},|axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
+        let tree = create_owned_par(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)});
 
 
         MultiRectDemo{tree}
@@ -36,7 +36,7 @@ impl DemoSys for MultiRectDemo{
         
         
         for bot in self.tree.get_aabb_bots().iter(){
-            draw_rect_i32([0.0,0.0,0.0,0.3],&bot.rect,c,g);
+            draw_rect_i32([0.0,0.0,0.0,0.3],&bot.get(),c,g);
         }
 
 

@@ -6,10 +6,11 @@ edition = "2018"
 
 
 [dependencies]
-dists= "0.1.6"
-dinotree="0.4.4"
-duckduckgeo = "0.2.2"
+dists= "*"
+dinotree="0.5"
+duckduckgeo = "*"
 dinotree_alg = {path=".."}
 piston_window = "0.103.0"
-bit-vec = "0.6.1"
-num_cpus = "1.10.1"
+bit-vec = "0.6"
+num_cpus = "1.10"
+rayon = "1.2"

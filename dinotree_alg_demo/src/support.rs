@@ -30,6 +30,7 @@ pub mod prelude{
     //pub use core::pin::Pin;
     //pub use dinotree::*;
     pub use dinotree::prelude::*;
+    pub use dinotree::tree::dinotree_owned::*;
 }
 
 

@@ -6,15 +6,19 @@
 //! that return mutable references.
 //!
 //! Along with a reference to the tree, the user provides the needed geometric functions by passing an implementation of Knearest.
-//! The user provides a point, and the number of nearest objects to return. Then an iterator containing up to that number of units is returned. 
-//! A unit is a distance plus one or bots. This is to handle solutions where there is a tie. There may be multiple nearest elements.
-//! The first element returned is the closest, and the last the furtheset.
-//! It is possible for the vec to be empty if the tree does not contain any bots. 
-//! All bots are returned for ties since it is hard to define exactly which bot would be returned by this algorithm otherwise.
-//! This also means that the orderding of the bots inside of a Unit has no meaning and could be returned in any order.
-//! For trees that use floating point bounding boxes, ties will be extremely rare in a lot of cases, so each Unit
-//! will likely only have one bot inside of it.
+//! The user provides a point, and the number of nearest objects to return.
+//! Then the equivalent to a Vec<(&mut T,N)> is returned where T is the element, and N is its distance.
+//! Even if you are only looking for one closest element, becaise of ties, it is possible for many many bots to be returned.
+//! If we only returned an arbitrary one, then that would make verification against the naive algorithm harder.
+//! It is possible for the Vec returned to be empty if the tree does not contain any bots.
+//! While ties are possible, the ordering in which the ties are returned is arbitrary and has no meaning.
 //!
+//! If the user looks for multiple nearest, then the Vec will return first, all the 1st closest ties,
+//! then all the 2nd closest ties, etc.
+//! 
+//! Slice splitting functions are provided that will split up the Vec into slices over just the ties. 
+//!
+
 
 use crate::inner_prelude::*;
 use core::cmp::Ordering;

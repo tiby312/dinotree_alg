@@ -106,7 +106,6 @@ macro_rules! run_test {
 
 
 fn main() {
-    use dinotree::rayon;
     rayon::ThreadPoolBuilder::new().num_threads(num_cpus::get_physical()).build_global().unwrap();
 
 
@@ -154,7 +153,7 @@ fn main() {
             
             
             run_test!(&mut fb,colfind::dinotree_direct_indirect::handle);
-            /*
+            
             run_test!(&mut fb,colfind::colfind::handle_bench);
             
             //done
@@ -174,7 +173,7 @@ fn main() {
 
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb,colfind::height_heur_comparison::handle);
-            */
+            
 
             //nbody::theory::handle(&mut fb);
         },

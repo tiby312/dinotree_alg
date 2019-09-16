@@ -25,11 +25,10 @@ impl KnearestDemo{
             Bot{id,pos,radius}
         }).collect();
 
-        let tree = create_owned(
+        let tree = create_owned_par(
             axgeom::XAXISS,
             bots,
-            |bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()},
-            |axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
+            |bot|{Rect::from_point(bot.pos,bot.radius).inner_try_into().unwrap()});
         
 
         KnearestDemo{tree,dim}
@@ -42,7 +41,7 @@ impl DemoSys for KnearestDemo{
         
 
         for bot in tree.get_aabb_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
 
         struct Kn<'a,'c:'a>{

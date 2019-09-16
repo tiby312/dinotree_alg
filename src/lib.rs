@@ -17,7 +17,6 @@ extern crate alloc;
 
 
 mod inner_prelude {
-    pub use dinotree::rayon;
     pub use alloc::vec::Vec;
     pub use dinotree::prelude::*;
     pub use dinotree::axgeom;    

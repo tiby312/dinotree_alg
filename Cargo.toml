@@ -14,9 +14,7 @@ edition = "2018"
 rustc-test = "0.3.0"
 
 [dependencies]
-is_sorted = "0.1.1"
-itertools = "0.8.0"
-dinotree ="0.4.4"
-
-[features]
-#unstable =[]
+is_sorted = "0.1"
+itertools = "0.8"
+dinotree ="0.5"
+rayon = "1.2"

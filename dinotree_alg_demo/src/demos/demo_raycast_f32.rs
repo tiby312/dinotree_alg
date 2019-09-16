@@ -77,9 +77,9 @@ impl RaycastF32Demo{
         let radius=20.0;
         let vv=UniformRandGen::new(dim.inner_into()).map(|center|Bot{center}).take(100).collect();
 
-        let tree = create_owned(axgeom::XAXISS,vv,|a|{
+        let tree = create_owned_par(axgeom::XAXISS,vv,|a|{
             Rect::from_point(a.center,vec2same(radius)).inner_try_into().unwrap()
-        },|axis,bots|DinoTreeBuilder::new(axis,bots).build_seq());
+        });
 
 
         Self{tree,dim,radius}
@@ -91,7 +91,7 @@ impl DemoSys for RaycastF32Demo{
         
         //Draw bots
         for bot in self.tree.get_aabb_bots().iter(){
-            draw_rect_f32([0.0,0.0,0.0,0.3],bot.rect.as_ref(),c,g);
+            draw_rect_f32([0.0,0.0,0.0,0.3],bot.get().as_ref(),c,g);
         }
         
     
