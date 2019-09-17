@@ -1,6 +1,6 @@
 use crate::inner_prelude::*;
 use crate::colfind::ColMulti;
-use dinotree::tools::PreVecMut;
+use dinotree::elem::PreVecMut;
 
 struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
     a: &'a mut F,
@@ -154,7 +154,7 @@ impl<I: HasAabb> Sweeper<I> {
         let mut xs=cols.0.iter_mut().peekable();
         let ys = cols.1.iter_mut();
 
-        let active_x = self.helper.get_empty_vec_mut();
+        let active_x= self.helper.get_empty_vec_mut();
 
         for mut y in ys {
             //Add all the x's that are touching the y to the active x.

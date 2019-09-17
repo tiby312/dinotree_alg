@@ -24,9 +24,8 @@ pub fn intersect_with_mut<A:AxisTrait,N:NodeTrait,X>(
     let mut b2:Vec<_>=b.iter_mut().map(|a|BBoxMut::new(aabb_create(&a),a)).collect();
 
     for mut i in ProtectedBBoxSlice::new(&mut b2).iter_mut() {
-        
-        let (rect,i)=i.get_aabb_and_self();
-        for_all_intersect_rect_mut(tree,rect,|a| {
+        let rect=*i.get();
+        for_all_intersect_rect_mut(tree,&rect,|a| {
             func(a,i.as_mut());
         });
     }
