@@ -28,7 +28,7 @@ fn test_seq<T:HasAabb>(bots:&mut [T],func:impl Fn(ProtectedBBox<T>,ProtectedBBox
     
     let rebal=instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {
         func(a,b);
     });
 
@@ -45,7 +45,7 @@ fn test_par<T:HasAabb+Send+Sync>(bots:&mut [T],func:impl Fn(ProtectedBBox<T>,Pro
     
     let rebal=instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
+    colfind::QueryBuilder::new(&mut tree).query_par(|a,b| {
         func(a,b);
     });
 

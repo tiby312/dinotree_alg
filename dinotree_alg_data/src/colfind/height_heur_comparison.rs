@@ -31,7 +31,7 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
 pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
     
     
-    let mut counter=datanum::Counter::new();
+    let counter=datanum::Counter::new();
 
 
 
