@@ -200,8 +200,8 @@ fn test_parallel(){
     };
     impl ColMulti for Test{
         type T=BBox<isize,Bot>;
-        fn collide(&mut self,a:BBoxRefMut<isize,Bot>,b:BBoxRefMut<isize,Bot>){
-            let [a,b]=[a.inner.id,b.inner.id];
+        fn collide(&mut self,a:ProtectedBBox<BBox<isize,Bot>>,b:ProtectedBBox<BBox<isize,Bot>>){
+            let [a,b]=[a.inner().id,b.inner().id];
 
             let fin=if a<b{
                 [a,b]
@@ -240,12 +240,12 @@ fn test_parallel(){
 
 
     let mut test1=Test{set:BTreeSet::new()};
-    sweeper.find_bijective_parallel(axgeom::XAXISS,(ElemSliceMut::from_slice_mut(&mut left),ElemSliceMut::from_slice_mut(&mut right)),&mut test1);
+    sweeper.find_bijective_parallel(axgeom::XAXISS,(ProtectedBBoxSlice::new(&mut left),ProtectedBBoxSlice::new(&mut right)),&mut test1);
 
 
 
     let mut test2=Test{set:BTreeSet::new()};
-    sweeper.find_bijective_parallel(axgeom::XAXISS,(ElemSliceMut::from_slice_mut(&mut right),ElemSliceMut::from_slice_mut(&mut left)),&mut test2);
+    sweeper.find_bijective_parallel(axgeom::XAXISS,(ProtectedBBoxSlice::new(&mut right),ProtectedBBoxSlice::new(&mut left)),&mut test2);
 
     let num=test1.set.symmetric_difference(&test2.set).count();
 
