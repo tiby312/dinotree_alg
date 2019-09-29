@@ -1,148 +1,83 @@
-//!
-//! Some misc tests. Most tests can be found in the dinotree_alg_data project.
-//!
-/*
-extern crate dinotree;
-extern crate dinotree_alg;
-extern crate axgeom;
-//extern crate dists;
-use dinotree::*;
+use dinotree::axgeom;
+use dinotree::prelude::*;
+use dinotree_alg::*;
 
-//TODO write better code
-
-use dinotree_sample::SampleBuilder;
-//use axgeom;
-//use dinotree_sample::SampleBuilder;
-use dinotree::copy::*;
-use dinotree::nocopy::*;
-use dinotree_alg::colfind::{query_naive_mut,QueryBuilder};
+pub trait HasId{
+    fn get_id(&self)->usize;
+}
 
 
-#[test]
-fn query_test(){
-    
-    let test_size=2000;
-    let builder=SampleBuilder::new();
-    let mut bots:Vec<_>=builder.build().take(test_size).collect();
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_seq();
-    QueryBuilder::new(&mut tree).query_seq(|a,b|a.inner.collide(&mut b.inner));
+#[derive(Debug,Eq,Ord,PartialOrd,PartialEq)]
+struct IDPair{
+    a:usize,
+    b:usize
+}
 
-
-    let mut bots2=dinotree::advanced::into_bbox_vec(builder.build().take(test_size),|a|builder.create_aabb(a));
-
-    query_naive_mut(&mut bots2,|a,b|a.inner.collide(&mut b.inner));
-
-    for (a,b) in bots.iter().zip(bots2.iter()){
-        assert_eq!(a.acc,b.inner.acc);
+impl IDPair{
+    pub fn new(a:usize,b:usize)->IDPair{
+        let (a,b)=if a<=b{
+            (a,b)
+        }else{
+            (b,a)
+        };
+        IDPair{a,b}
     }
-
-
 }
 
 
-#[derive(Copy,Clone,Debug)]
-struct Bot{
+pub fn assert_query<T:HasInner>(bots:&mut [T]) where T::Inner: HasId{
+    
+    let mut naive_pairs=Vec::new();
+    colfind::query_naive_mut(bots,|mut a,mut b|{
+        naive_pairs.push(IDPair::new(a.inner().get_id(),b.inner().get_id()));
+    });
+
+
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
+    
+    let mut dinotree_pairs=Vec::new();
+    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+        dinotree_pairs.push(IDPair::new(a.inner().get_id(),b.inner().get_id()));
+    });
+
+
+    naive_pairs.sort();
+    dinotree_pairs.sort();
+
+    let res = naive_pairs.iter().zip(dinotree_pairs.iter()).fold(true,|acc,(a,b)|{
+        acc & (*a==*b)
+    });
+
+
+    assert!(res,"naive={} dinotree={}",naive_pairs.len(),dinotree_pairs.len());
+}
+
+
+
+
+pub struct Bot{
     id:usize,
-    pos:[isize;2],
-    col:usize
+    aabb:axgeom::Rect<i64>
+}
+impl HasId for Bot{
+    fn get_id(&self)->usize{
+        self.id
+    }
 }
 
 #[test]
-fn test_send_sync_dinotree(){
-    let mut bots1:Vec<Bot>=Vec::new();
-    let mut bots2:Vec<Bot>=Vec::new();
+fn test1(){
+    for &num_bots in [1000,0,1].iter(){
+        let s=dists::spiral::Spiral::new([400.0,400.0],12.0,1.0);
+        
+        let mut bots:Vec<Bot>=s.take(num_bots).enumerate().map(|(id,pos)|{
+            Bot{id,aabb:axgeom::Rect::from_point(pos.inner_as(),axgeom::vec2same(8+id as i64))}
+        }).collect();
 
-    let (t1,t2)=rayon::join(||{DinoTreeBuilder::new(axgeom::XAXISS,&mut bots1,|_|axgeom::Rect::new(0,0,0,0))}.build_seq(),||{DinoTreeBuilder::new(axgeom::YAXISS,&mut bots2,|_|axgeom::Rect::new(0,0,0,0)).build_seq()});
-
-    let (p1,p2)=(&t1,&t2);
-
-    rayon::join(||{p1},||{p2});
-}
-
-#[test]
-fn test_zero_sized_type() {
-    #[derive(Copy,Clone)]
-    struct Bot;
-
-  
-    {
-        let builder=SampleBuilder::new();
-        let mut bots:Vec<_>=builder.build().take(500).collect();
-
-        let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|a|builder.create_aabb(a)).build_seq();
-
-        let mut num=0;
-        dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|_, _| {
-               num+=1;
+        let mut bb=create_bbox_mut(&mut bots,|b|{
+            b.aabb
         });
 
-        //black_box(num);
+        assert_query(&mut bb);
     }
 }
-
-#[test]
-fn test_one_bot() {
-
-    #[derive(Copy,Clone)]
-    struct Bot;
-    
-
-    let mut bots:Vec<Bot> = Vec::new();
-    bots.push(Bot);
-    
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
-
-    let mut num=0;
-    dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|_, _| {
-           num+=1;
-    });
-
-    //black_box(num);
-}
-
-
-#[test]
-fn recursive_dinotree(){
-
-    #[derive(Copy,Clone)]
-    struct Bot;
-    
-
-    let mut bots:Vec<Bot> = Vec::new();
-    bots.push(Bot);
-    bots.push(Bot);
-    bots.push(Bot);
-
-    let mut bots2=bots.clone();
-
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
-
-    let mut vec:Vec<DinoTree<axgeom::XAXISS,BBox<isize,Bot>>>=Vec::new();
-    dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|_, _| {
-           vec.push(DinoTreeBuilder::new(axgeom::XAXISS,&mut bots2,|_|axgeom::Rect::new(0,0,0,0)).build_seq());
-    });
-
-    //black_box(vec);
-}
-
-
-#[test]
-fn test_empty() {
-    #[derive(Copy,Clone)]
-    struct Bot;
-    
-
-    let mut bots:Vec<Bot> = Vec::new();
-    
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS,&mut bots,|_|axgeom::Rect::new(0,0,0,0)).build_seq();
-
-    let mut num=0;
-    dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_seq(|_, _| {
-           num+=1;
-    });
-
-    //black_box(num);
-
-}
-
-*/
