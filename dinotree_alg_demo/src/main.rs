@@ -100,15 +100,14 @@ fn main(){
             }
 
             if key == Key::C{
-                unimplemented!();
-                /*
+                
                 check_naive= !check_naive;
                 if check_naive{
                     println!("Naive checking is on. Some demo's will now check the tree algorithm against a naive non tree version");
                 }else{
                     println!("Naive checking is off.");
                 }
-                */
+                
             }
         };
 

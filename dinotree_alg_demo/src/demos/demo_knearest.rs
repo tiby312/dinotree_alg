@@ -12,6 +12,12 @@ struct Bot{
     radius:Vec2<f32>
 }
 
+impl dinotree_alg::assert::HasId for Bot{
+    fn get_id(&self)->usize{
+        self.id
+    }
+}
+
 pub struct KnearestDemo{
     tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot>,
     dim:Rect<F32n>
@@ -107,65 +113,23 @@ impl DemoSys for KnearestDemo{
             mag:F32n
         }
         let mut vv={
-            let kn=Kn{c:&c,g:RefCell::new(g),draw:true};
-            k_nearest::k_nearest_mut(tree.get_mut(),cursor,3,kn,self.dim)
+            let mut kn=Kn{c:&c,g:RefCell::new(g),draw:true};
+            k_nearest::k_nearest_mut(tree.get_mut(),cursor,3,&mut kn,self.dim)
         };
         let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.get(),id:a.bot.inner().id,mag:a.mag}).collect();
 
-        /*
-        if vv.len()>3{
-            for i in vv.iter(){
-                print!("{:?},",i.mag);    
-            }
-            println!();
-        }
-        */
 
         if check_naive{
-            
-        
-            let mut vv2={
-                let kn=Kn{c:&c,g:RefCell::new(g),draw:false};
-                k_nearest::naive_mut(tree.get_aabb_bots_mut(),cursor,3,kn)
-            };
-            let mut vv2:Vec<_>=vv2.drain(..).map(|a|Res{rect:*a.bot.get(),id:a.bot.inner().id,mag:a.mag}).collect();
-        
+            let mut kn=Kn{c:&c,g:RefCell::new(g),draw:false};  
+            dinotree_alg::assert::assert_k_nearest(unsafe{tree.get_aabb_bots_mut_not_protected()},cursor,3,&mut kn,self.dim);        
+        }
 
-            assert_eq!(vv.len(),vv2.len());
-
-            let vv_iter=SliceSplitMut::new(&mut vv,|a,b|a.mag==b.mag);
-            let vv2_iter=SliceSplitMut::new(&mut vv2,|a,b|a.mag==b.mag);
-
-            for (a,b) in vv_iter.zip(vv2_iter){
-                a.sort_unstable_by(|a,b|a.id.cmp(&b.id));
-                b.sort_unstable_by(|a,b|a.id.cmp(&b.id));
-                
-
-                for (a,b) in a.iter().zip(b.iter()){
-                    assert_eq!(a.mag,b.mag);
-                    if a.id != b.id{
-                        println!("Fail");
-                    }    
-                }
-
-            }
-            /*
-            for ((mut a,color),mut b) in vv.iter().zip(cols.iter()).zip(vv2.iter()){
-                
-                
-                draw_rect_f32(*color,(a.bots)[0].get().as_ref(),c,g);
-            }
-            */
-        
-        }else{
-            let vv_iter=SliceSplit::new(&mut vv,|a,b|a.mag==b.mag);
+        let vv_iter=SliceSplit::new(&mut vv,|a,b|a.mag==b.mag);
                         
-            for (a,color) in vv_iter.zip(cols.iter()){
-                for b in a.iter(){
-                    draw_rect_f32(*color,b.rect.as_ref(),c,g);
-                }
+        for (a,color) in vv_iter.zip(cols.iter()){
+            for b in a.iter(){
+                draw_rect_f32(*color,b.rect.as_ref(),c,g);
             }
-            
         }
     }   
 }

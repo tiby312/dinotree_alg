@@ -64,6 +64,12 @@ pub struct Bot2{
     id:usize
 }
 
+impl dinotree_alg::assert::HasId for Bot2{
+    fn get_id(&self)->usize{
+        self.id
+    }
+}
+
 pub struct RaycastF32DebugDemo{
     tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot2>,
     counter:f32,
@@ -112,9 +118,11 @@ impl DemoSys for RaycastF32DebugDemo{
     
         let height=self.tree.get_height();
         
+        if check_naive{
+            dinotree_alg::assert::assert_raycast(unsafe{self.tree.get_aabb_bots_mut_not_protected()},self.dim,ray,&mut ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height});
+        }
 
-        //dbg!("START");
-        let test = match raycast::raycast_mut(self.tree.get_mut(),self.dim,ray,ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
+        let test = match raycast::raycast_mut(self.tree.get_mut(),self.dim,ray,&mut ray_f32::RayT{draw:true,c:&c,g:RefCell::new(g),height}){
             Some((bots,dis))=>{
                 let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
                 k.sort();
@@ -124,40 +132,6 @@ impl DemoSys for RaycastF32DebugDemo{
                 None
             }
         };
-
-        //dbg!("END");
-
-        if check_naive{
-
-            let tree_ref=&mut self.tree;
-            
-            
-            let k = match raycast::naive_mut(tree_ref.get_aabb_bots_mut(),ray,ray_f32::RayT{draw:false,c:&c,g:RefCell::new(g),height}){
-                Some((bots,dis))=>{
-                    let mut k:Vec<_>=bots.iter().map(|a|a.inner().id).collect();
-                    k.sort();
-                    Some((k,dis.into_inner()))
-                },
-                None=>{
-                    None
-                }
-            };
-
-            match (&test,&k){
-                (Some(a),Some(b))=>{
-                    assert_eq!(a.1,b.1);
-                    for (a,b) in a.0.iter().zip(b.0.iter()){
-                        assert_eq!(a,b);
-                    }
-                },
-                (None,None)=>{
-                    //Do nothing
-                },
-                _=>{
-                    panic!("fail");
-                }
-            }
-        }
 
         let ray:raycast::Ray<f32>=ray.inner_into();
         

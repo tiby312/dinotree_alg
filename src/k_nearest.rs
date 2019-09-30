@@ -204,13 +204,13 @@ impl<'a,T:HasAabb> ClosestCand<'a,T>{
     }
 }
 
-struct Blap<'a,K:Knearest>{
-    knear:K,
+struct Blap<'a:'b,'b,K:Knearest>{
+    knear:&'b mut K,
     point:Vec2<K::N>,
     closest:ClosestCand<'a,K::T>
 }
 
-impl<'a,K:Knearest> Blap<'a,K>{
+impl<'a:'b,'b,K:Knearest> Blap<'a,'b,K>{
     fn should_traverse_rect(&self,rect:&Rect<K::N>)->bool{
         if let Some(dis) = self.closest.full_and_max_distance(){
             if self.knear.distance_to_rect(self.point,rect)<dis{
@@ -224,12 +224,11 @@ impl<'a,K:Knearest> Blap<'a,K>{
     }
 }
 
-fn recc<'a,
-    //T:HasAabb,
+fn recc<'a:'b,'b,
     N:NodeTrait,
     A: AxisTrait,
     K:Knearest<N=N::Num,T=N::T>,
-    >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<K::N>,blap:&mut Blap<'a,K>){
+    >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<K::N>,blap:&mut Blap<'a,'b,K>){
 
     let ((_depth, nn),rest)=stuff.next();
     let nn=nn.get_mut();
@@ -386,7 +385,7 @@ pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
     
-    pub fn naive_mut<K:Knearest<T=T,N=T::Num>,T:HasAabb>(bots:ProtectedBBoxSlice<T>,point:Vec2<K::N>,num:usize,k:K)->Vec<UnitMut<K::T>>{
+    pub fn naive_mut<'a,K:Knearest<T=T,N=T::Num>,T:HasAabb>(bots:ProtectedBBoxSlice<'a,T>,point:Vec2<K::N>,num:usize,k:&mut K)->Vec<UnitMut<'a,K::T>>{
         //let bots=ProtectedBBoxSlice::new(bots);
 
         let mut closest=ClosestCand::new(num);
@@ -408,10 +407,10 @@ mod mutable{
     }
     
 
-    pub fn k_nearest_mut<
+    pub fn k_nearest_mut<'a,
         A:AxisTrait,
         N:NodeTrait,
-        >(tree:&mut DinoTree<A,N>,point:Vec2<N::Num>,num:usize,knear: impl Knearest<N=N::Num,T=N::T>,rect:Rect<N::Num>)->Vec<UnitMut<N::T>>{
+        >(tree:&'a mut DinoTree<A,N>,point:Vec2<N::Num>,num:usize,knear: &mut impl Knearest<N=N::Num,T=N::T>,rect:Rect<N::Num>)->Vec<UnitMut<'a,N::T>>{
         
         let axis=tree.axis();
         

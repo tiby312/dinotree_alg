@@ -1,59 +1,6 @@
 use dinotree::axgeom;
 use dinotree::prelude::*;
-use dinotree_alg::*;
-
-pub trait HasId{
-    fn get_id(&self)->usize;
-}
-
-
-#[derive(Debug,Eq,Ord,PartialOrd,PartialEq)]
-struct IDPair{
-    a:usize,
-    b:usize
-}
-
-impl IDPair{
-    pub fn new(a:usize,b:usize)->IDPair{
-        let (a,b)=if a<=b{
-            (a,b)
-        }else{
-            (b,a)
-        };
-        IDPair{a,b}
-    }
-}
-
-
-pub fn assert_query<T:HasInner>(bots:&mut [T]) where T::Inner: HasId{
-    
-    let mut naive_pairs=Vec::new();
-    colfind::query_naive_mut(bots,|mut a,mut b|{
-        naive_pairs.push(IDPair::new(a.inner().get_id(),b.inner().get_id()));
-    });
-
-
-    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
-    
-    let mut dinotree_pairs=Vec::new();
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-        dinotree_pairs.push(IDPair::new(a.inner().get_id(),b.inner().get_id()));
-    });
-
-
-    naive_pairs.sort();
-    dinotree_pairs.sort();
-
-    let res = naive_pairs.iter().zip(dinotree_pairs.iter()).fold(true,|acc,(a,b)|{
-        acc & (*a==*b)
-    });
-
-
-    assert!(res,"naive={} dinotree={}",naive_pairs.len(),dinotree_pairs.len());
-}
-
-
-
+use dinotree_alg::assert::*;
 
 pub struct Bot{
     id:usize,

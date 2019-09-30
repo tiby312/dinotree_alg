@@ -29,6 +29,8 @@ mod inner_prelude {
 }
 
 
+pub mod assert;
+
 ///aabb broadphase collision detection
 pub mod colfind;
 

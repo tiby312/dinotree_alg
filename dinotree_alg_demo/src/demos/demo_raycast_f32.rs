@@ -62,8 +62,16 @@ impl<'a,'c:'a> RayTrait for RayT<'a,'c>{
 
 #[derive(Copy,Clone)]
 struct Bot{
+    id:usize,
     center:Vec2<f32>
 }
+
+impl dinotree_alg::assert::HasId for Bot{
+    fn get_id(&self)->usize{
+        self.id
+    }
+}
+
 
 pub struct RaycastF32Demo{
     tree:DinoTreeOwned<axgeom::XAXISS,F32n,Bot>,
@@ -75,7 +83,7 @@ impl RaycastF32Demo{
     pub fn new(dim:Rect<F32n>)->Self{
         
         let radius=20.0;
-        let vv=UniformRandGen::new(dim.inner_into()).map(|center|Bot{center}).take(100).collect();
+        let vv=UniformRandGen::new(dim.inner_into()).enumerate().map(|(id,center)|Bot{id,center}).take(100).collect();
 
         let tree = create_owned_par(axgeom::XAXISS,vv,|a|{
             Rect::from_point(a.center,vec2same(radius)).inner_try_into().unwrap()
@@ -87,7 +95,7 @@ impl RaycastF32Demo{
 }
 
 impl DemoSys for RaycastF32Demo{
-    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         
         //Draw bots
         for bot in self.tree.get_aabb_bots().iter(){
@@ -109,8 +117,12 @@ impl DemoSys for RaycastF32Demo{
                 };
 
                 
+                if check_naive{
+                    dinotree_alg::assert::assert_raycast(unsafe{tree.get_aabb_bots_mut_not_protected()},self.dim,ray,&mut RayT{radius:self.radius,c:&c,g});
+                }
 
-                let res=raycast::raycast_mut(tree.get_mut(),self.dim,ray,RayT{radius:self.radius,c:&c,g});
+
+                let res=raycast::raycast_mut(tree.get_mut(),self.dim,ray,&mut RayT{radius:self.radius,c:&c,g});
                 
                 let (ppx,ppy)=if let Some(k)=res{
                     let ppx=ray.point.x+ray.dir.x*k.1;
