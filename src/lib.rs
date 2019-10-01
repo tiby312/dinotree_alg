@@ -28,7 +28,7 @@ mod inner_prelude {
     pub(crate) use crate::tools;
 }
 
-
+///Functions that will compare query output to the naive solution.
 pub mod assert;
 
 ///aabb broadphase collision detection
