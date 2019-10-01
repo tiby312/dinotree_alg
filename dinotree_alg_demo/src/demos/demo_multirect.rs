@@ -3,8 +3,15 @@ use dinotree_alg::rect::*;
 
 #[derive(Copy,Clone,Debug)]
 struct Bot{
+    id:usize,
     radius:Vec2<i32>,
     pos:Vec2<i32>
+}
+
+impl dinotree_alg::assert::HasId for Bot{
+    fn get_id(&self)->usize{
+        self.id
+    }
 }
 
 pub struct MultiRectDemo{
@@ -16,10 +23,10 @@ impl MultiRectDemo{
 
 
         let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).
-            take(200).map(|(pos,radius)|{
+            take(200).enumerate().map(|(id,(pos,radius))|{
             let pos=pos.inner_as();
             let radius=radius.inner_as();
-            Bot{pos,radius}
+            Bot{pos,radius,id}
         }).collect();
 
 
@@ -31,7 +38,7 @@ impl MultiRectDemo{
 }
 
 impl DemoSys for MultiRectDemo{
-    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,_check_naive:bool){
+    fn step(&mut self,cursor:Vec2<F32n>,c:&piston_window::Context,g:&mut piston_window::G2d,check_naive:bool){
         
         
         
@@ -44,7 +51,17 @@ impl DemoSys for MultiRectDemo{
         let r1=axgeom::Rect::new(cc.x-100,cc.x+100,cc.y-100,cc.y+100);
         let r2=axgeom::Rect::new(100,400,100,400);
 
-        
+        if check_naive{
+            use dinotree_alg::assert::*;
+            assert_for_all_in_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r1);
+            assert_for_all_in_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r2);
+            assert_for_all_intersect_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r1);
+            assert_for_all_intersect_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r2);
+
+            //TODO test something with 
+            //assert_for_all_not_in_rect_mut
+        }
+
         {
             let mut rects=MultiRectMut::new(self.tree.get_mut());
 

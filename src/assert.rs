@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use crate::raycast;
 use crate::colfind;
 use crate::k_nearest;
-
+use crate::rect;
 
 pub trait HasId{
     fn get_id(&self)->usize;
@@ -64,12 +64,71 @@ pub fn assert_k_nearest<T:HasInner>(bots:&mut [T],point:Vec2<T::Num>,num:usize,k
     }
 }
 
+
+pub fn assert_for_all_not_in_rect_mut<T:HasInner>(bots:&mut [T],rect:&axgeom::Rect<T::Num>) where T::Inner:HasId{
+    let mut naive_res=Vec::new();
+    rect::naive_for_all_not_in_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
+
+    let mut dinotree_res=Vec::new();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
+    rect::for_all_not_in_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
+
+    naive_res.sort();
+    dinotree_res.sort();
+
+    let res = naive_res.iter().zip(dinotree_res.iter()).fold(true,|acc,(a,b)|{
+        acc & (*a==*b)
+    });
+
+    assert!(res);
+}
+
+pub fn assert_for_all_in_rect_mut<T:HasInner>(bots:&mut [T],rect:&axgeom::Rect<T::Num>) where T::Inner:HasId{
+    let mut naive_res=Vec::new();
+    rect::naive_for_all_in_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
+
+    let mut dinotree_res=Vec::new();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
+    rect::for_all_in_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
+
+    naive_res.sort();
+    dinotree_res.sort();
+
+    let res = naive_res.iter().zip(dinotree_res.iter()).fold(true,|acc,(a,b)|{
+        acc & (*a==*b)
+    });
+
+    assert!(res);
+}
+
+pub fn assert_for_all_intersect_rect_mut<T:HasInner>(bots:&mut [T],rect:&axgeom::Rect<T::Num>) where T::Inner:HasId{
+    let mut naive_res=Vec::new();
+    rect::naive_for_all_intersect_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
+
+    let mut dinotree_res=Vec::new();
+    let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
+    rect::for_all_intersect_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
+
+    naive_res.sort();
+    dinotree_res.sort();
+
+    let res = naive_res.iter().zip(dinotree_res.iter()).fold(true,|acc,(a,b)|{
+        acc & (*a==*b)
+    });
+
+    assert!(res);
+}
+
 pub fn assert_raycast<T:HasInner>(
     bots:&mut [T],
     rect:axgeom::Rect<T::Num>,
     ray:raycast::Ray<T::Num>,
     rtrait:&mut impl raycast::RayTrait<N=T::Num,T=T>) where T::Inner: HasId, T::Num:core::fmt::Debug{
-    
+
+    //TODO need to make sure naive also restricts its search to be in just the rect.
+    //Otherwise in some cases this function will panic when it shouldnt.
+
+
     let res_naive=raycast::naive_mut(ProtectedBBoxSlice::new(bots),ray,rtrait).map(|mut a|
         (a.0.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,a.1) );
 
