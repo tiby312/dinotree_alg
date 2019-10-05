@@ -214,58 +214,45 @@ impl DemoSys for GridDemo{
             a/256.0
         }
         
-        for (bot,cols) in k.iter_mut().zip(self.colors.iter()){
-            let rect=&axgeom::Rect::from_point(bot.inner().pos,vec2(radius,radius));
+        for (bot,cols) in self.bots.iter_mut().zip(self.colors.iter()){
+            let rect=&axgeom::Rect::from_point(bot.pos,vec2(radius,radius));
             
 
-            let cols=match self.grid.detect_collision(bot.inner_mut(),radius){
-                Some(rr)=>{
+            let cols=[conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6];
 
-                    if let Some(k)=collide_with_rect::<f32>(bot.get().as_ref(),&rr){
-                        let wallx=rr.x;
-                        let wally=rr.y;
-                        let fric=0.5;
-                        let vel=bot.inner().vel;
-                        let wall_move=match k{
-                            WallSide::Above=>{
-                                [None,Some((wally.left-radius,-vel.y*fric))]
-                            },
-                            WallSide::Below=>{
-                                [None,Some((wally.right+radius,-vel.y*fric))]
-                            },
-                            WallSide::LeftOf=>{
-                                [Some((wallx.left-radius,-vel.x*fric)),None]
-                            },
-                            WallSide::RightOf=>{
-                                [Some((wallx.right+radius,-vel.x*fric)),None]
-                            }
-                        };
-
-                        let bot=bot.inner_mut();
-                        if let Some((pos,vel))=wall_move[0]{
-                            bot.pos.x=pos;
-                            bot.vel.x=vel;
+            
+            if let Some(rr)= self.grid.detect_collision(bot,radius){
+                if let Some(k)=collide_with_rect::<f32>(rect,&rr){
+                    let wallx=rr.x;
+                    let wally=rr.y;
+                    let fric=0.5;
+                    let vel=bot.vel;
+                    let wall_move=match k{
+                        WallSide::Above=>{
+                            [None,Some((wally.left-radius,-vel.y*fric))]
+                        },
+                        WallSide::Below=>{
+                            [None,Some((wally.right+radius,-vel.y*fric))]
+                        },
+                        WallSide::LeftOf=>{
+                            [Some((wallx.left-radius,-vel.x*fric)),None]
+                        },
+                        WallSide::RightOf=>{
+                            [Some((wallx.right+radius,-vel.x*fric)),None]
                         }
+                    };
 
-                        if let Some((pos,vel))=wall_move[1]{    
-                            bot.pos.y=pos;
-                            bot.vel.y=vel;
-                        }
+                    if let Some((pos,vel))=wall_move[0]{
+                        bot.pos.x=pos;
+                        bot.vel.x=vel;
                     }
 
-
-                    //draw_rect_f32([0.0,0.0,0.5,1.0],&rr,c,g);
-            
-                    //[0.0,0.0,0.0,1.0]
-                    [conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6]
-        
-                },
-                None=>{
-                   [conv(cols[0]),conv(cols[1]),conv(cols[2]),0.6]
-        
+                    if let Some((pos,vel))=wall_move[1]{    
+                        bot.pos.y=pos;
+                        bot.vel.y=vel;
+                    }
                 }
-            };
-
+            }
 
            draw_rect_f32(cols,rect,c,g);
             

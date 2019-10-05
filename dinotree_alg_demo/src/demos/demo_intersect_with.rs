@@ -132,6 +132,7 @@ impl DemoSys for IntersectWithDemo{
                 let _ = duckduckgeo::repel(a.inner_mut(),b.inner_mut(),0.001,2.0);
             });
 
+
         }
 
         for wall in walls.iter(){

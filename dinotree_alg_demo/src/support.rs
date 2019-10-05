@@ -50,9 +50,9 @@ impl std::iter::FusedIterator for ColorGenerator{}
 impl Iterator for ColorGenerator{
     type Item=[u8;3];
     fn next(&mut self)->Option<Self::Item>{
-        self.rgb[0]=((self.rgb[0] as usize + 1) % 256) as u8;
-        self.rgb[1]=((self.rgb[1] as usize + 1) % 256) as u8;
-        self.rgb[2]=((self.rgb[2] as usize + 1) % 256) as u8;
+        self.rgb[0]=((self.rgb[0] as usize + 2) % 256) as u8;
+        self.rgb[1]=((self.rgb[1] as usize + 3) % 256) as u8;
+        self.rgb[2]=((self.rgb[2] as usize + 5) % 256) as u8;
         Some(self.rgb)
     }
 }

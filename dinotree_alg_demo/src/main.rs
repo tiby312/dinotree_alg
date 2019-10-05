@@ -23,7 +23,7 @@ mod demo_iter{
         pub fn new()->DemoIter{
             DemoIter(0)
         }
-        pub fn next(&mut self,area:Vec2<u32>)->Box<DemoSys>{
+        pub fn next(&mut self,area:Vec2<u32>)->Box<dyn DemoSys>{
             
             let curr=self.0;
             
@@ -32,7 +32,7 @@ mod demo_iter{
             let area:Rect<F32n>=area.inner_try_into().unwrap();
 
             
-            let k:Box<DemoSys>=match curr{
+            let k:Box<dyn DemoSys>=match curr{
                 0=>{Box::new(demo_raycast_f32_debug::RaycastF32DebugDemo::new(area))}
                 1=>{Box::new(demo_raycast_f32::RaycastF32Demo::new(area))}
                 2=>{Box::new(demo_liquid::LiquidDemo::new(area))},

@@ -1,7 +1,6 @@
 use crate::support::prelude::*;
 use dinotree_alg::k_nearest;
 use std::cell::RefCell;
-use k_nearest::SliceSplitMut;
 use k_nearest::SliceSplit;
 
 
@@ -59,8 +58,7 @@ impl DemoSys for KnearestDemo{
         impl<'a,'c:'a> k_nearest::Knearest for Kn<'a,'c>{
             type T=BBoxPtr<F32n,Bot>;
             type N=F32n;
-            //type Inner=Bot;
-
+            
             fn distance_to_bot(&self,point:Vec2<Self::N>,bot:&Self::T)->Self::N{
                 if self.draw{
                     draw_rect_f32([0.0,0.0,1.0,0.5],bot.get().as_ref(),self.c,&mut self.g.borrow_mut());
@@ -109,14 +107,13 @@ impl DemoSys for KnearestDemo{
 
         struct Res{
             rect:Rect<F32n>,
-            id:usize,
             mag:F32n
         }
         let mut vv={
             let mut kn=Kn{c:&c,g:RefCell::new(g),draw:true};
             k_nearest::k_nearest_mut(tree.get_mut(),cursor,3,&mut kn,self.dim)
         };
-        let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.get(),id:a.bot.inner().id,mag:a.mag}).collect();
+        let mut vv:Vec<_>=vv.drain(..).map(|a|Res{rect:*a.bot.get(),mag:a.mag}).collect();
 
 
         if check_naive{

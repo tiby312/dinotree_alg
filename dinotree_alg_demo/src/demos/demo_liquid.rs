@@ -117,24 +117,7 @@ impl DemoSys for LiquidDemo{
         
         
         colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
-            //let arr = [a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
             let _ = a.inner_mut().solve(b.inner_mut(),radius);
-
-            /*
-            let arr=[a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
-
-            let col=if mag>0.0{
-                [1.0, 0.0, 0.0, 1.0]
-            }else{
-                [0.0, 0.0, 1.0, 1.0]
-            };
-
-            line(col, // black
-                 2.0, // radius of line
-                 arr, // [x0, y0, x1,y1] coordinates of line
-                 c.transform,
-                 g);
-            */
         });
 
 
@@ -153,16 +136,6 @@ impl DemoSys for LiquidDemo{
         }        
         
         for b in self.bots.iter_mut(){
-            /*
-            let arr=[b.pos.x as f64,b.pos.y as f64,(b.pos.x+b.acc.x*500.0) as f64,(b.pos.y+b.acc.y*500.0) as f64];
-
-            line([0.0,0.0,0.0,0.8], // black
-                 2.0, // radius of line
-                 arr, // [x0, y0, x1,y1] coordinates of line
-                 c.transform,
-                 g);
-
-            */
             b.pos+=b.vel;
             b.vel+=b.acc;
             b.acc=vec2same(0.0);

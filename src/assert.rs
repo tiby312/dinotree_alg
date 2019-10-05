@@ -40,6 +40,8 @@ struct UnitMut2<N>{
     mag:N
 }
 
+
+
 pub fn assert_k_nearest<T:HasInner>(bots:&mut [T],point:Vec2<T::Num>,num:usize,knear:&mut impl k_nearest::Knearest<N=T::Num,T=T>,rect:Rect<T::Num>) where T::Inner: HasId{
 
     let mut res_naive:Vec<_>=k_nearest::naive_mut(ProtectedBBoxSlice::new(bots),point,num,knear).drain(..).map(|a|UnitMut2{id:a.bot.inner().get_id(),mag:a.mag}).collect();
@@ -75,6 +77,7 @@ pub fn assert_for_all_not_in_rect_mut<T:HasInner>(bots:&mut [T],rect:&axgeom::Re
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
     rect::for_all_not_in_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
 
+    assert_eq!(naive_res.len(),dinotree_res.len());
     naive_res.sort();
     dinotree_res.sort();
 
@@ -93,6 +96,7 @@ pub fn assert_for_all_in_rect_mut<T:HasInner>(bots:&mut [T],rect:&axgeom::Rect<T
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
     rect::for_all_in_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
 
+    assert_eq!(naive_res.len(),dinotree_res.len());
     naive_res.sort();
     dinotree_res.sort();
 
@@ -111,6 +115,7 @@ pub fn assert_for_all_intersect_rect_mut<T:HasInner>(bots:&mut [T],rect:&axgeom:
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
     rect::for_all_intersect_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
 
+    assert_eq!(naive_res.len(),dinotree_res.len());
     naive_res.sort();
     dinotree_res.sort();
 

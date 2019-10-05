@@ -15,7 +15,8 @@ impl dinotree_alg::assert::HasId for Bot{
 }
 
 pub struct MultiRectDemo{
-    tree:DinoTreeOwned<axgeom::XAXISS,i32,Bot>
+    tree:DinoTreeOwned<axgeom::XAXISS,i32,Bot>,
+    dim:Rect<i32>
 }
 impl MultiRectDemo{
     pub fn new(dim:Rect<F32n>)->MultiRectDemo{
@@ -24,7 +25,8 @@ impl MultiRectDemo{
 
         let bots:Vec<_>=UniformRandGen::new(dim.inner_into()).with_radius(5.0,20.0).
             take(200).enumerate().map(|(id,(pos,radius))|{
-            let pos=pos.inner_as();
+            let pos:Vec2<f32>=pos;
+            let pos=pos.inner_as::<i32>();
             let radius=radius.inner_as();
             Bot{pos,radius,id}
         }).collect();
@@ -33,7 +35,7 @@ impl MultiRectDemo{
         let tree = create_owned_par(axgeom::XAXISS,bots,|b|{ Rect::from_point(b.pos,b.radius)});
 
 
-        MultiRectDemo{tree}
+        MultiRectDemo{dim:dim.inner_into::<f32>().inner_as(),tree}
     }
 }
 
@@ -57,11 +59,10 @@ impl DemoSys for MultiRectDemo{
             assert_for_all_in_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r2);
             assert_for_all_intersect_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r1);
             assert_for_all_intersect_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r2);
-
-            //TODO test something with 
-            //assert_for_all_not_in_rect_mut
+            assert_for_all_not_in_rect_mut(unsafe{self.tree.get_aabb_bots_mut_not_protected()},&r1);
         }
 
+        //test MultiRect
         {
             let mut rects=MultiRectMut::new(self.tree.get_mut());
 
@@ -96,24 +97,18 @@ impl DemoSys for MultiRectDemo{
         
 
         
+        //test for_all_intersect_rect
         for_all_intersect_rect(self.tree.get(),&r1,|a|{
             draw_rect_i32([0.0,0.0,1.0,0.3],a.get(),c,g);
         });
         
-        /* TODO do something else here
-        let mut rects=multirect::multi_rect_mut(&mut self.tree);
-        let _ = multirect::collide_two_rect_parallel(&mut rects,axgeom::YAXISS,&r1,&r2,|a,b|{
-            
-            let arr=[a.inner.pos.x as f64,a.inner.pos.y as f64,b.inner.pos.x as f64,b.inner.pos.y as f64];
-            line([0.0, 0.0, 0.0, 0.2], // black
-                 1.0, // radius of line
-                 arr, // [x0, y0, x1,y1] coordinates of line
-                 c.transform,
-                 g);
-        });
-        */
 
-
-        
+        //test for_all_not_in_rect_mut
+        let mut r1=self.dim.clone();
+        r1.grow(-40);
+        draw_rect_i32([1.0,0.0,0.0,0.2],&r1,c,g);
+        for_all_not_in_rect_mut(self.tree.get_mut(),&r1,|b|{
+            draw_rect_i32([1.0,0.0,1.0,0.5],b.get(),c,g);
+        });        
    }
 }
