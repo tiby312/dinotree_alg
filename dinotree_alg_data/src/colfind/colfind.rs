@@ -70,7 +70,7 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,ypositi
         };
         
         let c3={
-            if num_bots<50000{
+            if num_bots<20000{
                 let mut bb:Vec<BBox<isize,Bot>>=bots.iter().map(|b|{
                     BBox::new(axgeom::Rect::from_point(b.pos,vec2same(5)),*b)
                 }).collect();

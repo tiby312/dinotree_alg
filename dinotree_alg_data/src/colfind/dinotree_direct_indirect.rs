@@ -163,10 +163,10 @@ impl Record{
         const NAMES:&[&str]=&["direct seq","direct par","indirect seq","indirect par","default seq","default par"];
         {
             let k=fg.axes2d()
-                .set_title(&format!("Dinotree vs Direct vs Indirect with grow {} and {}",grow,name), &[])
+                .set_title(&format!("Dinotree vs Direct vs Indirect with abspiral-size(x,{},{})",grow,name), &[])
                 .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
                 .set_x_label("Number of Elements", &[])
-                .set_y_label("Number of Comparisons", &[]);
+                .set_y_label("Time in Seconds", &[]);
 
             let x=records.iter().map(|a|a.num_bots);
             for index in 0..6{
@@ -184,7 +184,7 @@ fn handle_num_bots<T:TestTrait>(fb:&mut FigureBuilder,grow:f32,val:T,name:&str){
     let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
-    for num_bots in (0..40_000).rev().step_by(500){
+    for num_bots in (0..30_000).rev().step_by(200){
         
         let mut bots:Vec<Bot<T>>=s.clone().take(num_bots).map(|pos|{
             Bot{num:0,pos:pos.inner_as(),_val:val.clone()}

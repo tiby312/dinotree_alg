@@ -15,6 +15,8 @@ fn theory(scene:&mut bot::BotScene)->(usize,usize){
         prop.collide(a.inner_mut(),b.inner_mut());
     });
 
+    black_box(tree);
+
     let b=counter.into_inner();
     (a,(b-a))
 }
@@ -35,6 +37,7 @@ fn theory_not_sorted(scene:&mut bot::BotScene)->(usize,usize){
         prop.collide(a.inner_mut(),b.inner_mut());
     });
 
+    black_box(tree);
 
     let b=counter.into_inner();
     (a,(b-a))
@@ -55,6 +58,8 @@ fn bench_seq(scene:&mut bot::BotScene)->(f64,f64){
         prop.collide(a.inner_mut(),b.inner_mut());
     });
 
+    black_box(tree);
+
     let b=instant_to_sec(instant.elapsed());
     (a,(b-a))
 }
@@ -72,6 +77,8 @@ fn bench_par(scene:&mut bot::BotScene)->(f64,f64){
     colfind::QueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
         prop.collide(a.inner_mut(),b.inner_mut());
     });
+
+    black_box(tree);
 
     let b=instant_to_sec(instant.elapsed());
     (a,(b-a))
@@ -94,6 +101,8 @@ fn bench_not_sorted_seq(scene:&mut bot::BotScene)->(f64,f64){
         prop.collide(a.inner_mut(),b.inner_mut());
     });
 
+    black_box(tree);
+
     let b=instant_to_sec(instant.elapsed());
 
     (a,(b-a))
@@ -115,6 +124,8 @@ fn bench_not_sorted_par(scene:&mut bot::BotScene)->(f64,f64){
     colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|mut a,mut b| {
         prop.collide(a.inner_mut(),b.inner_mut());
     });
+
+    black_box(tree);
 
     let b=instant_to_sec(instant.elapsed());
 
@@ -201,7 +212,7 @@ fn handle_num_bots_bench_inner(fg:&mut Figure,grow:f32,position:u32){
 
     let mut rects:Vec<Record>=Vec::new();
 
-    for num_bots in (1..20_000).step_by(200){
+    for num_bots in (1..10_000).step_by(100){
 
         let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build();
         
@@ -229,7 +240,7 @@ fn handle_num_bots_bench_inner(fg:&mut Figure,grow:f32,position:u32){
 
     fg.axes2d()
         .set_pos_grid(2,1,position)
-        .set_title(&format!("Rebal vs Query Benches with a spiral grow of {}",grow), &[])
+        .set_title(&format!("Rebal vs Query Benches with abspiral(x,{})",grow), &[])
         .lines(x.clone(), y1,  &[Caption("Rebal Sequential"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Query Sequential"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y3,  &[Caption("Rebal Parallel"), Color("red"), LineWidth(2.0)])
@@ -296,7 +307,7 @@ fn handle_grow_bench(fb:&mut FigureBuilder){
     let mut fg= fb.build("construction_vs_query_grow_bench");
 
     fg.axes2d()
-        .set_title("Rebal vs Query Benches with abspiral(80000,y)", &[])
+        .set_title("Rebal vs Query Benches with abspiral(80000,x)", &[])
         .lines(x.clone(), y1,  &[Caption("Rebal Sequential"), Color("blue"), LineWidth(2.0)])
         .lines(x.clone(), y2,  &[Caption("Query Sequential"), Color("green"), LineWidth(2.0)])
         .lines(x.clone(), y3,  &[Caption("Rebal Parallel"), Color("red"), LineWidth(2.0)])

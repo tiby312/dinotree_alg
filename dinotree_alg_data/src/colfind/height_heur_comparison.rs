@@ -29,13 +29,10 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
 
 
 pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
-    
-    
-    let counter=datanum::Counter::new();
+        
+    let mut counter=datanum::Counter::new();
 
-
-
-    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));
+    let mut bb=create_bbox_mut(bots,|b|datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5))));
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_height(height).build_seq();
 
@@ -44,9 +41,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
         b.inner_mut().num+=2;            
     });
     
-
     counter.into_inner()
-
 }
 
 pub fn create_bots(num_bots:usize)->Vec<Bot>{

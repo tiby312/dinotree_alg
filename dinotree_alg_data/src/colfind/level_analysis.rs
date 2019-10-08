@@ -226,6 +226,10 @@ pub fn handle_bench(fb:&mut FigureBuilder){
 		  	}
 		}
 	}
+
+	//TODO try stuff with different aabb sizes.
+	//abspiral_aabb(5.0,grow) vs abspiral_aabb(10.0,grow)
+
 	let mut fg=fb.build("level_analysis_bench_rebal");
 	draw_graph(&format!("Rebal Level Bench with abspiral({},x)",num_bots),&mut fg,&res1,true,0);
 	draw_graph(&format!("Rebal Level Bench with abspiral({},x)",num_bots),&mut fg,&res2,true,1);

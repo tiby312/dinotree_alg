@@ -87,10 +87,10 @@ impl Record{
         const NAMES:&[&str]=&["RebalStrat Checked Par","RebalStrat Not Checked Par","RebalStrat Checked Seq","RebalStrat Not Checked Seq"];
         {
             let k=fg.axes2d()
-                .set_title(&"Checked vs Unchecked binning indexing with a spiral grow of 1".to_string(), &[])
+                .set_title(&"Checked vs Unchecked binning indexing with abspiral(x,1.0)".to_string(), &[])
                 .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
-                .set_x_label("Number of Elements", &[])
-                .set_y_label("Number of Comparisons", &[]);
+                .set_x_label("Number of Objects", &[])
+                .set_y_label("Time in Seconds", &[]);
 
             let x=records.iter().map(|a|a.num_bots);
             for index in 0..4{
