@@ -139,16 +139,13 @@ fn complete_test<T:TestTrait>(bots:&mut [Bot<T>])->CompleteTestResult{
 
 
 pub fn handle(fb:&mut FigureBuilder){ 
-    handle_num_bots(fb,0.1,[0u8;8],"8 bytes");
-    handle_num_bots(fb,0.1,[0u8;32],"32 bytes");
-    handle_num_bots(fb,0.1,[0u8;128],"128 bytes");
-    handle_num_bots(fb,0.1,[0u8;256],"256 bytes");
+    handle_num_bots(fb,0.1,[0u8;8],"8_bytes");
+    handle_num_bots(fb,0.1,[0u8;32],"32_bytes");
+    handle_num_bots(fb,0.1,[0u8;128],"128_bytes");
+    handle_num_bots(fb,0.1,[0u8;256],"256_bytes");
 
-
-    handle_num_bots(fb,0.01,[0u8;128],"128 bytes");
-    handle_num_bots(fb,1.0,[0u8;128],"128 bytes");
-    
-    
+    handle_num_bots(fb,0.01,[0u8;128],"128_bytes");
+    handle_num_bots(fb,1.0,[0u8;128],"128_bytes");    
 }
 
 

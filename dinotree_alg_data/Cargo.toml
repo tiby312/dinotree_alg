@@ -10,6 +10,6 @@ dinotree_alg = {path=".."}
 dists = "*"
 gnuplot = "*"
 duckduckgeo = "*"
-dinotree ="0.5"
+dinotree = {path="../../dinotree"}
 rayon = "1.2"
 num_cpus = "*"
