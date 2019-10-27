@@ -156,11 +156,11 @@ struct Record {
     arr:CompleteTestResult    
 }
 impl Record{
-    fn draw(records:&[Record],fg:&mut Figure,grow:f32,name:&str,func:impl Fn(TestResult)->f64){
+    fn draw(records:&[Record],fg:&mut Figure,grow:f32,construction:&str,name:&str,func:impl Fn(TestResult)->f64){
         const NAMES:&[&str]=&["direct seq","direct par","indirect seq","indirect par","default seq","default par"];
         {
             let k=fg.axes2d()
-                .set_title(&format!("Dinotree vs Direct vs Indirect with abspiral-size(x,{},{})",grow,name), &[])
+                .set_title(&format!("{} Dinotree vs Direct vs Indirect with abspiral-size(x,{},{})",construction,grow,name), &[])
                 .set_legend(Graph(1.0),Graph(1.0),&[LegendOption::Horizontal],&[])
                 .set_x_label("Number of Elements", &[])
                 .set_y_label("Time in Seconds", &[]);
@@ -194,12 +194,12 @@ fn handle_num_bots<T:TestTrait>(fb:&mut FigureBuilder,grow:f32,val:T,name:&str){
 
 
     let mut fg= fb.build(&format!("dinotree_direct_indirect_rebal_{}_{}",grow,name));
-    Record::draw(&rects,&mut fg,grow,name,|a|a.rebal);
+    Record::draw(&rects,&mut fg,grow,"Construction:",name,|a|a.rebal);
     fb.finish(fg);
 
 
     let mut fg= fb.build(&format!("dinotree_direct_indirect_query_{}_{}",grow,name));
-    Record::draw(&rects,&mut fg,grow,name,|a|a.query);
+    Record::draw(&rects,&mut fg,grow,"Querying:",name,|a|a.query);
     fb.finish(fg);
 
 

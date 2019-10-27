@@ -179,18 +179,19 @@ fn handle2d(fb:&mut FigureBuilder){
         bench: f64
     }
 
-    let mut theory_records=Vec::new();
+    //let mut theory_records=Vec::new();
     let mut bench_records:Vec<BenchRecord>=Vec::new();
     
 
     let mut bots=create_bots(10_000);
 
 
-
+    /*
     for height in 2..13{
         let num_comparison=handle_theory_inner(&mut bots,height);
         theory_records.push(Record{height,num_comparison});
     }
+    */
 
     for height in (2..13).flat_map(|a|std::iter::repeat(a).take(20)){
         let bench=handle_bench_inner(&mut bots,height);
@@ -199,20 +200,21 @@ fn handle2d(fb:&mut FigureBuilder){
 
 
 
-    let rects=&mut theory_records;
+    //let rects=&mut theory_records;
     use gnuplot::*;
-    let x=rects.iter().map(|a|a.height);
-    let y=rects.iter().map(|a|a.num_comparison);
+    //let x=rects.iter().map(|a|a.height);
+    //let y=rects.iter().map(|a|a.num_comparison);
 
     let mut fg = fb.build("height_heuristic");
 
+    /*
     fg.axes2d()
         .set_pos_grid(2,1,0)
         .set_title("Number of Comparisons with different numbers of objects per node with abspiral(10000,2.0)", &[])
         .lines(x, y,  &[Color("blue"), LineWidth(2.0)])
         .set_x_label("Tree Height", &[])
         .set_y_label("Number of Comparisons", &[]);
-
+    */
  
 
 
@@ -221,7 +223,7 @@ fn handle2d(fb:&mut FigureBuilder){
 
 
     fg.axes2d()
-        .set_pos_grid(2,1,1)
+        //.set_pos_grid(2,1,1)
         .set_title("Bench times with different numbers of objects per node (seq,colfind) with abspiral(10000,2.0)", &[])
         .points(x,y,&[Color("blue"), LineWidth(2.0)])
         .set_x_label("Tree Height", &[])

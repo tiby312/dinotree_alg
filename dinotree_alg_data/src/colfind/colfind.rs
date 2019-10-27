@@ -300,8 +300,13 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
             counter.into_inner()
         };
 
-        records.push(Record{num_bots,num_comparison_alg:c1,num_comparison_naive:c2,num_comparison_sweep:c3,num_comparison_nosort:c4});
+        let r=Record{num_bots,num_comparison_alg:c1,num_comparison_naive:c2,num_comparison_sweep:c3,num_comparison_nosort:c4};
+        
+        records.push(r);
     }
+
+    //dbg!(records.last().unwrap());
+        
 
     let rects=&mut records;
     use gnuplot::*;
@@ -310,6 +315,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
     let y2=rects.iter().take_while(|a|a.num_comparison_naive.is_some()).map(|a|a.num_comparison_naive.unwrap());
     let y3=rects.iter().take_while(|a|a.num_comparison_sweep.is_some()).map(|a|a.num_comparison_sweep.unwrap());
     let y4=rects.iter().map(|a|a.num_comparison_nosort);
+    
 
     fg.axes2d()
         .set_pos_grid(2,1,yposition as u32)
@@ -321,6 +327,7 @@ fn handle_theory_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str,yposit
         .lines(x.clone(), y4,  &[Caption("KDTree"), Color("brown"), LineWidth(2.0)])
         .set_x_label("Number of Objects", &[])
         .set_y_label("Number of Comparisons", &[]);
+        
 }
 
 
