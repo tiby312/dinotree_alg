@@ -43,7 +43,7 @@ fn handle1(fb: &mut FigureBuilder) {
     let x = rects.iter().map(|a| a.0);
     let y = rects.iter().map(|a| a.1);
     fg.axes2d()
-    	.set_title("Number of Intersections with 10000 objects with a AABB for size 10 and a spiral separation of 17.0", &[])
+    	.set_title("Number of Intersections with abspiral(10000,grow)", &[])
         .lines(x, y,  &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("Spiral Grow", &[])
         .set_y_label("Number of Intersections", &[]);
@@ -71,7 +71,7 @@ fn handle2(fb: &mut FigureBuilder) {
         .set_pos_grid(2, 2, 0)
         .set_x_range(Fix(-500.0), Fix(500.0))
         .set_y_range(Fix(-500.0), Fix(500.0))
-        .set_title("Grow of 0.1 of size 10000", &[])
+        .set_title("abspiral(10000,0.1)", &[])
         .points(ax, ay, &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
@@ -85,7 +85,7 @@ fn handle2(fb: &mut FigureBuilder) {
         .set_pos_grid(2, 2, 1)
         .set_x_range(Fix(-500.0), Fix(500.0))
         .set_y_range(Fix(-500.0), Fix(500.0))
-        .set_title("Grow of 0.3 of size 10000", &[])
+        .set_title("abspiral(10000,0.3)", &[])
         .points(ax, ay, &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
@@ -100,7 +100,7 @@ fn handle2(fb: &mut FigureBuilder) {
         .set_pos_grid(2, 2, 2)
         .set_x_range(Fix(-500.0), Fix(500.0))
         .set_y_range(Fix(-500.0), Fix(500.0))
-        .set_title("Grow of 3.0 of size 10000", &[])
+        .set_title("abspiral(10000,3.0)", &[])
         .points(ax, ay, &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
@@ -116,7 +116,7 @@ fn handle2(fb: &mut FigureBuilder) {
         .set_pos_grid(2, 2, 3)
         .set_x_range(Fix(-500.0), Fix(500.0))
         .set_y_range(Fix(-500.0), Fix(500.0))
-        .set_title("Grow of 6.0 of size 10000", &[])
+        .set_title("abspiral(10000,6.0)", &[])
         .points(ax, ay, &[Caption("Naive"), Color("red"), LineWidth(4.0)])
         .set_x_label("x", &[])
         .set_y_label("y", &[]);
