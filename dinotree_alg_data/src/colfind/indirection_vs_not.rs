@@ -254,11 +254,9 @@ black_box(bots2);
 pub fn handle_bench(fb:&mut FigureBuilder){
            
     let s1=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
-    //let s2=dists::spiral::Spiral::new([400.0,400.0],12.0,0.05);
-
+    
     let mut fg=fb.build("direct_vs_indirect");
     handle_bench_inner(&s1.clone(),&mut fg,"Direct vs Indirect");
-    //handle_bench_inner(&s2.clone(),&mut fg,"Comparison of space partitioning algs with abspiral(x,0.05)",1);
     
     fb.finish(fg);
 }
