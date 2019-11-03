@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 dists= "*"
-dinotree="0.5"
+dinotree={path="../../dinotree"}
 duckduckgeo = "*"
 dinotree_alg = {path=".."}
 piston_window = "0.103.0"

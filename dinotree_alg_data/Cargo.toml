@@ -7,9 +7,9 @@ edition = "2018"
 
 [dependencies]
 dinotree_alg = {path=".."}
-dists = "*"
+dists = {path="../../dists"}
 gnuplot = "*"
-duckduckgeo = "*"
+duckduckgeo = {path="../../duckduckgeo"}
 dinotree = {path="../../dinotree"}
 rayon = "1.2"
 num_cpus = "*"
