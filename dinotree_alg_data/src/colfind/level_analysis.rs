@@ -84,7 +84,7 @@ fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Th
 	    //let s=dists::spiral::Spiral::new([400.0,400.0],12.0,grow);
 
 	    //let num_bots=10_000;
-	    let mut bots=&mut scene.bots;
+	    let bots=&mut scene.bots;
 	    let prop=&scene.bot_prop;
 	    /*
 	    let mut bots:Vec<Bot>=s.take(num_bots).enumerate().map(|(_e,pos)|{
@@ -151,7 +151,7 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 	    }).collect();
 	    */
 
-	    let mut bots=&mut scene.bots;
+	    let bots=&mut scene.bots;
 	    let prop=&scene.bot_prop;
 	    let mut times1=LevelTimer::new();
 

@@ -180,12 +180,6 @@ fn handle2d(fb:&mut FigureBuilder){
 
 
     #[derive(Debug)]
-    struct Record {
-        height: usize,
-        num_comparison: usize
-    }
-
-    #[derive(Debug)]
     struct BenchRecord {
         height: usize,
         bench: f64

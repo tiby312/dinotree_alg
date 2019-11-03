@@ -6,7 +6,7 @@ use std::time::Instant;
 use crate::inner_prelude::*;
 
 
-use duckduckgeo::bot::*;
+
 
 
 

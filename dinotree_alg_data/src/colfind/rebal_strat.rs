@@ -14,7 +14,7 @@ fn test1(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
-    let mut bots=&mut scene.bots;
+    let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
     let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
     
@@ -31,7 +31,7 @@ fn test2(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
-    let mut bots=&mut scene.bots;
+    let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
 
     let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
@@ -50,7 +50,7 @@ fn test3(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
-    let mut bots=&mut scene.bots;
+    let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
 
     let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
@@ -69,7 +69,7 @@ fn test4(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
-    let mut bots=&mut scene.bots;
+    let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
 
     let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
