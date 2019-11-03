@@ -9,7 +9,7 @@ impl<T:Copy+Send+Sync> TestTrait for T{}
 #[derive(Copy,Clone)]
 pub struct Bot<T>{
     num:usize,
-    pos:Vec2<isize>,
+    pos:Vec2<i32>,
     _val:T
 }
 
@@ -75,14 +75,14 @@ impl CompleteTestResult{
     }
 }
 
-fn complete_test<T:TestTrait>(bots:&mut [Bot<T>])->CompleteTestResult{
-    let aabb_make=|b:&Bot<T>|axgeom::Rect::from_point(b.pos,vec2same(5));
-    
-    
+fn complete_test<T:TestTrait>(scene:&mut bot::BotScene<Bot<T>>)->CompleteTestResult{
+    let mut bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+
     let (direct_seq,direct_par) = {
-        let mut direct:Vec<_>=bots.iter().map(|a|BBox::new(aabb_make(a),*a)).collect();
+        let mut direct:Vec<_>=bots.iter().map(|b|BBox::new(prop.create_bbox_i32(b.pos),*b)).collect();
         
-        let collide=|mut b:ProtectedBBox<BBox<isize,Bot<T>>>,mut c:ProtectedBBox<BBox<isize,Bot<T>>>|{
+        let collide=|mut b:ProtectedBBox<BBox<i32,Bot<T>>>,mut c:ProtectedBBox<BBox<i32,Bot<T>>>|{
             b.inner_mut().num+=1;
             c.inner_mut().num+=1;
         };
@@ -95,11 +95,11 @@ fn complete_test<T:TestTrait>(bots:&mut [Bot<T>])->CompleteTestResult{
     };
 
     let (indirect_seq,indirect_par) = {
-        let mut direct:Vec<_>=bots.iter().map(|a|BBox::new(aabb_make(a),*a)).collect();
+        let mut direct:Vec<_>=bots.iter().map(|b|BBox::new(prop.create_bbox_i32(b.pos),*b)).collect();
         let mut indirect:Vec<_>=direct.iter_mut().map(|a|BBoxIndirect::new(a)).collect();
 
     
-        let collide=|mut b:ProtectedBBox<BBoxIndirect<BBox<isize,Bot<T>>>>,mut c:ProtectedBBox<BBoxIndirect<BBox<isize,Bot<T>>>>|{
+        let collide=|mut b:ProtectedBBox<BBoxIndirect<BBox<i32,Bot<T>>>>,mut c:ProtectedBBox<BBoxIndirect<BBox<i32,Bot<T>>>>|{
             b.inner_mut().num+=1;
             c.inner_mut().num+=1;
         };
@@ -110,10 +110,10 @@ fn complete_test<T:TestTrait>(bots:&mut [Bot<T>])->CompleteTestResult{
         )
     };
     let (default_seq,default_par) = {
-        let mut default=create_bbox_mut(bots,aabb_make);
+        let mut default=create_bbox_mut(&mut bots,|b|prop.create_bbox_i32(b.pos));
+        
 
-
-        let collide=|mut b:ProtectedBBox<BBoxMut<isize,Bot<T>>>,mut c:ProtectedBBox<BBoxMut<isize,Bot<T>>>|{
+        let collide=|mut b:ProtectedBBox<BBoxMut<i32,Bot<T>>>,mut c:ProtectedBBox<BBoxMut<i32,Bot<T>>>|{
             b.inner_mut().num+=1;
             c.inner_mut().num+=1;
         };
@@ -178,17 +178,13 @@ impl Record{
 
 fn handle_num_bots<T:TestTrait>(fb:&mut FigureBuilder,grow:f32,val:T,name:&str){
     
-    let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
     for num_bots in (0..30_000).rev().step_by(200){
-        
-        let mut bots:Vec<Bot<T>>=s.clone().take(num_bots).map(|pos|{
-            Bot{num:0,pos:pos.inner_as(),_val:val.clone()}
-        }).collect();
-
-
-        let r=Record{num_bots,arr:complete_test(&mut bots)};
+    
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build_specialized(|pos|Bot{pos:pos.inner_as(),num:0,_val:val.clone()});
+    
+        let r=Record{num_bots,arr:complete_test(&mut scene)};
         rects.push(r);      
     }
 
@@ -201,7 +197,6 @@ fn handle_num_bots<T:TestTrait>(fb:&mut FigureBuilder,grow:f32,val:T,name:&str){
     let mut fg= fb.build(&format!("dinotree_direct_indirect_query_{}_{}",grow,name));
     Record::draw(&rects,&mut fg,grow,"Querying:",name,|a|a.query);
     fb.finish(fg);
-
 
 }
 

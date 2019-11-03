@@ -5,6 +5,38 @@ use std::time::Duration;
 use std::time::Instant;
 use crate::inner_prelude::*;
 
+
+use duckduckgeo::bot::*;
+
+
+
+
+/*
+
+pub type ABSpiralIter=dists::spiral::Spiral;
+pub fn create_abspiral(grow:f32)->dists::spiral::Spiral{
+    dists::spiral::Spiral::new([0.0,0.0],12.0,grow)
+}
+
+pub fn abspiral_aabb_create(pos:Vec2<f32>)->Rect<f32>{
+    axgeom::Rect::from_point(pos,vec2same(5.0))
+}
+
+
+pub fn abspiral_aabb_create_isize(pos:Vec2<i32>)->Rect<i32>{
+    axgeom::Rect::from_point(pos,vec2same(5))
+}
+
+pub fn create_abspiral_isize(grow:f32)->dists::spiral::SpiralInt{
+    dists::spiral::Spiral::new([0.0,0.0],12.0,grow).as_isize();
+    
+}
+*/
+
+
+
+
+
  
 fn into_secs(elapsed: std::time::Duration) -> f64 {
     (elapsed.as_secs() as f64) + (f64::from(elapsed.subsec_nanos()) / 1_000_000_000.0)

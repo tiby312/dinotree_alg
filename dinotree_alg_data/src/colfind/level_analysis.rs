@@ -10,7 +10,7 @@ use dinotree_alg::colfind;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:Vec2<isize>,
+    pos:Vec2<i32>,
     num:usize
 }
 
@@ -78,24 +78,31 @@ struct TheoryRes{
 fn handle_inner_theory(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<TheoryRes>{
 	let mut rects=Vec::new();
     for grow in grow_iter{
+        
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build_specialized(|pos|Bot{num:0,pos:pos.inner_as()});
                
-	    let s=dists::spiral::Spiral::new([400.0,400.0],12.0,grow);
+	    //let s=dists::spiral::Spiral::new([400.0,400.0],12.0,grow);
 
 	    //let num_bots=10_000;
-
+	    let mut bots=&mut scene.bots;
+	    let prop=&scene.bot_prop;
+	    /*
 	    let mut bots:Vec<Bot>=s.take(num_bots).enumerate().map(|(_e,pos)|{
 	        Bot{num:0,pos:pos.inner_as()}
 	    }).collect();
-	
-
+		*/
+    
 	    {
 	    	let mut counter=datanum::Counter::new();
 
 		    let mut levelc=level_counter::LevelCounter::new(&mut counter);
 
+		    let mut bb=create_bbox_mut(bots,|b|datanum::from_rect(&mut counter,prop.create_bbox_i32(b.pos)));
+		    /*
 		    let mut bb=create_bbox_mut(&mut bots,|b|{
 				datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5)))  
 		    });
+		    */
 
 			let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_with_splitter_seq(&mut levelc);
 	
@@ -133,6 +140,8 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 	let mut rects=Vec::new();
     for grow in grow_iter{
                
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build_specialized(|pos|Bot{num:0,pos:pos.inner_as()});
+        /*
 	    let s=dists::spiral::Spiral::new([400.0,400.0],12.0,grow);
 
 	    //let num_bots=10_000;
@@ -140,13 +149,18 @@ fn handle_inner_bench(num_bots:usize,grow_iter:impl Iterator<Item=f32>)->Vec<Ben
 	    let mut bots:Vec<Bot>=s.take(num_bots).enumerate().map(|(_e,pos)|{
 	        Bot{num:0,pos:pos.inner_as()}
 	    }).collect();
-	    
+	    */
+
+	    let mut bots=&mut scene.bots;
+	    let prop=&scene.bot_prop;
 	    let mut times1=LevelTimer::new();
 
 		
+		let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
+		   /*
 	    let mut bb=create_bbox_mut(&mut bots,|b|{
         	axgeom::Rect::from_point(b.pos,vec2same(5))  
-	    });
+	    });*/
 
 		let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_with_splitter_seq(&mut times1);
 

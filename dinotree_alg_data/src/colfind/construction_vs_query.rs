@@ -1,6 +1,6 @@
 use crate::inner_prelude::*;
 
-fn theory(scene:&mut bot::BotScene)->(usize,usize){
+fn theory(scene:&mut bot::BotScene<bot::Bot>)->(usize,usize){
     
     let mut counter=datanum::Counter::new();
 
@@ -22,7 +22,7 @@ fn theory(scene:&mut bot::BotScene)->(usize,usize){
 }
 
 
-fn theory_not_sorted(scene:&mut bot::BotScene)->(usize,usize){
+fn theory_not_sorted(scene:&mut bot::BotScene<bot::Bot>)->(usize,usize){
     let mut counter=datanum::Counter::new();
 
     let bots=&mut scene.bots;
@@ -44,7 +44,7 @@ fn theory_not_sorted(scene:&mut bot::BotScene)->(usize,usize){
 }
 
 
-fn bench_seq(scene:&mut bot::BotScene)->(f64,f64){
+fn bench_seq(scene:&mut bot::BotScene<bot::Bot>)->(f64,f64){
     let instant=Instant::now();
     let bots=&mut scene.bots;
     let prop=&scene.bot_prop;
@@ -64,7 +64,7 @@ fn bench_seq(scene:&mut bot::BotScene)->(f64,f64){
     (a,(b-a))
 }
 
-fn bench_par(scene:&mut bot::BotScene)->(f64,f64){
+fn bench_par(scene:&mut bot::BotScene<bot::Bot>)->(f64,f64){
     
     let instant=Instant::now();
     let bots=&mut scene.bots;
@@ -85,7 +85,7 @@ fn bench_par(scene:&mut bot::BotScene)->(f64,f64){
 }
 
 
-fn bench_not_sorted_seq(scene:&mut bot::BotScene)->(f64,f64){
+fn bench_not_sorted_seq(scene:&mut bot::BotScene<bot::Bot>)->(f64,f64){
     
     let instant=Instant::now();
 
@@ -108,7 +108,7 @@ fn bench_not_sorted_seq(scene:&mut bot::BotScene)->(f64,f64){
     (a,(b-a))
 }
 
-fn bench_not_sorted_par(scene:&mut bot::BotScene)->(f64,f64){
+fn bench_not_sorted_par(scene:&mut bot::BotScene<bot::Bot>)->(f64,f64){
     
     let instant=Instant::now();
 

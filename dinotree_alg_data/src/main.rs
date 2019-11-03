@@ -26,7 +26,6 @@ mod inner_prelude{
     pub use std::time::Instant;
     pub use std::time::Duration;
     pub use crate::black_box;
-    //pub use num_traits::cast::AsPrimitive;
     pub use axgeom::Rect;
     pub use axgeom::ordered_float::NotNan;
     pub use axgeom::Vec2;
@@ -136,12 +135,12 @@ fn main() {
             
             //done
             run_test!(&mut fb,colfind::colfind::handle_theory);
-            /*
+            
             run_test!(&mut fb,colfind::construction_vs_query::handle_theory); 
             run_test!(&mut fb,spiral::handle);
             run_test!(&mut fb,colfind::level_analysis::handle_theory);
             run_test!(&mut fb,colfind::theory_colfind_3d::handle);
-            */
+            
         }
         "bench"=>{
             
@@ -150,10 +149,11 @@ fn main() {
             std::fs::create_dir_all(&path).expect("failed to create directory");
             let mut fb=FigureBuilder::new(folder);
             
-            /*
+            run_test!(&mut fb,colfind::colfind::handle_bench);
+            
+            
             //done
             run_test!(&mut fb,colfind::rebal_strat::handle);
-            run_test!(&mut fb,colfind::colfind::handle_bench);
             run_test!(&mut fb,colfind::dinotree_direct_indirect::handle);
             run_test!(&mut fb,colfind::construction_vs_query::handle_bench);
             run_test!(&mut fb,colfind::colfind::handle_bench);
@@ -165,7 +165,7 @@ fn main() {
             //TODO this has a problem!!!!
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb,colfind::height_heur_comparison::handle);
-            */
+            
 
             //nbody::theory::handle(&mut fb);
         },

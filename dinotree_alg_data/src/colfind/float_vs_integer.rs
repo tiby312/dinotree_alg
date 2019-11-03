@@ -3,14 +3,14 @@ use crate::inner_prelude::*;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:Vec2<isize>,
+    pos:Vec2<i32>,
     num:usize
 }
 
 
 
 
-fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
+fn handle_bench(fg:&mut Figure){
 
     #[derive(Debug)]
     struct Record {
@@ -30,19 +30,29 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
     let mut records=Vec::new();
 
     for num_bots in (0..80000).step_by(200){
+        let mut scene=bot::BotSceneBuilder::new(num_bots).build_specialized(|pos|Bot{num:0,pos:pos.inner_as()});
+        let prop=&scene.bot_prop;
+        let mut bots=&mut scene.bots;
+        /*
         let s2=s.clone();
 
         let mut bots:Vec<Bot>=s2.take(num_bots).enumerate().map(|(_e,pos)|{
             Bot{num:0,pos:pos.inner_as()}
         }).collect();
-        
+        */
+            
 
         let bench_integer={
             let instant=Instant::now();
             
+            /*
             let mut bb=create_bbox_mut(&mut bots,|b|{
                 axgeom::Rect::from_point(b.pos.inner_as::<i32>(),vec2same(5))
             });
+            */
+            let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos)); 
+        
+
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_seq();
 
@@ -58,9 +68,10 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_i64={
             let instant=Instant::now();
             
-            let mut bb=create_bbox_mut(&mut bots,|b|{
-                axgeom::Rect::from_point(b.pos.inner_as::<i64>(),vec2same(5))
-            });
+            
+            let r=vec2same(prop.radius.dis() as i64);
+            let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos.inner_as::<i64>(),r)); 
+        
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_seq();
 
@@ -76,8 +87,10 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
             let instant=Instant::now();
 
 
+            let r=vec2same(prop.radius.dis() as f32);
+            
             let mut bb=create_bbox_mut(&mut bots,|b|{
-                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
+                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as::<f32>(),r).inner_try_into().unwrap();
                 k
             });
 
@@ -94,8 +107,10 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_float_par={
             let instant=Instant::now();
 
+            let r=vec2same(prop.radius.dis() as f32);
+        
             let mut bb=create_bbox_mut(&mut bots,|b|{
-                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
+                let k:Rect<NotNan<f32>>=axgeom::Rect::from_point(b.pos.inner_as(),r).inner_try_into().unwrap();
                 k
             });
 
@@ -112,8 +127,11 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_integer_par={
             let instant=Instant::now();
             
+            let r=vec2same(prop.radius.dis() as i32);
+        
+
             let mut bb=create_bbox_mut(&mut bots,|b|{
-                axgeom::Rect::from_point(b.pos.inner_as::<i32>(),vec2same(5))
+                axgeom::Rect::from_point(b.pos.inner_as::<i32>(),r)
             });
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_par();
@@ -130,8 +148,10 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_i64_par={
             let instant=Instant::now();
             
+            let r=vec2same(prop.radius.dis() as i64);
+        
             let mut bb=create_bbox_mut(&mut bots,|b|{
-                axgeom::Rect::from_point(b.pos.inner_as::<i64>(),vec2same(5))
+                axgeom::Rect::from_point(b.pos.inner_as::<i64>(),r)
             });
 
             let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).build_par();
@@ -147,8 +167,10 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
         let bench_f64={
             let instant=Instant::now();
 
+            let r=vec2same(prop.radius.dis() as f64);
+
             let mut bb=create_bbox_mut(&mut bots,|b|{
-                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
+                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),r).inner_try_into().unwrap();
                 k
             });
 
@@ -164,9 +186,10 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
         let bench_f64_par={
             let instant=Instant::now();
+            let r=vec2same(prop.radius.dis() as f64);
 
             let mut bb=create_bbox_mut(&mut bots,|b|{
-                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),vec2same(5.0)).inner_try_into().unwrap();
+                let k:Rect<NotNan<f64>>=axgeom::Rect::from_point(b.pos.inner_as(),r).inner_try_into().unwrap();
                 k
             });
 
@@ -216,9 +239,9 @@ fn handle_bench(s:&dists::spiral::Spiral,fg:&mut Figure){
 
 
 pub fn handle(fb:&mut FigureBuilder){
-    let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
+    //let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
 
     let mut fg=fb.build("float_vs_integer");
-    handle_bench(&s,&mut fg);
+    handle_bench(&mut fg);
     fb.finish(fg);
 }

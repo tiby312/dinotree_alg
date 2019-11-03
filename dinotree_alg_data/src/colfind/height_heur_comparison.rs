@@ -2,19 +2,23 @@ use crate::inner_prelude::*;
 
 #[derive(Copy,Clone)]
 pub struct Bot{
-    pos:Vec2<isize>,
+    pos:Vec2<i32>,
     num:usize
 }
 
 
 
 
-pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
+pub fn handle_bench_inner(scene:&mut bot::BotScene<Bot>,height:usize)->f64{
 
     
     let instant=Instant::now();
 
-    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
+    
+    //let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_height(height).build_seq();
 
@@ -28,11 +32,15 @@ pub fn handle_bench_inner(bots:&mut [Bot],height:usize)->f64{
 }
 
 
-pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
+pub fn handle_theory_inner(scene:&mut bot::BotScene<Bot>,height:usize)->usize{
         
     let mut counter=datanum::Counter::new();
 
-    let mut bb=create_bbox_mut(bots,|b|datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5))));
+    let bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut bb=create_bbox_mut(bots,|b|datanum::from_rect(&mut counter,prop.create_bbox_i32(b.pos)));
+    
+    //let mut bb=create_bbox_mut(bots,|b|datanum::from_rect(&mut counter,axgeom::Rect::from_point(b.pos,vec2same(5))));
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_height(height).build_seq();
 
@@ -44,6 +52,7 @@ pub fn handle_theory_inner(bots:&mut [Bot],height:usize)->usize{
     counter.into_inner()
 }
 
+/*
 pub fn create_bots(num_bots:usize)->Vec<Bot>{
     let s=dists::spiral::Spiral::new([400.0,400.0],12.0,2.0);
 
@@ -51,6 +60,7 @@ pub fn create_bots(num_bots:usize)->Vec<Bot>{
         Bot{num:0,pos:pos.inner_as()}
     }).collect()    
 }
+*/
 
 
 pub fn handle(fb:&mut FigureBuilder){
@@ -81,10 +91,12 @@ fn handle_lowest(fb:&mut FigureBuilder){
         let mut minimum_theory=None;
         let max_height=(num_bots as f64).log2() as usize;
 
-        let mut bots=create_bots(num_bots);
+        //let mut bots=create_bots(num_bots);
+        let mut scene=bot::BotSceneBuilder::new(num_bots).build_specialized(|pos|Bot{pos:pos.inner_as(),num:0});
+        
         for height in 1..max_height{
-            let theory=handle_theory_inner(&mut bots,height);
-            let bench=handle_bench_inner(&mut bots,height);
+            let theory=handle_theory_inner(&mut scene,height);
+            let bench=handle_bench_inner(&mut scene,height);
             match minimum{
                 Some((a,_b))=>{
                     if bench<a{
@@ -183,8 +195,9 @@ fn handle2d(fb:&mut FigureBuilder){
     let mut bench_records:Vec<BenchRecord>=Vec::new();
     
 
-    let mut bots=create_bots(10_000);
-
+    //let mut bots=create_bots(10_000);
+    let mut scene=bot::BotSceneBuilder::new(10_000).build_specialized(|pos|Bot{pos:pos.inner_as(),num:0});
+        
 
     /*
     for height in 2..13{
@@ -194,7 +207,7 @@ fn handle2d(fb:&mut FigureBuilder){
     */
 
     for height in (2..13).flat_map(|a|std::iter::repeat(a).take(20)){
-        let bench=handle_bench_inner(&mut bots,height);
+        let bench=handle_bench_inner(&mut scene,height);
         bench_records.push(BenchRecord{height,bench});
     }
 

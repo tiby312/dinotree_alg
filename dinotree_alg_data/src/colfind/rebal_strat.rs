@@ -4,18 +4,20 @@ use crate::inner_prelude::*;
 #[derive(Copy,Clone)]
 pub struct Bot{
     _num:usize,
-    pos:Vec2<isize>
+    pos:Vec2<i32>
 }
 
 
 
 
-fn test1(bots:&mut [Bot])->f64{
+fn test1(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
+    let mut bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+    let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
     
-    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::Checked).build_par();
     
 
@@ -25,11 +27,15 @@ fn test1(bots:&mut [Bot])->f64{
 }
 
 
-fn test2(bots:&mut [Bot])->f64{
+fn test2(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
-    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));   
+    let mut bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+
+    let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
+    
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::NotChecked).build_par();
     
     
@@ -40,11 +46,15 @@ fn test2(bots:&mut [Bot])->f64{
 
 
 
-fn test3(bots:&mut [Bot])->f64{
+fn test3(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
-    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));      
+    let mut bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+
+    let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
+    
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::Checked).build_seq();
     
     
@@ -55,11 +65,15 @@ fn test3(bots:&mut [Bot])->f64{
 
 
 
-fn test4(bots:&mut [Bot])->f64{
+fn test4(scene:&mut bot::BotScene<Bot>)->f64{
     
     let instant=Instant::now();
 
-    let mut bb=create_bbox_mut(bots,|b|axgeom::Rect::from_point(b.pos,vec2same(5)));         
+    let mut bots=&mut scene.bots;
+    let prop=&scene.bot_prop;
+
+    let mut bb=create_bbox_mut(bots,|b|prop.create_bbox_i32(b.pos));
+    
     let tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bb).with_bin_strat(BinStrat::NotChecked).build_seq();
     
     
@@ -103,19 +117,16 @@ impl Record{
 
 fn handle_num_bots(fb:&mut FigureBuilder,grow:f32){
     
-    let s=dists::spiral::Spiral::new([400.0,400.0],17.0,grow);
     let mut rects=Vec::new();
 
     for num_bots in (0..700_000).step_by(5000){
 
-        let mut bots:Vec<Bot>=s.clone().take(num_bots).map(|pos|{
-            Bot{_num:0,pos:pos.inner_as()}
-        }).collect();
-
-        let arr=[test1(&mut bots),
-                test2(&mut bots),
-                test3(&mut bots),
-                test4(&mut bots)];
+        let mut scene=bot::BotSceneBuilder::new(num_bots).with_grow(grow).build_specialized(|pos|Bot{pos:pos.inner_as(),_num:0});
+        
+        let arr=[test1(&mut scene),
+                test2(&mut scene),
+                test3(&mut scene),
+                test4(&mut scene)];
 
         let r=Record{num_bots,arr};
         rects.push(r);      
