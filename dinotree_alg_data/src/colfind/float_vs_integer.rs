@@ -219,6 +219,7 @@ fn handle_bench(fg: &mut Figure) {
             "Comparison of DinoTree Performance With Different Number Types With abspiral(x,2.0)",
             &[],
         )
+        .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
         .lines(
             x.clone(),
             y1,

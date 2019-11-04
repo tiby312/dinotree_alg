@@ -209,6 +209,7 @@ pub fn handle_bench(fb: &mut FigureBuilder) {
             .axes2d()
             .set_pos_grid(2, 1, pos as u32)
             .set_title(title_name, &[])
+            .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
             .set_x_label("Spiral Grow", &[])
             .set_y_label("Time taken in Seconds", &[]);
 
@@ -298,6 +299,7 @@ pub fn handle_theory(fb: &mut FigureBuilder) {
             .axes2d()
             .set_pos_grid(2, 1, pos as u32)
             .set_title(title_name, &[])
+            .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
             .set_x_label("Spiral Grow", &[])
             .set_y_label("Number of Comparisons", &[]);
 

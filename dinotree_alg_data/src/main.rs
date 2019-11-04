@@ -53,21 +53,17 @@ impl FigureBuilder {
     fn build(&mut self, filename: &str) -> Figure {
         let mut fg = Figure::new();
         let ss = format!("{}/{}.gplot", &self.folder, filename);
-        //println!("Creating {}",ss);
 
-        //let ss2=format!("{}/{}.png",&self.folder,filename);
         fg.set_terminal("pngcairo size 800,600 enhanced font 'Veranda,10'", "");
 
         fg.set_pre_commands("set output system(\"echo $FILE_PATH\")");
 
         //set terminal pngcairo size 350,262 enhanced font 'Verdana,10'
         self.last_file_name = Some(ss);
-        //fg.set_terminal("pngcairo",&ss);// size 1024, 800
         fg
     }
     fn finish(&mut self, figure: Figure) {
         figure.echo_to_file(&self.last_file_name.take().unwrap());
-        //figure.show();
     }
 }
 
@@ -138,7 +134,7 @@ fn main() {
             let path = Path::new(folder.trim_end_matches('/'));
             std::fs::create_dir_all(&path).expect("failed to create directory");
             let mut fb = FigureBuilder::new(folder);
-
+            
             run_test!(&mut fb, colfind::colfind::handle_bench);
 
             //done
@@ -153,7 +149,7 @@ fn main() {
             //TODO this has a problem!!!!
             //This is the one thats interesting to see what the results are on phone/vs/laptop
             run_test!(&mut fb, colfind::height_heur_comparison::handle);
-
+            
             //nbody::theory::handle(&mut fb);
         }
         "graph" => {
@@ -164,9 +160,6 @@ fn main() {
             let target_folder = args[3].clone();
             let target_dir = Path::new(target_folder.trim_end_matches('/'));
             std::fs::create_dir_all(&target_dir).expect("failed to create directory");
-
-            //println!("path={:?}",path);
-            //println!("target dir={:?}",target_dir);
 
             let paths = std::fs::read_dir(path).unwrap();
 
@@ -186,8 +179,6 @@ fn main() {
 
                         let mut command = std::process::Command::new("gnuplot");
 
-                        //println!("filename={:?}",path.path().file_stem().unwrap());
-
                         let new_path = path.path().with_extension("png");
                         let blag = Path::new(new_path.file_name().unwrap().to_str().unwrap());
                         let file_path = target_dir.join(blag);
@@ -195,8 +186,6 @@ fn main() {
                             .arg("-p")
                             .arg(path_command)
                             .env("FILE_PATH", file_path.to_str().unwrap());
-
-                        //println!("command={:?}",command);
 
                         command.status()
                             .expect("Couldn't spawn gnuplot. Make sure it is installed and available in PATH.");

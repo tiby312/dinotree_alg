@@ -93,6 +93,29 @@ fn test3(scene: &mut bot::BotScene<Bot>) -> Res {
     }
 }
 
+fn test4(scene: &mut bot::BotScene<Bot>) -> Res {
+    let bots = &mut scene.bots;
+    let prop = &scene.bot_prop;
+
+    let mut counter = datanum::Counter::new();
+
+    let mut bots = create_bbox_mut(bots, |b| {
+        datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
+    });
+
+    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bots).build_not_sorted_par();
+
+    let mut num_pairs = 0;
+
+    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|_a, _b| {
+        num_pairs += 1;
+    });
+
+    Res {
+        num_pairs,
+        num_comparison: counter.into_inner(),
+    }
+}
 #[derive(Debug)]
 struct Record {
     num_bots: usize,
@@ -101,6 +124,7 @@ struct Record {
     z1: usize,
     z2: usize,
     z3: Option<usize>,
+    z4: usize
 }
 
 fn handle_spiral(fb: &mut FigureBuilder) {
@@ -125,6 +149,7 @@ fn handle_spiral(fb: &mut FigureBuilder) {
             } else {
                 None
             };
+            let z4 = test4(&mut scene);
 
             black_box(scene.bots.drain(..).map(|a| a.num).count());
 
@@ -139,6 +164,7 @@ fn handle_spiral(fb: &mut FigureBuilder) {
             let z1 = z1.num_comparison;
             let z2 = z2.num_comparison;
             let z3 = z3.map(|a| a.num_comparison);
+            let z4 = z4.num_comparison;
             let r = Record {
                 num_bots,
                 grow,
@@ -146,6 +172,7 @@ fn handle_spiral(fb: &mut FigureBuilder) {
                 z1,
                 z2,
                 z3,
+                z4
             };
             rects.push(r);
         }
@@ -159,6 +186,7 @@ fn draw_rects(rects: &mut [Record], fb: &mut FigureBuilder, name1: &str) {
         let y = rects.iter().map(|a| a.grow);
         let z1 = rects.iter().map(|a| a.z1 as f32);
         let z2 = rects.iter().map(|a| a.z2 as f32);
+        let z4 = rects.iter().map(|a| a.z4 as f32);
 
         let (x2, y2, z3) = {
             let ii = rects.iter().filter(|a| a.z3.is_some());
@@ -173,7 +201,7 @@ fn draw_rects(rects: &mut [Record], fb: &mut FigureBuilder, name1: &str) {
 
         fg.axes3d()
             .set_view(110.0, 30.0)
-            .set_title("Comparison of Sweep and Prune versus Dinotree", &[])
+            .set_title("Comparison of Algs with abspiral(n,grow)", &[])
             .set_x_label("Number of Objects", &[])
             .set_y_label("Spareness of Objects", &[])
             .set_z_label(
@@ -210,6 +238,17 @@ fn draw_rects(rects: &mut [Record], fb: &mut FigureBuilder, name1: &str) {
                     Caption("Naive"),
                     PointSymbol('o'),
                     Color("green"),
+                    PointSize(0.5),
+                ],
+            )
+            .points(
+                x.clone(),
+                y.clone(),
+                z4.clone(),
+                &[
+                    Caption("KdTree"),
+                    PointSymbol('o'),
+                    Color("blue"),
                     PointSize(0.5),
                 ],
             );

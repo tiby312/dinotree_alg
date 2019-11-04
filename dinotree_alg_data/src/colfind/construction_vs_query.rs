@@ -170,6 +170,7 @@ fn handle_num_bots_theory_inner(fg: &mut Figure, grow: f32, counter: u32) {
             &format!("Rebal vs Query Comparisons with a spiral grow of {}", grow),
             &[],
         )
+        .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
         .lines(
             x.clone(),
             y1,
@@ -241,6 +242,7 @@ fn handle_num_bots_bench_inner(fg: &mut Figure, grow: f32, position: u32) {
             &format!("Rebal vs Query Benches with abspiral(x,{})", grow),
             &[],
         )
+        .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
         .lines(
             x.clone(),
             y1,
@@ -358,6 +360,7 @@ fn handle_grow_bench(fb: &mut FigureBuilder) {
 
     fg.axes2d()
         .set_title("Rebal vs Query Benches with abspiral(80000,x)", &[])
+        .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
         .lines(
             x.clone(),
             y1,
@@ -471,6 +474,7 @@ fn handle_grow_theory(fb: &mut FigureBuilder) {
 
     fg.axes2d()
         .set_title("Rebal vs Query Comparisons with 80,000 objects", &[])
+        .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
         .lines(
             x.clone(),
             y1,
