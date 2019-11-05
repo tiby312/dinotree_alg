@@ -2,7 +2,6 @@ use crate::inner_prelude::*;
 
 #[derive(Copy, Clone)]
 pub struct Bot {
-    num: usize,
     pos: Vec2<i32>,
 }
 
@@ -123,14 +122,14 @@ struct Record {
     num_pairs: usize,
     z1: usize,
     z2: usize,
-    z3: Option<usize>,
+    z3: usize,
     z4: usize
 }
 
 fn handle_spiral(fb: &mut FigureBuilder) {
     let mut rects = Vec::new();
 
-    for num_bots in (0..10000).step_by(1000) {
+    for num_bots in (0..6000).step_by(500) {
         for grow in (0usize..100).map(|a| {
             let a: f32 = a as f32;
             0.0005 + a * 0.0001
@@ -138,32 +137,27 @@ fn handle_spiral(fb: &mut FigureBuilder) {
             let mut scene = bot::BotSceneBuilder::new(num_bots)
                 .with_grow(grow)
                 .build_specialized(|pos| Bot {
-                    num: 0,
                     pos: pos.inner_as(),
                 });
 
             let z1 = test1(&mut scene);
             let z2 = test2(&mut scene);
-            let z3 = if num_bots < 8000 {
-                Some(test3(&mut scene))
-            } else {
-                None
-            };
+            let z3 = test3(&mut scene);
             let z4 = test4(&mut scene);
 
-            black_box(scene.bots.drain(..).map(|a| a.num).count());
+            //black_box(scene.bots.drain(..).map(|a| a.num).count());
+            black_box(scene);
+
 
             let num_pairs = {
                 assert_eq!(z1.num_pairs, z2.num_pairs);
-                if let Some(z3) = &z3 {
-                    assert_eq!(z2.num_pairs, z3.num_pairs);
-                }
+                assert_eq!(z2.num_pairs, z3.num_pairs);
                 z1.num_pairs
             };
 
             let z1 = z1.num_comparison;
             let z2 = z2.num_comparison;
-            let z3 = z3.map(|a| a.num_comparison);
+            let z3 = z3.num_comparison;
             let z4 = z4.num_comparison;
             let r = Record {
                 num_bots,
@@ -186,8 +180,10 @@ fn draw_rects(rects: &mut [Record], fb: &mut FigureBuilder, name1: &str) {
         let y = rects.iter().map(|a| a.grow);
         let z1 = rects.iter().map(|a| a.z1 as f32);
         let z2 = rects.iter().map(|a| a.z2 as f32);
+        let z3 = rects.iter().map(|a| a.z3 as f32);
         let z4 = rects.iter().map(|a| a.z4 as f32);
 
+        /*
         let (x2, y2, z3) = {
             let ii = rects.iter().filter(|a| a.z3.is_some());
             let x = ii.clone().map(|a| a.num_bots as f32);
@@ -196,6 +192,7 @@ fn draw_rects(rects: &mut [Record], fb: &mut FigureBuilder, name1: &str) {
 
             (x, y, z3)
         };
+        */
 
         let mut fg = fb.build(name1);
 
@@ -231,8 +228,8 @@ fn draw_rects(rects: &mut [Record], fb: &mut FigureBuilder, name1: &str) {
                 ],
             )
             .points(
-                x2.clone(),
-                y2.clone(),
+                x.clone(),
+                y.clone(),
                 z3.clone(),
                 &[
                     Caption("Naive"),

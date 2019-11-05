@@ -369,7 +369,7 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Sen
             //into two independant ones, and we can do this all over again for the two children.
             //potentially in parlalel.
            
-            match join.next(depth){
+            match join.next(){
                 par::ParResult::Parallel([dleft,dright])=>{
                     let mut n2=ncontext.clone();
                     rayon::join(

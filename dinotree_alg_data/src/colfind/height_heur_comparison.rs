@@ -57,18 +57,20 @@ fn handle_lowest(fb: &mut FigureBuilder) {
         num_bots: usize,
     }
 
+    /*
     struct TheoryRecord {
         height: usize,
         num_bots: usize,
     }
+    */
 
     let mut benches: Vec<BenchRecord> = Vec::new();
-    let mut theories: Vec<TheoryRecord> = Vec::new();
+    //let mut theories: Vec<TheoryRecord> = Vec::new();
 
     let its = (1usize..80_000).step_by(2000);
     for num_bots in its.clone() {
         let mut minimum = None;
-        let mut minimum_theory = None;
+        //let mut minimum_theory = None;
         let max_height = (num_bots as f64).log2() as usize;
 
         let mut scene = bot::BotSceneBuilder::new(num_bots).build_specialized(|pos| Bot {
@@ -77,7 +79,7 @@ fn handle_lowest(fb: &mut FigureBuilder) {
         });
 
         for height in 1..max_height {
-            let theory = handle_theory_inner(&mut scene, height);
+            //let theory = handle_theory_inner(&mut scene, height);
             let bench = handle_bench_inner(&mut scene, height);
             match minimum {
                 Some((a, _b)) => {
@@ -89,6 +91,7 @@ fn handle_lowest(fb: &mut FigureBuilder) {
                     minimum = Some((bench, height));
                 }
             }
+            /*
             match minimum_theory {
                 Some((a, _b)) => {
                     if theory < a {
@@ -99,20 +102,26 @@ fn handle_lowest(fb: &mut FigureBuilder) {
                     minimum_theory = Some((theory, height));
                 }
             }
+            */
         }
 
+        /*
         if let Some((_, height)) = minimum_theory {
             theories.push(TheoryRecord { height, num_bots });
             let (_, height) = minimum.unwrap();
             benches.push(BenchRecord { height, num_bots });
+        }
+        */
+        if let Some((_,height))=minimum{
+            benches.push(BenchRecord{height,num_bots});
         }
     }
 
     {
         let mut fg = fb.build("height_heuristic_vs_optimal");
 
-        let xx = theories.iter().map(|a| a.num_bots);
-        let yy = theories.iter().map(|a| a.height);
+        //let xx = theories.iter().map(|a| a.num_bots);
+        //let yy = theories.iter().map(|a| a.height);
 
         let x = benches.iter().map(|a| a.num_bots);
         let y = benches.iter().map(|a| a.height);
@@ -129,6 +138,7 @@ fn handle_lowest(fb: &mut FigureBuilder) {
         let heurx = heur.iter().map(|a| a.0);
         let heury = heur.iter().map(|a| a.1);
 
+        /*
         fg.axes2d()
             .set_pos_grid(2, 1, 0)
             .set_legend(
@@ -163,9 +173,9 @@ fn handle_lowest(fb: &mut FigureBuilder) {
                     PointSize(2.0),
                 ],
             );
-
+        */
         fg.axes2d()
-            .set_pos_grid(2, 1, 1)
+            //.set_pos_grid(2, 1, 1)
             .set_legend(
                 Graph(1.0),
                 Graph(0.0),
@@ -204,11 +214,19 @@ fn handle_lowest(fb: &mut FigureBuilder) {
 }
 
 fn handle2d(fb: &mut FigureBuilder) {
+    #[derive(Debug)]    
+    struct Record { 
+        height: usize,  
+        num_comparison: usize   
+    }
+
     #[derive(Debug)]
     struct BenchRecord {
         height: usize,
         bench: f64,
     }
+
+    let mut theory_records=Vec::new();
 
     let mut bench_records: Vec<BenchRecord> = Vec::new();
 
@@ -216,6 +234,13 @@ fn handle2d(fb: &mut FigureBuilder) {
         pos: pos.inner_as(),
         num: 0,
     });
+
+
+    for height in 2..13{            
+        let num_comparison = handle_theory_inner(&mut scene,height);
+        theory_records.push(Record{height,num_comparison});     
+    }   
+    
 
     for height in (2..13).flat_map(|a| std::iter::repeat(a).take(20)) {
         let bench = handle_bench_inner(&mut scene, height);
@@ -226,10 +251,24 @@ fn handle2d(fb: &mut FigureBuilder) {
 
     let mut fg = fb.build("height_heuristic");
 
+
+    let x = theory_records.iter().map(|a| a.height);
+    let y = theory_records.iter().map(|a| a.num_comparison);
+
+
+    fg.axes2d()
+        .set_pos_grid(2, 1, 0) 
+        .set_title("Number of Comparisons with different numbers of objects per node with abspiral(10000,2.0)", &[])
+        .lines(x,y,&[Color("blue"), LineWidth(2.0)])
+        .set_x_label("Tree Height", &[])
+        .set_y_label("Number of Comparisons", &[]);
+
+
     let x = bench_records.iter().map(|a| a.height);
     let y = bench_records.iter().map(|a| a.bench);
 
     fg.axes2d()
+        .set_pos_grid(2, 1, 1) 
         .set_title("Bench times with different numbers of objects per node (seq,colfind) with abspiral(10000,2.0)", &[])
         .points(x,y,&[Color("blue"), LineWidth(2.0)])
         .set_x_label("Tree Height", &[])

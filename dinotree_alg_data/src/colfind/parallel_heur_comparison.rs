@@ -34,17 +34,18 @@ fn test3(scene: &mut bot::BotScene<Bot>, rebal_height: usize, query_height: usiz
     let prop = &scene.bot_prop;
     let mut bb = create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
+    //dbg!("YOOOOOOOOOOO", rebal_height,query_height);
     let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb)
         .with_height_switch_seq(rebal_height)
         .build_par();
-
+    //dbg!("FINISH");
     let a = instant_to_sec(instant.elapsed());
 
     colfind::QueryBuilder::new(&mut tree)
         .with_switch_height(query_height)
         .query_par(|mut a, mut b| {
-            a.inner_mut().num += 1;
-            b.inner_mut().num += 1;
+            a.inner_mut().num += 2;
+            b.inner_mut().num += 2;
         });
 
     let b = instant_to_sec(instant.elapsed());
@@ -74,13 +75,13 @@ pub fn handle(fb: &mut FigureBuilder) {
     let height = compute_tree_height_heuristic(num_bots, DEFAULT_NUMBER_ELEM_PER_NODE);
 
     let mut rebals = Vec::new();
-    for rebal_height in (0..height).flat_map(|a| std::iter::repeat(a).take(16)) {
+    for rebal_height in (1..height+1).flat_map(|a| std::iter::repeat(a).take(16)) {
         let (a, _b) = test3(&mut scene, rebal_height, 4);
         rebals.push((rebal_height, a));
     }
 
     let mut queries = Vec::new();
-    for query_height in (0..height).flat_map(|a| std::iter::repeat(a).take(16)) {
+    for query_height in (1..height+1).flat_map(|a| std::iter::repeat(a).take(16)) {
         let (_a, b) = test3(&mut scene, 4, query_height);
         queries.push((query_height, b));
     }
@@ -95,7 +96,7 @@ pub fn handle(fb: &mut FigureBuilder) {
         let (a, b) = test1(&mut scene);
         seqs.push((a, b));
     }
-    let xx = seqs.iter().map(|_| height - 1);
+    let xx = seqs.iter().map(|_| height );
     let yy1 = seqs.iter().map(|a| a.0);
     let yy2 = seqs.iter().map(|a| a.1);
 
@@ -103,7 +104,7 @@ pub fn handle(fb: &mut FigureBuilder) {
 
     fg.axes2d()
         .set_title(
-            "Parallel Height heuristic for 20,000 elements with a spiral grow of 0.2",
+            &format!("Parallel Height heuristic with abspiral(20,000,0.2) (which has a height of {})",height),
             &[],
         )
         .points(

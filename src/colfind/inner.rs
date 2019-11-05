@@ -106,7 +106,7 @@ impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+S
                     
                 let splitter={
                     let splitter2=&mut splitter2;
-                    match par.next(depth) {
+                    match par.next() {
                         par::ParResult::Parallel([dleft,dright])=>{
                             let mut sweeper2=sweeper.div();
                             
