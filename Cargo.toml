@@ -17,6 +17,5 @@ dists = "*"
 [dependencies]
 is_sorted = "0.1"
 itertools = "0.8"
-#dinotree ="0.5"
-dinotree={path="../dinotree"}
+dinotree ="0.5"
 rayon = "1.2"

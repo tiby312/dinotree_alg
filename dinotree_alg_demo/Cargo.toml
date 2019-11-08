@@ -6,9 +6,9 @@ edition = "2018"
 
 
 [dependencies]
-dists= "*"
-dinotree={path="../../dinotree"}
-duckduckgeo = "*"
+dists= "0.2"
+dinotree="0.5"
+duckduckgeo = "0.2"
 dinotree_alg = {path=".."}
 piston_window = "0.103.0"
 bit-vec = "0.6"

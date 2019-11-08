@@ -142,7 +142,9 @@ impl DemoSys for RaycastF32Demo {
                     );
                 }
 
-                let res = raycast::raycast_mut(
+                use raycast::*;
+
+                let res = raycast_mut(
                     tree.get_mut(),
                     self.dim,
                     ray,
@@ -153,15 +155,19 @@ impl DemoSys for RaycastF32Demo {
                     },
                 );
 
-                let (ppx, ppy) = if let Some(k) = res {
-                    let ppx = ray.point.x + ray.dir.x * k.1;
-                    let ppy = ray.point.y + ray.dir.y * k.1;
-                    (ppx, ppy)
-                } else {
-                    let ppx = ray.point.x + ray.dir.x * 800.0;
-                    let ppy = ray.point.y + ray.dir.y * 800.0;
-                    (ppx, ppy)
+                let (ppx,ppy) = match res{
+                    RayCastResult::Hit(_,dis)=>{
+                        let ppx = ray.point.x + ray.dir.x * dis;
+                        let ppy = ray.point.y + ray.dir.y * dis;
+                        (ppx, ppy)
+                    },
+                    RayCastResult::NoHit=>{
+                        let ppx = ray.point.x + ray.dir.x * 800.0;
+                        let ppy = ray.point.y + ray.dir.y * 800.0;
+                        (ppx, ppy)
+                    }
                 };
+
 
                 let arr = [
                     ray.point.x.into_inner() as f64,

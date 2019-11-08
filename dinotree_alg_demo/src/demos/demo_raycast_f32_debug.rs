@@ -142,7 +142,7 @@ impl DemoSys for RaycastF32DebugDemo {
             );
         }
 
-        let test = match raycast::raycast_mut(
+        let test = raycast::raycast_mut(
             self.tree.get_mut(),
             self.dim,
             ray,
@@ -152,29 +152,25 @@ impl DemoSys for RaycastF32DebugDemo {
                 g: RefCell::new(g),
                 height,
             },
-        ) {
-            Some((bots, dis)) => {
-                let mut k: Vec<_> = bots.iter().map(|a| a.inner().id).collect();
-                k.sort();
-                Some((k, dis.into_inner()))
-            }
-            None => None,
-        };
+        );
 
         let ray: raycast::Ray<f32> = ray.inner_into();
 
-        let (ppx, ppy) = match test {
-            Some(k) => {
-                let ppx = ray.point.x + ray.dir.x * k.1;
-                let ppy = ray.point.y + ray.dir.y * k.1;
+
+        let (ppx,ppy) = match test {
+            raycast::RayCastResult::Hit(_,dis)=>{
+                let ppx = ray.point.x + ray.dir.x * dis.into_inner();
+                let ppy = ray.point.y + ray.dir.y * dis.into_inner();
                 (ppx, ppy)
-            }
-            None => {
+            },
+            raycast::RayCastResult::NoHit=>{
                 let ppx = ray.point.x + ray.dir.x * 800.0;
                 let ppy = ray.point.y + ray.dir.y * 800.0;
                 (ppx, ppy)
             }
         };
+
+
 
         let arr = [
             ray.point.x as f64,
