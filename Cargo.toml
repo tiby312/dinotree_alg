@@ -10,6 +10,11 @@ readme = "readme.md"
 edition = "2018"
 
 
+[workspace]
+members = ["dinotree", "dinotree_alg_demo", "dinotree_alg_data"]
+#exclude = ["ci"]
+
+
 [dev-dependencies]
 dists = "0.2"
 
@@ -17,5 +22,5 @@ dists = "0.2"
 [dependencies]
 is_sorted = "0.1"
 itertools = "0.8"
-dinotree ="0.5"
+dinotree = {version = "0.5", path = "dinotree"}
 rayon = "1.2"

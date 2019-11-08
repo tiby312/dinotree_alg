@@ -1,0 +1,18 @@
+[package]
+name = "dinotree"
+version = "0.5.2"
+authors = ["Ken Reed <kenakioreed@gmail.com>"]
+description = "An aabb space partitioning 2d tree data structure"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/tiby312/dinotree"
+keywords = ["tree", "kdtree","dinotree","space-partitioning"]
+readme = "readme.md"
+edition = "2018"
+
+[dependencies]
+is_sorted = "0.1"
+rayon = "1.2"
+pdqselect = "0.1"
+compt = "1.6"
+axgeom = "1.2"
+
