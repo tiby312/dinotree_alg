@@ -2,7 +2,7 @@
 ///to sequential. Once the tree construction reaches
 ///this height, it will no longer call rayon::join(),
 ///on each sub problem.
-pub const SWITCH_SEQUENTIAL_DEFAULT:usize = 6;
+pub const SWITCH_SEQUENTIAL_DEFAULT:usize = 3;
 
 
 

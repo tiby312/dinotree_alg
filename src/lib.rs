@@ -68,7 +68,7 @@ pub mod prelude{
 
 
 
-///Contains all nbody code.
+///[EXPERIMENTAL] Contains all nbody code.
 pub mod nbody;
 
 

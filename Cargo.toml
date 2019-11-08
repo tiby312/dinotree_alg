@@ -12,12 +12,9 @@ edition = "2018"
 
 [workspace]
 members = ["dinotree", "dinotree_alg_demo", "dinotree_alg_data"]
-#exclude = ["ci"]
-
 
 [dev-dependencies]
 dists = "0.2"
-
 
 [dependencies]
 is_sorted = "0.1"

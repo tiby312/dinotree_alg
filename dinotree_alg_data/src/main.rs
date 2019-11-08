@@ -54,7 +54,7 @@ impl FigureBuilder {
         let mut fg = Figure::new();
         let ss = format!("{}/{}.gplot", &self.folder, filename);
 
-        fg.set_terminal("pngcairo size 800,600 enhanced font 'Veranda,10'", "");
+        fg.set_terminal("pngcairo size 640,480 enhanced font 'Veranda,10'", "");
 
         fg.set_pre_commands("set output system(\"echo $FILE_PATH\")");
 
