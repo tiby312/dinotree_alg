@@ -3,7 +3,7 @@ name = "dinotree_alg_data"
 version = "0.1.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 edition = "2018"
-
+publish = false
 
 [dependencies]
 dinotree_alg = {path=".."}
