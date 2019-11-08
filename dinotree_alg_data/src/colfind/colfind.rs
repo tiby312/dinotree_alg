@@ -357,13 +357,13 @@ pub fn handle_theory(fb: &mut FigureBuilder) {
     handle_theory_inner(
         1.0,
         &mut fg,
-        "Comparison of space partitioning algs with dinotree grow of 1.0",
+        "Comparison of space partitioning algs with abspiral(x,1.0)",
         0,
     );
     handle_theory_inner(
         0.05,
         &mut fg,
-        "Comparison of space partitioning algs with dinotree grow of 0.05",
+        "Comparison of space partitioning algs with abspiral(x,0.05)",
         1,
     );
     fb.finish(fg)

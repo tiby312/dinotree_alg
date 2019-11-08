@@ -97,7 +97,7 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N
         
         let par=dinotree::par::compute_level_switch_sequential(switch_height,height);
         
-        ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
+        ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo,&mut SplitterEmpty);
     }
 
 }
@@ -119,7 +119,7 @@ impl<'a,A:AxisTrait,N:NodeTrait> NotSortedQueryBuilder<'a,A,N>{
 
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();    
-        let dt = vistr_mut.with_depth(Depth(0));
+        let dt = vistr_mut;
         ColFindRecurser::new().recurse_seq(axis, &mut sweeper, dt,splitter);
     }    
 
@@ -132,7 +132,7 @@ impl<'a,A:AxisTrait,N:NodeTrait> NotSortedQueryBuilder<'a,A,N>{
 
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();    
-        let dt = vistr_mut.with_depth(Depth(0));
+        let dt = vistr_mut;
         ColFindRecurser::new().recurse_seq(axis, &mut sweeper, dt,&mut SplitterEmpty);
     }
 }
@@ -160,7 +160,7 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send
         let axis=self.tree.axis();
         let oo=self.tree.vistr_mut();
         let par=dinotree::par::compute_level_switch_sequential(switch_height,height);
-        ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo.with_depth(Depth(0)),&mut SplitterEmpty);
+        ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, oo,&mut SplitterEmpty);
 
     }
 
@@ -178,7 +178,7 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send
         let par=dinotree::par::compute_level_switch_sequential(self.switch_height,height);
 
 
-        let dt = vistr_mut.with_depth(Depth(0));
+        let dt = vistr_mut;
         let mut sweeper=HandleSorted::new(clos);
         ColFindRecurser::new().recurse_par(axis, par,&mut sweeper, dt,&mut SplitterEmpty);
     }
@@ -214,7 +214,7 @@ impl<'a,A:AxisTrait,N:NodeTrait> QueryBuilder<'a,A,N>{
 
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();    
-        let dt = vistr_mut.with_depth(Depth(0));
+        let dt = vistr_mut;
         ColFindRecurser::new().recurse_seq(axis, &mut sweeper, dt,&mut splitter);
     }
 
@@ -229,7 +229,7 @@ impl<'a,A:AxisTrait,N:NodeTrait> QueryBuilder<'a,A,N>{
         let mut sweeper=HandleSorted::new(b);
         let axis=self.tree.axis();
         let vistr_mut=self.tree.vistr_mut();    
-        let dt = vistr_mut.with_depth(Depth(0));
+        let dt = vistr_mut;
         ColFindRecurser::new().recurse_seq(axis, &mut sweeper, dt,splitter);
     }     
 }

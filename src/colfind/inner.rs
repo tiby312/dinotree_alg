@@ -71,12 +71,12 @@ pub struct ColFindRecurser<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter
 }
 impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+Send+Sync> ColFindRecurser<N,K,S>{
 
-    pub fn recurse_par<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:LevelIter<VistrMut<N>>,splitter:&mut K){
+    pub fn recurse_par<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:VistrMut<N>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
 
-        let((depth, nn),rest)=m.next();
+        let(nn,rest)=m.next();
         let mut nn=nn.get_mut();
         sweeper.handle_node(this_axis.next(),nn.bots.as_mut());
                     
@@ -94,8 +94,8 @@ impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+S
                 if let Some(cont)=nn.cont{
                     let nn=DestructuredNode{range:nn.bots,cont,div,axis:this_axis};
                     {
-                        let left=left.as_inner_mut().create_wrap_mut();
-                        let right=right.as_inner_mut().create_wrap_mut();
+                        let left=left.create_wrap_mut();
+                        let right=right.create_wrap_mut();
                         let mut g=GoDownRecurser::new(nn,sweeper);
                         g.go_down(this_axis.next(), left);
                         g.go_down(this_axis.next(), right);
@@ -148,12 +148,12 @@ impl<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,
     }
 
 
-    pub fn recurse_seq<A:AxisTrait>(&self,this_axis:A,sweeper:&mut S,m:LevelIter<VistrMut<N>>,splitter:&mut K){
+    pub fn recurse_seq<A:AxisTrait>(&self,this_axis:A,sweeper:&mut S,m:VistrMut<N>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
 
-        let((_depth, nn),rest)=m.next();
+        let(nn,rest)=m.next();
         let mut nn=nn.get_mut();
 
         sweeper.handle_node(this_axis.next(),nn.bots.as_mut());
@@ -172,8 +172,8 @@ impl<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,
                 if let Some(cont)=nn.cont{
                     let nn=DestructuredNode{range:nn.bots,cont,div,axis:this_axis};
                     {
-                        let left=left.as_inner_mut().create_wrap_mut();
-                        let right=right.as_inner_mut().create_wrap_mut();
+                        let left=left.create_wrap_mut();
+                        let right=right.create_wrap_mut();
                         let mut g=GoDownRecurser::new(nn,sweeper);
                         g.go_down(this_axis.next(), left);
                         g.go_down(this_axis.next(), right);

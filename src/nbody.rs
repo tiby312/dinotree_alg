@@ -49,19 +49,19 @@ pub fn naive_mut<T:HasAabb>(bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,Prote
 
 
 use compt::dfs_order;
-type CombinedVistr<'a,N,J> = compt::LevelIter<compt::Zip<dfs_order::Vistr<'a,N,dfs_order::PreOrder>,VistrMut<'a,J>>>;
-type CombinedVistrMut<'a,N,J> = compt::LevelIter<compt::Zip<dfs_order::VistrMut<'a,N,dfs_order::PreOrder>,VistrMut<'a,J>>>;
+type CombinedVistr<'a,N,J> = compt::Zip<dfs_order::Vistr<'a,N,dfs_order::PreOrder>,VistrMut<'a,J>>;
+type CombinedVistrMut<'a,N,J> = compt::Zip<dfs_order::VistrMut<'a,N,dfs_order::PreOrder>,VistrMut<'a,J>>;
 
 
 fn wrap_mut<'a:'b,'b,N,J:NodeTrait>(bla:&'b mut CombinedVistrMut<'a,N,J>)->CombinedVistrMut<'b,N,J>{
-    let depth=bla.depth();
+    //let depth=bla.depth();
 
-    let (a,b)=bla.as_inner_mut().as_inner_mut();
+    let (a,b)=bla.as_inner_mut();
 
     let a=a.create_wrap_mut();
     let b=b.create_wrap_mut();
 
-    a.zip(b).with_depth(Depth(depth))
+    a.zip(b)//.with_depth(Depth(depth))
 }
 
 //pseudo code
@@ -125,13 +125,13 @@ fn apply_tree<
     fn recc<N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait>
         (stuff:CombinedVistr<N::No,J>,ncontext:&N){
         
-        let ((_,(misc,nn)),rest)=stuff.next();
+        let ((misc,nn),rest)=stuff.next();
         let nn=nn.get_mut();
         match rest{
             Some([mut left,mut right])=>{
 
-                let i1=left.as_inner_mut().as_inner_mut().1.create_wrap_mut().dfs_preorder_iter().flat_map(|a|a.get_mut().bots.iter_mut());
-                let i2=right.as_inner_mut().as_inner_mut().1.create_wrap_mut().dfs_preorder_iter().flat_map(|a|a.get_mut().bots.iter_mut());
+                let i1=left.as_inner_mut().1.create_wrap_mut().dfs_preorder_iter().flat_map(|a|a.get_mut().bots.iter_mut());
+                let i2=right.as_inner_mut().1.create_wrap_mut().dfs_preorder_iter().flat_map(|a|a.get_mut().bots.iter_mut());
                 let i3=nn.bots.iter_mut().chain(i1.chain(i2));
                 
 
@@ -157,7 +157,7 @@ struct Anchor<'a,A:AxisTrait,N:NodeTrait>{
     div:N::Num
 }
 
-fn handle_anchor_with_children<'a,
+fn handle_anchor_with_children<
 	A:AxisTrait,
 	B:AxisTrait,
     N:NodeMassTrait<Num=J::Num,Item=J::T>,
@@ -330,7 +330,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait<Num=J::Num,
 fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Send,F:NodeTrait+Send+Sync>(join:J,axis:A,it:CombinedVistrMut<N::No,F>,ncontext:&N) where F::T:Send,N::No:Send{
     
 
-    let ((depth,(_, nn)),rest)=it.next();
+    let ((_, nn),rest)=it.next();
     let mut nn=nn.get_mut();
     match rest{
         Some([mut left,mut right])=>{
@@ -371,10 +371,10 @@ fn recc<J:par::Joiner,A:AxisTrait,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Sen
            
             match join.next(){
                 par::ParResult::Parallel([dleft,dright])=>{
-                    let mut n2=ncontext.clone();
+                    let n2=ncontext.clone();
                     rayon::join(
                     ||recc(dleft,axis.next(),left,ncontext),
-                    ||recc(dright,axis.next(),right,&mut n2)
+                    ||recc(dright,axis.next(),right,&n2)
                     );
                 },
                 par::ParResult::Sequential([dleft,dright])=>{
@@ -409,7 +409,7 @@ trait Bok2{
         A:AxisTrait,
         >(&mut self,this_axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::J>,stuff:CombinedVistrMut<Self::No,Self::J>){
 
-        let ((_depth,(misc,nn)),rest)=stuff.next();
+        let ((misc,nn),rest)=stuff.next();
         let nn=nn.get_mut();
         if this_axis.is_equal_to(anchor.axis) && self.is_far_enough(this_axis,anchor,misc){
             self.handle_node_far_enough(this_axis,misc,anchor);
@@ -454,11 +454,11 @@ pub fn nbody_par<A:AxisTrait,J:NodeTrait+Send+Sync,N:NodeMassTrait<Num=J::Num,It
         let k=dinotree::par::SWITCH_SEQUENTIAL_DEFAULT;
         let par=dinotree::par::compute_level_switch_sequential(k,t1.get_height());
 
-        let d=misc_tree.vistr_mut().zip(t1.vistr_mut()).with_depth(Depth(0));
+        let d=misc_tree.vistr_mut().zip(t1.vistr_mut());
         recc(par,axis,d,ncontext);    
     }
 
-    apply_tree(axis,misc_tree.vistr().zip(t1.vistr_mut()).with_depth(Depth(0)),ncontext);
+    apply_tree(axis,misc_tree.vistr().zip(t1.vistr_mut()),ncontext);
 }
 
 
@@ -473,10 +473,10 @@ pub fn nbody<A:AxisTrait,J:NodeTrait+Send+Sync,N:NodeMassTrait<Num=J::Num,Item=J
 
     let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
-    let d=misc_tree.vistr_mut().zip(t1.vistr_mut()).with_depth(Depth(0));        
+    let d=misc_tree.vistr_mut().zip(t1.vistr_mut());        
     recc(par::Sequential,axis,d,ncontext);    
 
-    let d=misc_tree.vistr().zip(t1.vistr_mut()).with_depth(Depth(0));
+    let d=misc_tree.vistr().zip(t1.vistr_mut());
     apply_tree(axis,d,ncontext);
     
 }

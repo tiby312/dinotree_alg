@@ -46,6 +46,7 @@ pub fn handle_theory_inner(scene: &mut bot::BotScene<Bot>, height: usize) -> usi
     counter.into_inner()
 }
 
+
 pub fn handle(fb: &mut FigureBuilder) {
     handle2d(fb);
     handle_lowest(fb);

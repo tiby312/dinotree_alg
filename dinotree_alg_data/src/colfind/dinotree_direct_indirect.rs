@@ -154,13 +154,13 @@ fn complete_test<T: TestTrait>(scene: &mut bot::BotScene<Bot<T>>) -> CompleteTes
 }
 
 pub fn handle(fb: &mut FigureBuilder) {
-    handle_num_bots(fb, 0.1, [0u8; 8], "8_bytes");
-    handle_num_bots(fb, 0.1, [0u8; 32], "32_bytes");
-    handle_num_bots(fb, 0.1, [0u8; 128], "128_bytes");
-    handle_num_bots(fb, 0.1, [0u8; 256], "256_bytes");
+    handle_num_bots(fb, 0.1, [0u8; 8]);
+    handle_num_bots(fb, 0.1, [0u8; 32]);
+    handle_num_bots(fb, 0.1, [0u8; 128]);
+    handle_num_bots(fb, 0.1, [0u8; 256]);
 
-    handle_num_bots(fb, 0.01, [0u8; 128], "128_bytes");
-    handle_num_bots(fb, 1.0, [0u8; 128], "128_bytes");
+    handle_num_bots(fb, 0.01, [0u8; 128]);
+    handle_num_bots(fb, 1.0, [0u8; 128]);
 }
 
 #[derive(Debug)]
@@ -190,7 +190,7 @@ impl Record {
                 .axes2d()
                 .set_title(
                     &format!(
-                        "{} Dinotree vs Direct vs Indirect with abspiral-size(x,{},{})",
+                        "{} Dinotree vs Direct vs Indirect with abspiral-size(x, {}, {})",
                         construction, grow, name
                     ),
                     &[],
@@ -212,7 +212,7 @@ impl Record {
     }
 }
 
-fn handle_num_bots<T: TestTrait>(fb: &mut FigureBuilder, grow: f32, val: T, name: &str) {
+fn handle_num_bots<T: TestTrait>(fb: &mut FigureBuilder, grow: f32, val: T) {
     let mut rects = Vec::new();
 
     for num_bots in (0..30_000).rev().step_by(200) {
@@ -230,12 +230,15 @@ fn handle_num_bots<T: TestTrait>(fb: &mut FigureBuilder, grow: f32, val: T, name
         };
         rects.push(r);
     }
+    let name=format!("{}_bytes",core::mem::size_of::<T>());
+    let name2=format!("{} bytes",core::mem::size_of::<T>());
+    
 
     let mut fg = fb.build(&format!("dinotree_direct_indirect_rebal_{}_{}", grow, name));
-    Record::draw(&rects, &mut fg, grow, "Construction:", name, |a| a.rebal);
+    Record::draw(&rects, &mut fg, grow, "Construction:", &name2, |a| a.rebal);
     fb.finish(fg);
 
     let mut fg = fb.build(&format!("dinotree_direct_indirect_query_{}_{}", grow, name));
-    Record::draw(&rects, &mut fg, grow, "Querying:", name, |a| a.query);
+    Record::draw(&rects, &mut fg, grow, "Querying:", &name2, |a| a.query);
     fb.finish(fg);
 }

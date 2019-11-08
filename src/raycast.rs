@@ -252,7 +252,7 @@ impl<'a:'b,'b,R:RayTrait> Blap<'a,'b,R>{
 
             }
         }
-        return false;
+        false
     } 
 }
 
@@ -363,6 +363,11 @@ pub use self::mutable::naive_mut;
 pub use self::mutable::raycast_mut;
 
 
+pub enum RayCastResult<'a,T:HasAabb>{
+    Hit(Vec<ProtectedBBox<'a,T>>,T::Num),
+    NoHit
+}
+
 
 mod mutable{
     use super::*;
@@ -370,20 +375,29 @@ mod mutable{
     pub fn naive_mut<
         'a,
         T:HasAabb,
-        >(bots:ProtectedBBoxSlice<'a,T>,ray:Ray<T::Num>,rtrait:&mut impl RayTrait<N=T::Num,T=T>)->Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>{
+        >(bots:ProtectedBBoxSlice<'a,T>,ray:Ray<T::Num>,rtrait:&mut impl RayTrait<N=T::Num,T=T>)->RayCastResult<'a,T>{
         let mut closest=Closest{closest:None};
 
         for b in bots.iter_mut(){
             closest.consider(&ray,b,rtrait);
         }
 
-        closest.closest
+
+        match closest.closest{
+            Some((a,b))=>{
+                RayCastResult::Hit(a,b)
+            },
+            None=>{
+                RayCastResult::NoHit
+            }
+        }
     }
+
     pub fn raycast_mut<
         'a,   
         A:AxisTrait,
         N:NodeTrait
-        >(tree:&'a mut DinoTree<A,N>,rect:Rect<N::Num>,ray:Ray<N::Num>,rtrait:&mut impl RayTrait<N=N::Num,T=N::T>)->Option<(Vec<ProtectedBBox<'a,N::T>>,N::Num)>{
+        >(tree:&'a mut DinoTree<A,N>,rect:Rect<N::Num>,ray:Ray<N::Num>,rtrait:&mut impl RayTrait<N=N::Num,T=N::T>)->RayCastResult<'a,N::T>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
@@ -393,6 +407,13 @@ mod mutable{
         let mut blap=Blap{rtrait,ray,closest};
         recc(axis,dt,rect,&mut blap);
 
-        blap.closest.closest
+        match blap.closest.closest{
+            Some((a,b))=>{
+                RayCastResult::Hit(a,b)
+            },
+            None=>{
+                RayCastResult::NoHit
+            }
+        }
     }
 }

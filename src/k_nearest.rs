@@ -190,7 +190,8 @@ impl<'a,T:HasAabb> ClosestCand<'a,T>{
                 }
             }
         }
-        return false;
+
+        false
     }
 
     fn full_and_max_distance(&self)->Option<T::Num>{
@@ -213,11 +214,7 @@ struct Blap<'a:'b,'b,K:Knearest>{
 impl<'a:'b,'b,K:Knearest> Blap<'a,'b,K>{
     fn should_traverse_rect(&self,rect:&Rect<K::N>)->bool{
         if let Some(dis) = self.closest.full_and_max_distance(){
-            if self.knear.distance_to_rect(self.point,rect)<dis{
-                true
-            }else{
-                false
-            }
+            self.knear.distance_to_rect(self.point,rect)<dis
         }else{
             true
         }

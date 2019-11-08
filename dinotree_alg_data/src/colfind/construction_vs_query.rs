@@ -167,7 +167,7 @@ fn handle_num_bots_theory_inner(fg: &mut Figure, grow: f32, counter: u32) {
     fg.axes2d()
         .set_pos_grid(2, 1, counter)
         .set_title(
-            &format!("Rebal vs Query Comparisons with a spiral grow of {}", grow),
+            &format!("Rebal vs Query Comparisons with a abspiral(n,{})", grow),
             &[],
         )
         .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
@@ -299,7 +299,7 @@ fn handle_num_bots_bench_inner(fg: &mut Figure, grow: f32, position: u32) {
                 LineWidth(2.0),
             ],
         )
-        .set_x_label("Grow", &[])
+        .set_x_label("Number of Elements", &[])
         .set_y_label("Time in seconds", &[]);
 }
 
@@ -473,7 +473,7 @@ fn handle_grow_theory(fb: &mut FigureBuilder) {
     let mut fg = fb.build("construction_vs_query_grow_theory");
 
     fg.axes2d()
-        .set_title("Rebal vs Query Comparisons with 80,000 objects", &[])
+        .set_title("Rebal vs Query Comparisons with abspiral(80,000,x)", &[])
         .set_legend(Graph(1.0), Graph(1.0), &[LegendOption::Horizontal], &[])
         .lines(
             x.clone(),

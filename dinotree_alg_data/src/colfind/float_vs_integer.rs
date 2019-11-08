@@ -22,7 +22,7 @@ fn handle_bench(fg: &mut Figure) {
 
     let mut records = Vec::new();
 
-    for num_bots in (0..80000).step_by(200) {
+    for num_bots in (0..80_000).step_by(200) {
         let mut scene = bot::BotSceneBuilder::new(num_bots).build_specialized(|pos| Bot {
             num: 0,
             pos: pos.inner_as(),

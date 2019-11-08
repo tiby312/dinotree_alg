@@ -200,7 +200,7 @@ fn draw_rects(rects: &mut [Record], fb: &mut FigureBuilder, name1: &str) {
             .set_view(110.0, 30.0)
             .set_title("Comparison of Algs with abspiral(n,grow)", &[])
             .set_x_label("Number of Objects", &[])
-            .set_y_label("Spareness of Objects", &[])
+            .set_y_label("Grow", &[])
             .set_z_label(
                 "Number of Comparisons",
                 &[Rotate(90.0), TextOffset(-3.0, 0.0)],

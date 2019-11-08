@@ -136,13 +136,25 @@ pub fn assert_raycast<T:HasInner>(
     //Otherwise in some cases this function will panic when it shouldnt.
 
 
-    let res_naive=raycast::naive_mut(ProtectedBBoxSlice::new(bots),ray,rtrait).map(|mut a|
-        (a.0.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,a.1) );
+    let res_naive=match raycast::naive_mut(ProtectedBBoxSlice::new(bots),ray,rtrait){
+        raycast::RayCastResult::Hit(mut a,b)=>{
+            Some( (a.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,b) )   
+        },
+        raycast::RayCastResult::NoHit=>{
+            None
+        }
+    };
 
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
 
-    let res_dinotree=raycast::raycast_mut(&mut tree,rect,ray,rtrait).map(|mut a|
-        (a.0.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,a.1) );
+    let res_dinotree=match raycast::raycast_mut(&mut tree,rect,ray,rtrait){
+        raycast::RayCastResult::Hit(mut a,b)=>{
+            Some((a.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,b))
+        },
+        raycast::RayCastResult::NoHit=>{
+            None
+        }
+    };
 
     match (res_naive,res_dinotree){
         (Some((mut naive_bots,naive_dis)),Some((mut dinotree_bots,dinotree_dis)))=>{
@@ -171,7 +183,7 @@ pub fn assert_raycast<T:HasInner>(
 pub fn assert_query<T:HasInner>(bots:&mut [T]) where T::Inner: HasId{
     
     let mut naive_pairs=Vec::new();
-    colfind::query_naive_mut(bots,|mut a,mut b|{
+    colfind::query_naive_mut(bots,|a,b|{
         naive_pairs.push(IDPair::new(a.inner().get_id(),b.inner().get_id()));
     });
 
@@ -179,7 +191,7 @@ pub fn assert_query<T:HasInner>(bots:&mut [T]) where T::Inner: HasId{
     let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,bots).build_seq(); 
     
     let mut dinotree_pairs=Vec::new();
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+    colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {
         dinotree_pairs.push(IDPair::new(a.inner().get_id(),b.inner().get_id()));
     });
 
