@@ -47,27 +47,6 @@ pub mod raycast;
 ///Allows user to intersect the tree with a seperate group of bots.
 pub mod intersect_with;
 
-
-///Prelude for convenience
-/*
-pub mod prelude{
-    pub use crate::graphics::*;
-    pub use crate::colfind::*;
-    pub use crate::intersect_with::*;
-    pub use crate::k_nearest::*;
-    pub use crate::nbody::*;
-    pub use crate::raycast::*;
-    pub use crate::rect::*;
-}
-
-*/
-
-
-
-
-
-
-
 ///[EXPERIMENTAL] Contains all nbody code.
 pub mod nbody;
 
