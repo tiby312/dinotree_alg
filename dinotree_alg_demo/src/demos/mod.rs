@@ -17,3 +17,5 @@ pub mod demo_rigid_body;
 pub mod demo_liquid;
 
 pub mod demo_nbody;
+
+pub mod demo_raycast_grid;
