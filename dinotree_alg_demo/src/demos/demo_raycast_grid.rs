@@ -26,9 +26,8 @@ impl DemoSys for RaycastGridDemo {
         _check_naive: bool,
     ) {
         let dim=self.dim.inner_into();
-        let cursor=cursor.inner_into();
         let radius=3.0;
-        let viewport=GridViewPort{spacing:vec2(25.0,25.0),origin:vec2(0.0,0.0)};
+        let viewport=GridViewPort{spacing:vec2(60.0,60.0),origin:vec2(0.0,0.0)};
 
         for y in 0..100{
             let yy:f32=viewport.origin.y+(y as f32)*viewport.spacing.y;
@@ -47,21 +46,28 @@ impl DemoSys for RaycastGridDemo {
         }
 
         //let point=vec2(300.0,300.0);
-        let point=vec2(310.0,310.0);
+        let point=viewport.origin+viewport.spacing*5.0;//vec2(310.0,310.0);
 
+        //let pos=vec2(10.0,10.0);
+        //let pos=vec2(86.70752,647.98);
+        //let vel=vec2(-0.03991765,0.22951305);
+            
+
+        let cursor=cursor.inner_into();
         let ray=Ray{point,dir:(cursor-point).normalize_to(1.0)};
+        //let ray=Ray{point:pos,dir:vel};
 
         let rect = &axgeom::Rect::from_point(ray.point, vec2same(radius));    
         draw_rect_f32([1.0, 0.0, 0.0, 0.5], rect, c, g);
         
 
-        for (count,a) in RayCaster::new(&viewport,ray).unwrap().enumerate().take(50){
+        for (count,a) in RayCaster::new(&viewport,ray).enumerate().take(50){
             let point = ray.point+ray.dir*a.tval;
 
             let cell=a.cell;
             let topleft=viewport.to_world_topleft(cell);
 
-            let kk=(count as f32)*0.1;
+            let kk=(count as f32)*0.8;
 
             let rect = &axgeom::Rect::from_point(point, vec2same(radius));
             draw_rect_f32([0.0, 0.0, kk, 0.5], rect, c, g);
