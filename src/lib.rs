@@ -48,6 +48,7 @@ pub mod raycast;
 pub mod intersect_with;
 
 ///[EXPERIMENTAL] Contains all nbody code.
+#[cfg(feature = "nbody")]
 pub mod nbody;
 
 
