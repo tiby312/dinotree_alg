@@ -1,9 +1,5 @@
 use crate::support::prelude::*;
 use bit_vec::BitVec;
-use dinotree_alg;
-use dinotree_alg::colfind;
-use dinotree_alg::rect::*;
-use duckduckgeo;
 use duckduckgeo::collide_with_rect;
 use duckduckgeo::WallSide;
 
@@ -192,22 +188,22 @@ impl DemoSys for GridDemo {
         });
 
         {
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut k).build_par();
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
 
             {
                 let dim2 = self.dim.inner_into();
-                for_all_not_in_rect_mut(&mut tree, &self.dim, |mut a| {
+                tree.for_all_not_in_rect_mut(&self.dim, |mut a| {
                     duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
                 });
             }
 
             let vv = vec2same(100.0).inner_try_into().unwrap();
             let cc = cursor.inner_into();
-            for_all_in_rect_mut(&mut tree, &axgeom::Rect::from_point(cursor, vv), |mut b| {
+            tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
                 let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 20.0);
             });
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_par(|mut a, mut b| {
                 let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
             });
 

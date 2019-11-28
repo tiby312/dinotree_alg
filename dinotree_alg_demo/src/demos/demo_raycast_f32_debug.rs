@@ -1,7 +1,5 @@
 use crate::support::prelude::*;
 use dinotree_alg;
-use dinotree_alg::raycast;
-use dinotree_alg::raycast::RayIntersectResult;
 use duckduckgeo;
 use std;
 use std::cell::RefCell;
@@ -9,7 +7,6 @@ use std::cell::RefCell;
 mod ray_f32 {
     use super::*;
 
-    use self::raycast::RayTrait;
     use duckduckgeo;
 
     pub struct RayT<'a, 'c: 'a> {
@@ -19,7 +16,7 @@ mod ray_f32 {
         pub draw: bool,
     }
 
-    impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
+    impl<'a, 'c: 'a> raycast::RayTrait for RayT<'a, 'c> {
         type T = BBoxPtr<F32n, Bot2>;
         type N = F32n;
 
@@ -27,7 +24,7 @@ mod ray_f32 {
             &self,
             ray: &raycast::Ray<Self::N>,
             bot: &Self::T,
-        ) -> RayIntersectResult<Self::N> {
+        ) -> raycast::RayIntersectResult<Self::N> {
             if self.draw {
                 draw_rect_f32(
                     [1.0, 0.0, 0.0, 0.5],
@@ -43,7 +40,7 @@ mod ray_f32 {
             &self,
             ray: &raycast::Ray<Self::N>,
             rect: &Rect<Self::N>,
-        ) -> RayIntersectResult<Self::N> {
+        ) -> raycast::RayIntersectResult<Self::N> {
             let ray: duckduckgeo::Ray<f32> = Ray {
                 point: ray.point.inner_into(),
                 dir: ray.dir.inner_into(),
@@ -52,10 +49,10 @@ mod ray_f32 {
 
             let k = ray_intersects_box(&ray, &rect);
             match k {
-                IntersectsBotResult::Hit(val) => RayIntersectResult::Hit(val),
-                IntersectsBotResult::NoHit => RayIntersectResult::NoHit,
+                IntersectsBotResult::Hit(val) => raycast::RayIntersectResult::Hit(val),
+                IntersectsBotResult::NoHit => raycast::RayIntersectResult::NoHit,
                 IntersectsBotResult::Inside => {
-                    RayIntersectResult::Hit(0.0)
+                    raycast::RayIntersectResult::Hit(0.0)
 
                     //Return none if you do not want results that intersect the ray origin.
                     //None
@@ -73,7 +70,7 @@ pub struct Bot2 {
     id: usize,
 }
 
-impl dinotree_alg::assert::HasId for Bot2 {
+impl assert::HasId for Bot2 {
     fn get_id(&self) -> usize {
         self.id
     }
@@ -92,7 +89,7 @@ impl RaycastF32DebugDemo {
             .with_radius(1.0, 4.0)
             .map(|(pos, radius)| Rect::from_point(pos, radius).inner_try_into().unwrap());
 
-        let tree = create_owned_par(axgeom::XAXISS, vv, |_a| ii.next().unwrap());
+        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, vv, |_a| ii.next().unwrap());
 
         RaycastF32DebugDemo {
             tree,
@@ -129,7 +126,7 @@ impl DemoSys for RaycastF32DebugDemo {
         let height = self.tree.get_height();
 
         if check_naive {
-            dinotree_alg::assert::assert_raycast(
+            assert::assert_raycast(
                 unsafe { self.tree.get_aabb_bots_mut_not_protected() },
                 self.dim,
                 ray,
@@ -142,8 +139,7 @@ impl DemoSys for RaycastF32DebugDemo {
             );
         }
 
-        let test = raycast::raycast_mut(
-            self.tree.get_mut(),
+        let test = self.tree.get_mut().raycast_mut(
             self.dim,
             ray,
             &mut ray_f32::RayT {
@@ -190,7 +186,7 @@ impl DemoSys for RaycastF32DebugDemo {
             c: &'a Context,
             g: &'a mut G2d<'b>,
         }
-        impl<'a, 'b: 'a> dinotree_alg::graphics::DividerDrawer for Bla<'a, 'b> {
+        impl<'a, 'b: 'a> graphics::DividerDrawer for Bla<'a, 'b> {
             type N = F32n;
             fn draw_divider<A: axgeom::AxisTrait>(
                 &mut self,
@@ -234,6 +230,6 @@ impl DemoSys for RaycastF32DebugDemo {
         }
 
         let mut dd = Bla { c: &c, g };
-        dinotree_alg::graphics::draw(self.tree.get(), &mut dd, &self.dim);
+        self.tree.get().draw( &mut dd, &self.dim);
     }
 }

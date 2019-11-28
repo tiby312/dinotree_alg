@@ -34,7 +34,7 @@
 //! just barely fits into the number type.
 //! 
 
-use crate::inner_prelude::*;
+use crate::query::inner_prelude::*;
 use core::cmp::Ordering;
 use core::convert::TryFrom;
 

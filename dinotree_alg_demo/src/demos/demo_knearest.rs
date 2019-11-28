@@ -1,9 +1,6 @@
 use crate::support::prelude::*;
-use dinotree_alg::k_nearest;
-use k_nearest::SliceSplit;
 use std::cell::RefCell;
 
-use dinotree::HasAabb;
 
 #[derive(Copy, Clone)]
 struct Bot {
@@ -12,7 +9,7 @@ struct Bot {
     radius: Vec2<f32>,
 }
 
-impl dinotree_alg::assert::HasId for Bot {
+impl dinotree_alg::query::assert::HasId for Bot {
     fn get_id(&self) -> usize {
         self.id
     }
@@ -33,7 +30,7 @@ impl KnearestDemo {
             .map(|(id, (pos, radius))| Bot { id, pos, radius })
             .collect();
 
-        let tree = create_owned_par(axgeom::XAXISS, bots, |bot| {
+        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, bots, |bot| {
             Rect::from_point(bot.pos, bot.radius)
                 .inner_try_into()
                 .unwrap()
@@ -123,7 +120,7 @@ impl DemoSys for KnearestDemo {
                 g: RefCell::new(g),
                 draw: true,
             };
-            k_nearest::k_nearest_mut(tree.get_mut(), cursor, 3, &mut kn, self.dim)
+            tree.get_mut().k_nearest_mut(cursor, 3, &mut kn, self.dim)
         };
         let mut vv: Vec<_> = vv
             .drain(..)
@@ -139,7 +136,7 @@ impl DemoSys for KnearestDemo {
                 g: RefCell::new(g),
                 draw: false,
             };
-            dinotree_alg::assert::assert_k_nearest(
+            assert::assert_k_nearest(
                 unsafe { tree.get_aabb_bots_mut_not_protected() },
                 cursor,
                 3,
@@ -148,7 +145,7 @@ impl DemoSys for KnearestDemo {
             );
         }
 
-        let vv_iter = SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
+        let vv_iter = k_nearest::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
         for (a, color) in vv_iter.zip(cols.iter()) {
             for b in a.iter() {

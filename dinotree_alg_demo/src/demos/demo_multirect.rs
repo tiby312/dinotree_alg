@@ -1,5 +1,5 @@
 use crate::support::prelude::*;
-use dinotree_alg::rect::*;
+use dinotree_alg::prelude::*;
 
 #[derive(Copy, Clone, Debug)]
 struct Bot {
@@ -8,7 +8,7 @@ struct Bot {
     pos: Vec2<i32>,
 }
 
-impl dinotree_alg::assert::HasId for Bot {
+impl assert::HasId for Bot {
     fn get_id(&self) -> usize {
         self.id
     }
@@ -32,7 +32,7 @@ impl MultiRectDemo {
             })
             .collect();
 
-        let tree = create_owned_par(axgeom::XAXISS, bots, |b| Rect::from_point(b.pos, b.radius));
+        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, bots, |b| Rect::from_point(b.pos, b.radius));
 
         MultiRectDemo {
             dim: dim.inner_into::<f32>().inner_as(),
@@ -58,7 +58,6 @@ impl DemoSys for MultiRectDemo {
         let r2 = axgeom::Rect::new(100, 400, 100, 400);
 
         if check_naive {
-            use dinotree_alg::assert::*;
             assert_for_all_in_rect_mut(unsafe { self.tree.get_aabb_bots_mut_not_protected() }, &r1);
             assert_for_all_in_rect_mut(unsafe { self.tree.get_aabb_bots_mut_not_protected() }, &r2);
             assert_for_all_intersect_rect_mut(
@@ -77,7 +76,7 @@ impl DemoSys for MultiRectDemo {
 
         //test MultiRect
         {
-            let mut rects = MultiRectMut::new(self.tree.get_mut());
+            let mut rects = self.tree.get_mut().multi_rect();
 
             let mut to_draw = Vec::new();
             let _ = rects.for_all_in_rect_mut(r1, |a| to_draw.push(a));
@@ -103,7 +102,7 @@ impl DemoSys for MultiRectDemo {
         }
 
         //test for_all_intersect_rect
-        for_all_intersect_rect(self.tree.get(), &r1, |a| {
+        self.tree.get().for_all_intersect_rect(&r1, |a| {
             draw_rect_i32([0.0, 0.0, 1.0, 0.3], a.get(), c, g);
         });
 
@@ -111,7 +110,8 @@ impl DemoSys for MultiRectDemo {
         let mut r1 = self.dim.clone();
         r1.grow(-40);
         draw_rect_i32([1.0, 0.0, 0.0, 0.2], &r1, c, g);
-        for_all_not_in_rect_mut(self.tree.get_mut(), &r1, |b| {
+        
+        self.tree.get_mut().for_all_not_in_rect_mut( &r1, |b| {
             draw_rect_i32([1.0, 0.0, 1.0, 0.5], b.get(), c, g);
         });
     }

@@ -1,5 +1,5 @@
-use crate::inner_prelude::*;
-use crate::rect::*;
+use crate::query::inner_prelude::*;
+use crate::query::rect::*;
 
 ///Find all intersecting pairs between the elements in this dinotree, and the specified elements.
 ///No intersecting pairs within each group are looked for, only those between the two groups.
@@ -12,18 +12,16 @@ use crate::rect::*;
 ///But using the api, it is possible to build up a tree using the current trees dividers
 ///to exploit the divide and conquer properties of this problem.
 ///The two trees could be recursed at the same time to break up the problem.
-pub fn intersect_with_mut<A:AxisTrait,N:NodeTrait,X>(
+pub fn intersect_with_mut<A:AxisTrait,N:NodeTrait,X:HasAabb<Num=N::Num>>(
     tree:&mut DinoTree<A,N>,
     b: &mut [X],
-    mut aabb_create:impl FnMut(&X)->axgeom::Rect<N::Num>,
-    func: impl Fn(ProtectedBBox<N::T>,ProtectedBBox<BBoxMut<N::Num,X>>),
+    func: impl Fn(ProtectedBBox<N::T>,ProtectedBBox<X>),
 ) {
 
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
     //This way we can paralleliz this function.
-    let mut b2:Vec<_>=b.iter_mut().map(|a|BBoxMut::new(aabb_create(&a),a)).collect();
 
-    for mut i in ProtectedBBoxSlice::new(&mut b2).iter_mut() {
+    for mut i in ProtectedBBoxSlice::new(b).iter_mut() {
         let rect=*i.get();
         for_all_intersect_rect_mut(tree,&rect,|a| {
             func(a,i.as_mut());

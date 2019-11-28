@@ -20,7 +20,7 @@
 //!
 
 
-use crate::inner_prelude::*;
+use crate::query::inner_prelude::*;
 use core::cmp::Ordering;
 
 ///The geometric functions that the user must provide.

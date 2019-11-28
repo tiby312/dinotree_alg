@@ -1,7 +1,4 @@
 use crate::support::prelude::*;
-use dinotree_alg::colfind;
-use dinotree_alg::intersect_with;
-use dinotree_alg::rect::*;
 use duckduckgeo;
 
 #[derive(Copy, Clone)]
@@ -108,12 +105,11 @@ impl DemoSys for IntersectWithDemo {
         });
 
         {
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut k).build_par();
+            let mut walls=create_bbox_mut(walls,|wall| wall.0);
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
 
-            intersect_with::intersect_with_mut(
-                &mut tree,
-                walls,
-                |wall| wall.0,
+            tree.intersect_with_mut(
+                &mut walls,
                 |mut bot, wall| {
                     let fric = 0.8;
 
@@ -145,8 +141,7 @@ impl DemoSys for IntersectWithDemo {
             );
 
             let cc = cursor.inner_into();
-            for_all_in_rect_mut(
-                &mut tree,
+            tree.for_all_in_rect_mut(
                 &axgeom::Rect::from_point(cc, vec2same(100.0))
                     .inner_try_into()
                     .unwrap(),
@@ -155,7 +150,7 @@ impl DemoSys for IntersectWithDemo {
                 },
             );
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_par(|mut a, mut b| {
                 let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
             });
         }

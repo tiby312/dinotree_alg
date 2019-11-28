@@ -1,8 +1,4 @@
 use crate::support::prelude::*;
-use dinotree_alg;
-use dinotree_alg::rect::*;
-use duckduckgeo;
-
 use axgeom::Rect;
 
 #[derive(Copy, Clone, Debug)]
@@ -143,10 +139,10 @@ pub fn handle_rigid_body(
 
         let k2: &mut [BBoxMut<F32n, RigidBody>] = unsafe { &mut *(&mut k as &mut [_] as *mut [_]) };
 
-        let mut tree = DinoTreeBuilder::new(axgeom::YAXISS, &mut k).build_seq();
+        let mut tree = DinoTree::new(axgeom::YAXISS, &mut k);
 
         for _ in 0..num_query {
-            dinotree_alg::colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_par(|mut a, mut b| {
                 match a.inner_mut().push_away(b.inner_mut(), ball_size, push_rate) {
                     Some(dis) => {
                         func(a.inner_mut(), b.inner_mut(), dis);
@@ -155,7 +151,7 @@ pub fn handle_rigid_body(
                 }
             });
 
-            for_all_not_in_rect_mut(&mut tree, dim, |mut a| {
+            tree.for_all_not_in_rect_mut(dim, |mut a| {
                 a.inner_mut().push_away_from_border(dim.as_ref(), push_rate)
             });
 
@@ -231,10 +227,9 @@ impl DemoSys for RigidBodyDemo {
 
         let mut k = create_bbox_mut(&mut self.bots, |bot| bot.create_loose(radius));
 
-        let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut k).build_seq();
+        let mut tree = DinoTree::new(axgeom::XAXISS, &mut k);
 
-        for_all_in_rect_mut(
-            &mut tree,
+        tree.for_all_in_rect_mut(
             &axgeom::Rect::from_point(cursor, vec2same(100.0 + radius).inner_try_into().unwrap()),
             |mut b| {
                 let diff = cursor.inner_into() - b.inner().pos;

@@ -11,7 +11,7 @@ edition = "2018"
 
 
 [workspace]
-members = ["dinotree", "dinotree_alg_demo", "dinotree_alg_data"]
+members = [ "dinotree_alg_demo", "dinotree_alg_data"]
 
 [dev-dependencies]
 dists = "0.3"
@@ -19,10 +19,11 @@ dists = "0.3"
 [dependencies]
 is_sorted = "0.1"
 itertools = "0.8"
-dinotree = {version = "0.5" , path= "dinotree"}
 rayon = "1.2"
 compt = "1.6"
 axgeom = "1.2"
+pdqselect = "0.1"
+
 
 [features]
 nbody = []

@@ -6,7 +6,7 @@
 //! The user is allowed to hold on to the mutable references returned for as long as the tree itself is mutably borrowed.
 //!
 
-use crate::inner_prelude::*;
+use crate::query::inner_prelude::*;
 
 
 
@@ -166,7 +166,7 @@ impl<'a,K:DinoTreeRefMutTrait> core::convert::From<RectQueryMutBuilder<'a,K>> fo
 
 
 mod mutable{
-    use crate::colfind::oned::get_section_mut;
+    use crate::query::colfind::oned::get_section_mut;
     use super::*;
 
     rect!(VistrMut<N>,ProtectedBBox<N::T>,get_section_mut,get_mut);
@@ -234,7 +234,7 @@ mod mutable{
 
 mod constant{
 
-    use crate::colfind::oned::get_section;
+    use crate::query::colfind::oned::get_section;
     use super::*;
     rect!(Vistr<N>,&N::T,get_section,get);
     

@@ -1,6 +1,6 @@
 use axgeom;
-use dinotree::prelude::*;
-use dinotree_alg::assert::*;
+use dinotree_alg::prelude::*;
+use dinotree_alg::query::assert::*;
 
 pub struct Bot{
     id:usize,

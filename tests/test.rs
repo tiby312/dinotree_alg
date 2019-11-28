@@ -1,22 +1,21 @@
 
 extern crate axgeom;
-extern crate dinotree;
+extern crate dinotree_alg;
 extern crate compt;
 
-use dinotree::prelude::*;
+use dinotree_alg::prelude::*;
 use compt::*;
-
+use dinotree_alg::par::*;
+    
 
 
 #[test]
 fn test_par_heur(){
-    use dinotree::par::*;
     let p = compute_level_switch_sequential(6,6);
     assert_eq!(p.get_depth_to_switch_at(),0);
 }
 #[test]
 fn test_parallel(){
-    use dinotree::par::*;
     let k=Parallel::new(0);
     match k.next(){
         ParResult::Parallel(_)=>{
@@ -51,6 +50,20 @@ fn test_zero_sized() {
     assert!(n.cont.is_some());
 }
 
+#[test]
+fn test_zero_sized2() {
+    let mut bots = vec![(); 1];
+
+    let mut bots = create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
+
+    let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
+    
+    let (n, _) = tree.vistr().next();
+    let n=n.get();
+    assert_eq!(n.div.is_none(), true);
+    assert_eq!(n.bots.len(), 1);
+    assert!(n.cont.is_some());
+}
 #[test]
 fn test_one() {
     let mut bots = vec![0usize; 1];

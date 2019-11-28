@@ -1,6 +1,6 @@
-use crate::inner_prelude::*;
-use crate::colfind::ColMulti;
-use dinotree::elem::PreVecMut;
+use crate::query::inner_prelude::*;
+use crate::query::colfind::ColMulti;
+use crate::elem::PreVecMut;
 
 struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
     a: &'a mut F,

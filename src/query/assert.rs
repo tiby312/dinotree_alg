@@ -1,11 +1,11 @@
-use dinotree::prelude::*;
-use crate::inner_prelude::*;
+use crate::prelude::*;
+use crate::query::inner_prelude::*;
 use alloc::vec::Vec;
 
-use crate::raycast;
-use crate::colfind;
-use crate::k_nearest;
-use crate::rect;
+use crate::query::raycast;
+use crate::query::colfind;
+use crate::query::k_nearest;
+use crate::query::rect;
 
 pub trait HasId{
     fn get_id(&self)->usize;

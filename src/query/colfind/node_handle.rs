@@ -1,7 +1,7 @@
 
-use crate::inner_prelude::*;
-use crate::colfind::ColMulti;
-use crate::colfind::oned;
+use crate::query::inner_prelude::*;
+use crate::query::colfind::ColMulti;
+use crate::query::colfind::oned;
 
 
 

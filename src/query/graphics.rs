@@ -1,4 +1,4 @@
-use crate::inner_prelude::*;
+use crate::query::inner_prelude::*;
 
 ///Trait user must implement.
 pub trait DividerDrawer{

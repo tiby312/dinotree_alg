@@ -1,4 +1,4 @@
-use dinotree::prelude::*;
+use crate::prelude::*;
 
 
 pub fn for_every_pair<T:HasAabb>(mut arr:ProtectedBBoxSlice<T>,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){

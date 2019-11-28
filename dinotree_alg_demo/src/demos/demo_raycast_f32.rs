@@ -1,7 +1,4 @@
-use self::raycast::RayTrait;
 use crate::support::prelude::*;
-use dinotree_alg::raycast;
-use dinotree_alg::raycast::RayIntersectResult;
 use duckduckgeo;
 use std;
 
@@ -11,7 +8,7 @@ struct RayT<'a, 'c: 'a> {
     pub g: &'a mut G2d<'c>,
 }
 
-impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
+impl<'a, 'c: 'a> raycast::RayTrait for RayT<'a, 'c> {
     type N = F32n;
     type T = BBoxPtr<F32n, Bot>;
 
@@ -19,17 +16,17 @@ impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
         &self,
         ray: &raycast::Ray<Self::N>,
         bot: &Self::T,
-    ) -> RayIntersectResult<Self::N> {
+    ) -> raycast::RayIntersectResult<Self::N> {
         let ray: duckduckgeo::Ray<f32> = Ray {
             point: ray.point.inner_into(),
             dir: ray.dir.inner_into(),
         };
 
         match ray_intersects_circle(&ray, bot.inner().center, self.radius) {
-            IntersectsBotResult::Hit(val) => RayIntersectResult::Hit(val),
-            IntersectsBotResult::NoHit => RayIntersectResult::NoHit,
+            IntersectsBotResult::Hit(val) => raycast::RayIntersectResult::Hit(val),
+            IntersectsBotResult::NoHit => raycast::RayIntersectResult::NoHit,
             IntersectsBotResult::Inside => {
-                RayIntersectResult::Hit(0.0)
+                raycast::RayIntersectResult::Hit(0.0)
 
                 //Return none if you do not want results that intersect the ray origin.
                 //None
@@ -42,7 +39,7 @@ impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
         &self,
         ray: &raycast::Ray<Self::N>,
         rect: &Rect<Self::N>,
-    ) -> RayIntersectResult<Self::N> {
+    ) -> raycast::RayIntersectResult<Self::N> {
         let ray: duckduckgeo::Ray<f32> = Ray {
             point: ray.point.inner_into(),
             dir: ray.dir.inner_into(),
@@ -51,10 +48,10 @@ impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
 
         let k = ray_intersects_box(&ray, &rect);
         match k {
-            IntersectsBotResult::Hit(val) => RayIntersectResult::Hit(val),
-            IntersectsBotResult::NoHit => RayIntersectResult::NoHit,
+            IntersectsBotResult::Hit(val) => raycast::RayIntersectResult::Hit(val),
+            IntersectsBotResult::NoHit => raycast::RayIntersectResult::NoHit,
             IntersectsBotResult::Inside => {
-                RayIntersectResult::Hit(0.0)
+                raycast::RayIntersectResult::Hit(0.0)
                 //Return none if you do not want results that intersect the ray origin.
                 //None
             }
@@ -70,7 +67,7 @@ struct Bot {
     center: Vec2<f32>,
 }
 
-impl dinotree_alg::assert::HasId for Bot {
+impl assert::HasId for Bot {
     fn get_id(&self) -> usize {
         self.id
     }
@@ -90,7 +87,7 @@ impl RaycastF32Demo {
             .take(100)
             .collect();
 
-        let tree = create_owned_par(axgeom::XAXISS, vv, |a| {
+        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, vv, |a| {
             Rect::from_point(a.center, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
@@ -130,7 +127,7 @@ impl DemoSys for RaycastF32Demo {
                 };
 
                 if check_naive {
-                    dinotree_alg::assert::assert_raycast(
+                    assert::assert_raycast(
                         unsafe { tree.get_aabb_bots_mut_not_protected() },
                         self.dim,
                         ray,
@@ -142,10 +139,8 @@ impl DemoSys for RaycastF32Demo {
                     );
                 }
 
-                use raycast::*;
-
-                let res = raycast_mut(
-                    tree.get_mut(),
+                
+                let res = tree.get_mut().raycast_mut(
                     self.dim,
                     ray,
                     &mut RayT {
@@ -156,12 +151,12 @@ impl DemoSys for RaycastF32Demo {
                 );
 
                 let (ppx,ppy) = match res{
-                    RayCastResult::Hit(_,dis)=>{
+                    raycast::RayCastResult::Hit(_,dis)=>{
                         let ppx = ray.point.x + ray.dir.x * dis;
                         let ppy = ray.point.y + ray.dir.y * dis;
                         (ppx, ppy)
                     },
-                    RayCastResult::NoHit=>{
+                    raycast::RayCastResult::NoHit=>{
                         let ppx = ray.point.x + ray.dir.x * 800.0;
                         let ppy = ray.point.y + ray.dir.y * 800.0;
                         (ppx, ppy)

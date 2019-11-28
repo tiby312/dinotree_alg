@@ -1,6 +1,6 @@
 
+pub use crate::DinoTree;
 use crate::inner_prelude::*;
-use crate::assert_invariants::assert_invariants;
 
 
 ///Convenience function to create a `&mut (Rect<N>,T)` from a `(Rect<N>,T)` bounding box.
@@ -78,39 +78,6 @@ impl<A:AxisTrait,N:NodeTrait> NotSorted<A,N>{
 
 }
 
-
-///The data structure this crate revoles around.
-pub struct DinoTree<A:AxisTrait,N:NodeTrait>{
-    axis:A,
-    inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
-}
-
-impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
-    //TODO should these be inlined?
-    pub fn axis(&self)->A{
-        self.axis
-    }
-    pub fn vistr_mut(&mut self)->VistrMut<N>{
-        VistrMut{
-            inner:self.inner.vistr_mut()
-        }
-    }
-    pub fn vistr(&self)->Vistr<N>{
-        self.inner.vistr()
-    }
-    pub fn get_height(&self)->usize{
-        self.inner.get_height()
-    }
-
-    pub fn num_nodes(&self)->usize{
-        self.inner.get_nodes().len()
-    }
-    #[must_use]
-    pub fn assert_invariants(&self)->bool{
-        assert_invariants(self)
-        
-    }
-}
 
 
 ///Builder pattern for dinotree.

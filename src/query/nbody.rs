@@ -10,7 +10,7 @@
 //! a rectangle within which the nbody simulation will take place. So the simulation is only designed to work
 //! in a finite area.
 //!
-use crate::inner_prelude::*;
+use crate::query::inner_prelude::*;
 
 
 pub trait NodeMassTrait:Clone{
@@ -451,8 +451,8 @@ pub fn nbody_par<A:AxisTrait,J:NodeTrait+Send+Sync,N:NodeMassTrait<Num=J::Num,It
     let mut misc_tree=compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
     {
-        let k=dinotree::par::SWITCH_SEQUENTIAL_DEFAULT;
-        let par=dinotree::par::compute_level_switch_sequential(k,t1.get_height());
+        let k=par::SWITCH_SEQUENTIAL_DEFAULT;
+        let par=par::compute_level_switch_sequential(k,t1.get_height());
 
         let d=misc_tree.vistr_mut().zip(t1.vistr_mut());
         recc(par,axis,d,ncontext);    

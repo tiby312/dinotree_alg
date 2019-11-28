@@ -1,7 +1,5 @@
 use crate::support::prelude::*;
 use dinotree_alg;
-use dinotree_alg::colfind;
-use dinotree_alg::nbody;
 use duckduckgeo;
 use duckduckgeo::GravityTrait;
 
@@ -210,16 +208,13 @@ impl DemoSys for DemoNbody {
         let mut k = create_bbox_mut(bots, |b| b.create_aabb());
 
         {
-            let mut tree = {
-                DinoTreeBuilder::new(axgeom::XAXISS, &mut k).build_par()
-            };
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
            
 
             let border = self.dim;
 
             if !check_naive {
-                nbody::nbody(
-                    &mut tree,
+                tree.nbody(
                     &mut Bla {
                         num_pairs_checked: 0,
                         _p: PhantomData,
@@ -231,7 +226,7 @@ impl DemoSys for DemoNbody {
                     num_pairs_checked: 0,
                     _p: PhantomData,
                 };
-                nbody::nbody(&mut tree, &mut bla, border);
+                tree.nbody(&mut bla, border);
                 let num_pair_alg = bla.num_pairs_checked;
 
                 let (bots2, num_pair_naive) = {
@@ -290,7 +285,7 @@ impl DemoSys for DemoNbody {
                 }
             }
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_par(|mut a, mut b| {
                 let (a, b) = if a.inner().mass > b.inner().mass {
                     (a.inner_mut(), b.inner_mut())
                 } else {
@@ -324,7 +319,7 @@ impl DemoSys for DemoNbody {
                     c: &'a Context,
                     g: &'a mut G2d<'b>,
                 }
-                impl<'a, 'b: 'a> dinotree_alg::graphics::DividerDrawer for Bla<'a, 'b> {
+                impl<'a, 'b: 'a> graphics::DividerDrawer for Bla<'a, 'b> {
                     type N = F32n;
                     fn draw_divider<A: axgeom::AxisTrait>(
                         &mut self,
@@ -379,7 +374,7 @@ impl DemoSys for DemoNbody {
                 }
 
                 let mut dd = Bla { c: &c, g };
-                dinotree_alg::graphics::draw(&tree, &mut dd, &border);
+                graphics::draw(&tree, &mut dd, &border);
             }
         }
         //Draw bots.
