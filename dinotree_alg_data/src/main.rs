@@ -6,6 +6,7 @@ pub fn black_box<T>(dummy: T) -> T {
     }
 }
 
+
 mod inner_prelude {
 
     pub use crate::support::*;
@@ -17,12 +18,11 @@ mod inner_prelude {
 
     pub use crate::black_box;
     pub(crate) use crate::datanum;
-    pub use axgeom::ordered_float::NotNan;
+    pub use ordered_float::NotNan;
     pub use axgeom::vec2;
     pub use axgeom::vec2same;
     pub use axgeom::Rect;
     pub use axgeom::Vec2;
-    pub(crate) use dinotree::axgeom;
     pub(crate) use dists;
     pub use gnuplot::*;
     pub use std::time::Duration;

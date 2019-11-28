@@ -191,7 +191,7 @@ fn handle_anchor_with_children<
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,J>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough([anchor.div,range.right])
+            self.ncontext.is_far_enough([anchor.div,range.end])
         }
     }
 
@@ -221,7 +221,7 @@ fn handle_anchor_with_children<
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,J>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough([anchor.div,range.left])
+            self.ncontext.is_far_enough([anchor.div,range.start])
         }
     }
     {
@@ -260,7 +260,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait<Num=J::Num,
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,_anchor:&mut Anchor<B,Self::J>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough_half([self.div,range.left])
+            self.ncontext.is_far_enough_half([self.div,range.start])
         }
     }
     struct Bo2<'a,B:AxisTrait,N:NodeMassTrait,J:NodeTrait>{
@@ -286,7 +286,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait<Num=J::Num,
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,_anchor:&mut Anchor<B,J>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough_half([self.div,range.left])
+            self.ncontext.is_far_enough_half([self.div,range.start])
         }
     }
 
@@ -318,7 +318,7 @@ fn handle_left_with_right<'a,A:AxisTrait,B:AxisTrait,N:NodeMassTrait<Num=J::Num,
         fn is_far_enough<A:AxisTrait>(&mut self,axis:A,anchor:&mut Anchor<B,J>,misc:&Self::No)->bool{
             let rect=N::get_rect(misc);
             let range=rect.get_range(axis);
-            self.ncontext.is_far_enough_half([range.right,anchor.div])
+            self.ncontext.is_far_enough_half([range.end,anchor.div])
         }
     }
     let mut bo= Bo{_anchor_axis:anchor.axis,right:&mut right,ncontext};

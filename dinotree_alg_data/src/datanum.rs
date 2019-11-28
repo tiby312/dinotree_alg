@@ -1,4 +1,4 @@
-use dinotree::axgeom::Rect;
+use axgeom::Rect;
 use dinotree::NumTrait;
 use std::cmp::Ordering;
 

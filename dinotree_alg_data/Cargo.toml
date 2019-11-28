@@ -8,8 +8,11 @@ publish = false
 [dependencies]
 dinotree_alg = {path=".."}
 dinotree = {path="../dinotree"}
-dists = "0.2"
-gnuplot = "*"
+dists = "0.3"
+gnuplot = "0.0.32"
 duckduckgeo = "0.2"
 rayon = "1.2"
-num_cpus = "*"
+axgeom = "1.2"
+num_cpus = "1.11.1"
+ordered-float = "1.0.2"
+num-traits = "0.2.8"
