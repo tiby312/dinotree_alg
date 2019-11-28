@@ -42,10 +42,10 @@ macro_rules! rect{
                     }
                     let rr = rect.get_range(this_axis);
 
-                    if !(*div < rr.left) {
+                    if !(*div < rr.start) {
                         self::rect_recurse(this_axis.next(), left, rect, func);
                     }
-                    if !(*div > rr.right) {
+                    if !(*div > rr.end) {
                         self::rect_recurse(this_axis.next(), right, rect, func);
                     }
                 },
@@ -92,7 +92,7 @@ pub fn for_all_not_in_rect_mut<A:AxisTrait,N:NodeTrait>(tree:&mut DinoTree<A,N>,
                     None=>return closure,
                 };
 
-                match rect.get_range(axis).left_or_right_or_contain(div){
+                match rect.get_range(axis).contains_ext(*div){
                     core::cmp::Ordering::Less=>{
                         rect_recurse(axis.next(),left,rect,closure)
                     },

@@ -1,4 +1,4 @@
-use dinotree::axgeom;
+use axgeom;
 use dinotree::prelude::*;
 use dinotree_alg::assert::*;
 

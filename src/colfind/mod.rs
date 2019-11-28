@@ -40,7 +40,7 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl AxisTrait,bots:&mut [T],func:impl Fn
     fn sweeper_update<I:HasAabb,A:AxisTrait>(axis:A,collision_botids: &mut [I]) {
 
         let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
-            let (p1,p2)=(a.get().get_range(axis).left,b.get().get_range(axis).left);
+            let (p1,p2)=(a.get().get_range(axis).start,b.get().get_range(axis).start);
             if p1 > p2 {
                 return core::cmp::Ordering::Greater;
             }

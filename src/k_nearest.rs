@@ -111,11 +111,12 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 
 
 fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::AxisTrait,range:&Range<N>)->Ordering{
-    if axis.is_xaxis(){
-        range.left_or_right_or_contain(&point.x)
+    let v = if axis.is_xaxis(){
+        point.x
     }else{
-        range.left_or_right_or_contain(&point.y)
-    }
+        point.y
+    };
+    range.contains_ext(v)
 }
 
 /// Returned by k_nearest_mut
@@ -244,7 +245,7 @@ fn recc<'a:'b,'b,
                     *cont
                 },
                 None=>{
-                    Range{left:*div,right:*div}
+                    Range{start:*div,end:*div}
                 }
             };
 

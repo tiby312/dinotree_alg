@@ -38,11 +38,11 @@ impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait> GoDownRecurser<'a,N,NN,B
                 }    
                 
                 if this_axis.is_equal_to(anchor_axis) {
-                    if *div >= self.anchor.cont.left {
+                    if *div >= self.anchor.cont.start {
                         self.go_down(this_axis.next(), left);
                     }
 
-                    if *div <= self.anchor.cont.right {
+                    if *div <= self.anchor.cont.end {
                         self.go_down(this_axis.next(), right);
                     };
                 } else {

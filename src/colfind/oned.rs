@@ -126,7 +126,7 @@ impl<I: HasAabb> Sweeper<I> {
                 {
                     let crr = curr_bot.get().get_range(axis);
                     //change this to do retain and then iter
-                    active.retain(|that_bot|that_bot.get().get_range(axis).right > crr.left);
+                    active.retain(|that_bot|that_bot.get().get_range(axis).end > crr.start);
                 }
 
                 for that_bot in active.iter_mut() {
@@ -158,19 +158,19 @@ impl<I: HasAabb> Sweeper<I> {
 
         for mut y in ys {
             //Add all the x's that are touching the y to the active x.
-            for x in xs.peeking_take_while(|x|x.get().get_range(axis).left<=y.get().get_range(axis).right){
+            for x in xs.peeking_take_while(|x|x.get().get_range(axis).start<=y.get().get_range(axis).end){
                 active_x.push(x);
             }
             
             //Prune all the x's that are no longer touching the y.
-            active_x.retain(|x| x.get().get_range(axis).right > y.get().get_range(axis).left);
+            active_x.retain(|x| x.get().get_range(axis).end > y.get().get_range(axis).start);
 
             //So at this point some of the x's could actualy not intersect y.
             //These are the x's that are to the complete right of y.
             //So to handle collisions, we want to make sure to not hit these.
             //That is why we have that condition to break out of the below loop
             for x in active_x.iter_mut() {
-                if x.get().get_range(axis).left>=y.get().get_range(axis).right{
+                if x.get().get_range(axis).start>=y.get().get_range(axis).end{
                     break;
                 }
 
@@ -261,7 +261,7 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Rang
     let mut start = 0;
     for (e, i) in arr.iter().enumerate() {
         let rr = i.get().get_range(axis);
-        if rr.right >= range.left {
+        if rr.end >= range.start {
             start = e;
             break;
         }
@@ -270,7 +270,7 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Rang
     let mut end = arr.len();
     for (e, i) in arr[start..].iter().enumerate() {
         let rr = i.get().get_range(axis);
-        if rr.left > range.right {
+        if rr.start > range.end {
             end = start + e;
             break;
         }
@@ -285,7 +285,7 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,mut arr: ProtectedBBox
     let mut start = 0;
     for (e, i) in arr.as_ref().iter().enumerate() {
         let rr = i.get().get_range(axis);
-        if rr.right >= range.left {
+        if rr.end >= range.start {
             start = e;
             break;
         }
@@ -295,7 +295,7 @@ pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,mut arr: ProtectedBBox
     for (e, i) in arr.as_mut().truncate_from(start..).iter().enumerate() {
     
         let rr = i.get().get_range(axis);
-        if rr.left > range.right {
+        if rr.start > range.end {
             end = start + e;
             break;
         }

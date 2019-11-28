@@ -32,9 +32,9 @@ pub fn draw<A:AxisTrait,N:NodeTrait,D:DividerDrawer<N=N::Num>>(
                 None=>return
             };
 
-            let cont=[cont.left,cont.right];
+            let cont=[cont.start,cont.end];
             let rr=rect.get_range(axis.next());
-            dr.draw_divider::<A>(axis,*div,cont,[rr.left,rr.right],depth.0);
+            dr.draw_divider::<A>(axis,*div,cont,[rr.start,rr.end],depth.0);
 
 
             let (a,b)=rect.subdivide(axis,*div);

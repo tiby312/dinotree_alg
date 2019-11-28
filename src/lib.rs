@@ -19,10 +19,10 @@ extern crate alloc;
 mod inner_prelude {
     pub use alloc::vec::Vec;
     pub use dinotree::prelude::*;
-    pub use dinotree::axgeom;    
-    pub use dinotree::axgeom::*;
-    pub use dinotree::compt;
-    pub use dinotree::compt::*;
+    pub use axgeom;    
+    pub use axgeom::*;
+    pub use compt;
+    pub use compt::*;
     pub use core::marker::PhantomData;
     pub use itertools::Itertools;
     pub(crate) use crate::tools;
