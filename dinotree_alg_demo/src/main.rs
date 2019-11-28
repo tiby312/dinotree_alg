@@ -1,8 +1,8 @@
-use axgeom::ordered_float::*;
+
+use ordered_float::*;
 use axgeom::vec2;
 use axgeom::Vec2;
 use axgeom::*;
-use dinotree::axgeom;
 use piston_window::*;
 
 #[macro_use]
@@ -36,9 +36,7 @@ mod demo_iter {
             let area: Rect<F32n> = area.inner_try_into().unwrap();
 
             let k: Box<dyn DemoSys> = match curr {
-                0 => Box::new(demo_raycast_grid::RaycastGridDemo::new(area)),
                 
-                /*
                 0 => Box::new(demo_raycast_f32_debug::RaycastF32DebugDemo::new(area)),
                 1 => Box::new(demo_raycast_f32::RaycastF32Demo::new(area)),
                 2 => Box::new(demo_liquid::LiquidDemo::new(area)),
@@ -49,12 +47,13 @@ mod demo_iter {
                 7 => Box::new(demo_rigid_body::RigidBodyDemo::new(area)),
                 8 => Box::new(demo_grid::GridDemo::new(area)),
                 9 => Box::new(demo_nbody::DemoNbody::new(area)),
-                */
+                10 => Box::new(demo_raycast_grid::RaycastGridDemo::new(area)),
+                
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
 
-            if self.0 == 10 {
+            if self.0 == 11 {
                 self.0 = 0
             }
             k
@@ -69,7 +68,7 @@ fn main() {
         .unwrap();
 
     let area = vec2(1024, 768);
-
+    
     let window = WindowSettings::new("dinotree test", [area.x, area.y])
         .exit_on_esc(true)
         .fullscreen(false)

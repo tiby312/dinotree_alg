@@ -40,17 +40,17 @@ impl GridDim2D {
         let ydim = self.ys;
         let xratio = i as f32 / xdim as f32;
         let yratio = j as f32 / ydim as f32;
-        let width = dim.x.right - dim.x.left;
-        let height = dim.y.right - dim.y.left;
+        let width = dim.x.end - dim.x.start;
+        let height = dim.y.end - dim.y.start;
 
         let xratio2 = (i as f32 + 1.0) / xdim as f32;
         let yratio2 = (j as f32 + 1.0) / ydim as f32;
 
         Rect::new(
-            dim.x.left + xratio * width,
-            dim.x.left + xratio2 * width,
-            dim.y.left + yratio * height,
-            dim.y.left + yratio2 * height,
+            dim.x.start + xratio * width,
+            dim.x.start + xratio2 * width,
+            dim.y.start + yratio * height,
+            dim.y.start + yratio2 * height,
         )
     }
     fn detect_collision(&self, bot: &Bot, radius: f32) -> Option<Rect<f32>> {
@@ -68,8 +68,8 @@ impl GridDim2D {
 
         let x = bot.pos.x + jj.x;
         let y = bot.pos.y + jj.y;
-        let width = dim.x.right - dim.x.left;
-        let height = dim.y.right - dim.y.left;
+        let width = dim.x.end - dim.x.start;
+        let height = dim.y.end - dim.y.start;
 
         let i = (x * (xdim as f32 / width))
             .floor()
@@ -239,10 +239,10 @@ impl DemoSys for GridDemo {
                     let fric = 0.5;
                     let vel = bot.vel;
                     let wall_move = match k {
-                        WallSide::Above => [None, Some((wally.left - radius, -vel.y * fric))],
-                        WallSide::Below => [None, Some((wally.right + radius, -vel.y * fric))],
-                        WallSide::LeftOf => [Some((wallx.left - radius, -vel.x * fric)), None],
-                        WallSide::RightOf => [Some((wallx.right + radius, -vel.x * fric)), None],
+                        WallSide::Above => [None, Some((wally.start - radius, -vel.y * fric))],
+                        WallSide::Below => [None, Some((wally.end + radius, -vel.y * fric))],
+                        WallSide::LeftOf => [Some((wallx.start - radius, -vel.x * fric)), None],
+                        WallSide::RightOf => [Some((wallx.end + radius, -vel.x * fric)), None],
                     };
 
                     if let Some((pos, vel)) = wall_move[0] {

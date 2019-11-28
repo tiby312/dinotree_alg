@@ -128,16 +128,16 @@ impl DemoSys for IntersectWithDemo {
                     .unwrap()
                     {
                         duckduckgeo::WallSide::Above => {
-                            [None, Some((wally.left - radius, -vel.y * fric))]
+                            [None, Some((wally.start - radius, -vel.y * fric))]
                         }
                         duckduckgeo::WallSide::Below => {
-                            [None, Some((wally.right + radius, -vel.y * fric))]
+                            [None, Some((wally.end + radius, -vel.y * fric))]
                         }
                         duckduckgeo::WallSide::LeftOf => {
-                            [Some((wallx.left - radius, -vel.x * fric)), None]
+                            [Some((wallx.start - radius, -vel.x * fric)), None]
                         }
                         duckduckgeo::WallSide::RightOf => {
-                            [Some((wallx.right + radius, -vel.x * fric)), None]
+                            [Some((wallx.end + radius, -vel.x * fric)), None]
                         }
                     };
                     bot.inner_mut().wall_move = ret;

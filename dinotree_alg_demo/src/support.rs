@@ -1,5 +1,5 @@
-use dinotree::axgeom::*;
 use std;
+use axgeom::*;
 
 pub mod prelude {
 
@@ -17,14 +17,13 @@ pub mod prelude {
 
     pub use duckduckgeo::bot::*;
     pub use duckduckgeo::*;
-
+    pub use axgeom;
+    pub use axgeom::*;
     pub use duckduckgeo::F32n;
 
     pub use dists;
 
-    pub use dinotree::axgeom;
-    pub use dinotree::axgeom::*;
-    pub use dinotree::compt;
+    //pub use dinotree::compt;
     pub use dists::uniform_rand::UniformRandGen;
     pub use duckduckgeo::array2_inner_into;
     //pub use core::pin::Pin;

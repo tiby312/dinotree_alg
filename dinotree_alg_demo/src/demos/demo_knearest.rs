@@ -3,6 +3,8 @@ use dinotree_alg::k_nearest;
 use k_nearest::SliceSplit;
 use std::cell::RefCell;
 
+use dinotree::HasAabb;
+
 #[derive(Copy, Clone)]
 struct Bot {
     id: usize,
@@ -20,6 +22,7 @@ pub struct KnearestDemo {
     tree: DinoTreeOwned<axgeom::XAXISS, F32n, Bot>,
     dim: Rect<F32n>,
 }
+
 
 impl KnearestDemo {
     pub fn new(dim: Rect<F32n>) -> KnearestDemo {

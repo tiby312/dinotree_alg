@@ -6,14 +6,16 @@ edition = "2018"
 publish = false
 
 [dependencies]
-dists= "0.2"
+dists= "0.3"
 dinotree={path = "../dinotree"}
-#dinotree_alg = {path=".."}
 duckduckgeo = "0.2"
 piston_window = "0.103.0"
 bit-vec = "0.6"
 num_cpus = "1.10"
 rayon = "1.2"
+axgeom="1.2"
+ordered-float = "1.0.2"
+compt = "1.6"
 
 [dependencies.dinotree_alg]
 path = ".."

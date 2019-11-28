@@ -108,17 +108,17 @@ impl RigidBody {
 
         let (pos, _vel) = &mut a.pos_vel_mut();
 
-        if pos.x < xx.left {
-            pos.x = xx.left;
+        if pos.x < xx.start {
+            pos.x = xx.start;
         }
-        if pos.x > xx.right {
-            pos.x = xx.right;
+        if pos.x > xx.end {
+            pos.x = xx.end;
         }
-        if pos.y < yy.left {
-            pos.y = yy.left;
+        if pos.y < yy.start {
+            pos.y = yy.start;
         }
-        if pos.y > yy.right {
-            pos.y = yy.right;
+        if pos.y > yy.end {
+            pos.y = yy.end;
         }
     }
 }

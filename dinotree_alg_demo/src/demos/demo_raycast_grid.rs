@@ -27,26 +27,26 @@ impl DemoSys for RaycastGridDemo {
     ) {
         let dim=self.dim.inner_into();
         let radius=3.0;
-        let viewport=GridViewPort{spacing:vec2(60.0,60.0),origin:vec2(0.0,0.0)};
+        let viewport=GridViewPort{spacing:60.0,origin:vec2(0.0,0.0)};
 
         for y in 0..100{
-            let yy:f32=viewport.origin.y+(y as f32)*viewport.spacing.y;
+            let yy:f32=viewport.origin.y+(y as f32)*viewport.spacing;
     
-            let rect=axgeom::Rect::new(dim.x.left,dim.x.right,yy,yy+1.0);
+            let rect=axgeom::Rect::new(dim.x.start,dim.x.end,yy,yy+1.0);
             draw_rect_f32([1.0, 0.6, 0.6, 1.0], &rect, c, g);
         
         }
 
         for x in 0..100{
-            let xx:f32=viewport.origin.x+(x as f32)*viewport.spacing.x;
+            let xx:f32=viewport.origin.x+(x as f32)*viewport.spacing;
     
-            let rect=axgeom::Rect::new(xx,xx+1.0,dim.y.left,dim.y.right);
+            let rect=axgeom::Rect::new(xx,xx+1.0,dim.y.start,dim.y.end);
             draw_rect_f32([0.6, 1.0, 0.6, 1.0], &rect, c, g);
         
         }
 
         //let point=vec2(300.0,300.0);
-        let point=viewport.origin+viewport.spacing*5.0;//vec2(310.0,310.0);
+        let point=viewport.origin+vec2same(viewport.spacing*5.0);//vec2(310.0,310.0);
 
         //let pos=vec2(10.0,10.0);
         //let pos=vec2(86.70752,647.98);
@@ -65,7 +65,7 @@ impl DemoSys for RaycastGridDemo {
             let point = ray.point+ray.dir*a.tval;
 
             let cell=a.cell;
-            let topleft=viewport.to_world_topleft(cell);
+            let topstart=viewport.to_world_topleft(cell);
 
             let kk=(count as f32)*0.8;
 
@@ -73,7 +73,7 @@ impl DemoSys for RaycastGridDemo {
             draw_rect_f32([0.0, 0.0, kk, 0.5], rect, c, g);
 
 
-            let cell_rect=axgeom::Rect::new(topleft.x,topleft.x+viewport.spacing.x,topleft.y,topleft.y+viewport.spacing.y);
+            let cell_rect=axgeom::Rect::new(topstart.x,topstart.x+viewport.spacing,topstart.y,topstart.y+viewport.spacing);
             draw_rect_f32([0.0, 0.0, kk, 0.5], &cell_rect, c, g);
 
             use CardDir::*;

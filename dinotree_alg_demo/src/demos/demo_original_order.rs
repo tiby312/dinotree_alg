@@ -272,12 +272,12 @@ fn draw_bot_lines<A: axgeom::AxisTrait>(
     let (nn, rest) = stuff.next();
     let nn = nn.get();
     let mid = match rest {
-        Some([left, right]) => match nn.div {
+        Some([start, end]) => match nn.div {
             Some(div) => {
                 let (a, b) = rect.subdivide(axis, *div);
 
-                draw_bot_lines(axis.next(), left, &a, c, g);
-                draw_bot_lines(axis.next(), right, &b, c, g);
+                draw_bot_lines(axis.next(), start, &a, c, g);
+                draw_bot_lines(axis.next(), end, &b, c, g);
 
                 let ((x1, x2), (y1, y2)) = rect.inner_into::<f32>().get();
                 let midx = if !axis.is_xaxis() {
