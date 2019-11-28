@@ -36,21 +36,21 @@
 //!
 //! ## Data Structure
 //!
-//! Using this crate, the user can create three flavors of the same fundamental data structure are provided. They each 
+//! Using this crate, the user can create three flavors of the same fundamental data structure. They each 
 //! have different characteristics that may make you want to use them over the others. You can make a dinotree
-//! composed of either:
+//! composed of the following:
 //!
 //!
 //! + `(Rect<N>,&mut T)` is the most well rounded and most performant in most cases.
 //! The aabb's themselves don't have a level of indirection. Broad-phase
 //! algorithms need to look at these very often. It's only when these algorithms
 //! detect a intersection do they need to look further, which doesnt happen as often.
-//! so a level of indirection here is not so bad. The fact that T is a pointer, also
+//! So a level of indirection here is not so bad. The fact that T is a pointer, also
 //! means that more aabb's will be in cache at once, further speeding up algorithms
 //! that need to look at the aabb's very often.
 //!
 //!
-//! + `(Rect<N>,T)` performs slightly better during the querying phase, But suffers
+//! + `(Rect<N>,T)` performs slightly better during the querying phase, but suffers
 //! during the construction phase. There is also no easy way to return the elements back
 //! to their original positions on destructing of the tree (something you don't need to worry about with pointers).
 //! One benefit of using this tree, is that it owns the elements completely, so there are no lifetime references to worry about.
@@ -97,45 +97,11 @@
 //! 
 //!
 
-
-//#![no_std]
-
-#[cfg(all(feature = "unstable", test))]
-extern crate test;
+#![no_std]
 
 extern crate alloc;
 extern crate is_sorted;
 extern crate pdqselect;
-
-mod inner_prelude {
-    pub use axgeom::*;
-    pub use core::iter::*;
-    pub use core::marker::PhantomData;
-    
-
-    pub use alloc::vec::Vec;
-
-    pub(crate) use super::*;
-    pub(crate) use crate::compt::Visitor;
-    pub(crate) use crate::tree;
-    pub(crate) use crate::tree::*;
-    pub(crate) use crate::elem::*;
-    pub(crate) use crate::bbox::*;
-    pub(crate) use crate::par;
-}
-
-
-pub use axgeom;
-pub use compt;
-
-mod assert_invariants;
-
-///Contains generic code used in all dinotree versions
-pub mod tree;
-
-///Contains code to write generic code that can be run in parallel, or sequentially. The api is exposed
-///in case users find it useful when writing parallel query code to operate on the tree.
-pub mod par;
 
 ///Prelude to include by using: pub use dinotree::prelude::*
 pub mod prelude{
@@ -148,6 +114,31 @@ pub mod prelude{
     pub use crate::par;
 }
 
+mod inner_prelude {
+    pub use axgeom::*;
+    pub use core::iter::*;
+    pub use core::marker::PhantomData;
+    pub use alloc::vec::Vec;
+    pub(crate) use super::*;
+    pub(crate) use compt::Visitor;
+    pub(crate) use crate::tree;
+    pub(crate) use crate::tree::*;
+    pub(crate) use crate::elem::*;
+    pub(crate) use crate::bbox::*;
+    pub(crate) use crate::par;
+}
+
+use axgeom::*;
+
+///Contains code to check the data structure is valid.
+mod assert_invariants;
+
+///Contains generic code used in all dinotree versions
+pub mod tree;
+
+///Contains code to write generic code that can be run in parallel, or sequentially. The api is exposed
+///in case users find it useful when writing parallel query code to operate on the tree.
+pub mod par;
 
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
@@ -167,10 +158,6 @@ pub mod bbox;
 pub trait NumTrait: Ord + Copy + Send + Sync {}
 impl<T> NumTrait for T where T: Ord + Copy + Send + Sync {}
 
-
-
-
-use axgeom::*;
 
 ///Trait to signify that this object has an axis aligned bounding box.
 ///get() must return a aabb with the same value in it while the element

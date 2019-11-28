@@ -108,6 +108,7 @@ impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
     #[must_use]
     pub fn assert_invariants(&self)->bool{
         assert_invariants(self)
+        
     }
 }
 
@@ -719,25 +720,25 @@ fn bench_cont2(b: &mut test::Bencher) {
 fn create_cont<A: AxisTrait, T: HasAabb>(axis: A, middle: &[T]) -> Option<axgeom::Range<T::Num>> {
     match middle.split_first(){
         Some((first,rest))=>{
-            let mut min = first.get().get_range(axis).left;
-            let mut max = first.get().get_range(axis).right;
+            let mut min = first.get().get_range(axis).start;
+            let mut max = first.get().get_range(axis).end;
 
             for a in rest.iter() {
-                let left = &a.get().get_range(axis).left;
-                let right = &a.get().get_range(axis).right;
+                let start = &a.get().get_range(axis).start;
+                let end = &a.get().get_range(axis).end;
 
-                if *left < min {
-                    min = *left;
+                if *start < min {
+                    min = *start;
                 }
 
-                if *right > max {
-                    max = *right;
+                if *end > max {
+                    max = *end;
                 }
             }
 
             Some(axgeom::Range {
-                left: min,
-                right: max,
+                start: min,
+                end: max,
             })
         },
         None=>{
@@ -784,7 +785,7 @@ fn construct_non_leaf<T: HasAabb>(
             &bots[mm]
         };
 
-        k.get().get_range(div_axis).left
+        k.get().get_range(div_axis).start
     };
 
     //TODO. its possible that middle is empty is the ranges inserted had

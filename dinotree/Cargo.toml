@@ -1,6 +1,6 @@
 [package]
 name = "dinotree"
-version = "0.5.2"
+version = "0.5.4"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 description = "An aabb space partitioning 2d tree data structure"
 license = "MIT/Apache-2.0"
@@ -15,4 +15,5 @@ rayon = "1.2"
 pdqselect = "0.1"
 compt = "1.6"
 axgeom = "1.2"
+
 

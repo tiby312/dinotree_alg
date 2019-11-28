@@ -19,10 +19,10 @@ fn test_parallel(){
     use dinotree::par::*;
     let k=Parallel::new(0);
     match k.next(){
-        ParResult::Parallel([a,b])=>{
+        ParResult::Parallel(_)=>{
             panic!("fail");
         },
-        ParResult::Sequential([a,b])=>{
+        ParResult::Sequential(_)=>{
             
         }
     }
