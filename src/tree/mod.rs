@@ -82,11 +82,11 @@ impl<A:AxisTrait,N:NodeTrait> NotSorted<A,N>{
 
 ///Builder pattern for dinotree.
 pub struct DinoTreeBuilder<'a, A: AxisTrait, T> {
-    pub(crate) axis: A,
-    pub(crate) bots: &'a mut [T],
-    pub(crate) rebal_strat: BinStrat,
-    pub(crate) height: usize,
-    pub(crate) height_switch_seq: usize,
+    axis: A,
+    bots: &'a mut [T],
+    rebal_strat: BinStrat,
+    height: usize,
+    height_switch_seq: usize,
 }
 
 
@@ -363,7 +363,7 @@ fn nodes_left(depth: usize, height: usize) -> usize {
 
 
 
-pub(crate) fn create_tree_seq<'a,A:AxisTrait,T:HasAabb,K:Splitter>(
+fn create_tree_seq<'a,A:AxisTrait,T:HasAabb,K:Splitter>(
         div_axis: A,
         rest: &'a mut [T],
         sorter: impl Sorter,
@@ -398,7 +398,8 @@ pub(crate) fn create_tree_seq<'a,A:AxisTrait,T:HasAabb,K:Splitter>(
 
     tree
 }
-pub(crate) fn create_tree_par<'a,A:AxisTrait,JJ:par::Joiner,T:HasAabb+Send+Sync,K:Splitter+Send+Sync>(
+
+fn create_tree_par<'a,A:AxisTrait,JJ:par::Joiner,T:HasAabb+Send+Sync,K:Splitter+Send+Sync>(
         div_axis: A,
         dlevel: JJ,
         rest: &'a mut [T],

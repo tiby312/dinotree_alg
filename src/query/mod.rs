@@ -1,6 +1,6 @@
 //! ## Overview
 //!
-//! This crate provides some useful 2D space querying algorithms that you can perform on a dinotree.
+//! This module provides some useful 2D space querying algorithms that you can perform on a dinotree.
 //! Checkout the inner demo and data projects to see how all these algorithms can be used.
 //!
 //! ## Unsafety
@@ -8,12 +8,6 @@
 //! `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
 //! that belong to rectangle regions that don't intersect at the same time.
 //!
-
-//#![no_std]
-
-//#[macro_use]
-//extern crate alloc;
-
 
 
 mod inner_prelude {
@@ -50,7 +44,6 @@ pub mod intersect_with;
 ///[EXPERIMENTAL] Contains all nbody code.
 #[cfg(feature = "nbody")]
 pub mod nbody;
-
 
 ///Contains rect code.
 pub mod rect;
