@@ -6,7 +6,7 @@ description = "Dinotree algorithms"
 license = "MIT/Apache-2.0"
 repository = "https://github.com/tiby312/dinotree_alg"
 keywords = ["tree", "kdtree","dinotree","space-partitioning"]
-readme = "readme.md"
+readme = "README.md"
 edition = "2018"
 
 
