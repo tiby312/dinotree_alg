@@ -6,16 +6,16 @@
 //!
 //!
 //!    o   ┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┃         ┆         o
-//!  ┈┈┈┈┈┈┆     o      o     ┃     o   ┆   o                 o
-//!  ───────o─────────────────┃         o┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
+//!  ┈┈┈┈┈┈┆     o      o     ┃     o   ┆   o        o
+//!  ───────o─────────────────┃         o┈┈┈┈┈┈┈┈┈┈┈┈┈
 //!                ┆       o  o   o     ┆
 //!        o       ┆    o     ┃┈┈┈┈┈o┈┈┈┆       o
-//!                ┆   o      ┃         o             o
-//!                ┆┈┈┈┈┈┈┈┈┈┈┃         ┆                   o
-//!      o         o    o     ┃───────o────────────────────────
+//!                ┆   o      ┃         o            o
+//!                ┆┈┈┈┈┈┈┈┈┈┈┃         ┆               
+//!      o         o    o     ┃───────o───────────────
 //!                ┆          ┃                ┆   o
-//!  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┆      o   o   o            ┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-//!     o          ┆          ┃┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┆         o
+//!  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┆      o   o   o            ┆┈┈┈┈┈┈
+//!     o          ┆          ┃┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┆        
 //!          o     ┆   o      ┃        o       ┆   o
 //!                ┆          ┃                ┆
 //!
@@ -86,21 +86,21 @@
 //!
 //! ## Usage Guidlines
 //!
-//! TODO talk about Rect<N> properties.
+//! The AABB struct that the user must use is from the [axgeom](https://crates.io/crates/axgeom) crate.
 //!
 //! If you insert aabb's with zero width or zero height, it is unspecified behavior (but still safe).
 //! It is expected that all elements in the tree take up some area. This is not inteded to be used
-//! as a "point" tree. Using this tree for a point tree would be inefficient since the data layout
+//! as a "point" tree. Using this tree for a point tree would be inefficient anyway since the data layout
 //! assumes there is a aabb, which is composed of 4 numbers when a point would be just 2.
 //!
 //! That said, an aabb is composed of half-open ranges [start,end). So one could simulate a "point",
 //! by putting in a very small epsilon value to ensure that end>start.
 //! 
-//!
 //! ## Unsafety
 //!
 //! `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
-//! that belong to rectangle regions that don't intersect at the same time.
+//! that belong to rectangle regions that don't intersect at the same time. This is why
+//! the HasAabb trait is unsafe.
 //!
 
 

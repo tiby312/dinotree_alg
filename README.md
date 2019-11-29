@@ -1,12 +1,10 @@
-Provides various query aabb broad phase algorithms such as collision pair finding, raycast, or k_nearest, on the [dinotree](https://crates.io/crates/dinotree) data structure. 
+Provides various query aabb broad phase algorithms such as collision pair finding, raycast, or k_nearest. 
 
 ### Inner projects
 
-The dinotree inner project contains the dinotree data structure itself. The algorithms in the dinotree_alg project depend on this project.
-
 The dinotree_alg_demo inner project is meant to show case the use of these algorithms. It depends on the piston 2d engine to draw to the screen. 
 
-The dinotree_alg_data project generates some graphs using RustGnuPlot. These graphs are used to create the reports in the dinotree_report project that is a seperate dinotree project.
+The dinotree_alg_data project generates some graphs using RustGnuPlot. These graphs are used to create the reports in the dinotree_report project that is a seperate project.
 
 ### Analysis
 
