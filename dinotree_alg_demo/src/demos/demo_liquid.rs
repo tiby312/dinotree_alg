@@ -105,7 +105,7 @@ impl DemoSys for LiquidDemo {
     ) {
         let radius = self.radius;
 
-        let mut k = create_bbox_mut(&mut self.bots, |bot| {
+        let mut k = build_helper::create_bbox_mut(&mut self.bots, |bot| {
             let p = bot.pos;
             let r = radius;
             Rect::new(p.x - r, p.x + r, p.y - r, p.y + r)
@@ -115,7 +115,7 @@ impl DemoSys for LiquidDemo {
 
         let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
 
-        tree.find_collisions_par(|mut a, mut b| {
+        tree.find_collisions_mut_par(|mut a, mut b| {
             let _ = a.inner_mut().solve(b.inner_mut(), radius);
         });
 

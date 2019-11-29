@@ -181,7 +181,7 @@ impl DemoSys for GridDemo {
             b.update();
         }
 
-        let mut k = create_bbox_mut(&mut self.bots, |b| {
+        let mut k = build_helper::create_bbox_mut(&mut self.bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
@@ -203,7 +203,7 @@ impl DemoSys for GridDemo {
                 let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 20.0);
             });
 
-            tree.find_collisions_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
             });
 

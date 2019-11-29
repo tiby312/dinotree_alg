@@ -18,14 +18,11 @@ pub mod prelude {
 
     pub use dists;
 
-    //pub use dinotree::compt;
     pub use dists::uniform_rand::UniformRandGen;
     pub use duckduckgeo::array2_inner_into;
-    //pub use core::pin::Pin;
-    //pub use dinotree::*;
-    pub use dinotree_alg::query::assert::*;
     pub use dinotree_alg::prelude::*;
-    pub use dinotree_alg::tree::dinotree_owned::*;
+    pub use dinotree_alg::analyze;
+    pub use dinotree_alg::dinotree_owned::*;
 }
 
 pub struct ColorGenerator {

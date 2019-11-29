@@ -84,7 +84,7 @@ impl DemoSys for OrigOrderDemo {
             b.update();
         }
 
-        let mut k = create_bbox_mut(&mut self.bots, |b| {
+        let mut k = build_helper::create_bbox_mut(&mut self.bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
@@ -106,7 +106,7 @@ impl DemoSys for OrigOrderDemo {
 
         {
             let mut dd = Bla { c: &c, g };
-            graphics::draw(&tree, &mut dd, &self.dim);
+            tree.draw(&mut dd, &self.dim);
         }
 
         //draw lines to the bots.
@@ -115,7 +115,7 @@ impl DemoSys for OrigOrderDemo {
         }
 
         if !check_naive {
-            tree.find_collisions_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
             });
         } else {
@@ -206,7 +206,7 @@ struct Bla<'a, 'b: 'a> {
     c: &'a Context,
     g: &'a mut G2d<'b>,
 }
-impl<'a, 'b: 'a> graphics::DividerDrawer for Bla<'a, 'b> {
+impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
     type N = F32n;
     fn draw_divider<A: axgeom::AxisTrait>(
         &mut self,

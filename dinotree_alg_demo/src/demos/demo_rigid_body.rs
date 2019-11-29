@@ -133,7 +133,7 @@ pub fn handle_rigid_body(
     }
 
     for _ in 0..num_rebal {
-        let mut k = create_bbox_mut(bodies, |a| {
+        let mut k = build_helper::create_bbox_mut(bodies, |a| {
             a.create_loose(ball_size + push_rate * (num_query as f32))
         });
 
@@ -142,7 +142,7 @@ pub fn handle_rigid_body(
         let mut tree = DinoTree::new(axgeom::YAXISS, &mut k);
 
         for _ in 0..num_query {
-            tree.find_collisions_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 match a.inner_mut().push_away(b.inner_mut(), ball_size, push_rate) {
                     Some(dis) => {
                         func(a.inner_mut(), b.inner_mut(), dis);
@@ -225,7 +225,7 @@ impl DemoSys for RigidBodyDemo {
             },
         );
 
-        let mut k = create_bbox_mut(&mut self.bots, |bot| bot.create_loose(radius));
+        let mut k = build_helper::create_bbox_mut(&mut self.bots, |bot| bot.create_loose(radius));
 
         let mut tree = DinoTree::new(axgeom::XAXISS, &mut k);
 

@@ -31,7 +31,7 @@ struct Bla<'a> {
     num_pairs_checked: usize,
     _p: PhantomData<&'a usize>,
 }
-impl<'b> nbody::NodeMassTrait for Bla<'b> {
+impl<'b> NodeMassTrait for Bla<'b> {
     type No = NodeMass;
     type Item = BBoxMut<'b, F32n, Bot>;
     type Num = F32n;
@@ -205,7 +205,7 @@ impl DemoSys for DemoNbody {
             .collect();
         let mut bots3 = bots.clone();
 
-        let mut k = create_bbox_mut(bots, |b| b.create_aabb());
+        let mut k = build_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
         {
             let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
@@ -214,7 +214,7 @@ impl DemoSys for DemoNbody {
             let border = self.dim;
 
             if !check_naive {
-                tree.nbody(
+                tree.nbody_mut(
                     &mut Bla {
                         num_pairs_checked: 0,
                         _p: PhantomData,
@@ -226,18 +226,25 @@ impl DemoSys for DemoNbody {
                     num_pairs_checked: 0,
                     _p: PhantomData,
                 };
-                tree.nbody(&mut bla, border);
+                tree.nbody_mut(&mut bla, border);
                 let num_pair_alg = bla.num_pairs_checked;
 
+                
                 let (bots2, num_pair_naive) = {
                     let mut num_pairs_checked = 0;
+                    /*
                     nbody::naive_mut(&mut bots2, |mut a, mut b| {
                         let _ =
                             duckduckgeo::gravitate(a.inner_mut(), b.inner_mut(), 0.00001, 0.004);
                         num_pairs_checked += 1;
                     });
+                    */
+                    unimplemented!();
                     (bots2, num_pairs_checked)
+                    
+                    
                 };
+
 
                 for b in bots3.iter_mut() {
                     b.force = vec2same(0.0);
@@ -285,7 +292,7 @@ impl DemoSys for DemoNbody {
                 }
             }
 
-            tree.find_collisions_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 let (a, b) = if a.inner().mass > b.inner().mass {
                     (a.inner_mut(), b.inner_mut())
                 } else {
@@ -319,7 +326,7 @@ impl DemoSys for DemoNbody {
                     c: &'a Context,
                     g: &'a mut G2d<'b>,
                 }
-                impl<'a, 'b: 'a> graphics::DividerDrawer for Bla<'a, 'b> {
+                impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
                     type N = F32n;
                     fn draw_divider<A: axgeom::AxisTrait>(
                         &mut self,
@@ -374,7 +381,7 @@ impl DemoSys for DemoNbody {
                 }
 
                 let mut dd = Bla { c: &c, g };
-                graphics::draw(&tree, &mut dd, &border);
+                tree.draw(&mut dd, &border);
             }
         }
         //Draw bots.

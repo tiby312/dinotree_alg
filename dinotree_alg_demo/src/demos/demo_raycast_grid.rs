@@ -54,7 +54,7 @@ impl DemoSys for RaycastGridDemo {
             
 
         let cursor=cursor.inner_into();
-        let ray=Ray{point,dir:(cursor-point).normalize_to(1.0)};
+        let ray=duckduckgeo::Ray{point,dir:(cursor-point).normalize_to(1.0)};
         //let ray=Ray{point:pos,dir:vel};
 
         let rect = &axgeom::Rect::from_point(ray.point, vec2same(radius));    

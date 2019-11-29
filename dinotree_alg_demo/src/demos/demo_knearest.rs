@@ -9,7 +9,7 @@ struct Bot {
     radius: Vec2<f32>,
 }
 
-impl dinotree_alg::query::assert::HasId for Bot {
+impl analyze::HasId for Bot {
     fn get_id(&self) -> usize {
         self.id
     }
@@ -60,7 +60,7 @@ impl DemoSys for KnearestDemo {
             g: RefCell<&'a mut G2d<'c>>,
         };
 
-        impl<'a, 'c: 'a> k_nearest::Knearest for Kn<'a, 'c> {
+        impl<'a, 'c: 'a> Knearest for Kn<'a, 'c> {
             type T = BBoxPtr<F32n, Bot>;
             type N = F32n;
 
@@ -136,8 +136,7 @@ impl DemoSys for KnearestDemo {
                 g: RefCell::new(g),
                 draw: false,
             };
-            assert::assert_k_nearest(
-                unsafe { tree.get_aabb_bots_mut_not_protected() },
+            analyze::NaiveAlgs::new(unsafe { tree.get_aabb_bots_mut_not_protected() }).assert_k_nearest_mut(
                 cursor,
                 3,
                 &mut kn,
@@ -145,7 +144,7 @@ impl DemoSys for KnearestDemo {
             );
         }
 
-        let vv_iter = k_nearest::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
+        let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
         for (a, color) in vv_iter.zip(cols.iter()) {
             for b in a.iter() {

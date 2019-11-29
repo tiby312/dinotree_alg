@@ -8,7 +8,7 @@ struct Bot {
     pos: Vec2<i32>,
 }
 
-impl assert::HasId for Bot {
+impl analyze::HasId for Bot {
     fn get_id(&self) -> usize {
         self.id
     }
@@ -58,20 +58,14 @@ impl DemoSys for MultiRectDemo {
         let r2 = axgeom::Rect::new(100, 400, 100, 400);
 
         if check_naive {
-            assert_for_all_in_rect_mut(unsafe { self.tree.get_aabb_bots_mut_not_protected() }, &r1);
-            assert_for_all_in_rect_mut(unsafe { self.tree.get_aabb_bots_mut_not_protected() }, &r2);
-            assert_for_all_intersect_rect_mut(
-                unsafe { self.tree.get_aabb_bots_mut_not_protected() },
-                &r1,
-            );
-            assert_for_all_intersect_rect_mut(
-                unsafe { self.tree.get_aabb_bots_mut_not_protected() },
-                &r2,
-            );
-            assert_for_all_not_in_rect_mut(
-                unsafe { self.tree.get_aabb_bots_mut_not_protected() },
-                &r1,
-            );
+            let k=unsafe { self.tree.get_aabb_bots_mut_not_protected() };
+            let mut na=analyze::NaiveAlgs::new(k);
+            na.assert_for_all_in_rect_mut(&r1);
+            na.assert_for_all_in_rect_mut(&r2);
+            na.assert_for_all_intersect_rect_mut(&r1);
+            na.assert_for_all_intersect_rect_mut(&r2);
+            na.assert_for_all_not_in_rect_mut(&r1);
+
         }
 
         //test MultiRect

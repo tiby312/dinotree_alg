@@ -4,6 +4,10 @@ use duckduckgeo;
 use std;
 use std::cell::RefCell;
 
+type Ray1<T> = duckduckgeo::Ray<T>;
+type Ray2<T> = dinotree_alg::query::Ray<T>;
+
+
 mod ray_f32 {
     use super::*;
 
@@ -16,15 +20,15 @@ mod ray_f32 {
         pub draw: bool,
     }
 
-    impl<'a, 'c: 'a> raycast::RayTrait for RayT<'a, 'c> {
+    impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
         type T = BBoxPtr<F32n, Bot2>;
         type N = F32n;
 
         fn compute_distance_to_bot(
             &self,
-            ray: &raycast::Ray<Self::N>,
+            ray: &Ray2<Self::N>,
             bot: &Self::T,
-        ) -> raycast::RayIntersectResult<Self::N> {
+        ) -> RayIntersectResult<Self::N> {
             if self.draw {
                 draw_rect_f32(
                     [1.0, 0.0, 0.0, 0.5],
@@ -38,10 +42,10 @@ mod ray_f32 {
 
         fn compute_distance_to_rect(
             &self,
-            ray: &raycast::Ray<Self::N>,
+            ray: &Ray2<Self::N>,
             rect: &Rect<Self::N>,
-        ) -> raycast::RayIntersectResult<Self::N> {
-            let ray: duckduckgeo::Ray<f32> = Ray {
+        ) -> RayIntersectResult<Self::N> {
+            let ray: Ray1<f32> = Ray1 {
                 point: ray.point.inner_into(),
                 dir: ray.dir.inner_into(),
             };
@@ -49,10 +53,10 @@ mod ray_f32 {
 
             let k = ray_intersects_box(&ray, &rect);
             match k {
-                IntersectsBotResult::Hit(val) => raycast::RayIntersectResult::Hit(val),
-                IntersectsBotResult::NoHit => raycast::RayIntersectResult::NoHit,
+                IntersectsBotResult::Hit(val) => RayIntersectResult::Hit(val),
+                IntersectsBotResult::NoHit => RayIntersectResult::NoHit,
                 IntersectsBotResult::Inside => {
-                    raycast::RayIntersectResult::Hit(0.0)
+                    RayIntersectResult::Hit(0.0)
 
                     //Return none if you do not want results that intersect the ray origin.
                     //None
@@ -70,7 +74,7 @@ pub struct Bot2 {
     id: usize,
 }
 
-impl assert::HasId for Bot2 {
+impl analyze::HasId for Bot2 {
     fn get_id(&self) -> usize {
         self.id
     }
@@ -109,14 +113,14 @@ impl DemoSys for RaycastF32DebugDemo {
     ) {
         let counter = &mut self.counter;
 
-        let ray: raycast::Ray<F32n> = {
+        let ray: Ray2<F32n> = {
             *counter += 0.004;
             let point: Vec2<f32> = cursor.inner_into::<f32>().inner_as();
             //*counter=10.0;
             let dir = vec2(counter.cos() * 10.0, counter.sin() * 10.0);
 
             let dir = dir.inner_as();
-            raycast::Ray { point, dir }.inner_try_into().unwrap()
+            Ray2 { point, dir }.inner_try_into().unwrap()
         };
 
         for bot in self.tree.get_aabb_bots().iter() {
@@ -126,8 +130,7 @@ impl DemoSys for RaycastF32DebugDemo {
         let height = self.tree.get_height();
 
         if check_naive {
-            assert::assert_raycast(
-                unsafe { self.tree.get_aabb_bots_mut_not_protected() },
+            analyze::NaiveAlgs::new(unsafe { self.tree.get_aabb_bots_mut_not_protected() }).assert_raycast_mut(
                 self.dim,
                 ray,
                 &mut ray_f32::RayT {
@@ -150,16 +153,16 @@ impl DemoSys for RaycastF32DebugDemo {
             },
         );
 
-        let ray: raycast::Ray<f32> = ray.inner_into();
+        let ray: Ray2<f32> = ray.inner_into();
 
 
         let (ppx,ppy) = match test {
-            raycast::RayCastResult::Hit(_,dis)=>{
+            RayCastResult::Hit(_,dis)=>{
                 let ppx = ray.point.x + ray.dir.x * dis.into_inner();
                 let ppy = ray.point.y + ray.dir.y * dis.into_inner();
                 (ppx, ppy)
             },
-            raycast::RayCastResult::NoHit=>{
+            RayCastResult::NoHit=>{
                 let ppx = ray.point.x + ray.dir.x * 800.0;
                 let ppy = ray.point.y + ray.dir.y * 800.0;
                 (ppx, ppy)
@@ -186,7 +189,7 @@ impl DemoSys for RaycastF32DebugDemo {
             c: &'a Context,
             g: &'a mut G2d<'b>,
         }
-        impl<'a, 'b: 'a> graphics::DividerDrawer for Bla<'a, 'b> {
+        impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
             type N = F32n;
             fn draw_divider<A: axgeom::AxisTrait>(
                 &mut self,
