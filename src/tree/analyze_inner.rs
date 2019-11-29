@@ -1,6 +1,8 @@
 use crate::query::*;
 use crate::inner_prelude::*;
 
+pub use crate::query::colfind::QueryBuilder;
+pub use crate::query::colfind::NotSortedQueryBuilder;
 
 pub use crate::tree::builder::DinoTreeBuilder;
 

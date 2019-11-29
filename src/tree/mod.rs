@@ -51,7 +51,15 @@ pub mod build_helpers{
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`. 
 pub mod dinotree_owned;
 
-pub mod analyze;
+#[allow(dead_code)]
+pub(crate) mod analyze_inner;
+
+#[cfg(feature = "analyze")]
+pub mod analyze{
+    pub use super::analyze_inner::*;
+}
+
+
 
 
 ///A version of dinotree where the elements are not sorted along each axis.
@@ -337,12 +345,14 @@ mod builder{
 
 
         #[inline(always)]
+        #[cfg(feature = "analyze")]
         pub fn with_bin_strat(&mut self, strat: BinStrat) -> &mut Self {
             self.rebal_strat = strat;
             self
         }
 
         #[inline(always)]
+        #[cfg(feature = "analyze")]
         pub fn with_height(&mut self, height: usize) -> &mut Self {
             self.height = height;
             self
@@ -352,12 +362,14 @@ mod builder{
         ///Choose the height at which to switch from parallel to sequential.
         ///If you end up building sequentially, this argument is ignored.
         #[inline(always)]
+        #[cfg(feature = "analyze")]
         pub fn with_height_switch_seq(&mut self, height: usize) -> &mut Self {
             self.height_switch_seq = height;
             self
         }
 
         ///Build with a Splitter.
+        #[cfg(feature = "analyze")]
         pub fn build_with_splitter_seq<S: Splitter>(
             &mut self,
             splitter: &mut S,

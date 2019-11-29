@@ -87,6 +87,8 @@
 //!
 //! ## Usage Guidlines
 //!
+//! TODO talk about Rect<N> properties.
+//!
 //! If you insert aabb's with zero width or zero height, it is unspecified behavior (but still safe).
 //! It is expected that all elements in the tree take up some area. This is not inteded to be used
 //! as a "point" tree. Using this tree for a point tree would be inefficient since the data layout
@@ -123,14 +125,13 @@ mod inner_prelude {
     pub(crate) use super::*;
     pub(crate) use compt::Visitor;
     pub(crate) use crate::tree;
-    pub(crate) use crate::tree::analyze::*;
+    pub(crate) use crate::tree::analyze_inner::*;
 
     pub(crate) use crate::tree::*;
     pub(crate) use crate::elem::*;
     pub(crate) use crate::bbox::*;
     pub(crate) use crate::par;
 }
-
 
 pub mod query;
 
