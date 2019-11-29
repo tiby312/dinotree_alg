@@ -32,6 +32,7 @@
 //!
 //! This crate hopes to provide an efficient 2D space partitioning data structure and useful query algorithms to perform on it.
 //! It is a hybrid between a [KD Tree](https://en.wikipedia.org/wiki/K-d_tree) and [Sweep and Prune](https://en.wikipedia.org/wiki/Sweep_and_prune).
+//! Uses `no_std`, but uses the `alloc` crate.
 //!
 //! ## Data Structure
 //!
