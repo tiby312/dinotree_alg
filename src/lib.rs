@@ -106,13 +106,10 @@ extern crate pdqselect;
 
 ///Prelude to include by using: pub use dinotree::prelude::*
 pub mod prelude{
-    pub use crate::tree::*;
+    pub use crate::*;
     pub use crate::elem::*;
     pub use crate::bbox::*;  
-    pub use crate::query::*;  
-    pub use crate::HasAabb;
-    pub use crate::HasInner;
-    pub use crate::NumTrait;
+    pub use crate::query::*;
     pub use crate::par;
 }
 
