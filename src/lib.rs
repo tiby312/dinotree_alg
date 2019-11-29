@@ -123,6 +123,8 @@ mod inner_prelude {
     pub(crate) use super::*;
     pub(crate) use compt::Visitor;
     pub(crate) use crate::tree;
+    pub(crate) use crate::tree::analyze::*;
+
     pub(crate) use crate::tree::*;
     pub(crate) use crate::elem::*;
     pub(crate) use crate::bbox::*;
@@ -159,7 +161,6 @@ pub mod bbox;
 pub mod util;
 
 
-pub mod naive;
 
 
 ///The underlying number type used for the dinotree.

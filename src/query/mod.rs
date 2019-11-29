@@ -12,7 +12,7 @@
 
 mod inner_prelude {
     pub use alloc::vec::Vec;
-    pub use crate::prelude::*;
+    pub use crate::inner_prelude::*;
     pub use axgeom;    
     pub use axgeom::*;
     pub use compt;

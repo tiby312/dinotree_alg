@@ -1,7 +1,6 @@
 
 use crate::inner_prelude::*;
 
-
 pub mod build_helpers{
     use crate::inner_prelude::*;
 
@@ -51,6 +50,8 @@ pub mod build_helpers{
 ///A version of dinotree that is not lifetimed and uses unsafe{} to own the elements
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`. 
 pub mod dinotree_owned;
+
+pub mod analyze;
 
 
 ///A version of dinotree where the elements are not sorted along each axis.
@@ -247,120 +248,126 @@ impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
 }
 
 
-///Builder pattern for dinotree.
-pub struct DinoTreeBuilder<'a, A: AxisTrait, T> {
-    axis: A,
-    bots: &'a mut [T],
-    rebal_strat: BinStrat,
-    height: usize,
-    height_switch_seq: usize,
-}
 
+use self::builder::DinoTreeBuilder;
+mod builder{
+    use super::*;
 
-impl<'a,A: AxisTrait, T:HasAabb+Send+Sync>
-    DinoTreeBuilder<'a,A,  T>
-{
-    ///Build not sorted in parallel
-    pub fn build_not_sorted_par(&mut self) -> NotSorted<A,NodeMut<'a,T>> {
-        let mut bots:&mut [T]=&mut [];
-        core::mem::swap(&mut bots,&mut self.bots);
-        
-        let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
-        let inner = create_tree_par(self.axis,dlevel, bots, NoSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-        NotSorted(DinoTree{axis:self.axis,inner})
+    ///Builder pattern for dinotree.
+    pub struct DinoTreeBuilder<'a, A: AxisTrait, T> {
+        axis: A,
+        bots: &'a mut [T],
+        rebal_strat: BinStrat,
+        height: usize,
+        height_switch_seq: usize,
     }
 
-    ///Build in parallel
-    pub fn build_par(&mut self) -> DinoTree<A,NodeMut<'a,T>> {
-        let mut bots:&mut [T]=&mut [];
-        core::mem::swap(&mut bots,&mut self.bots);
-        
-        let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
-        let inner = create_tree_par(self.axis,dlevel, bots, DefaultSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-        DinoTree{axis:self.axis,inner}
-    }
-}
 
+    impl<'a,A: AxisTrait, T:HasAabb+Send+Sync>
+        DinoTreeBuilder<'a,A,  T>
+    {
+        ///Build not sorted in parallel
+        pub fn build_not_sorted_par(&mut self) -> NotSorted<A,NodeMut<'a,T>> {
+            let mut bots:&mut [T]=&mut [];
+            core::mem::swap(&mut bots,&mut self.bots);
+            
+            let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
+            let inner = create_tree_par(self.axis,dlevel, bots, NoSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
+            NotSorted(DinoTree{axis:self.axis,inner})
+        }
 
-impl<'a, A: AxisTrait, T:HasAabb> DinoTreeBuilder<'a,A,T>{
-
-    ///Create a new builder with a slice of elements that implement `HasAabb`.
-    pub fn new(axis: A, bots: &'a mut [T]) -> DinoTreeBuilder<'a,A, T> {
-        let rebal_strat = BinStrat::NotChecked;
-
-        //we want each node to have space for around num_per_node bots.
-        //there are 2^h nodes.
-        //2^h*200>=num_bots.  Solve for h s.t. h is an integer.
-
-        //Make this number too small, and the tree will have too many levels,
-        //and too much time will be spent recursing.
-        //Make this number too high, and you will lose the properties of a tree,
-        //and you will end up with just sweep and prune.
-        //This number was chosen emprically from running the dinotree_alg_data project,
-        //on two different machines.
-        let height = compute_tree_height_heuristic(bots.len(),DEFAULT_NUMBER_ELEM_PER_NODE);
-
-        let height_switch_seq = par::SWITCH_SEQUENTIAL_DEFAULT;
-
-        DinoTreeBuilder {
-            axis,
-            bots,
-            rebal_strat,
-            height,
-            height_switch_seq,
+        ///Build in parallel
+        pub fn build_par(&mut self) -> DinoTree<A,NodeMut<'a,T>> {
+            let mut bots:&mut [T]=&mut [];
+            core::mem::swap(&mut bots,&mut self.bots);
+            
+            let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
+            let inner = create_tree_par(self.axis,dlevel, bots, DefaultSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
+            DinoTree{axis:self.axis,inner}
         }
     }
 
 
-    ///Build not sorted sequentially
-    pub fn build_not_sorted_seq(&mut self) -> NotSorted<A,NodeMut<'a,T>> {
-        let mut bots:&mut [T]=&mut [];
-        core::mem::swap(&mut bots,&mut self.bots);
-        
-        let inner = create_tree_seq(self.axis, bots, NoSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-        NotSorted(DinoTree{axis:self.axis,inner})
-    }
+    impl<'a, A: AxisTrait, T:HasAabb> DinoTreeBuilder<'a,A,T>{
 
-    ///Build sequentially
-    pub fn build_seq(&mut self)->DinoTree<A,NodeMut<'a,T>>{
-        let mut bots:&mut [T]=&mut [];
-        core::mem::swap(&mut bots,&mut self.bots);
-        let inner = create_tree_seq(self.axis, bots, DefaultSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-        DinoTree{axis:self.axis,inner}
-    }
+        ///Create a new builder with a slice of elements that implement `HasAabb`.
+        pub fn new(axis: A, bots: &'a mut [T]) -> DinoTreeBuilder<'a,A, T> {
+            let rebal_strat = BinStrat::NotChecked;
+
+            //we want each node to have space for around num_per_node bots.
+            //there are 2^h nodes.
+            //2^h*200>=num_bots.  Solve for h s.t. h is an integer.
+
+            //Make this number too small, and the tree will have too many levels,
+            //and too much time will be spent recursing.
+            //Make this number too high, and you will lose the properties of a tree,
+            //and you will end up with just sweep and prune.
+            //This number was chosen emprically from running the dinotree_alg_data project,
+            //on two different machines.
+            let height = compute_tree_height_heuristic(bots.len(),DEFAULT_NUMBER_ELEM_PER_NODE);
+
+            let height_switch_seq = par::SWITCH_SEQUENTIAL_DEFAULT;
+
+            DinoTreeBuilder {
+                axis,
+                bots,
+                rebal_strat,
+                height,
+                height_switch_seq,
+            }
+        }
 
 
-    #[inline(always)]
-    pub fn with_bin_strat(&mut self, strat: BinStrat) -> &mut Self {
-        self.rebal_strat = strat;
-        self
-    }
+        ///Build not sorted sequentially
+        pub fn build_not_sorted_seq(&mut self) -> NotSorted<A,NodeMut<'a,T>> {
+            let mut bots:&mut [T]=&mut [];
+            core::mem::swap(&mut bots,&mut self.bots);
+            
+            let inner = create_tree_seq(self.axis, bots, NoSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
+            NotSorted(DinoTree{axis:self.axis,inner})
+        }
 
-    #[inline(always)]
-    pub fn with_height(&mut self, height: usize) -> &mut Self {
-        self.height = height;
-        self
-        //TODO test corner cases of this
-    }
+        ///Build sequentially
+        pub fn build_seq(&mut self)->DinoTree<A,NodeMut<'a,T>>{
+            let mut bots:&mut [T]=&mut [];
+            core::mem::swap(&mut bots,&mut self.bots);
+            let inner = create_tree_seq(self.axis, bots, DefaultSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
+            DinoTree{axis:self.axis,inner}
+        }
 
-    ///Choose the height at which to switch from parallel to sequential.
-    ///If you end up building sequentially, this argument is ignored.
-    #[inline(always)]
-    pub fn with_height_switch_seq(&mut self, height: usize) -> &mut Self {
-        self.height_switch_seq = height;
-        self
-    }
 
-    ///Build with a Splitter.
-    pub fn build_with_splitter_seq<S: Splitter>(
-        &mut self,
-        splitter: &mut S,
-    ) -> DinoTree<A,NodeMut<'a,T>> {
-        let mut bots:&mut [T]=&mut [];
-        core::mem::swap(&mut bots,&mut self.bots);
-        
-        let inner = create_tree_seq(self.axis, bots, DefaultSorter, splitter, self.height, self.rebal_strat);
-        DinoTree{axis:self.axis,inner} 
+        #[inline(always)]
+        pub fn with_bin_strat(&mut self, strat: BinStrat) -> &mut Self {
+            self.rebal_strat = strat;
+            self
+        }
+
+        #[inline(always)]
+        pub fn with_height(&mut self, height: usize) -> &mut Self {
+            self.height = height;
+            self
+            //TODO test corner cases of this
+        }
+
+        ///Choose the height at which to switch from parallel to sequential.
+        ///If you end up building sequentially, this argument is ignored.
+        #[inline(always)]
+        pub fn with_height_switch_seq(&mut self, height: usize) -> &mut Self {
+            self.height_switch_seq = height;
+            self
+        }
+
+        ///Build with a Splitter.
+        pub fn build_with_splitter_seq<S: Splitter>(
+            &mut self,
+            splitter: &mut S,
+        ) -> DinoTree<A,NodeMut<'a,T>> {
+            let mut bots:&mut [T]=&mut [];
+            core::mem::swap(&mut bots,&mut self.bots);
+            
+            let inner = create_tree_seq(self.axis, bots, DefaultSorter, splitter, self.height, self.rebal_strat);
+            DinoTree{axis:self.axis,inner} 
+        }
     }
 }
 
@@ -369,65 +376,6 @@ impl<'a, A: AxisTrait, T:HasAabb> DinoTreeBuilder<'a,A,T>{
 pub(crate) use self::node::*;
 pub mod node{
     use super::*;
-
-    ///Returns the height of a dyn tree for a given number of bots.
-    ///The height is chosen such that the nodes will each have a small amount of bots.
-    ///If we had a node per bot, the tree would have too many levels. Too much time would be spent recursing.
-    ///If we had too many bots per node, you would lose the properties of a tree, and end up with plain sweep and prune.
-    ///Theory would tell you to just make a node per bot, but there is
-    ///a sweet spot inbetween determined by the real-word properties of your computer. 
-    pub const DEFAULT_NUMBER_ELEM_PER_NODE:usize=128;
-
-    ///Outputs the height given an desirned number of bots per node.
-    #[inline]
-    pub fn compute_tree_height_heuristic(num_bots: usize, num_per_node: usize) -> usize {
-        //we want each node to have space for around 300 bots.
-        //there are 2^h nodes.
-        //2^h*200>=num_bots.  Solve for h s.t. h is an integer.
-
-        if num_bots <= num_per_node {
-            1
-        } else {
-            let a=num_bots as f32 / num_per_node as f32;
-            let b=a.log2()/2.0;
-            (b.ceil() as usize)*2+1
-        }
-    }
-
-
-    ///A trait that gives the user callbacks at events in a recursive algorithm on the tree.
-    ///The main motivation behind this trait was to track the time spent taken at each level of the tree
-    ///during construction.
-    pub trait Splitter: Sized {
-        ///Called to split this into two to be passed to the children.
-        fn div(&mut self) -> Self;
-
-        ///Called to add the results of the recursive calls on the children.
-        fn add(&mut self, b: Self);
-
-        ///Called at the start of the recursive call.
-        fn node_start(&mut self);
-
-        ///It is important to note that this gets called in other places besides in the final recursive call of a leaf.
-        ///They may get called in a non leaf if its found that there is no more need to recurse further.
-        fn node_end(&mut self);
-    }
-
-    ///For cases where you don't care about any of the callbacks that Splitter provides, this implements them all to do nothing.
-    pub struct SplitterEmpty;
-
-    impl Splitter for SplitterEmpty {
-        #[inline(always)]
-        fn div(&mut self) -> Self {
-            SplitterEmpty
-        }
-        #[inline(always)]
-        fn add(&mut self, _: Self) {}
-        #[inline(always)]
-        fn node_start(&mut self) {}
-        #[inline(always)]
-        fn node_end(&mut self) {}
-    }
 
 
     ///When we traverse the tree in read-only mode, we can simply return a reference to each node.
@@ -575,42 +523,6 @@ pub mod node{
 
 
 
-    ///Expose a common Sorter trait so that we may have two version of the tree
-    ///where one implementation actually does sort the tree, while the other one
-    ///does nothing when sort() is called.
-    pub(crate) trait Sorter: Copy + Clone + Send + Sync {
-        fn sort(&self, axis: impl AxisTrait, bots: &mut [impl HasAabb]);
-    }
-
-    #[derive(Copy, Clone)]
-    pub(crate) struct DefaultSorter;
-
-    impl Sorter for DefaultSorter {
-        fn sort(&self, axis: impl AxisTrait, bots: &mut [impl HasAabb]) {
-            oned::sweeper_update(axis, bots);
-        }
-    }
-
-    #[derive(Copy, Clone)]
-    pub(crate) struct NoSorter;
-
-    impl Sorter for NoSorter {
-        fn sort(&self, _axis: impl AxisTrait, _bots: &mut [impl HasAabb]) {}
-    }
-
-    pub fn nodes_left(depth: usize, height: usize) -> usize {
-        let levels = height - depth;
-        2usize.rotate_left(levels as u32) - 1
-    }
-
-        
-    ///Passed to the binning algorithm to determine
-    ///if the binning algorithm should check for index out of bounds.
-    #[derive(Copy, Clone, Debug)]
-    pub enum BinStrat {
-        Checked,
-        NotChecked,
-    }
 
 
 }
