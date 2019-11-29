@@ -30,9 +30,8 @@
 //! ~~~~
 //! # Overview
 //!
-//! Provides the dinotree data structure and ways to traverse it. No actual query algorithms are provided in this crate.
-//! Only the data structure and a way to construct and traverse it are provided in this crate.
-//!
+//! This crate hopes to provide an efficient 2D space partitioning data structure and useful query algorithms for it.
+//! It is a hybrid between a KD Tree and Sweep and Prune.
 //!
 //! ## Data Structure
 //!
@@ -98,6 +97,12 @@
 //! by putting in a very small epsilon value to ensure that end>start.
 //! 
 //!
+//! ## Unsafety
+//!
+//! `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
+//! that belong to rectangle regions that don't intersect at the same time.
+//!
+
 
 #![no_std]
 

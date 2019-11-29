@@ -1,6 +1,7 @@
 
 use crate::inner_prelude::*;
 
+///Helper module for creating Vecs of different types of BBoxes.
 pub mod build_helper{
     use crate::inner_prelude::*;
 
@@ -60,10 +61,7 @@ pub mod analyze{
 }
 
 
-
-
-///A version of dinotree where the elements are not sorted along each axis.
-///So this is basically a KD Tree. Is consutrcted using `DinoTreeBuilder`.
+///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
 pub struct NotSorted<A: AxisTrait,N:NodeTrait>(DinoTree<A,N>);
 
 impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> NotSorted<A,NodeMut<'a,T>>{
@@ -403,6 +401,7 @@ mod builder{
 
 
 pub(crate) use self::node::*;
+///Contains node-level building block structs and visitors used for a DinoTree.
 pub mod node{
     use super::*;
 

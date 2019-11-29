@@ -1,13 +1,4 @@
-//! ## Overview
-//!
-//! This module provides some useful 2D space querying algorithms that you can perform on a dinotree.
-//! Checkout the inner demo and data projects to see how all these algorithms can be used.
-//!
-//! ## Unsafety
-//!
-//! `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
-//! that belong to rectangle regions that don't intersect at the same time.
-//!
+//! Module contains query related structs.
 
 
 mod inner_prelude {
