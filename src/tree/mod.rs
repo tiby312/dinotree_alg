@@ -239,6 +239,7 @@ impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
     #[must_use]
     #[cfg(feature = "analyze")]
     pub fn assert_invariants(&self)->bool{
+        use crate::assert_invariants::*;
         assert_invariants(self)
     }
 
