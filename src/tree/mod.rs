@@ -1,7 +1,7 @@
 
 use crate::inner_prelude::*;
 
-pub mod build_helpers{
+pub mod build_helper{
     use crate::inner_prelude::*;
 
     ///Convenience function to create a `&mut (Rect<N>,T)` from a `(Rect<N>,T)` bounding box.
