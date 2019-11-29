@@ -111,7 +111,9 @@ pub mod prelude{
     pub use crate::bbox::*;  
     pub use crate::query::*;
     pub use crate::par;
+    pub use crate::tree::node::*;
 }
+
 
 mod inner_prelude {
     pub use axgeom::*;

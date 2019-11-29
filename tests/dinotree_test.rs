@@ -1,12 +1,12 @@
 use axgeom;
 use dinotree_alg::prelude::*;
-use dinotree_alg::query::assert::*;
+use dinotree_alg::*;
 
 pub struct Bot{
     id:usize,
     aabb:axgeom::Rect<i64>
 }
-impl HasId for Bot{
+impl naive::HasId for Bot{
     fn get_id(&self)->usize{
         self.id
     }
@@ -21,10 +21,10 @@ fn test1(){
             Bot{id,aabb:axgeom::Rect::from_point(pos.inner_as(),axgeom::vec2same(8+id as i64))}
         }).collect();
 
-        let mut bb=create_bbox_mut(&mut bots,|b|{
+        let mut bb=build_helpers::create_bbox_mut(&mut bots,|b|{
             b.aabb
         });
 
-        assert_query(&mut bb);
+        naive::NaiveAlgs::new(&mut bb).assert_find_collisions_mut();
     }
 }
