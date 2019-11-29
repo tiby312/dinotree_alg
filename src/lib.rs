@@ -108,12 +108,12 @@ extern crate pdqselect;
 pub mod prelude{
     pub use crate::tree::*;
     pub use crate::elem::*;
-    pub use crate::bbox::*;    
+    pub use crate::bbox::*;  
+    pub use crate::query::*;  
     pub use crate::HasAabb;
     pub use crate::HasInner;
     pub use crate::NumTrait;
     pub use crate::par;
-    pub use crate::query::*;
 }
 
 mod inner_prelude {
@@ -131,8 +131,8 @@ mod inner_prelude {
 }
 
 
-
 pub mod query;
+
 
 use axgeom::*;
 
@@ -140,7 +140,8 @@ use axgeom::*;
 mod assert_invariants;
 
 ///Contains generic code used in all dinotree versions
-pub mod tree;
+pub use self::tree::*;
+mod tree;
 
 ///Contains code to write generic code that can be run in parallel, or sequentially. The api is exposed
 ///in case users find it useful when writing parallel query code to operate on the tree.
@@ -155,6 +156,11 @@ pub mod elem;
 
 ///A collection of different bounding box containers.
 pub mod bbox;
+
+pub mod util;
+
+
+pub mod naive;
 
 
 ///The underlying number type used for the dinotree.
@@ -197,152 +203,7 @@ pub trait HasInner:HasAabb{
 
 
 
-use crate::inner_prelude::*;
-use crate::assert_invariants::assert_invariants;
-
-
-///The data structure this crate revoles around.
-pub struct DinoTree<A:AxisTrait,N:NodeTrait>{
-    axis:A,
-    inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
-}
-
-use query::rect;
-use query::colfind;
-use query::k_nearest;
-use query::raycast;
-use query::intersect_with;
-use query::graphics;
 
 
 
 
-
-
-impl<'a,A:AxisTrait,T:HasAabb> DinoTree<A,NodeMut<'a,T>>{
-    pub fn new(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(axis,bots).build_seq()
-    }
-}
-
-impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
-    pub fn new_par(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(axis,bots).build_par()
-    }
-}
-
-impl<A:AxisTrait,N:NodeTrait + Send + Sync> DinoTree<A,N> where N::T : Send + Sync{
-    pub fn find_collisions_par(&mut self,func:impl Fn(ProtectedBBox<N::T>,ProtectedBBox<N::T>) + Send + Sync){
-        query::colfind::QueryBuilder::new(self).query_par(|a,b|{
-            func(a,b)
-        });
-    }
-
-    #[cfg(feature = "nbody")]
-    pub fn nbody_par<X:query::nbody::NodeMassTrait<Num=N::Num,Item=N::T>+Sync+Send>(
-        &mut self,ncontext:&X,rect:Rect<N::Num>) where X::No:Send, N::T:Send+Copy{
-        query::nbody::nbody_par(self,ncontext,rect)
-    }
-
-
-    //TODO remove send/sync trait bounds
-    #[cfg(feature = "nbody")]
-    pub fn nbody<X:query::nbody::NodeMassTrait<Num=N::Num,Item=N::T>+Sync+Send>(
-        &mut self,ncontext:&X,rect:Rect<N::Num>) where X::No:Send, N::T:Send+Sync{
-        query::nbody::nbody(self,ncontext,rect)
-    }
-
-}
-
-impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
-
-
-
-
-    pub fn draw(&self,drawer:&mut impl graphics::DividerDrawer<N=N::Num>,rect:&Rect<N::Num>){
-        graphics::draw(self,drawer,rect)
-    }
-    pub fn intersect_with_mut<X:HasAabb<Num=N::Num>>(
-        &mut self,
-        other:&mut [X],
-        func: impl Fn(ProtectedBBox<N::T>,ProtectedBBox<X>)){
-        intersect_with::intersect_with_mut(self,other,func)
-    }
-
-    #[must_use]
-    pub fn raycast_mut(
-        &mut self,
-        rect:Rect<N::Num>,
-        ray:raycast::Ray<N::Num>,
-        rtrait: &mut impl raycast::RayTrait<N=N::Num,T=N::T> )->raycast::RayCastResult<N::T>{
-        raycast::raycast_mut(self,rect,ray,rtrait)
-    }
-
-    #[must_use]
-    pub fn k_nearest_mut(
-        &mut self,
-        point:Vec2<N::Num>,
-        num:usize,
-        knear:&mut impl k_nearest::Knearest<N=N::Num,T=N::T>,
-        rect:Rect<N::Num>) -> Vec<k_nearest::UnitMut<N::T>>{
-        k_nearest::k_nearest_mut(self,point,num,knear,rect)
-    }
-
-    #[must_use]
-    pub fn multi_rect(&mut self)->rect::MultiRectMut<A,N>{
-        rect::MultiRectMut::new(self)
-    }
-    pub fn for_all_not_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){
-        rect::for_all_not_in_rect_mut(self,rect,func);
-    }
-    pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){
-        rect::for_all_intersect_rect_mut(self,rect,func);
-    }
-    pub fn for_all_intersect_rect(&self,rect:&Rect<N::Num>,func:impl FnMut(&N::T)){
-        rect::for_all_intersect_rect(self,rect,func);
-    }
-    pub fn for_all_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){
-        rect::for_all_in_rect_mut(self,rect,func);
-    }
-    pub fn for_all_in_rect(&self,rect:&Rect<N::Num>,func:impl FnMut(&N::T)){
-        rect::for_all_in_rect(self,rect,func);
-    }
-    pub fn find_collisions(&mut self,mut func:impl FnMut(ProtectedBBox<N::T>,ProtectedBBox<N::T>)){
-        colfind::QueryBuilder::new(self).query_seq(|a,b|{
-            func(a,b)
-        });
-    }
-
-    #[must_use]
-    pub fn assert_invariants(&self)->bool{
-        assert_invariants(self)
-    }
-
-
-    #[must_use]
-    pub fn axis(&self)->A{
-        self.axis
-    }
-
-    #[must_use]
-    pub fn vistr_mut(&mut self)->VistrMut<N>{
-        VistrMut{
-            inner:self.inner.vistr_mut()
-        }
-    }
-
-    #[must_use]
-    pub fn vistr(&self)->Vistr<N>{
-        self.inner.vistr()
-    }
-
-    #[must_use]
-    pub fn get_height(&self)->usize{
-        self.inner.get_height()
-    }
-
-    #[must_use]
-    pub fn num_nodes(&self)->usize{
-        self.inner.get_nodes().len()
-    }
-}

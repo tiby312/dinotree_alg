@@ -23,8 +23,8 @@ pub trait ColMulti{
 
 
 ///Naive algorithm.
-pub fn query_naive_mut<T:HasAabb>(bots:&mut [T],mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
-    let bots=ProtectedBBoxSlice::new(bots);
+pub fn query_naive_mut<T:HasAabb>(bots:ProtectedBBoxSlice<T>,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+    
     tools::for_every_pair(bots,|a,b|{
         if a.get().intersects_rect(b.get()){
             func(a,b);

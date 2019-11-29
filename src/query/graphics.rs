@@ -1,5 +1,7 @@
 use crate::query::inner_prelude::*;
 
+
+
 ///Trait user must implement.
 pub trait DividerDrawer{
     type N:NumTrait;

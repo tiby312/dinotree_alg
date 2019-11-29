@@ -63,8 +63,7 @@ macro_rules! rect{
 
 
 
-pub fn naive_for_all_not_in_rect_mut<T:HasAabb>(bots:&mut [T],rect:&Rect<T::Num>,mut closure:impl FnMut(ProtectedBBox<T>)){
-    let bots = ProtectedBBoxSlice::new(bots);
+pub fn naive_for_all_not_in_rect_mut<T:HasAabb>(bots:ProtectedBBoxSlice<T>,rect:&Rect<T::Num>,mut closure:impl FnMut(ProtectedBBox<T>)){
 
     for b in bots.iter_mut(){
         if !rect.contains_rect(b.get()){
@@ -115,8 +114,8 @@ pub fn for_all_not_in_rect_mut<A:AxisTrait,N:NodeTrait>(tree:&mut DinoTree<A,N>,
 
 
 
-pub use self::mutable::naive_for_all_intersect_rect_mut;
-pub use self::mutable::naive_for_all_in_rect_mut;
+//pub use self::mutable::naive_for_all_intersect_rect_mut;
+//pub use self::mutable::naive_for_all_in_rect_mut;
 pub use constant::*;
 pub use mutable::*;
 
@@ -188,11 +187,10 @@ mod mutable{
     }
 
     pub fn naive_for_all_in_rect_mut<T: HasAabb>(
-        bots: &mut [T],
+        bots: ProtectedBBoxSlice<T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(ProtectedBBox<T>),
     ) {
-        let bots = ProtectedBBoxSlice::new(bots);
 
         for b in bots.iter_mut(){
             if rect.contains_rect(b.get()){
@@ -203,11 +201,10 @@ mod mutable{
     }
 
     pub fn naive_for_all_intersect_rect_mut<T: HasAabb>(
-        bots: &mut [T],
+        bots: ProtectedBBoxSlice<T>,
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(ProtectedBBox<T>),
     ) {
-        let bots = ProtectedBBoxSlice::new(bots);
         for b in bots.iter_mut(){
             if rect.get_intersect_rect(b.get()).is_some(){
                 closure(b);

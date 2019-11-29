@@ -41,64 +41,6 @@ pub trait Knearest{
 
 
 
-///Splits a mutable slice into multiple slices
-///The splits occur where the predicate returns false.
-pub struct SliceSplitMut<'a,T,F>{
-    arr:Option<&'a mut [T]>,
-    func:F
-}
-
-impl<'a,T,F:FnMut(&T,&T)->bool> SliceSplitMut<'a,T,F>
-{
-    pub fn new(arr:&'a mut [T],func:F)->SliceSplitMut<'a,T,F>
-    {
-        SliceSplitMut{arr:Some(arr),func}
-    }
-}
-
-impl<'a,T,F:FnMut(&T,&T)->bool> Iterator for SliceSplitMut<'a,T,F>{
-    type Item=&'a mut [T];
-    fn next(&mut self)->Option<Self::Item>{
-        let (last,arr)={
-            let arr=self.arr.take()?;
-            let i=arr.get(0)?;        
-            let count=arr.iter().peeking_take_while(|a|(self.func)(a,i)).count();
-            (count,arr)
-        };
-        let (first,rest)=arr.split_at_mut(last);
-        self.arr=Some(rest);
-        Some(first)
-    }
-}
-
-///Splits a mutable slice into multiple slices
-///The splits occur where the predicate returns false.
-pub struct SliceSplit<'a,T,F>{
-    arr:Option<&'a [T]>,
-    func:F
-}
-impl<'a,T,F:FnMut(&T,&T)->bool> SliceSplit<'a,T,F>{
-    pub fn new(arr:&'a [T],func:F)->SliceSplit<'a,T,F>{
-        SliceSplit{arr:Some(arr),func}
-    }
-}
-impl<'a,T,F:FnMut(&T,&T)->bool> Iterator for SliceSplit<'a,T,F>{
-    type Item=&'a [T];
-    fn next(&mut self)->Option<Self::Item>{
-        let (last,arr)={
-            let arr=self.arr.take()?;
-            let i=arr.get(0)?;        
-            let count=arr.iter().peeking_take_while(|a|(self.func)(a,i)).count();
-            (count,arr)
-        };
-        let (first,rest)=arr.split_at(last);
-        self.arr=Some(rest);
-        Some(first)
-    }
-}
-
-
-
 
 
 fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
@@ -120,7 +62,7 @@ fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::AxisTrait,range:&Range
 }
 
 /// Returned by k_nearest_mut
-pub struct UnitMut<'a,T:HasAabb>{
+pub struct KnearestResult<'a,T:HasAabb>{
     pub bot:ProtectedBBox<'a,T>,
     pub mag:T::Num
 }
@@ -128,7 +70,7 @@ pub struct UnitMut<'a,T:HasAabb>{
 
 struct ClosestCand<'a,T:HasAabb>{
     //Can have multiple bots with the same mag. So the length could be bigger than num.
-    bots:Vec<UnitMut<'a,T>>,
+    bots:Vec<KnearestResult<'a,T>>,
     //The current number of different distances in the vec
     curr_num:usize,
     //The max number of different distances.
@@ -137,7 +79,7 @@ struct ClosestCand<'a,T:HasAabb>{
 impl<'a,T:HasAabb> ClosestCand<'a,T>{
 
     //First is the closest
-    fn into_sorted(self)->Vec<UnitMut<'a,T>>{
+    fn into_sorted(self)->Vec<KnearestResult<'a,T>>{
         self.bots
     }
     fn new(num:usize)->ClosestCand<'a,T>{
@@ -155,14 +97,14 @@ impl<'a,T:HasAabb> ClosestCand<'a,T>{
             
             for i in 0..arr.len(){
                 if curr_dis<arr[i].mag{
-                    let unit= UnitMut{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
+                    let unit= KnearestResult{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
                     arr.insert(i,unit);
                     self.curr_num+=1;
                     return true;
                 }
             }
             //only way we get here is if the above didnt return.
-            let unit=UnitMut{bot:curr_bot,mag:curr_dis};
+            let unit=KnearestResult{bot:curr_bot,mag:curr_dis};
             self.curr_num+=1;
             arr.push(unit);
         }else{
@@ -178,14 +120,14 @@ impl<'a,T:HasAabb> ClosestCand<'a,T>{
                             break;
                         }
                     }
-                    let unit=UnitMut{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
+                    let unit=KnearestResult{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
                     arr.insert(i,unit);
                 
                     let max=arr.iter().map(|a|a.mag).max().unwrap();
                     assert!(max<v.mag);
                     return true;
                 }else if curr_dis==arr[i].mag{
-                    let unit=UnitMut{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
+                    let unit=KnearestResult{bot:curr_bot,mag:curr_dis};//$unit_create!(curr_bot,curr_dis);
                     arr.insert(i,unit);
                     return true;
                 }
@@ -378,12 +320,12 @@ mod con{
 }
 */
 
-pub use self::mutable::naive_mut;
+pub use self::mutable::k_nearest_naive_mut;
 pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
     
-    pub fn naive_mut<'a,K:Knearest<T=T,N=T::Num>,T:HasAabb>(bots:ProtectedBBoxSlice<'a,T>,point:Vec2<K::N>,num:usize,k:&mut K)->Vec<UnitMut<'a,K::T>>{
+    pub fn k_nearest_naive_mut<'a,K:Knearest<T=T,N=T::Num>,T:HasAabb>(bots:ProtectedBBoxSlice<'a,T>,point:Vec2<K::N>,num:usize,k:&mut K)->Vec<KnearestResult<'a,K::T>>{
         //let bots=ProtectedBBoxSlice::new(bots);
 
         let mut closest=ClosestCand::new(num);
@@ -408,7 +350,7 @@ mod mutable{
     pub fn k_nearest_mut<'a,
         A:AxisTrait,
         N:NodeTrait,
-        >(tree:&'a mut DinoTree<A,N>,point:Vec2<N::Num>,num:usize,knear: &mut impl Knearest<N=N::Num,T=N::T>,rect:Rect<N::Num>)->Vec<UnitMut<'a,N::T>>{
+        >(tree:&'a mut DinoTree<A,N>,point:Vec2<N::Num>,num:usize,knear: &mut impl Knearest<N=N::Num,T=N::T>,rect:Rect<N::Num>)->Vec<KnearestResult<'a,N::T>>{
         
         let axis=tree.axis();
         

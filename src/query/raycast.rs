@@ -355,7 +355,7 @@ fn recc<'a:'b,'b,
 }
 
 
-pub use self::mutable::naive_mut;
+pub use self::mutable::raycast_naive_mut;
 pub use self::mutable::raycast_mut;
 
 
@@ -368,7 +368,7 @@ pub enum RayCastResult<'a,T:HasAabb>{
 mod mutable{
     use super::*;
 
-    pub fn naive_mut<
+    pub fn raycast_naive_mut<
         'a,
         T:HasAabb,
         >(bots:ProtectedBBoxSlice<'a,T>,ray:Ray<T::Num>,rtrait:&mut impl RayTrait<N=T::Num,T=T>)->RayCastResult<'a,T>{

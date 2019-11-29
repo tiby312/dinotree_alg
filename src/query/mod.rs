@@ -22,31 +22,37 @@ mod inner_prelude {
     pub(crate) use crate::query::tools;
 }
 
-///Functions that will compare query output to the naive solution.
-pub mod assert;
+
+pub use crate::query::raycast::{Ray,RayIntersectResult,RayTrait,RayCastResult};
+pub use crate::query::k_nearest::{Knearest,KnearestResult};
+pub use crate::query::graphics::DividerDrawer;
+#[cfg(feature = "nbody")]
+pub use crate::query::nbody::NodeMassTrait;
+
+
 
 ///aabb broadphase collision detection
-pub mod colfind;
+pub(crate) mod colfind;
 
 ///Provides functionality to draw the dividers of a dinotree.
-pub mod graphics;
+pub(crate) mod graphics;
 
 ///Contains all k_nearest code.
-pub mod k_nearest;
+pub(crate) mod k_nearest;
 
 
 ///Contains all raycast code.
-pub mod raycast;
+pub(crate) mod raycast;
 
 ///Allows user to intersect the tree with a seperate group of bots.
-pub mod intersect_with;
+pub(crate) mod intersect_with;
 
 ///[EXPERIMENTAL] Contains all nbody code.
 #[cfg(feature = "nbody")]
-pub mod nbody;
+pub(crate) mod nbody;
 
 ///Contains rect code.
-pub mod rect;
+pub(crate) mod rect;
 
 ///Contains misc tools
 pub(crate) mod tools;
