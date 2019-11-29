@@ -7,7 +7,6 @@ publish = false
 
 [dependencies]
 dists= "0.3"
-#dinotree={path = "../dinotree"}
 duckduckgeo = "0.2"
 piston_window = "0.103.0"
 bit-vec = "0.6"
@@ -19,5 +18,5 @@ compt = "1.6"
 
 [dependencies.dinotree_alg]
 path = ".."
-features = ["nbody"]
+features = ["nbody","analyze"]
 
