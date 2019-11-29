@@ -139,6 +139,7 @@ pub mod query;
 use axgeom::*;
 
 ///Contains code to check the data structure is valid.
+#[cfg(feature = "analyze")]
 mod assert_invariants;
 
 ///Contains generic code used in all dinotree versions

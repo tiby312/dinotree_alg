@@ -29,6 +29,9 @@ pub use crate::query::graphics::DividerDrawer;
 #[cfg(feature = "nbody")]
 pub use crate::query::nbody::NodeMassTrait;
 
+#[cfg(feature = "analyze")]
+pub use crate::query::colfind::{NotSortedQueryBuilder,QueryBuilder};
+
 
 
 ///aabb broadphase collision detection

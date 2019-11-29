@@ -79,10 +79,24 @@ impl<'a,A:AxisTrait,T:HasAabb> NotSorted<A,NodeMut<'a,T>>{
     }
 }
 
+impl<A:AxisTrait,N:NodeTrait + Send + Sync> NotSorted<A,N> where N::T : Send + Sync{
+
+    pub fn find_collisions_mut_par(&mut self,func:impl Fn(ProtectedBBox<N::T>,ProtectedBBox<N::T>) + Send + Sync){
+        colfind::NotSortedQueryBuilder::new(self).query_par(|a,b|{
+            func(a,b)
+        });
+    }
+}
 impl<A:AxisTrait,N:NodeTrait> NotSorted<A,N>{
 
+    pub fn find_collisions_mut(&mut self,mut func:impl FnMut(ProtectedBBox<N::T>,ProtectedBBox<N::T>)){
+        colfind::NotSortedQueryBuilder::new(self).query_seq(|a,b|{
+            func(a,b)
+        });
+    }
 
     #[must_use]
+    #[cfg(feature = "analyze")]
     pub fn find_collisions_builder(&mut self)->colfind::NotSortedQueryBuilder<A,N>{
         colfind::NotSortedQueryBuilder::new(self)
     }
@@ -113,7 +127,6 @@ impl<A:AxisTrait,N:NodeTrait> NotSorted<A,N>{
 
 
 use crate::query::*;
-use crate::assert_invariants::assert_invariants;
 
 
 ///The data structure this crate revoles around.
@@ -212,6 +225,8 @@ impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
     pub fn for_all_in_rect(&self,rect:&Rect<N::Num>,func:impl FnMut(&N::T)){
         rect::for_all_in_rect(self,rect,func);
     }
+
+    #[cfg(feature = "analyze")]
     pub fn find_collisions_mut_builder(&mut self)->colfind::QueryBuilder<A,N>{
         colfind::QueryBuilder::new(self)
     }
@@ -222,6 +237,7 @@ impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
     }
 
     #[must_use]
+    #[cfg(feature = "analyze")]
     pub fn assert_invariants(&self)->bool{
         assert_invariants(self)
     }
