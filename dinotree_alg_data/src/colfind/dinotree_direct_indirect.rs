@@ -22,11 +22,11 @@ fn test_seq<T: HasAabb>(
 ) -> TestResult {
     let instant = Instant::now();
 
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, bots).build_seq();
+    let mut tree = DinoTree::new(axgeom::XAXISS, bots);
 
     let rebal = instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
+    tree.find_collisions_mut(|a, b| {
         func(a, b);
     });
 
@@ -45,11 +45,11 @@ fn test_par<T: HasAabb + Send + Sync>(
 ) -> TestResult {
     let instant = Instant::now();
 
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, bots).build_par();
+    let mut tree = DinoTree::new_par(axgeom::XAXISS, bots);
 
     let rebal = instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_par(|a, b| {
+    tree.find_collisions_mut_par(|a, b| {
         func(a, b);
     });
 
@@ -129,7 +129,7 @@ fn complete_test<T: TestTrait>(scene: &mut bot::BotScene<Bot<T>>) -> CompleteTes
         )
     };
     let (default_seq, default_par) = {
-        let mut default = create_bbox_mut(&mut bots, |b| prop.create_bbox_i32(b.pos));
+        let mut default = build_helper::create_bbox_mut(&mut bots, |b| prop.create_bbox_i32(b.pos));
 
         let collide = |mut b: ProtectedBBox<BBoxMut<i32, Bot<T>>>,
                        mut c: ProtectedBBox<BBoxMut<i32, Bot<T>>>| {

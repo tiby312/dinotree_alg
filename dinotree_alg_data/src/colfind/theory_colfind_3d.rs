@@ -16,7 +16,7 @@ fn test1(scene: &mut bot::BotScene<Bot>) -> Res {
 
     let mut counter = datanum::Counter::new();
 
-    let mut bots = create_bbox_mut(bots, |b| {
+    let mut bots = build_helper::create_bbox_mut(bots, |b| {
         datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
     });
 
@@ -24,7 +24,7 @@ fn test1(scene: &mut bot::BotScene<Bot>) -> Res {
 
     let mut num_pairs = 0;
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|_a, _b| {
+    QueryBuilder::new(&mut tree).query_seq(|_a, _b| {
         num_pairs += 1;
     });
 
@@ -49,7 +49,7 @@ fn test2(scene: &mut bot::BotScene<Bot>) -> Res {
         .collect();
 
     let mut num_pairs = 0;
-    colfind::query_sweep_mut(axgeom::XAXISS, &mut bb, |_a, _b| {
+    analyze::NaiveAlgs::new(&mut bb).find_collisions_sweep_mut(axgeom::XAXISS, |_a, _b| {
         num_pairs += 1;
     });
 
@@ -78,7 +78,7 @@ fn test3(scene: &mut bot::BotScene<Bot>) -> Res {
         .collect();
 
     let mut num_pairs = 0;
-    colfind::query_naive_mut(&mut bb, |_a, _b| {
+    analyze::NaiveAlgs::new(&mut bb).find_collisions_mut(|_a, _b| {
         num_pairs += 1;
     });
 
@@ -98,15 +98,15 @@ fn test4(scene: &mut bot::BotScene<Bot>) -> Res {
 
     let mut counter = datanum::Counter::new();
 
-    let mut bots = create_bbox_mut(bots, |b| {
+    let mut bots = build_helper::create_bbox_mut(bots, |b| {
         datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
     });
 
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bots).build_not_sorted_par();
+    let mut tree = NotSorted::new_par(axgeom::XAXISS, &mut bots);
 
     let mut num_pairs = 0;
 
-    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|_a, _b| {
+    tree.find_collisions_mut(|_a, _b| {
         num_pairs += 1;
     });
 

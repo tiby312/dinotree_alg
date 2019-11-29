@@ -1,5 +1,5 @@
 use axgeom::Rect;
-use dinotree::NumTrait;
+use dinotree_alg::NumTrait;
 use std::cmp::Ordering;
 
 pub struct Counter(usize);

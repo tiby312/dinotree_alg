@@ -11,13 +11,13 @@ fn test1(scene: &mut bot::BotScene<Bot>) -> (f64, f64) {
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
+    let mut bb = build_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
     let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
 
     let a = instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+    QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
         a.inner_mut().num += 2;
         b.inner_mut().num += 2;
     });
@@ -32,7 +32,7 @@ fn test3(scene: &mut bot::BotScene<Bot>, rebal_height: usize, query_height: usiz
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
+    let mut bb = build_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
     //dbg!("YOOOOOOOOOOO", rebal_height,query_height);
     let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb)
@@ -41,7 +41,7 @@ fn test3(scene: &mut bot::BotScene<Bot>, rebal_height: usize, query_height: usiz
     //dbg!("FINISH");
     let a = instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree)
+    QueryBuilder::new(&mut tree)
         .with_switch_height(query_height)
         .query_par(|mut a, mut b| {
             a.inner_mut().num += 2;

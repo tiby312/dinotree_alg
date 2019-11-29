@@ -11,13 +11,13 @@ pub fn handle_bench_inner(scene: &mut bot::BotScene<Bot>, height: usize) -> f64 
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
+    let mut bb = build_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
     let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb)
         .with_height(height)
         .build_seq();
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+    tree.find_collisions_mut(|mut a, mut b| {
         a.inner_mut().num += 2;
         b.inner_mut().num += 2;
     });
@@ -30,7 +30,7 @@ pub fn handle_theory_inner(scene: &mut bot::BotScene<Bot>, height: usize) -> usi
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| {
+    let mut bb = build_helper::create_bbox_mut(bots, |b| {
         datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
     });
 
@@ -38,7 +38,7 @@ pub fn handle_theory_inner(scene: &mut bot::BotScene<Bot>, height: usize) -> usi
         .with_height(height)
         .build_seq();
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+    tree.find_collisions_mut(|mut a, mut b| {
         a.inner_mut().num += 2;
         b.inner_mut().num += 2;
     });

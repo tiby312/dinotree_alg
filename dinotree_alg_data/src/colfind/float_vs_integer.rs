@@ -33,11 +33,11 @@ fn handle_bench(fg: &mut Figure) {
         let bench_integer = {
             let instant = Instant::now();
 
-            let mut bb = create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
+            let mut bb = build_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -49,13 +49,13 @@ fn handle_bench(fg: &mut Figure) {
             let instant = Instant::now();
 
             let r = vec2same(prop.radius.dis() as i64);
-            let mut bb = create_bbox_mut(bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(bots, |b| {
                 axgeom::Rect::from_point(b.pos.inner_as::<i64>(), r)
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -68,16 +68,16 @@ fn handle_bench(fg: &mut Figure) {
 
             let r = vec2same(prop.radius.dis() as f32);
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 let k: Rect<NotNan<f32>> = axgeom::Rect::from_point(b.pos.inner_as::<f32>(), r)
                     .inner_try_into()
                     .unwrap();
                 k
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -90,16 +90,16 @@ fn handle_bench(fg: &mut Figure) {
 
             let r = vec2same(prop.radius.dis() as f32);
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 let k: Rect<NotNan<f32>> = axgeom::Rect::from_point(b.pos.inner_as(), r)
                     .inner_try_into()
                     .unwrap();
                 k
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_par();
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -112,13 +112,13 @@ fn handle_bench(fg: &mut Figure) {
 
             let r = vec2same(prop.radius.dis() as i32);
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 axgeom::Rect::from_point(b.pos.inner_as::<i32>(), r)
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_par();
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -131,13 +131,13 @@ fn handle_bench(fg: &mut Figure) {
 
             let r = vec2same(prop.radius.dis() as i64);
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 axgeom::Rect::from_point(b.pos.inner_as::<i64>(), r)
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_par();
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -150,16 +150,16 @@ fn handle_bench(fg: &mut Figure) {
 
             let r = vec2same(prop.radius.dis() as f64);
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 let k: Rect<NotNan<f64>> = axgeom::Rect::from_point(b.pos.inner_as(), r)
                     .inner_try_into()
                     .unwrap();
                 k
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -171,16 +171,16 @@ fn handle_bench(fg: &mut Figure) {
             let instant = Instant::now();
             let r = vec2same(prop.radius.dis() as f64);
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 let k: Rect<NotNan<f64>> = axgeom::Rect::from_point(b.pos.inner_as(), r)
                     .inner_try_into()
                     .unwrap();
                 k
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_par();
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });

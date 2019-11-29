@@ -11,11 +11,10 @@ mod inner_prelude {
 
     pub use crate::support::*;
     pub(crate) use crate::FigureBuilder;
-    pub use dinotree_alg::colfind;
+    pub use dinotree_alg::prelude::*;
+    pub use dinotree_alg::analyze::*;
+    
     pub(crate) use duckduckgeo::bot;
-
-    pub use dinotree::prelude::*;
-
     pub use crate::black_box;
     pub(crate) use crate::datanum;
     pub use ordered_float::NotNan;

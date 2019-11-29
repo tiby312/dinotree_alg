@@ -5,14 +5,14 @@ fn theory(scene: &mut bot::BotScene<bot::Bot>) -> (usize, usize) {
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| {
+    let mut bb = build_helper::create_bbox_mut(bots, |b| {
         datanum::from_rect(&mut counter, b.create_bbox_nan(prop))
     });
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+    let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
     let a = *counter.get_inner();
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+    tree.find_collisions_mut(|mut a, mut b| {
         prop.collide(a.inner_mut(), b.inner_mut());
     });
 
@@ -28,14 +28,15 @@ fn theory_not_sorted(scene: &mut bot::BotScene<bot::Bot>) -> (usize, usize) {
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
 
-    let mut bb = create_bbox_mut(bots, |b| {
+    let mut bb = build_helper::create_bbox_mut(bots, |b| {
         datanum::from_rect(&mut counter, b.create_bbox_nan(prop))
     });
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_not_sorted_seq();
+    let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
 
     let a = *counter.get_inner();
 
-    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+
+    tree.find_collisions_mut(|mut a, mut b| {
         prop.collide(a.inner_mut(), b.inner_mut());
     });
 
@@ -50,12 +51,12 @@ fn bench_seq(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
 
-    let mut bb = create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+    let mut bb = build_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
+    let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+    tree.find_collisions_mut(|mut a, mut b| {
         prop.collide(a.inner_mut(), b.inner_mut());
     });
 
@@ -69,12 +70,12 @@ fn bench_par(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
     let instant = Instant::now();
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_par();
+    let mut bb = build_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
+    let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 
-    colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+    tree.find_collisions_mut_par(|mut a, mut b| {
         prop.collide(a.inner_mut(), b.inner_mut());
     });
 
@@ -89,12 +90,12 @@ fn bench_not_sorted_seq(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_not_sorted_seq();
+    let mut bb = build_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
+    let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 
-    colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+    tree.find_collisions_mut(|mut a, mut b| {
         prop.collide(a.inner_mut(), b.inner_mut());
     });
 
@@ -110,12 +111,12 @@ fn bench_not_sorted_par(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_not_sorted_par();
+    let mut bb = build_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
+    let mut tree = NotSorted::new_par(axgeom::XAXISS, &mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 
-    colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+    tree.find_collisions_mut_par(|mut a, mut b| {
         prop.collide(a.inner_mut(), b.inner_mut());
     });
 

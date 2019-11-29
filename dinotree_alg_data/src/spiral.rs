@@ -18,16 +18,16 @@ fn handle1(fb: &mut FigureBuilder) {
 
         let mut bots: Vec<Vec2<f32>> = s.take(num_bots).collect();
 
-        let mut bb = create_bbox_mut(&mut bots, |b| {
+        let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
             axgeom::Rect::from_point(*b, vec2same(5.0))
                 .inner_try_into::<NotNan<f32>>()
                 .unwrap()
         });
 
-        let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_par();
+        let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
 
         let mut num_intersection = 0;
-        colfind::QueryBuilder::new(&mut tree).query_seq(|_a, _b| {
+        tree.find_collisions_mut(|_a, _b| {
             num_intersection += 1;
         });
 

@@ -73,17 +73,16 @@ fn handle_bench_inner(s:&dists::spiral::Spiral,fg:&mut Figure,title:&str){
             let instant=Instant::now();
             
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots2,|bot|{
+            let mut tree=DinoTree::new(axgeom::XAXISS,&mut bots2,|bot|{
                 axgeom::Rect::from_point(bot.pos,vec2same(5))
-            }).build_seq();
+            });
 
-    
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
+            tree.find_collisions_mut(|mut a,mut b| {
                 a.inner.num+=1;
                 b.inner.num+=1;
         
             });
-black_box(bots2);
+            black_box(bots2);
             instant_to_sec(instant.elapsed())
             
 
@@ -101,13 +100,12 @@ black_box(bots2);
             let instant=Instant::now();
             
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots2,|bot|{
+            let mut tree=DinoTree::new(axgeom::XAXISS,&mut bots2,|bot|{
                 let bot:&mut Bot=unsafe{&mut *(*bot)};
                 axgeom::Rect::from_point(bot.pos,vec2same(5))
-            }).build_seq();
+            });
 
-    
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {
+            tree.find_collisions_mut(|a,b| {
                 let a:&mut Bot=unsafe{&mut *(*a.inner)};
                 let b:&mut Bot=unsafe{&mut *(*b.inner)};
                 a.num+=1;
@@ -137,13 +135,12 @@ black_box(bots2);
             let instant=Instant::now();
             
 
-            let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,&mut bots2,|bot|{
+            let mut tree=DinoTree::new(axgeom::XAXISS,&mut bots2,|bot|{
                 let bot:&mut BBox2<_,_>=unsafe{&mut *(*bot)};
                 bot.0.rect
-            }).build_seq();
+            });
 
-    
-            colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {
+            tree.find_collisions_mut(|a,b| {
                 let a:&mut BBox2<_,_>=unsafe{&mut *(*a.inner)};
                 let b:&mut BBox2<_,_>=unsafe{&mut *(*b.inner)};
                 a.0.inner.num+=1;
@@ -151,7 +148,7 @@ black_box(bots2);
         
             });
             
-black_box(bots2);
+            black_box(bots2);
             instant_to_sec(instant.elapsed())
             
 

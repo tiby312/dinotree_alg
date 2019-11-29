@@ -1,5 +1,4 @@
 use crate::inner_prelude::*;
-use dinotree_alg::colfind;
 
 #[derive(Copy, Clone)]
 pub struct Bot {
@@ -9,7 +8,7 @@ pub struct Bot {
 
 mod level_counter {
     use crate::datanum;
-    use dinotree::tree::Splitter;
+    use dinotree_alg::analyze::Splitter;
 
     pub struct LevelCounter {
         counter: *mut datanum::Counter,
@@ -92,7 +91,7 @@ fn handle_inner_theory(num_bots: usize, grow_iter: impl Iterator<Item = f32>) ->
 
             let mut levelc = level_counter::LevelCounter::new(&mut counter);
 
-            let mut bb = create_bbox_mut(bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(bots, |b| {
                 datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
             });
 
@@ -101,7 +100,7 @@ fn handle_inner_theory(num_bots: usize, grow_iter: impl Iterator<Item = f32>) ->
 
             counter.reset();
             let mut levelc2 = level_counter::LevelCounter::new(&mut counter);
-            colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(
+            QueryBuilder::new(&mut tree).query_with_splitter_seq(
                 |mut a, mut b| {
                     a.inner_mut().num += 1;
                     b.inner_mut().num += 1;
@@ -147,14 +146,14 @@ fn handle_inner_bench(num_bots: usize, grow_iter: impl Iterator<Item = f32>) -> 
         let prop = &scene.bot_prop;
         let mut times1 = LevelTimer::new();
 
-        let mut bb = create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
+        let mut bb = build_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
         let mut tree =
             DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_with_splitter_seq(&mut times1);
 
         let mut times2 = LevelTimer::new();
 
-        colfind::QueryBuilder::new(&mut tree).query_with_splitter_seq(
+        QueryBuilder::new(&mut tree).query_with_splitter_seq(
             |mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1

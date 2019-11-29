@@ -31,14 +31,14 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
             b.num = 0;
         }
 
-        let mut bb = create_bbox_mut(&mut bots, |b| prop.create_bbox_nan(b.pos));
+        let mut bb = build_helper::create_bbox_mut(&mut bots, |b| prop.create_bbox_nan(b.pos));
 
         let c0 = {
             let instant = Instant::now();
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_par();
+            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -49,9 +49,9 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
         let c1 = {
             let instant = Instant::now();
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -63,7 +63,7 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
             if num_bots < 20000 {
                 let instant = Instant::now();
 
-                colfind::query_sweep_mut(axgeom::XAXISS, &mut bb, |mut a, mut b| {
+                analyze::NaiveAlgs::new(&mut bb).find_collisions_sweep_mut(axgeom::XAXISS, |mut a, mut b| {
                     a.inner_mut().num -= 2;
                     b.inner_mut().num -= 2;
                 });
@@ -82,7 +82,7 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
             if num_bots < 8000 {
                 let instant = Instant::now();
 
-                colfind::query_naive_mut(&mut bb, |mut a, mut b| {
+                analyze::NaiveAlgs::new(&mut bb).find_collisions_mut(|mut a, mut b| {
                     a.inner_mut().num -= 1;
                     b.inner_mut().num -= 1;
                 });
@@ -96,9 +96,9 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
         let c5 = {
             let instant = Instant::now();
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_not_sorted_par();
+            let mut tree = NotSorted::new_par(axgeom::XAXISS,&mut bb);
 
-            colfind::NotSortedQueryBuilder::new(&mut tree).query_par(|mut a, mut b| {
+            tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -109,9 +109,9 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
         let c6 = {
             let instant = Instant::now();
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_not_sorted_seq();
+            let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
 
-            colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
                 b.inner_mut().num += 1;
             });
@@ -230,13 +230,13 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
         let c1 = {
             let mut counter = datanum::Counter::new();
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
+            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
 
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 2;
                 b.inner_mut().num += 2;
             });
@@ -248,11 +248,11 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
             if num_bots < stop_naive_at {
                 let mut counter = datanum::Counter::new();
 
-                let mut bb = create_bbox_mut(&mut bots, |b| {
+                let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                     datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
                 });
 
-                colfind::query_naive_mut(&mut bb, |mut a, mut b| {
+                analyze::NaiveAlgs::new(&mut bb).find_collisions_mut(|mut a, mut b| {
                     a.inner_mut().num -= 1;
                     b.inner_mut().num -= 1;
                 });
@@ -266,11 +266,11 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
             if num_bots < stop_sweep_at {
                 let mut counter = datanum::Counter::new();
 
-                let mut bb = create_bbox_mut(&mut bots, |b| {
+                let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                     datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
                 });
 
-                colfind::query_sweep_mut(axgeom::XAXISS, &mut bb, |mut a, mut b| {
+                analyze::NaiveAlgs::new(&mut bb).find_collisions_sweep_mut(axgeom::XAXISS, |mut a, mut b| {
                     a.inner_mut().num -= 1;
                     b.inner_mut().num -= 1;
                 });
@@ -284,13 +284,13 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
         let c4 = {
             let mut counter = datanum::Counter::new();
 
-            let mut bb = create_bbox_mut(&mut bots, |b| {
+            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
                 datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
             });
 
-            let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_not_sorted_seq();
+            let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
 
-            colfind::NotSortedQueryBuilder::new(&mut tree).query_seq(|mut a, mut b| {
+            tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 2;
                 b.inner_mut().num += 2;
             });
