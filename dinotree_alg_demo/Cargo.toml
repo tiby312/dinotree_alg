@@ -18,5 +18,5 @@ compt = "1.6"
 
 [dependencies.dinotree_alg]
 path = ".."
-features = ["nbody","analyze"]
+features = ["nbody"]
 

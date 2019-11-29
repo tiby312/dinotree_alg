@@ -27,4 +27,3 @@ pdqselect = "0.1"
 
 [features]
 nbody = []
-analyze =[]

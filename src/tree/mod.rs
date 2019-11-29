@@ -2,7 +2,7 @@
 use crate::inner_prelude::*;
 
 ///Helper module for creating Vecs of different types of BBoxes.
-pub mod build_helper{
+pub mod bbox_helper{
     use crate::inner_prelude::*;
 
     ///Convenience function to create a `&mut (Rect<N>,T)` from a `(Rect<N>,T)` bounding box.
@@ -52,13 +52,8 @@ pub mod build_helper{
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`. 
 pub mod dinotree_owned;
 
-#[allow(dead_code)]
-pub(crate) mod analyze_inner;
 
-#[cfg(feature = "analyze")]
-pub mod analyze{
-    pub use super::analyze_inner::*;
-}
+pub mod analyze;
 
 
 ///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
@@ -91,12 +86,6 @@ impl<A:AxisTrait,N:NodeTrait> NotSorted<A,N>{
         colfind::NotSortedQueryBuilder::new(self).query_seq(|a,b|{
             func(a,b)
         });
-    }
-
-    #[must_use]
-    #[cfg(feature = "analyze")]
-    pub fn find_collisions_builder(&mut self)->colfind::NotSortedQueryBuilder<A,N>{
-        colfind::NotSortedQueryBuilder::new(self)
     }
 
     #[inline(always)]
@@ -224,21 +213,10 @@ impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
         rect::for_all_in_rect(self,rect,func);
     }
 
-    #[cfg(feature = "analyze")]
-    pub fn find_collisions_mut_builder(&mut self)->colfind::QueryBuilder<A,N>{
-        colfind::QueryBuilder::new(self)
-    }
     pub fn find_collisions_mut(&mut self,mut func:impl FnMut(ProtectedBBox<N::T>,ProtectedBBox<N::T>)){
         colfind::QueryBuilder::new(self).query_seq(|a,b|{
             func(a,b)
         });
-    }
-
-    #[must_use]
-    #[cfg(feature = "analyze")]
-    pub fn assert_invariants(&self)->bool{
-        use crate::assert_invariants::*;
-        assert_invariants(self)
     }
 
 
@@ -360,14 +338,12 @@ mod builder{
 
 
         #[inline(always)]
-        #[cfg(feature = "analyze")]
         pub fn with_bin_strat(&mut self, strat: BinStrat) -> &mut Self {
             self.rebal_strat = strat;
             self
         }
 
         #[inline(always)]
-        #[cfg(feature = "analyze")]
         pub fn with_height(&mut self, height: usize) -> &mut Self {
             self.height = height;
             self
@@ -377,14 +353,12 @@ mod builder{
         ///Choose the height at which to switch from parallel to sequential.
         ///If you end up building sequentially, this argument is ignored.
         #[inline(always)]
-        #[cfg(feature = "analyze")]
         pub fn with_height_switch_seq(&mut self, height: usize) -> &mut Self {
             self.height_switch_seq = height;
             self
         }
 
         ///Build with a Splitter.
-        #[cfg(feature = "analyze")]
         pub fn build_with_splitter_seq<S: Splitter>(
             &mut self,
             splitter: &mut S,

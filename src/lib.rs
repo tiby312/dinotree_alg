@@ -131,7 +131,7 @@ mod inner_prelude {
     pub(crate) use super::*;
     pub(crate) use compt::Visitor;
     pub(crate) use crate::tree;
-    pub(crate) use crate::tree::analyze_inner::*;
+    pub(crate) use crate::tree::analyze::*;
 
     pub(crate) use crate::tree::*;
     pub(crate) use crate::elem::*;
@@ -144,9 +144,6 @@ pub mod query;
 
 use axgeom::*;
 
-///Contains code to check the data structure is valid.
-#[cfg(feature = "analyze")]
-mod assert_invariants;
 
 ///Contains generic code used in all dinotree versions
 pub use self::tree::*;

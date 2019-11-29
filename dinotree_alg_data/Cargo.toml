@@ -17,5 +17,5 @@ num-traits = "0.2.8"
 
 [dependencies.dinotree_alg]
 path = ".."
-features = ["analyze"]
+features = []
 
