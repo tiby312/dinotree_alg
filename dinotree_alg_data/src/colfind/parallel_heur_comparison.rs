@@ -11,7 +11,7 @@ fn test1(scene: &mut bot::BotScene<Bot>) -> (f64, f64) {
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = build_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
+    let mut bb = bbox_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
     let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_seq();
 
@@ -32,7 +32,7 @@ fn test3(scene: &mut bot::BotScene<Bot>, rebal_height: usize, query_height: usiz
 
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
-    let mut bb = build_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
+    let mut bb = bbox_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
     //dbg!("YOOOOOOOOOOO", rebal_height,query_height);
     let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb)

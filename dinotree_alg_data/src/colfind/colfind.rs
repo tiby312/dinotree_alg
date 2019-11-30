@@ -31,7 +31,7 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
             b.num = 0;
         }
 
-        let mut bb = build_helper::create_bbox_mut(&mut bots, |b| prop.create_bbox_nan(b.pos));
+        let mut bb = bbox_helper::create_bbox_mut(&mut bots, |b| prop.create_bbox_nan(b.pos));
 
         let c0 = {
             let instant = Instant::now();
@@ -230,7 +230,7 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
         let c1 = {
             let mut counter = datanum::Counter::new();
 
-            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
+            let mut bb = bbox_helper::create_bbox_mut(&mut bots, |b| {
                 datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
             });
 
@@ -248,7 +248,7 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
             if num_bots < stop_naive_at {
                 let mut counter = datanum::Counter::new();
 
-                let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
+                let mut bb = bbox_helper::create_bbox_mut(&mut bots, |b| {
                     datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
                 });
 
@@ -266,7 +266,7 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
             if num_bots < stop_sweep_at {
                 let mut counter = datanum::Counter::new();
 
-                let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
+                let mut bb = bbox_helper::create_bbox_mut(&mut bots, |b| {
                     datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
                 });
 
@@ -284,7 +284,7 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
         let c4 = {
             let mut counter = datanum::Counter::new();
 
-            let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
+            let mut bb = bbox_helper::create_bbox_mut(&mut bots, |b| {
                 datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
             });
 

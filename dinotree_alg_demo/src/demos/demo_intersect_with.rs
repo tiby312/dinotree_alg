@@ -98,14 +98,14 @@ impl DemoSys for IntersectWithDemo {
         }
         bots[0].pos = cursor.inner_into();
 
-        let mut k = build_helper::create_bbox_mut(bots, |b| {
+        let mut k = bbox_helper::create_bbox_mut(bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
         });
 
         {
-            let mut walls=build_helper::create_bbox_mut(walls,|wall| wall.0);
+            let mut walls=bbox_helper::create_bbox_mut(walls,|wall| wall.0);
             let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
 
             tree.intersect_with_mut(

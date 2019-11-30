@@ -84,7 +84,7 @@ impl DemoSys for OrigOrderDemo {
             b.update();
         }
 
-        let mut k = build_helper::create_bbox_mut(&mut self.bots, |b| {
+        let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()

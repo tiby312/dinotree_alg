@@ -111,7 +111,6 @@ impl<'a,A:AxisTrait,N:NodeTrait> NotSortedQueryBuilder<'a,A,N>{
     }
 
     #[inline(always)]
-    #[cfg(feature = "analyze")]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
                     ProtectedBBox<N::T>,
             ProtectedBBox<N::T>),splitter:&mut impl Splitter){
@@ -171,7 +170,6 @@ impl<'a,A:AxisTrait,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
     #[inline(always)]
-    #[cfg(feature = "analyze")]
     pub fn query_splitter_par<C:ColMulti<T=N::T>+Splitter+Send+Sync>(self,clos:C){
         let axis=self.tree.axis();
         let height=self.tree.get_height();
@@ -199,7 +197,6 @@ impl<'a,A:AxisTrait,N:NodeTrait> QueryBuilder<'a,A,N>{
     ///Choose a custom height at which to switch from parallel to sequential.
     ///If you end up building sequentially, this option is ignored.
     #[inline(always)]
-    #[cfg(feature = "analyze")]
     pub fn with_switch_height(mut self,height:usize)->Self{
         self.switch_height=height;
         self
@@ -223,7 +220,6 @@ impl<'a,A:AxisTrait,N:NodeTrait> QueryBuilder<'a,A,N>{
 
     ///Perform the query sequentially with a splitter.
     #[inline(always)]
-    #[cfg(feature = "analyze")]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
         ProtectedBBox<N::T>,
         ProtectedBBox<N::T>),splitter:&mut impl Splitter){

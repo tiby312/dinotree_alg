@@ -105,7 +105,7 @@ impl DemoSys for LiquidDemo {
     ) {
         let radius = self.radius;
 
-        let mut k = build_helper::create_bbox_mut(&mut self.bots, |bot| {
+        let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |bot| {
             let p = bot.pos;
             let r = radius;
             Rect::new(p.x - r, p.x + r, p.y - r, p.y + r)

@@ -133,7 +133,7 @@ pub fn handle_rigid_body(
     }
 
     for _ in 0..num_rebal {
-        let mut k = build_helper::create_bbox_mut(bodies, |a| {
+        let mut k = bbox_helper::create_bbox_mut(bodies, |a| {
             a.create_loose(ball_size + push_rate * (num_query as f32))
         });
 
@@ -225,7 +225,7 @@ impl DemoSys for RigidBodyDemo {
             },
         );
 
-        let mut k = build_helper::create_bbox_mut(&mut self.bots, |bot| bot.create_loose(radius));
+        let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |bot| bot.create_loose(radius));
 
         let mut tree = DinoTree::new(axgeom::XAXISS, &mut k);
 

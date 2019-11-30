@@ -18,7 +18,7 @@ fn handle1(fb: &mut FigureBuilder) {
 
         let mut bots: Vec<Vec2<f32>> = s.take(num_bots).collect();
 
-        let mut bb = build_helper::create_bbox_mut(&mut bots, |b| {
+        let mut bb = bbox_helper::create_bbox_mut(&mut bots, |b| {
             axgeom::Rect::from_point(*b, vec2same(5.0))
                 .inner_try_into::<NotNan<f32>>()
                 .unwrap()

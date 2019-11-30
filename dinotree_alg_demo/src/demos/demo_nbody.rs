@@ -205,7 +205,7 @@ impl DemoSys for DemoNbody {
             .collect();
         let mut bots3 = bots.clone();
 
-        let mut k = build_helper::create_bbox_mut(bots, |b| b.create_aabb());
+        let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
         {
             let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);

@@ -129,7 +129,7 @@ fn complete_test<T: TestTrait>(scene: &mut bot::BotScene<Bot<T>>) -> CompleteTes
         )
     };
     let (default_seq, default_par) = {
-        let mut default = build_helper::create_bbox_mut(&mut bots, |b| prop.create_bbox_i32(b.pos));
+        let mut default = bbox_helper::create_bbox_mut(&mut bots, |b| prop.create_bbox_i32(b.pos));
 
         let collide = |mut b: ProtectedBBox<BBoxMut<i32, Bot<T>>>,
                        mut c: ProtectedBBox<BBoxMut<i32, Bot<T>>>| {
