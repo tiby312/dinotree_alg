@@ -14,16 +14,11 @@ mod inner_prelude {
 }
 
 
-pub use crate::query::raycast::{Ray,RayIntersectResult,RayTrait,RayCastResult};
-pub use crate::query::k_nearest::{Knearest,KnearestResult};
+pub use crate::query::raycast::{RaycastSimple,Ray,RayIntersectResult,RayTrait,RayCastResult};
+pub use crate::query::k_nearest::{KnearestSimple,Knearest,KnearestResult};
 pub use crate::query::graphics::DividerDrawer;
 #[cfg(feature = "nbody")]
 pub use crate::query::nbody::NodeMassTrait;
-
-#[cfg(feature = "analyze")]
-pub use crate::query::colfind::{NotSortedQueryBuilder,QueryBuilder};
-
-
 
 ///aabb broadphase collision detection
 pub(crate) mod colfind;

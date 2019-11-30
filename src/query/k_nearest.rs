@@ -39,6 +39,27 @@ pub trait Knearest{
 }
 
 
+//TODO use this.
+pub struct KnearestSimple<T:HasAabb,F>{
+    _p:PhantomData<T>,
+    pub func:F
+}
+impl<T:HasAabb,F>  KnearestSimple<T,F>
+    where F:Fn(Vec2<T::Num>,&Rect<T::Num>) -> T::Num{
+    pub fn new(func:F)->KnearestSimple<T,F>{
+            KnearestSimple{_p:PhantomData,func}
+    }
+}
+impl<T:HasAabb,F> Knearest for KnearestSimple<T,F>
+    where F:Fn(Vec2<T::Num>,&Rect<T::Num>) -> T::Num{
+    type T=T;
+    type N=T::Num;
+
+    fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N{
+        (self.func)(point,rect)
+    }
+}
+
 
 
 

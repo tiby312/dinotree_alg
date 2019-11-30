@@ -157,6 +157,32 @@ pub trait RayTrait{
 
 
 
+//TODO use this.
+pub struct RaycastSimple<T:HasAabb,F>{
+    _p:PhantomData<T>,
+    pub func:F
+}
+
+impl<T:HasAabb,F> RaycastSimple<T,F>
+    where F:Fn(&Ray<T::Num>,&Rect<T::Num>) -> RayIntersectResult<T::Num>{
+
+    pub fn new(func:F)->RaycastSimple<T,F>{
+        RaycastSimple{_p:PhantomData,func}
+    }
+}
+impl<T:HasAabb,F> RayTrait for RaycastSimple<T,F>
+    where F:Fn(&Ray<T::Num>,&Rect<T::Num>) -> RayIntersectResult<T::Num>{
+    type T=T;
+    type N=T::Num;
+
+    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>{
+        (self.func)(ray,a)
+    }
+}
+
+
+
+
 
 
 

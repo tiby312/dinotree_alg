@@ -4,6 +4,8 @@ use axgeom::rect;
 use dinotree_alg::prelude::*;
 
 
+
+
 fn main(){
 
 	let mut aabbs=[
@@ -38,7 +40,7 @@ fn main(){
 		assert_eq!(rect_collisions.len(),1);
 		assert_eq!(*rect_collisions[0].get(),rect(0,10,0,10));
 	}
-	
+
 	assert_eq!(aabbs[0].inner, 1);
 	assert_eq!(aabbs[1].inner, 0);
 	assert_eq!(aabbs[2].inner, 1);
