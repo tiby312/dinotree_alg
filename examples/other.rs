@@ -21,12 +21,6 @@ fn main(){
 		//but this is okay since we populated it with mutable references.	
 		let mut tree=DinoTree::new(axgeom::XAXISS,&mut ref_aabbs);
 
-		//Find all colliding aabbs.
-		tree.find_collisions_mut(|mut a,mut b|{
-			*a.inner_mut()+=1;
-			*b.inner_mut()+=1;
-		});
-
 		let border=rect(0,100,0,100);
 		let mut kk=KnearestSimple::new(|p,r|distance(p,r) );
 		let res = tree.k_nearest_mut(vec2(30,30),2,&mut kk,border);
@@ -49,10 +43,6 @@ fn main(){
 		assert_eq!(rect_collisions.len(),1);
 		assert_eq!(*rect_collisions[0].get(),rect(0,10,0,10));
 	}
-
-	assert_eq!(aabbs[0].inner, 1);
-	assert_eq!(aabbs[1].inner, 0);
-	assert_eq!(aabbs[2].inner, 1);
 }
 
 fn distance(p:axgeom::Vec2<isize>,r:&Rect<isize>)->isize{
