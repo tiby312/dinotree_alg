@@ -24,7 +24,7 @@ fn test1(){
             Bot{id,aabb:axgeom::Rect::from_point(pos.inner_as(),axgeom::vec2same(8+id as i64))}
         }).collect();
 
-        let mut bb=build_helper::create_bbox_mut(&mut bots,|b|{
+        let mut bb=bbox_helper::create_bbox_mut(&mut bots,|b|{
             b.aabb
         });
 

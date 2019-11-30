@@ -97,6 +97,30 @@ impl<N, T> BBox<N, T> {
 
 
 
+unsafe impl<N: NumTrait, T> HasAabb for &mut BBox<N, T> {
+    type Num = N;
+    #[inline(always)]
+    fn get(&self) -> &Rect<Self::Num>{
+        &self.rect
+    }
+}
+impl<N:NumTrait,T> HasInner for &mut BBox<N,T>{
+    type Inner= T;
+
+    #[inline(always)]
+    fn get_inner(&self)->(&Rect<N>,&Self::Inner){
+        (&self.rect,&self.inner)
+    }
+
+    #[inline(always)]
+    fn get_inner_mut(&mut self)->(&Rect<N>,&mut Self::Inner){
+        (&self.rect,&mut self.inner)
+    }
+}
+
+
+
+
 unsafe impl<N: NumTrait, T> HasAabb for BBox<N, T> {
     type Num = N;
     #[inline(always)]

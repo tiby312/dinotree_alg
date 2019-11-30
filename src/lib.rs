@@ -191,6 +191,13 @@ pub unsafe trait HasAabb{
     fn get(&self) -> &Rect<Self::Num>;
 }
 
+unsafe impl<N:NumTrait> HasAabb for Rect<N>{
+    type Num=N;
+    fn get(&self)->&Rect<Self::Num>{
+        self
+    }
+}
+
 ///Trait exposes an api where you can return a read-only reference to the axis-aligned bounding box
 ///and at the same time return a mutable reference to a seperate inner section.
 pub trait HasInner:HasAabb{

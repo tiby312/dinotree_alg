@@ -25,5 +25,8 @@ axgeom = "1.2"
 pdqselect = "0.1"
 
 
+[patch.crates-io]
+axgeom = {path="../axgeom"}
+
 [features]
 nbody = []

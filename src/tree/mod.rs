@@ -207,7 +207,8 @@ impl<A:AxisTrait,N:NodeTrait> DinoTree<A,N>{
     pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){
         rect::for_all_intersect_rect_mut(self,rect,func);
     }
-    pub fn for_all_intersect_rect(&self,rect:&Rect<N::Num>,func:impl FnMut(&N::T)){
+    
+    pub fn for_all_intersect_rect<'a>(&'a self,rect:&Rect<N::Num>,func:impl FnMut(&'a N::T)){
         rect::for_all_intersect_rect(self,rect,func);
     }
     pub fn for_all_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){

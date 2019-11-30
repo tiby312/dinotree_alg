@@ -38,7 +38,7 @@ fn assert_length<I: std::iter::ExactSizeIterator>(it: I) {
 fn test_zero_sized() {
     let mut bots = vec![(); 1];
 
-    let mut bots = build_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
+    let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
     let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
 
@@ -53,7 +53,7 @@ fn test_zero_sized() {
 fn test_zero_sized2() {
     let mut bots = vec![(); 1];
 
-    let mut bots = build_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
+    let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
     let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
     
@@ -67,7 +67,7 @@ fn test_zero_sized2() {
 fn test_one() {
     let mut bots = vec![0usize; 1];
 
-    let mut bots = build_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
+    let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
     let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
 
@@ -81,7 +81,7 @@ fn test_one() {
 #[test]
 fn test_empty() {
     let mut bots: Vec<()> = Vec::new();
-    let mut bots = build_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
+    let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
     let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
 
     let (n, _) = tree.vistr().next();
@@ -96,7 +96,7 @@ fn test_empty() {
 fn test_many() {
     let mut bots = vec![0usize; 1000];
 
-    let mut bots = build_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
+    let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
     let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
 
@@ -123,8 +123,8 @@ fn test_send_sync_dinotree(){
     let mut bots1:Vec<()>=Vec::new();
     let mut bots2:Vec<()>=Vec::new();
 
-    let mut bots1=build_helper::create_bbox_mut(&mut bots1,|_|axgeom::Rect::new(0,0,0,0));
-    let mut bots2=build_helper::create_bbox_mut(&mut bots2,|_|axgeom::Rect::new(0,0,0,0));
+    let mut bots1=bbox_helper::create_bbox_mut(&mut bots1,|_|axgeom::Rect::new(0,0,0,0));
+    let mut bots2=bbox_helper::create_bbox_mut(&mut bots2,|_|axgeom::Rect::new(0,0,0,0));
 
     //Check that its send
     let (t1,t2)=rayon::join(
@@ -142,11 +142,11 @@ fn test_send_sync_dinotree(){
 fn test() {
     let mut bots = vec![0usize; 1234];
 
-    let mut bots = build_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
+    let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
     let mut tree = DinoTree::new(axgeom::YAXISS, &mut bots);
 
-    assert!(tree.assert_invariants());
+    assert!(analyze::assert_invariants(&tree));
 
     assert_length(tree.vistr_mut().dfs_preorder_iter());
     assert_length(tree.vistr().dfs_preorder_iter());
