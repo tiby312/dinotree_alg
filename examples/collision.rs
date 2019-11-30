@@ -14,7 +14,7 @@ fn main(){
 	//Create a DinoTree by picking a starting axis (x or y).
 	//This will change the order of the elements in bboxes,
 	//but this is okay since we populated it with mutable references.	
-	let mut tree=DinoTree::new(axgeom::XAXISS,&mut ref_aabbs);
+	let mut tree=DinoTree::new(&mut ref_aabbs);
 
 	//Find all colliding aabbs.
 	tree.find_collisions_mut(|mut a,mut b|{

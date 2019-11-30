@@ -62,15 +62,28 @@ mod notsorted{
     ///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
     pub struct NotSorted<A: AxisTrait,N:NodeTrait>(pub(crate) DinoTree<A,N>);
 
+    impl<'a,T:HasAabb + Send + Sync> NotSorted<DefaultAxis,NodeMut<'a,T>>{
+       #[must_use]
+        pub fn new_par(bots:&'a mut [T])->NotSorted<DefaultAxis,NodeMut<'a,T>>{
+            DinoTreeBuilder::new(default_axis(),bots).build_not_sorted_par()
+        }
+    }
+    impl<'a,T:HasAabb> NotSorted<DefaultAxis,NodeMut<'a,T>>{
+        #[must_use]
+        pub fn new(bots:&'a mut [T])->NotSorted<DefaultAxis,NodeMut<'a,T>>{
+            DinoTreeBuilder::new(default_axis(),bots).build_not_sorted_seq()
+        }
+    }
+
     impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> NotSorted<A,NodeMut<'a,T>>{
        #[must_use]
-        pub fn new_par(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
+        pub fn with_axis_par(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
             DinoTreeBuilder::new(axis,bots).build_not_sorted_par()
         }
     }
     impl<'a,A:AxisTrait,T:HasAabb> NotSorted<A,NodeMut<'a,T>>{
         #[must_use]
-        pub fn new(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
+        pub fn with_axis(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
             DinoTreeBuilder::new(axis,bots).build_not_sorted_seq()
         }
     }
@@ -126,18 +139,36 @@ pub struct DinoTree<A:AxisTrait,N:NodeTrait>{
     inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
 }
 
+pub type DefaultAxis = YAXISS;
+pub const fn default_axis()->YAXISS{
+    YAXISS
+}
 
+
+impl<'a,T:HasAabb> DinoTree<DefaultAxis,NodeMut<'a,T>>{
+    #[must_use]
+    pub fn new(bots:&'a mut [T])->DinoTree<DefaultAxis,NodeMut<'a,T>>{
+        DinoTreeBuilder::new(default_axis(),bots).build_seq()
+    }
+}
+
+impl<'a,T:HasAabb + Send + Sync> DinoTree<DefaultAxis,NodeMut<'a,T>>{
+    #[must_use]
+    pub fn new_par(bots:&'a mut [T])->DinoTree<DefaultAxis,NodeMut<'a,T>>{
+        DinoTreeBuilder::new(default_axis(),bots).build_par()
+    }
+}
 
 impl<'a,A:AxisTrait,T:HasAabb> DinoTree<A,NodeMut<'a,T>>{
     #[must_use]
-    pub fn new(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
+    pub fn with_axis(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
         DinoTreeBuilder::new(axis,bots).build_seq()
     }
 }
 
 impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
     #[must_use]
-    pub fn new_par(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
+    pub fn with_axis_par(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
         DinoTreeBuilder::new(axis,bots).build_par()
     }
 }

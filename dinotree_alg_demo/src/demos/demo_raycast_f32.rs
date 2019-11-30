@@ -80,7 +80,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct RaycastF32Demo {
-    tree: DinoTreeOwned<axgeom::XAXISS, F32n, Bot>,
+    tree: DinoTreeOwned<DefaultAxis, F32n, Bot>,
     dim: Rect<F32n>,
     radius: f32,
 }
@@ -93,7 +93,7 @@ impl RaycastF32Demo {
             .take(100)
             .collect();
 
-        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, vv, |a| {
+        let tree = DinoTreeOwned::new_par( vv, |a| {
             Rect::from_point(a.center, vec2same(radius))
                 .inner_try_into()
                 .unwrap()

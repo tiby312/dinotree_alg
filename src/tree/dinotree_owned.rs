@@ -77,10 +77,19 @@ pub struct DinoTreeOwned<A:AxisTrait,N:NumTrait,T>{
 }
 
 
+
+impl<N:NumTrait,T : Send + Sync> DinoTreeOwned<DefaultAxis,N,T>{
+    pub fn new_par(
+        bots:Vec<T>,
+        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultAxis,N,T>{
+        Self::with_axis_par(default_axis(),bots,aabb_create)
+    }
+}
+
 impl<A:AxisTrait,N:NumTrait,T : Send + Sync> DinoTreeOwned<A,N,T>{
 
     ///Create an owned dinotree in one thread.
-    pub fn new_par(
+    pub fn with_axis_par(
         axis:A,
         mut bots:Vec<T>,
         mut aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<A,N,T>{
@@ -100,10 +109,18 @@ impl<A:AxisTrait,N:NumTrait,T : Send + Sync> DinoTreeOwned<A,N,T>{
         }
     }
 }
-impl<A:AxisTrait,N:NumTrait,T> DinoTreeOwned<A,N,T>{
 
-    ///Create an owned dinotree in parallel.
+impl<N:NumTrait,T> DinoTreeOwned<DefaultAxis,N,T>{
     pub fn new(
+        bots:Vec<T>,
+        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultAxis,N,T>{
+        Self::with_axis(default_axis(),bots,aabb_create)
+    }
+}
+impl<A:AxisTrait,N:NumTrait,T> DinoTreeOwned<A,N,T>{
+    
+    ///Create an owned dinotree in parallel.
+    pub fn with_axis(
         axis:A,
         mut bots:Vec<T>,
         mut aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<A,N,T>{

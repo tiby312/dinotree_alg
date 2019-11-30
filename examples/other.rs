@@ -5,6 +5,8 @@ use dinotree_alg::prelude::*;
 
 fn main(){
 
+	let border=rect(0,100,0,100);
+	
 	let mut aabbs=[
 		BBox::new(rect(0isize,10,0,10),0),    
 		BBox::new(rect(15,20,15,20),0), 
@@ -19,9 +21,19 @@ fn main(){
 		//Create a DinoTree by picking a starting axis (x or y).
 		//This will change the order of the elements in bboxes,
 		//but this is okay since we populated it with mutable references.	
-		let mut tree=DinoTree::new(axgeom::XAXISS,&mut ref_aabbs);
+		let mut tree=DinoTree::new(&mut ref_aabbs);
 
-		let border=rect(0,100,0,100);
+		//Here we query for read-only references so we can pull
+		//them out of the closure.
+		let mut rect_collisions = Vec::new();
+		tree.for_all_intersect_rect(&rect(-5,1,-5,1),|a|{
+			rect_collisions.push(a);
+		});
+
+		assert_eq!(rect_collisions.len(),1);
+		assert_eq!(*rect_collisions[0].get(),rect(0,10,0,10));
+
+		
 		let mut kk=KnearestSimple::new(|p,r|distance(p,r) );
 		let res = tree.k_nearest_mut(vec2(30,30),2,&mut kk,border);
 		assert_eq!(res[0].bot.get(),&rect(15,20,15,20)  );
@@ -33,15 +45,6 @@ fn main(){
 		let res = tree.raycast_mut(border,ray,&mut kk);
 		assert_eq!(res.unwrap().0[0].get(),&rect(0,10,0,10)  );
 		
-		//Here we query for read-only references so we can pull
-		//them out of the closure.
-		let mut rect_collisions = Vec::new();
-		tree.for_all_intersect_rect(&rect(-5,1,-5,1),|a|{
-			rect_collisions.push(a);
-		});
-
-		assert_eq!(rect_collisions.len(),1);
-		assert_eq!(*rect_collisions[0].get(),rect(0,10,0,10));
 	}
 }
 

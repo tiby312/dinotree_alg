@@ -81,7 +81,7 @@ impl analyze::HasId for Bot2 {
 }
 
 pub struct RaycastF32DebugDemo {
-    tree: DinoTreeOwned<axgeom::XAXISS, F32n, Bot2>,
+    tree: DinoTreeOwned<DefaultAxis, F32n, Bot2>,
     counter: f32,
     dim: Rect<F32n>,
 }
@@ -93,7 +93,7 @@ impl RaycastF32DebugDemo {
             .with_radius(1.0, 4.0)
             .map(|(pos, radius)| Rect::from_point(pos, radius).inner_try_into().unwrap());
 
-        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, vv, |_a| ii.next().unwrap());
+        let tree = DinoTreeOwned::new_par( vv, |_a| ii.next().unwrap());
 
         RaycastF32DebugDemo {
             tree,

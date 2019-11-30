@@ -139,7 +139,7 @@ pub fn handle_rigid_body(
 
         let k2: &mut [BBoxMut<F32n, RigidBody>] = unsafe { &mut *(&mut k as &mut [_] as *mut [_]) };
 
-        let mut tree = DinoTree::new(axgeom::YAXISS, &mut k);
+        let mut tree = DinoTree::new( &mut k);
 
         for _ in 0..num_query {
             tree.find_collisions_mut_par(|mut a, mut b| {
@@ -227,7 +227,7 @@ impl DemoSys for RigidBodyDemo {
 
         let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |bot| bot.create_loose(radius));
 
-        let mut tree = DinoTree::new(axgeom::XAXISS, &mut k);
+        let mut tree = DinoTree::new( &mut k);
 
         tree.for_all_in_rect_mut(
             &axgeom::Rect::from_point(cursor, vec2same(100.0 + radius).inner_try_into().unwrap()),

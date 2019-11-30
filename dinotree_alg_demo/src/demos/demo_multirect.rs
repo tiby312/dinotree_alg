@@ -15,7 +15,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct MultiRectDemo {
-    tree: DinoTreeOwned<axgeom::XAXISS, i32, Bot>,
+    tree: DinoTreeOwned<DefaultAxis, i32, Bot>,
     dim: Rect<i32>,
 }
 impl MultiRectDemo {
@@ -32,7 +32,7 @@ impl MultiRectDemo {
             })
             .collect();
 
-        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, bots, |b| Rect::from_point(b.pos, b.radius));
+        let tree = DinoTreeOwned::new_par( bots, |b| Rect::from_point(b.pos, b.radius));
 
         MultiRectDemo {
             dim: dim.inner_into::<f32>().inner_as(),

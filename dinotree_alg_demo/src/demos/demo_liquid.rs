@@ -113,7 +113,7 @@ impl DemoSys for LiquidDemo {
                 .unwrap()
         });
 
-        let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
+        let mut tree = DinoTree::new_par( &mut k);
 
         tree.find_collisions_mut_par(|mut a, mut b| {
             let _ = a.inner_mut().solve(b.inner_mut(), radius);

@@ -188,7 +188,7 @@ impl DemoSys for GridDemo {
         });
 
         {
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
+            let mut tree = DinoTree::new_par( &mut k);
 
             {
                 let dim2 = self.dim.inner_into();

@@ -208,7 +208,7 @@ impl DemoSys for DemoNbody {
         let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
         {
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
+            let mut tree = DinoTree::new_par( &mut k);
            
 
             let border = self.dim;

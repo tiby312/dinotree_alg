@@ -16,7 +16,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct KnearestDemo {
-    tree: DinoTreeOwned<axgeom::XAXISS, F32n, Bot>,
+    tree: DinoTreeOwned<DefaultAxis, F32n, Bot>,
     dim: Rect<F32n>,
 }
 
@@ -30,7 +30,7 @@ impl KnearestDemo {
             .map(|(id, (pos, radius))| Bot { id, pos, radius })
             .collect();
 
-        let tree = DinoTreeOwned::new_par(axgeom::XAXISS, bots, |bot| {
+        let tree = DinoTreeOwned::new_par( bots, |bot| {
             Rect::from_point(bot.pos, bot.radius)
                 .inner_try_into()
                 .unwrap()

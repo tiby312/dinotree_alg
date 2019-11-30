@@ -106,7 +106,7 @@ impl DemoSys for IntersectWithDemo {
 
         {
             let mut walls=bbox_helper::create_bbox_mut(walls,|wall| wall.0);
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut k);
+            let mut tree = DinoTree::new_par( &mut k);
 
             tree.intersect_with_mut(
                 &mut walls,
