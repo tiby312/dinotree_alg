@@ -90,6 +90,19 @@ impl<N:NumTrait> Ray<N>{
 
 
 
+pub enum RayCastResult<'a,T:HasAabb>{
+    Hit(Vec<ProtectedBBox<'a,T>>,T::Num),
+    NoHit
+}
+impl<'a,T:HasAabb> RayCastResult<'a,T>{
+    pub fn unwrap(self)->(Vec<ProtectedBBox<'a,T>>,T::Num){
+        match self{
+            RayCastResult::Hit(a,b)=>(a,b),
+            RayCastResult::NoHit=>panic!("Ray did not hit.")
+        }
+    }
+}
+
 ///Describes if a ray hit a rectangle.
 #[derive(Copy, Clone, Debug)]
 pub enum RayIntersectResult<N> {
@@ -98,6 +111,7 @@ pub enum RayIntersectResult<N> {
 }
 
 impl<N> RayIntersectResult<N>{
+
     pub fn inner_into<K:From<N>>(self)->RayIntersectResult<K>{
         use RayIntersectResult::*;
         match self{
@@ -384,11 +398,6 @@ fn recc<'a:'b,'b,
 pub use self::mutable::raycast_naive_mut;
 pub use self::mutable::raycast_mut;
 
-
-pub enum RayCastResult<'a,T:HasAabb>{
-    Hit(Vec<ProtectedBBox<'a,T>>,T::Num),
-    NoHit
-}
 
 
 mod mutable{

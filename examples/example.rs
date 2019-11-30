@@ -1,9 +1,5 @@
-
-
-use axgeom::rect;
-use axgeom::vec2;
+use axgeom::{Rect,rect,vec2};
 use dinotree_alg::prelude::*;
-
 
 
 
@@ -31,10 +27,18 @@ fn main(){
 			*b.inner_mut()+=1;
 		});
 
-		//TODO work on this.
-		//let res = tree.k_nearest_mut(vec2(0,0),2,&mut KnearestSimple::new(|p:axgeom::Vec2<isize>,r:&axgeom::Rect<isize>|(r.x.start -p.x).abs() ),rect(0,100,0,100));
+		let border=rect(0,100,0,100);
+		let mut kk=KnearestSimple::new(|p,r|distance(p,r) );
+		let res = tree.k_nearest_mut(vec2(30,30),2,&mut kk,border);
+		assert_eq!(res[0].bot.get(),&rect(15,20,15,20)  );
+		assert_eq!(res[1].bot.get(),&rect(5,15,5,15)  );
 
 
+		let mut kk=RaycastSimple::new(|r,rr|raycast(r,rr));
+		let ray=Ray{point:vec2(-10,1),dir:vec2(1,0)};
+		let res = tree.raycast_mut(border,ray,&mut kk);
+		assert_eq!(res.unwrap().0[0].get(),&rect(0,10,0,10)  );
+		
 		//Here we query for read-only references so we can pull
 		//them out of the closure.
 		let mut rect_collisions = Vec::new();
@@ -49,5 +53,17 @@ fn main(){
 	assert_eq!(aabbs[0].inner, 1);
 	assert_eq!(aabbs[1].inner, 0);
 	assert_eq!(aabbs[2].inner, 1);
+}
+
+fn distance(p:axgeom::Vec2<isize>,r:&Rect<isize>)->isize{
+	//This is not a full implementation of the contract of Knearest trait.
+	//In the same of simplicity of just showing the api, it is hardcoded to give the answer we would expect.
+	(r.x.start-p.x).abs()
+}
+
+fn raycast(ray:&Ray<isize>,r:&Rect<isize>)->RayIntersectResult<isize>{
+	//This is not a full implementation of the contract of RayCastTrait.
+	//In the same of simplicity of just showing the api, it is hardcoded to give the answer we would expect.
+	RayIntersectResult::Hit(r.x.start-ray.point.x)
 }
 
