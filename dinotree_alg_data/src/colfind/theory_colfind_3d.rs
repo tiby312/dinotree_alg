@@ -20,7 +20,7 @@ fn test1(scene: &mut bot::BotScene<Bot>) -> Res {
         datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
     });
 
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bots).build_seq();
+    let mut tree = DinoTreeBuilder::new( &mut bots).build_seq();
 
     let mut num_pairs = 0;
 
@@ -102,7 +102,7 @@ fn test4(scene: &mut bot::BotScene<Bot>) -> Res {
         datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
     });
 
-    let mut tree = NotSorted::new_par(axgeom::XAXISS, &mut bots);
+    let mut tree = NotSorted::new_par( &mut bots);
 
     let mut num_pairs = 0;
 

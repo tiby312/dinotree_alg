@@ -108,7 +108,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
             let bots=ProtectedBBoxSlice::new(self.bots);
             k_nearest::k_nearest_naive_mut(bots,point,num,knear).drain(..).map(|a|UnitMut2{id:a.bot.inner().get_id(),mag:a.mag}).collect()
         };
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,self.bots).build_seq(); 
+        let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
 
         let mut res_dinotree:Vec<_>=k_nearest::k_nearest_mut(&mut tree,point,num,knear,rect).drain(..).map(|a|UnitMut2{id:a.bot.inner().get_id(),mag:a.mag}).collect();
 
@@ -138,7 +138,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
         }
 
         let mut dinotree_res=Vec::new();
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,self.bots).build_seq(); 
+        let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
         rect::for_all_not_in_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
 
         assert_eq!(naive_res.len(),dinotree_res.len());
@@ -159,7 +159,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
             rect::naive_for_all_in_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
         }
         let mut dinotree_res=Vec::new();
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,self.bots).build_seq(); 
+        let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
         rect::for_all_in_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
 
         assert_eq!(naive_res.len(),dinotree_res.len());
@@ -181,7 +181,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
             rect::naive_for_all_intersect_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
         }
         let mut dinotree_res=Vec::new();
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,self.bots).build_seq(); 
+        let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
         rect::for_all_intersect_rect_mut(&mut tree,rect,|a|dinotree_res.push(a.inner().get_id()));
 
         assert_eq!(naive_res.len(),dinotree_res.len());
@@ -215,7 +215,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
             }
         };
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,self.bots).build_seq(); 
+        let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
 
         let res_dinotree=match raycast::raycast_mut(&mut tree,rect,ray,rtrait){
             raycast::RayCastResult::Hit(mut a,b)=>{
@@ -257,7 +257,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
         });
 
 
-        let mut tree=DinoTreeBuilder::new(axgeom::XAXISS,self.bots).build_seq(); 
+        let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
         
         let mut dinotree_pairs=Vec::new();
         colfind::QueryBuilder::new(&mut tree).query_seq(|a,b| {

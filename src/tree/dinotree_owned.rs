@@ -95,7 +95,7 @@ impl<A:AxisTrait,N:NumTrait,T : Send + Sync> DinoTreeOwned<A,N,T>{
         mut aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<A,N,T>{
         let mut bots_aabb:Vec<BBoxPtr<N,T>>=bots.iter_mut().map(|k|BBoxPtr::new(aabb_create(k),core::ptr::NonNull::new(k).unwrap())).collect();
 
-        let inner = DinoTreeBuilder::new(axis,&mut bots_aabb).build_par();
+        let inner = DinoTreeBuilder::with_axis(axis,&mut bots_aabb).build_par();
         
         let inner:Vec<_>=inner.inner.into_nodes().drain(..).map(|node|NodePtr{range:core::ptr::NonNull::new(node.range).unwrap(),cont:node.cont,div:node.div}).collect(); 
         let inner=compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
@@ -126,7 +126,7 @@ impl<A:AxisTrait,N:NumTrait,T> DinoTreeOwned<A,N,T>{
         mut aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<A,N,T>{
         let mut bots_aabb:Vec<BBoxPtr<N,T>>=bots.iter_mut().map(|k|BBoxPtr::new(aabb_create(k),core::ptr::NonNull::new(k).unwrap())).collect();
 
-        let inner = DinoTreeBuilder::new(axis,&mut bots_aabb).build_seq();
+        let inner = DinoTreeBuilder::with_axis(axis,&mut bots_aabb).build_seq();
         
         let inner:Vec<_>=inner.inner.into_nodes().drain(..).map(|node|NodePtr{range:core::ptr::NonNull::new(node.range).unwrap(),cont:node.cont,div:node.div}).collect(); 
         let inner=compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();

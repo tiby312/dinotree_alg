@@ -96,7 +96,7 @@ fn handle_inner_theory(num_bots: usize, grow_iter: impl Iterator<Item = f32>) ->
             });
 
             let mut tree =
-                DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_with_splitter_seq(&mut levelc);
+                DinoTreeBuilder::new(&mut bb).build_with_splitter_seq(&mut levelc);
 
             counter.reset();
             let mut levelc2 = level_counter::LevelCounter::new(&mut counter);
@@ -149,7 +149,7 @@ fn handle_inner_bench(num_bots: usize, grow_iter: impl Iterator<Item = f32>) -> 
         let mut bb = bbox_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
         let mut tree =
-            DinoTreeBuilder::new(axgeom::XAXISS, &mut bb).build_with_splitter_seq(&mut times1);
+            DinoTreeBuilder::new(&mut bb).build_with_splitter_seq(&mut times1);
 
         let mut times2 = LevelTimer::new();
 

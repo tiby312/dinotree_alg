@@ -13,7 +13,7 @@ pub fn handle_bench_inner(scene: &mut bot::BotScene<Bot>, height: usize) -> f64 
     let prop = &scene.bot_prop;
     let mut bb = bbox_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb)
+    let mut tree = DinoTreeBuilder::new( &mut bb)
         .with_height(height)
         .build_seq();
 
@@ -34,7 +34,7 @@ pub fn handle_theory_inner(scene: &mut bot::BotScene<Bot>, height: usize) -> usi
         datanum::from_rect(&mut counter, prop.create_bbox_i32(b.pos))
     });
 
-    let mut tree = DinoTreeBuilder::new(axgeom::XAXISS, &mut bb)
+    let mut tree = DinoTreeBuilder::new( &mut bb)
         .with_height(height)
         .build_seq();
 

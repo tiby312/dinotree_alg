@@ -36,7 +36,7 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
         let c0 = {
             let instant = Instant::now();
 
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new_par(&mut bb);
 
             tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -49,7 +49,7 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
         let c1 = {
             let instant = Instant::now();
 
-            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new( &mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -96,7 +96,7 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
         let c5 = {
             let instant = Instant::now();
 
-            let mut tree = NotSorted::new_par(axgeom::XAXISS,&mut bb);
+            let mut tree = NotSorted::new_par(&mut bb);
 
             tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -109,7 +109,7 @@ fn handle_bench_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize)
         let c6 = {
             let instant = Instant::now();
 
-            let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
+            let mut tree = NotSorted::new( &mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -234,7 +234,7 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
                 datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
             });
 
-            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new(&mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 2;
@@ -288,7 +288,7 @@ fn handle_theory_inner(grow: f32, fg: &mut Figure, title: &str, yposition: usize
                 datanum::from_rect(&mut counter, prop.create_bbox_nan(b.pos))
             });
 
-            let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
+            let mut tree = NotSorted::new( &mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 2;

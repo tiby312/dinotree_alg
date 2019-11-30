@@ -8,7 +8,7 @@ fn theory(scene: &mut bot::BotScene<bot::Bot>) -> (usize, usize) {
     let mut bb = bbox_helper::create_bbox_mut(bots, |b| {
         datanum::from_rect(&mut counter, b.create_bbox_nan(prop))
     });
-    let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+    let mut tree = DinoTree::new( &mut bb);
 
     let a = *counter.get_inner();
 
@@ -31,7 +31,7 @@ fn theory_not_sorted(scene: &mut bot::BotScene<bot::Bot>) -> (usize, usize) {
     let mut bb = bbox_helper::create_bbox_mut(bots, |b| {
         datanum::from_rect(&mut counter, b.create_bbox_nan(prop))
     });
-    let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
+    let mut tree = NotSorted::new( &mut bb);
 
     let a = *counter.get_inner();
 
@@ -52,7 +52,7 @@ fn bench_seq(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
     let prop = &scene.bot_prop;
 
     let mut bb = bbox_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+    let mut tree = DinoTree::new(&mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 
@@ -71,7 +71,7 @@ fn bench_par(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
     let mut bb = bbox_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
+    let mut tree = DinoTree::new_par( &mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 
@@ -91,7 +91,7 @@ fn bench_not_sorted_seq(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
     let mut bb = bbox_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = NotSorted::new(axgeom::XAXISS, &mut bb);
+    let mut tree = NotSorted::new( &mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 
@@ -112,7 +112,7 @@ fn bench_not_sorted_par(scene: &mut bot::BotScene<bot::Bot>) -> (f64, f64) {
     let bots = &mut scene.bots;
     let prop = &scene.bot_prop;
     let mut bb = bbox_helper::create_bbox_mut(bots, |b| b.create_bbox_nan(prop));
-    let mut tree = NotSorted::new_par(axgeom::XAXISS, &mut bb);
+    let mut tree = NotSorted::new_par( &mut bb);
 
     let a = instant_to_sec(instant.elapsed());
 

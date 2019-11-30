@@ -22,7 +22,7 @@ fn test_seq<T: HasAabb>(
 ) -> TestResult {
     let instant = Instant::now();
 
-    let mut tree = DinoTree::new(axgeom::XAXISS, bots);
+    let mut tree = DinoTree::new(bots);
 
     let rebal = instant_to_sec(instant.elapsed());
 
@@ -45,7 +45,7 @@ fn test_par<T: HasAabb + Send + Sync>(
 ) -> TestResult {
     let instant = Instant::now();
 
-    let mut tree = DinoTree::new_par(axgeom::XAXISS, bots);
+    let mut tree = DinoTree::new_par( bots);
 
     let rebal = instant_to_sec(instant.elapsed());
 

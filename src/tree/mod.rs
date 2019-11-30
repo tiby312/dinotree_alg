@@ -65,26 +65,26 @@ mod notsorted{
     impl<'a,T:HasAabb + Send + Sync> NotSorted<DefaultAxis,NodeMut<'a,T>>{
        #[must_use]
         pub fn new_par(bots:&'a mut [T])->NotSorted<DefaultAxis,NodeMut<'a,T>>{
-            DinoTreeBuilder::new(default_axis(),bots).build_not_sorted_par()
+            DinoTreeBuilder::new(bots).build_not_sorted_par()
         }
     }
     impl<'a,T:HasAabb> NotSorted<DefaultAxis,NodeMut<'a,T>>{
         #[must_use]
         pub fn new(bots:&'a mut [T])->NotSorted<DefaultAxis,NodeMut<'a,T>>{
-            DinoTreeBuilder::new(default_axis(),bots).build_not_sorted_seq()
+            DinoTreeBuilder::new(bots).build_not_sorted_seq()
         }
     }
 
     impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> NotSorted<A,NodeMut<'a,T>>{
        #[must_use]
         pub fn with_axis_par(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
-            DinoTreeBuilder::new(axis,bots).build_not_sorted_par()
+            DinoTreeBuilder::with_axis(axis,bots).build_not_sorted_par()
         }
     }
     impl<'a,A:AxisTrait,T:HasAabb> NotSorted<A,NodeMut<'a,T>>{
         #[must_use]
         pub fn with_axis(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
-            DinoTreeBuilder::new(axis,bots).build_not_sorted_seq()
+            DinoTreeBuilder::with_axis(axis,bots).build_not_sorted_seq()
         }
     }
 
@@ -148,28 +148,28 @@ pub const fn default_axis()->YAXISS{
 impl<'a,T:HasAabb> DinoTree<DefaultAxis,NodeMut<'a,T>>{
     #[must_use]
     pub fn new(bots:&'a mut [T])->DinoTree<DefaultAxis,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(default_axis(),bots).build_seq()
+        DinoTreeBuilder::new(bots).build_seq()
     }
 }
 
 impl<'a,T:HasAabb + Send + Sync> DinoTree<DefaultAxis,NodeMut<'a,T>>{
     #[must_use]
     pub fn new_par(bots:&'a mut [T])->DinoTree<DefaultAxis,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(default_axis(),bots).build_par()
+        DinoTreeBuilder::new(bots).build_par()
     }
 }
 
 impl<'a,A:AxisTrait,T:HasAabb> DinoTree<A,NodeMut<'a,T>>{
     #[must_use]
     pub fn with_axis(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(axis,bots).build_seq()
+        DinoTreeBuilder::with_axis(axis,bots).build_seq()
     }
 }
 
 impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
     #[must_use]
     pub fn with_axis_par(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(axis,bots).build_par()
+        DinoTreeBuilder::with_axis(axis,bots).build_par()
     }
 }
 
@@ -324,11 +324,19 @@ mod builder{
         }
     }
 
+    
+    impl<'a, T:HasAabb> DinoTreeBuilder<'a,DefaultAxis,T>{
+        ///Create a new builder with a slice of elements that implement `HasAabb`.
+        pub fn new(bots: &'a mut [T]) -> DinoTreeBuilder<'a,DefaultAxis, T> {
+            Self::with_axis(default_axis(),bots)
+        }
+    }
+
 
     impl<'a, A: AxisTrait, T:HasAabb> DinoTreeBuilder<'a,A,T>{
 
         ///Create a new builder with a slice of elements that implement `HasAabb`.
-        pub fn new(axis: A, bots: &'a mut [T]) -> DinoTreeBuilder<'a,A, T> {
+        pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTreeBuilder<'a,A, T> {
             let rebal_strat = BinStrat::NotChecked;
 
             //we want each node to have space for around num_per_node bots.

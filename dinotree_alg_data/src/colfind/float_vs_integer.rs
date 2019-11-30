@@ -35,7 +35,7 @@ fn handle_bench(fg: &mut Figure) {
 
             let mut bb = bbox_helper::create_bbox_mut(bots, |b| prop.create_bbox_i32(b.pos));
 
-            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new( &mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -53,7 +53,7 @@ fn handle_bench(fg: &mut Figure) {
                 axgeom::Rect::from_point(b.pos.inner_as::<i64>(), r)
             });
 
-            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new( &mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -75,7 +75,7 @@ fn handle_bench(fg: &mut Figure) {
                 k
             });
 
-            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new( &mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -97,7 +97,7 @@ fn handle_bench(fg: &mut Figure) {
                 k
             });
 
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new_par(&mut bb);
 
             tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -116,7 +116,7 @@ fn handle_bench(fg: &mut Figure) {
                 axgeom::Rect::from_point(b.pos.inner_as::<i32>(), r)
             });
 
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new_par( &mut bb);
 
             tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -135,7 +135,7 @@ fn handle_bench(fg: &mut Figure) {
                 axgeom::Rect::from_point(b.pos.inner_as::<i64>(), r)
             });
 
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new_par( &mut bb);
 
             tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -157,7 +157,7 @@ fn handle_bench(fg: &mut Figure) {
                 k
             });
 
-            let mut tree = DinoTree::new(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new(&mut bb);
 
             tree.find_collisions_mut(|mut a, mut b| {
                 a.inner_mut().num += 1;
@@ -178,7 +178,7 @@ fn handle_bench(fg: &mut Figure) {
                 k
             });
 
-            let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
+            let mut tree = DinoTree::new_par( &mut bb);
 
             tree.find_collisions_mut_par(|mut a, mut b| {
                 a.inner_mut().num += 1;

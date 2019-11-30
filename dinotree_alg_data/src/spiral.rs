@@ -24,7 +24,7 @@ fn handle1(fb: &mut FigureBuilder) {
                 .unwrap()
         });
 
-        let mut tree = DinoTree::new_par(axgeom::XAXISS, &mut bb);
+        let mut tree = DinoTree::new_par(&mut bb);
 
         let mut num_intersection = 0;
         tree.find_collisions_mut(|_a, _b| {
