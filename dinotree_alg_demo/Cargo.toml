@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 dists= "0.3"
 duckduckgeo = "0.2"
-piston_window = "0.103.0"
+piston_window = "0.105.0"
 bit-vec = "0.6"
 num_cpus = "1.10"
 rayon = "1.2"

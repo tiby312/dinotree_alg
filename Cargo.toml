@@ -11,7 +11,7 @@ edition = "2018"
 
 
 [workspace]
-members = [ "dinotree_alg_demo", "dinotree_alg_data"]
+members = [ "dinotree_alg_demo"]
 
 [dev-dependencies]
 dists = "0.3"
