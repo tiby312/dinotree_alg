@@ -74,6 +74,11 @@ impl<'a,T:HasAabb> NaiveAlgs<'a,T>{
         rect::naive_for_all_not_in_rect_mut(bots,rect,func);
     }
 
+    #[cfg(feature = "nbody")]
+    pub fn nbody(&mut self,func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+        nbody::naive_mut(self.bots,func);
+    }
+
     pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<T::Num>,func:impl FnMut(ProtectedBBox<T>)){
         let bots=ProtectedBBoxSlice::new(self.bots);
         rect::naive_for_all_intersect_rect_mut(bots,rect,func);
