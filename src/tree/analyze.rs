@@ -1,3 +1,6 @@
+//! Contains code to manipulate the dinotree data structure and some of its query algorithms
+//! to help analyze and measure their performance.
+
 use crate::query::*;
 use crate::inner_prelude::*;
 
