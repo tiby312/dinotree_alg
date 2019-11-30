@@ -11,7 +11,6 @@ fn main(){
 	//Create a layer of direction.
 	let mut ref_aabbs  = aabbs.iter_mut().collect::<Vec<_>>();
 
-	//Create a DinoTree by picking a starting axis (x or y).
 	//This will change the order of the elements in bboxes,
 	//but this is okay since we populated it with mutable references.	
 	let mut tree=DinoTree::new(&mut ref_aabbs);
