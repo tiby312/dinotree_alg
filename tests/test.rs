@@ -40,7 +40,7 @@ fn test_zero_sized() {
 
     let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
-    let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
+    let tree = DinoTree::new(&mut bots);
 
     let (n, _) = tree.vistr().next();
     let n=n.get();
@@ -55,7 +55,7 @@ fn test_zero_sized2() {
 
     let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
-    let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
+    let tree = DinoTree::new(&mut bots);
     
     let (n, _) = tree.vistr().next();
     let n=n.get();
@@ -69,7 +69,7 @@ fn test_one() {
 
     let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
-    let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
+    let tree = DinoTree::new( &mut bots);
 
     let (n, _) = tree.vistr().next();
     let n=n.get();
@@ -82,7 +82,7 @@ fn test_one() {
 fn test_empty() {
     let mut bots: Vec<()> = Vec::new();
     let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
-    let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
+    let tree = DinoTree::new( &mut bots);
 
     let (n, _) = tree.vistr().next();
     let n=n.get();
@@ -98,7 +98,7 @@ fn test_many() {
 
     let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
-    let tree = DinoTree::new(axgeom::YAXISS, &mut bots);
+    let tree = DinoTree::new( &mut bots);
 
     
     assert_eq!(
@@ -128,8 +128,8 @@ fn test_send_sync_dinotree(){
 
     //Check that its send
     let (t1,t2)=rayon::join(
-            ||DinoTree::new(axgeom::XAXISS,&mut bots1),
-            ||DinoTree::new(axgeom::YAXISS,&mut bots2));
+            ||DinoTree::new(&mut bots1),
+            ||DinoTree::new(&mut bots2));
 
     //Check that its sync
     let (p1,p2)=(&t1,&t2);
@@ -144,7 +144,7 @@ fn test() {
 
     let mut bots = bbox_helper::create_bbox_mut(&mut bots,|_b|{axgeom::Rect::new(0isize,0,0,0)});
 
-    let mut tree = DinoTree::new(axgeom::YAXISS, &mut bots);
+    let mut tree = DinoTree::new( &mut bots);
 
     assert!(analyze::assert_invariants(&tree));
 

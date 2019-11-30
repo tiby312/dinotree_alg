@@ -140,7 +140,8 @@ pub struct DinoTree<A:AxisTrait,N:NodeTrait>{
 }
 
 ///The type of the axis of the first node in the dinotree.
-///If it is the y axis, then the first divider will be a line going from top to bottom.
+///If it is the y axis, then the first divider will be a horizontal line,
+///since it is partioning space based off of objects y value.
 pub type DefaultAxis = YAXISS;
 ///Constructor of the default axis type. Needed since you cannot construct from type alias's. 
 pub const fn default_axis()->YAXISS{
