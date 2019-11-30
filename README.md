@@ -10,12 +10,7 @@ The dinotree_alg_data project generates some graphs using RustGnuPlot. These gra
 
 Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project for a writeup of the design and analysis of the algorithms in this project.
 
-### License
-
-Licensed under the terms of MIT license and the Apache License (Version 2.0).
-
-See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
-
+### Example
 
 ```rust
 use axgeom::rect;
