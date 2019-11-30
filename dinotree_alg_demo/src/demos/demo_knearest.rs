@@ -24,8 +24,8 @@ pub struct KnearestDemo {
 impl KnearestDemo {
     pub fn new(dim: Rect<F32n>) -> KnearestDemo {
         let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .with_radius(2.0, 10.0)
-            .take(2000)
+            .with_radius(2.0, 50.0)
+            .take(40)
             .enumerate()
             .map(|(id, (pos, radius))| Bot { id, pos, radius })
             .collect();
@@ -147,7 +147,12 @@ impl DemoSys for KnearestDemo {
         let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
         for (a, color) in vv_iter.zip(cols.iter()) {
+            
+            if let Some(k) = a.first(){
+                draw_circle_f32(*color,cursor.inner_into(),k.mag.into_inner(),c,g);
+            }
             for b in a.iter() {
+
                 draw_rect_f32(*color, b.rect.as_ref(), c, g);
             }
         }
