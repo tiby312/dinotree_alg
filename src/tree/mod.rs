@@ -56,60 +56,64 @@ pub mod dinotree_owned;
 pub mod analyze;
 
 
-///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
-pub struct NotSorted<A: AxisTrait,N:NodeTrait>(DinoTree<A,N>);
+pub(crate) use self::notsorted::NotSorted;
+mod notsorted{
+    use super::*;
+    ///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
+    pub struct NotSorted<A: AxisTrait,N:NodeTrait>(pub(crate) DinoTree<A,N>);
 
-impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> NotSorted<A,NodeMut<'a,T>>{
-   #[must_use]
-    pub fn new_par(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(axis,bots).build_not_sorted_par()
+    impl<'a,A:AxisTrait,T:HasAabb + Send + Sync> NotSorted<A,NodeMut<'a,T>>{
+       #[must_use]
+        pub fn new_par(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
+            DinoTreeBuilder::new(axis,bots).build_not_sorted_par()
+        }
     }
-}
-impl<'a,A:AxisTrait,T:HasAabb> NotSorted<A,NodeMut<'a,T>>{
-    #[must_use]
-    pub fn new(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::new(axis,bots).build_not_sorted_seq()
-    }
-}
-
-impl<A:AxisTrait,N:NodeTrait + Send + Sync> NotSorted<A,N> where N::T : Send + Sync{
-
-    pub fn find_collisions_mut_par(&mut self,func:impl Fn(ProtectedBBox<N::T>,ProtectedBBox<N::T>) + Send + Sync){
-        colfind::NotSortedQueryBuilder::new(self).query_par(|a,b|{
-            func(a,b)
-        });
-    }
-}
-impl<A:AxisTrait,N:NodeTrait> NotSorted<A,N>{
-
-    pub fn find_collisions_mut(&mut self,mut func:impl FnMut(ProtectedBBox<N::T>,ProtectedBBox<N::T>)){
-        colfind::NotSortedQueryBuilder::new(self).query_seq(|a,b|{
-            func(a,b)
-        });
-    }
-
-    #[inline(always)]
-    pub fn axis(&self)->A{
-        self.0.axis()
-    }
-
-    #[inline(always)]
-    pub fn get_height(&self)->usize{
-        self.0.get_height()
-    }
-
-    #[inline(always)]
-    pub fn vistr(&self)->Vistr<N>{
-        self.0.inner.vistr()
-    }
-
-    #[inline(always)]
-    pub fn vistr_mut(&mut self)->VistrMut<N>{
-        VistrMut{
-            inner:self.0.inner.vistr_mut()
+    impl<'a,A:AxisTrait,T:HasAabb> NotSorted<A,NodeMut<'a,T>>{
+        #[must_use]
+        pub fn new(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
+            DinoTreeBuilder::new(axis,bots).build_not_sorted_seq()
         }
     }
 
+    impl<A:AxisTrait,N:NodeTrait + Send + Sync> NotSorted<A,N> where N::T : Send + Sync{
+
+        pub fn find_collisions_mut_par(&mut self,func:impl Fn(ProtectedBBox<N::T>,ProtectedBBox<N::T>) + Send + Sync){
+            colfind::NotSortedQueryBuilder::new(self).query_par(|a,b|{
+                func(a,b)
+            });
+        }
+    }
+    impl<A:AxisTrait,N:NodeTrait> NotSorted<A,N>{
+
+        pub fn find_collisions_mut(&mut self,mut func:impl FnMut(ProtectedBBox<N::T>,ProtectedBBox<N::T>)){
+            colfind::NotSortedQueryBuilder::new(self).query_seq(|a,b|{
+                func(a,b)
+            });
+        }
+
+        #[inline(always)]
+        pub fn axis(&self)->A{
+            self.0.axis()
+        }
+
+        #[inline(always)]
+        pub fn get_height(&self)->usize{
+            self.0.get_height()
+        }
+
+        #[inline(always)]
+        pub fn vistr(&self)->Vistr<N>{
+            self.0.inner.vistr()
+        }
+
+        #[inline(always)]
+        pub fn vistr_mut(&mut self)->VistrMut<N>{
+            VistrMut{
+                inner:self.0.inner.vistr_mut()
+            }
+        }
+
+    }
 }
 
 

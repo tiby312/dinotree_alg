@@ -1,9 +1,12 @@
 //! Contains code to manipulate the dinotree data structure and some of its query algorithms
 //! to help analyze and measure their performance.
 
+
 use crate::query::*;
 use crate::inner_prelude::*;
 
+
+pub use crate::tree::notsorted::NotSorted;
 pub use crate::query::colfind::QueryBuilder;
 pub use crate::query::colfind::NotSortedQueryBuilder;
 
