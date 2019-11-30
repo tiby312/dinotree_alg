@@ -149,7 +149,7 @@ impl DemoSys for KnearestDemo {
         for (a, color) in vv_iter.zip(cols.iter()) {
             
             if let Some(k) = a.first(){
-                draw_circle_f32(*color,cursor.inner_into(),k.mag.into_inner(),c,g);
+                draw_circle_f32(*color,cursor.inner_into(),k.mag.into_inner().sqrt(),c,g);
             }
             for b in a.iter() {
 

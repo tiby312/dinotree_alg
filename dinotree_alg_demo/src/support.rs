@@ -67,7 +67,7 @@ pub fn draw_circle_f32(col: [f32; 4], point:Vec2<f32>, radius:f32, c: &Context, 
         let v=point.inner_as::<f64>();
         let radius=radius as f64;
         use piston_window::ellipse::circle;
-        let current = Ellipse::new(col);
+        let current = Ellipse::new_border(col,3.0);
            
         current.draw(circle(v.x,v.y,radius),&c.draw_state, c.transform, g);
     }
