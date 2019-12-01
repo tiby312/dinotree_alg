@@ -16,10 +16,12 @@ fn main(){
 		//Create a layer of direction.
 		let mut ref_aabbs  = aabbs.iter_mut().collect::<Vec<_>>();
 
+		let border = rect(0,100,0,100);
+
 		//Create a DinoTree by picking a starting axis (x or y).
 		//This will change the order of the elements in bboxes,
 		//but this is okay since we populated it with mutable references.	
-		let mut tree=DinoTree::new(&mut ref_aabbs).into_bounded(rect(0,100,0,100));
+		let mut tree=DinoTree::new(&mut ref_aabbs);
 
 		//Here we query for read-only references so we can pull
 		//them out of the closure.
@@ -32,7 +34,7 @@ fn main(){
 		assert_eq!(*rect_collisions[0].get(),rect(0,10,0,10));
 
 		
-		let res = tree.k_nearest_mut(vec2(30,30),2,|a,b|b.distance_squared_to_point(a).unwrap_or(0));
+		let res = tree.k_nearest_mut(vec2(30,30),2,|a,b|b.distance_squared_to_point(a).unwrap_or(0),border);
 		assert_eq!(res[0].bot.get(),&rect(15,20,15,20)  );
 		assert_eq!(res[1].bot.get(),&rect(5,15,5,15)  );
 
