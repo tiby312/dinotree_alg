@@ -103,8 +103,6 @@ pub mod par;
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
 
-///Provies a slice that produces BBox's where users can only interact
-///with through the HasInner trait so as to protect the invariants of the tree.
 pub mod pmut;
 
 ///A collection of different bounding box containers.
