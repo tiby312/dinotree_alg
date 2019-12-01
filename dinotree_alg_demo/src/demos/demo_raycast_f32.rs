@@ -14,7 +14,7 @@ struct RayT<'a, 'c: 'a> {
     pub g: &'a mut G2d<'c>,
 }
 
-impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
+impl<'a, 'c: 'a> RayCast for RayT<'a, 'c> {
     type N = F32n;
     type T = BBoxPtr<F32n, Bot>;
 
@@ -80,7 +80,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct RaycastF32Demo {
-    tree: DinoTreeOwned<DefaultAxis, F32n, Bot>,
+    tree: DinoTreeOwned<DefaultA, F32n, Bot>,
     dim: Rect<F32n>,
     radius: f32,
 }

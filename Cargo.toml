@@ -1,6 +1,6 @@
 [package]
 name = "dinotree_alg"
-version = "0.5.6"
+version = "0.6.0"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 description = "Dinotree algorithms"
 license = "MIT/Apache-2.0"

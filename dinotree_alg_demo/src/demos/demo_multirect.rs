@@ -15,7 +15,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct MultiRectDemo {
-    tree: DinoTreeOwned<DefaultAxis, i32, Bot>,
+    tree: DinoTreeOwned<DefaultA, i32, Bot>,
     dim: Rect<i32>,
 }
 impl MultiRectDemo {

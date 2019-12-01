@@ -16,7 +16,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct KnearestDemo {
-    tree: DinoTreeOwned<DefaultAxis, F32n, Bot>,
+    tree: DinoTreeOwned<DefaultA, F32n, Bot>,
     dim: Rect<F32n>,
 }
 

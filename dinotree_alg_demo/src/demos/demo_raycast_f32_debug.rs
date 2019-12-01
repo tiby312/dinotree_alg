@@ -20,7 +20,7 @@ mod ray_f32 {
         pub draw: bool,
     }
 
-    impl<'a, 'c: 'a> RayTrait for RayT<'a, 'c> {
+    impl<'a, 'c: 'a> RayCast for RayT<'a, 'c> {
         type T = BBoxPtr<F32n, Bot2>;
         type N = F32n;
 
@@ -81,7 +81,7 @@ impl analyze::HasId for Bot2 {
 }
 
 pub struct RaycastF32DebugDemo {
-    tree: DinoTreeOwned<DefaultAxis, F32n, Bot2>,
+    tree: DinoTreeOwned<DefaultA, F32n, Bot2>,
     counter: f32,
     dim: Rect<F32n>,
 }
@@ -191,7 +191,7 @@ impl DemoSys for RaycastF32DebugDemo {
         }
         impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
             type N = F32n;
-            fn draw_divider<A: axgeom::AxisTrait>(
+            fn draw_divider<A: axgeom::Axis>(
                 &mut self,
                 axis: A,
                 div: F32n,

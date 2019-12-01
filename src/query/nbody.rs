@@ -25,25 +25,25 @@ pub trait NodeMassTrait:Clone{
     fn handle_node_with_node(&self,a:&mut Self::No,b:&mut Self::No);
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self,a:ProtectedBBox<Self::Item>,b:ProtectedBBox<Self::Item>);
+    fn handle_bot_with_bot(&self,a:PMut<Self::Item>,b:PMut<Self::Item>);
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self,a:&mut Self::No,b:ProtectedBBox<Self::Item>);
+    fn handle_node_with_bot(&self,a:&mut Self::No,b:PMut<Self::Item>);
 
     fn is_far_enough(&self,b:[Self::Num;2])->bool;
 
     fn is_far_enough_half(&self,b:[Self::Num;2])->bool;
 
     //This unloads the force accumulated by this node to the bots.
-    fn apply_to_bots<'a,I:Iterator<Item=ProtectedBBox<'a,Self::Item>>> (&'a self,a:&'a Self::No,it:I);
+    fn apply_to_bots<'a,I:Iterator<Item=PMut<'a,Self::Item>>> (&'a self,a:&'a Self::No,it:I);
 
     fn new<'a,I:Iterator<Item=&'a Self::Item>> (&'a self,it:I,rect:Rect<Self::Num>)->Self::No;
 }
 
 
 ///Naive version simply visits every pair.
-pub fn naive_mut<T:Aabb>(bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
-    let bots=ProtectedBBoxSlice::new(bots);
+pub fn naive_mut<T:Aabb>(bots:&mut [T],func:impl FnMut(PMut<T>,PMut<T>)){
+    let bots=PMut::new(bots);
     tools::for_every_pair(bots,func);
 }
 
@@ -53,7 +53,7 @@ type CombinedVistr<'a,N,J> = compt::Zip<dfs_order::Vistr<'a,N,dfs_order::PreOrde
 type CombinedVistrMut<'a,N,J> = compt::Zip<dfs_order::VistrMut<'a,N,dfs_order::PreOrder>,VistrMut<'a,J>>;
 
 
-fn wrap_mut<'a:'b,'b,N,J:NodeTrait>(bla:&'b mut CombinedVistrMut<'a,N,J>)->CombinedVistrMut<'b,N,J>{
+fn wrap_mut<'a:'b,'b,N,J:Node>(bla:&'b mut CombinedVistrMut<'a,N,J>)->CombinedVistrMut<'b,N,J>{
     //let depth=bla.depth();
 
     let (a,b)=bla.as_inner_mut();
@@ -67,13 +67,13 @@ fn wrap_mut<'a:'b,'b,N,J:NodeTrait>(bla:&'b mut CombinedVistrMut<'a,N,J>)->Combi
 //pseudo code
 //build up a tree where every nodemass has the mass of all the bots in that node and all the bots under it.
 fn buildtree<
-    J:NodeTrait,
+    J:Node,
     N:NodeMassTrait<Num=J::Num,Item=J::T>
     >
     (axis:impl Axis,node:VistrMut<J>,misc_nodes:&mut Vec<N::No>,ncontext:&N,rect:Rect<J::Num>){
 
 
-    fn recc<J:NodeTrait,N:NodeMassTrait<Num=J::Num,Item=J::T>>
+    fn recc<J:Node,N:NodeMassTrait<Num=J::Num,Item=J::T>>
         (axis:impl Axis,stuff:VistrMut<J>,misc_nodes:&mut Vec<N::No>,ncontext:&N,rect:Rect<J::Num>){
         
         let (nn,rest)=stuff.next();
@@ -118,11 +118,11 @@ fn buildtree<
 
 fn apply_tree<   
     N:NodeMassTrait<Num=J::Num,Item=J::T>,
-    J:NodeTrait,
+    J:Node,
     >
     (_axis:impl Axis,node:CombinedVistr<N::No,J>,ncontext:&N){
 
-    fn recc<N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait>
+    fn recc<N:NodeMassTrait<Num=J::Num,Item=J::T>,J:Node>
         (stuff:CombinedVistr<N::No,J>,ncontext:&N){
         
         let ((misc,nn),rest)=stuff.next();
@@ -151,9 +151,9 @@ fn apply_tree<
 
 
 //Construct anchor from cont!!!
-struct Anchor<'a,A:Axis,N:NodeTrait>{
+struct Anchor<'a,A:Axis,N:Node>{
 	axis:A,
-    range:ProtectedBBoxSlice<'a,N::T>,
+    range:PMut<'a,[N::T]>,
     div:N::Num
 }
 
@@ -161,23 +161,23 @@ fn handle_anchor_with_children<
 	A:Axis,
 	B:Axis,
     N:NodeMassTrait<Num=J::Num,Item=J::T>,
-    J:NodeTrait>
+    J:Node>
 (thisa:A,anchor:&mut Anchor<B,J>,left:CombinedVistrMut<N::No,J>,right:CombinedVistrMut<N::No,J>,ncontext:&N){
     
 
-    struct BoLeft<'a,B:Axis,N:NodeMassTrait,J:NodeTrait>{
+    struct BoLeft<'a,B:Axis,N:NodeMassTrait,J:Node>{
         _anchor_axis:B,
         _p:PhantomData<(N::No,J)>,
         ncontext:&'a N,
     }
     
-    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait> Bok2 for BoLeft<'a,B,N,J>{
+    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:Node> Bok2 for BoLeft<'a,B,N,J>{
         type No=N::No;
         type T=J::T;
         type J=J;
         type AnchorAxis=B;
 
-        fn handle_node<A:Axis>(&mut self,_axis:A,mut b:ProtectedBBox<J::T>,anchor:&mut Anchor<B,J>){
+        fn handle_node<A:Axis>(&mut self,_axis:A,mut b:PMut<J::T>,anchor:&mut Anchor<B,J>){
             for i in anchor.range.as_mut().iter_mut(){
                 self.ncontext.handle_bot_with_bot(i,b.as_mut());
             }
@@ -195,19 +195,19 @@ fn handle_anchor_with_children<
         }
     }
 
-    struct BoRight<'a,B:Axis,N:NodeMassTrait,J:NodeTrait>{
+    struct BoRight<'a,B:Axis,N:NodeMassTrait,J:Node>{
         _anchor_axis:B,
         _p:PhantomData<(N::No,J)>,
         ncontext:&'a N
     }
     
-    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait> Bok2 for BoRight<'a,B,N,J>{
+    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:Node> Bok2 for BoRight<'a,B,N,J>{
         type No=N::No;
         type T=J::T;
         type J=J;
         type AnchorAxis=B;
 
-        fn handle_node<A:Axis>(&mut self,_axis:A,mut b:ProtectedBBox<J::T>,anchor:&mut Anchor<B,J>){
+        fn handle_node<A:Axis>(&mut self,_axis:A,mut b:PMut<J::T>,anchor:&mut Anchor<B,J>){
             for i in anchor.range.as_mut().iter_mut(){
                 self.ncontext.handle_bot_with_bot(i,b.as_mut());
             }
@@ -234,24 +234,24 @@ fn handle_anchor_with_children<
     }
 }
 
-fn handle_left_with_right<'a,A:Axis,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait>
+fn handle_left_with_right<'a,A:Axis,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:Node>
     (axis:A,anchor:&mut Anchor<B,J>,left:CombinedVistrMut<'a,N::No,J>,mut right:CombinedVistrMut<'a,N::No,J>,ncontext:&N){
 
 
-	struct Bo4<'a,B:Axis,N:NodeMassTrait,J:NodeTrait>{
+	struct Bo4<'a,B:Axis,N:NodeMassTrait,J:Node>{
         _anchor_axis:B,
-        bot:ProtectedBBox<'a,J::T>,
+        bot:PMut<'a,J::T>,
         ncontext:&'a N,
         div:N::Num,
         _p:PhantomData<J>
     }
 
-    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait> Bok2 for Bo4<'a,B,N,J>{
+    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:Node> Bok2 for Bo4<'a,B,N,J>{
     	type No=N::No;
         type T=J::T;
         type J=J;
         type AnchorAxis=B;
-    	fn handle_node<A:Axis>(&mut self,_axis:A,b:ProtectedBBox<J::T>,_anchor:&mut Anchor<B,J>){
+    	fn handle_node<A:Axis>(&mut self,_axis:A,b:PMut<J::T>,_anchor:&mut Anchor<B,J>){
             self.ncontext.handle_bot_with_bot(self.bot.as_mut(),b);
     	}
     	fn handle_node_far_enough<A:Axis>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,J>){
@@ -263,7 +263,7 @@ fn handle_left_with_right<'a,A:Axis,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>
             self.ncontext.is_far_enough_half([self.div,range.start])
         }
     }
-    struct Bo2<'a,B:Axis,N:NodeMassTrait,J:NodeTrait>{
+    struct Bo2<'a,B:Axis,N:NodeMassTrait,J:Node>{
         _anchor_axis:B,
         node:&'a mut N::No,
         ncontext:&'a N,
@@ -271,13 +271,13 @@ fn handle_left_with_right<'a,A:Axis,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>
         _p:PhantomData<J>
     }
 
-    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait> Bok2 for Bo2<'a,B,N,J>{
+    impl<'a,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:Node> Bok2 for Bo2<'a,B,N,J>{
     	type No=N::No;
         type T=J::T;
         type J=J;
         type AnchorAxis=B;
 
-        fn handle_node<A:Axis>(&mut self,_axis:A,b:ProtectedBBox<J::T>,_anchor:&mut Anchor<B,J>){
+        fn handle_node<A:Axis>(&mut self,_axis:A,b:PMut<J::T>,_anchor:&mut Anchor<B,J>){
             self.ncontext.handle_node_with_bot(self.node,b);
     	}
     	fn handle_node_far_enough<A:Axis>(&mut self,_axis:A,a:&mut N::No,_anchor:&mut Anchor<B,J>){
@@ -290,18 +290,18 @@ fn handle_left_with_right<'a,A:Axis,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>
         }
     }
 
-    struct Bo<'a:'b,'b,B:Axis,N:NodeMassTrait,J:NodeTrait>{
+    struct Bo<'a:'b,'b,B:Axis,N:NodeMassTrait,J:Node>{
         _anchor_axis:B,
         right:&'b mut CombinedVistrMut<'a,N::No,J>,
         ncontext:&'b N
     }
     
-    impl<'a:'b,'b,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:NodeTrait> Bok2 for Bo<'a,'b,B,N,J>{
+    impl<'a:'b,'b,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>,J:Node> Bok2 for Bo<'a,'b,B,N,J>{
     	type No=N::No;
         type T=J::T;
         type J=J;
         type AnchorAxis=B;
-        fn handle_node<A:Axis>(&mut self,axis:A,b:ProtectedBBox<J::T>,anchor:&mut Anchor<B,J>){
+        fn handle_node<A:Axis>(&mut self,axis:A,b:PMut<J::T>,anchor:&mut Anchor<B,J>){
             let r=wrap_mut(&mut self.right);
             let anchor_axis=anchor.axis;
 
@@ -327,7 +327,7 @@ fn handle_left_with_right<'a,A:Axis,B:Axis,N:NodeMassTrait<Num=J::Num,Item=J::T>
 }
 
 
-fn recc<J:par::Joiner,A:Axis,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Send,F:NodeTrait+Send+Sync>(join:J,axis:A,it:CombinedVistrMut<N::No,F>,ncontext:&N) where F::T:Send,N::No:Send{
+fn recc<J:par::Joiner,A:Axis,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Send,F:Node+Send+Sync>(join:J,axis:A,it:CombinedVistrMut<N::No,F>,ncontext:&N) where F::T:Send,N::No:Send{
     
 
     let ((_, nn),rest)=it.next();
@@ -397,11 +397,11 @@ fn recc<J:par::Joiner,A:Axis,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Send,F:N
 
 trait Bok2{
     type No:Copy;
-    type J:NodeTrait<T=Self::T,Num=<Self::T as Aabb>::Num>;
+    type J:Node<T=Self::T,Num=<Self::T as Aabb>::Num>;
     type T:Aabb;
     type AnchorAxis:Axis;
     fn is_far_enough<A:Axis>(&mut self,axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::J>,misc:&Self::No)->bool;
-    fn handle_node<A:Axis>(&mut self,axis:A,n:ProtectedBBox<Self::T>,anchor:&mut Anchor<Self::AnchorAxis,Self::J>);
+    fn handle_node<A:Axis>(&mut self,axis:A,n:PMut<Self::T>,anchor:&mut Anchor<Self::AnchorAxis,Self::J>);
     fn handle_node_far_enough<A:Axis>(&mut self,axis:A,a:&mut Self::No,anchor:&mut Anchor<Self::AnchorAxis,Self::J>);
 
 
@@ -442,7 +442,7 @@ trait Bok2{
 
 
 ///Parallel version.
-pub fn nbody_par<A:Axis,J:NodeTrait+Send+Sync,N:NodeMassTrait<Num=J::Num,Item=J::T>+Sync+Send>(t1:&mut DinoTree<A,J>,ncontext:&N,rect:Rect<J::Num>) where N::No:Send, J::T:Send+Copy{
+pub fn nbody_par<A:Axis,J:Node+Send+Sync,N:NodeMassTrait<Num=J::Num,Item=J::T>+Sync+Send>(t1:&mut DinoTree<A,J>,ncontext:&N,rect:Rect<J::Num>) where N::No:Send, J::T:Send+Copy{
     let axis=t1.axis();
     
     let mut misc_nodes=Vec::new();
@@ -463,7 +463,7 @@ pub fn nbody_par<A:Axis,J:NodeTrait+Send+Sync,N:NodeMassTrait<Num=J::Num,Item=J:
 
 
 ///Sequential version.
-pub fn nbody<A:Axis,J:NodeTrait+Send+Sync,N:NodeMassTrait<Num=J::Num,Item=J::T>+Send+Sync>(t1:&mut DinoTree<A,J>,ncontext:&N,rect:Rect<J::Num>) where J::T:Send+Sync{
+pub fn nbody<A:Axis,J:Node+Send+Sync,N:NodeMassTrait<Num=J::Num,Item=J::T>+Send+Sync>(t1:&mut DinoTree<A,J>,ncontext:&N,rect:Rect<J::Num>) where J::T:Send+Sync{
     
     let axis=t1.axis();
     

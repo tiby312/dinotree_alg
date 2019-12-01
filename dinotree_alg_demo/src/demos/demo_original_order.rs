@@ -208,7 +208,7 @@ struct Bla<'a, 'b: 'a> {
 }
 impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
     type N = F32n;
-    fn draw_divider<A: axgeom::AxisTrait>(
+    fn draw_divider<A: axgeom::Axis>(
         &mut self,
         axis: A,
         div: F32n,
@@ -259,7 +259,7 @@ impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
         rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
     }
 }
-fn draw_bot_lines<A: axgeom::AxisTrait>(
+fn draw_bot_lines<A: axgeom::Axis>(
     axis: A,
     stuff: Vistr<NodeMut<BBoxMut<F32n, Bot>>>,
     rect: &axgeom::Rect<F32n>,

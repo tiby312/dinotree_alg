@@ -48,15 +48,15 @@ impl<'b> NodeMassTrait for Bla<'b> {
     //gravitate a bot with a bot
     fn handle_bot_with_bot(
         &self,
-        mut a: ProtectedBBox<Self::Item>,
-        mut b: ProtectedBBox<Self::Item>,
+        mut a: PMut<Self::Item>,
+        mut b: PMut<Self::Item>,
     ) {
         //self.num_pairs_checked+=1;
         let _ = duckduckgeo::gravitate(a.inner_mut(), b.inner_mut(), 0.0001, 0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self, a: &mut Self::No, mut b: ProtectedBBox<Self::Item>) {
+    fn handle_node_with_bot(&self, a: &mut Self::No, mut b: PMut<Self::Item>) {
         let _ = duckduckgeo::gravitate(a, b.inner_mut(), 0.0001, 0.004);
     }
 
@@ -89,7 +89,7 @@ impl<'b> NodeMassTrait for Bla<'b> {
         }
     }
 
-    fn apply_to_bots<'a, I: Iterator<Item = ProtectedBBox<'a, Self::Item>>>(
+    fn apply_to_bots<'a, I: Iterator<Item = PMut<'a, Self::Item>>>(
         &'a self,
         a: &'a Self::No,
         it: I,
@@ -328,7 +328,7 @@ impl DemoSys for DemoNbody {
                 }
                 impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
                     type N = F32n;
-                    fn draw_divider<A: axgeom::AxisTrait>(
+                    fn draw_divider<A: axgeom::Axis>(
                         &mut self,
                         axis: A,
                         div: F32n,
