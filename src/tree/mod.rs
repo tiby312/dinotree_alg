@@ -138,6 +138,84 @@ mod notsorted{
 use crate::query::*;
 
 
+pub struct BoundedDinoTree<'a,A:Axis,N:Node>{
+    rect : Rect<N::Num>,
+    tree : &'a mut DinoTree<A,N>
+}
+
+impl<A:Axis,N:Node> core::ops::Deref for BoundedDinoTree<'_,A,N>{
+    type Target = DinoTree<A,N>;
+    fn deref(&self)->&Self::Target{
+        self.tree
+    }
+}
+impl<A:Axis,N:Node> core::ops::DerefMut for BoundedDinoTree<'_,A,N>{
+    fn deref_mut(&mut self)->&mut Self::Target{
+        self.tree
+    }
+}
+
+impl<A:Axis,N:Node> BoundedDinoTree<'_,A,N>{
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let border = axgeom::rect(0,100,0,100);
+    ///let mut bots = [axgeom::rect(0,10,0,10),
+    ///                 axgeom::rect(2,5,2,5),
+    ///                 axgeom::rect(4,10,4,10)];
+    ///let mut tree = DinoTree::new(&mut bots1);
+    ///
+    ///
+    ///let res = tree.k_nearest_mut(vec2(0,0),2,|a,b|b.distance_to_point_squared(a),border);
+    ///
+    ///assert_eq!(res.len(),2)
+    ///assert_eq!(res[0],bots[0]);
+    ///assert_eq!(res[1],bots[1]);
+    ///```
+    #[must_use]
+    pub fn k_nearest_mut(
+        &mut self,
+        point:Vec2<N::Num>,
+        num:usize,
+        distance:impl Fn(Vec2<N::Num>,&Rect<N::Num>)->N::Num) -> Vec<k_nearest::KnearestResult<N::T>>{
+        let mut knear=k_nearest::KnearestWrapper{inner:distance,_p:PhantomData};
+        k_nearest::k_nearest_mut(self.tree,point,num,&mut knear,self.rect)
+    }
+
+
+    #[must_use]
+    pub fn k_nearest_fine_mut(
+        &mut self,
+        point:Vec2<N::Num>,
+        num:usize,
+        knear:&mut impl k_nearest::Knearest<N=N::Num,T=N::T>) -> Vec<k_nearest::KnearestResult<N::T>>{
+        k_nearest::k_nearest_mut(self.tree,point,num,knear,self.rect)
+    }
+
+    #[must_use]
+    pub fn raycast_fine_mut(
+        &mut self,
+        ray:axgeom::Ray<N::Num>,
+        rtrait: &mut impl raycast::RayCast<N=N::Num,T=N::T> )->raycast::RayCastResult<N::T>{
+        raycast::raycast_mut(self.tree,self.rect,ray,rtrait)
+    }
+
+
+    #[must_use]
+    pub fn raycast_mut(
+        &mut self,
+        ray:axgeom::Ray<N::Num>,
+        rtrait: impl Fn(&Ray<N::Num>,&Rect<N::Num>)->RayIntersectResult<N::Num> )->raycast::RayCastResult<N::T>{
+        let mut rtrait = raycast::RayCastFineWrapper{inner:rtrait,_p:PhantomData};
+        
+        raycast::raycast_mut(self.tree,self.rect,ray,&mut rtrait)
+    }
+
+}
+
+
 ///The data structure this crate revoles around.
 pub struct DinoTree<A:Axis,N:Node>{
     axis:A,
@@ -277,66 +355,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         intersect_with::intersect_with_mut(self,other,func)
     }
 
-    #[must_use]
-    pub fn raycast_fine_mut(
-        &mut self,
-        rect:Rect<N::Num>,
-        ray:raycast::Ray<N::Num>,
-        rtrait: &mut impl raycast::RayCast<N=N::Num,T=N::T> )->raycast::RayCastResult<N::T>{
-        raycast::raycast_mut(self,rect,ray,rtrait)
-    }
-
-
-    #[must_use]
-    pub fn raycast_mut(
-        &mut self,
-        rect:Rect<N::Num>,
-        ray:raycast::Ray<N::Num>,
-        rtrait: impl Fn(&Ray<N::Num>,&Rect<N::Num>)->RayIntersectResult<N::Num> )->raycast::RayCastResult<N::T>{
-        let mut rtrait = raycast::RayCastFineWrapper{inner:rtrait,_p:PhantomData};
-        
-        raycast::raycast_mut(self,rect,ray,&mut rtrait)
-    }
-
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let border = axgeom::rect(0,100,0,100);
-    ///let mut bots = [axgeom::rect(0,10,0,10),
-    ///                 axgeom::rect(2,5,2,5),
-    ///                 axgeom::rect(4,10,4,10)];
-    ///let mut tree = DinoTree::new(&mut bots1);
-    ///
-    ///
-    ///let res = tree.k_nearest_mut(vec2(0,0),2,|a,b|b.distance_to_point_squared(a),border);
-    ///
-    ///assert_eq!(res.len(),2)
-    ///assert_eq!(res[0],bots[0]);
-    ///assert_eq!(res[1],bots[1]);
-    ///```
-    #[must_use]
-    pub fn k_nearest_mut(
-        &mut self,
-        point:Vec2<N::Num>,
-        num:usize,
-        distance:impl Fn(Vec2<N::Num>,&Rect<N::Num>)->N::Num ,
-        rect:Rect<N::Num>) -> Vec<k_nearest::KnearestResult<N::T>>{
-        let mut knear=k_nearest::KnearestWrapper{inner:distance,_p:PhantomData};
-        k_nearest::k_nearest_mut(self,point,num,&mut knear,rect)
-    }
-
-
-    #[must_use]
-    pub fn k_nearest_fine_mut(
-        &mut self,
-        point:Vec2<N::Num>,
-        num:usize,
-        knear:&mut impl k_nearest::Knearest<N=N::Num,T=N::T>,
-        rect:Rect<N::Num>) -> Vec<k_nearest::KnearestResult<N::T>>{
-        k_nearest::k_nearest_mut(self,point,num,knear,rect)
-    }
 
     /// # Examples
     ///
