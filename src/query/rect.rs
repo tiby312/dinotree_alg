@@ -230,7 +230,7 @@ mod constant{
 ///Indicates that the user supplied a rectangle
 ///that intersects with a another one previously queries
 ///in the session.
-#[derive(Debug)]
+#[derive(Eq,PartialEq,Copy,Clone,Debug)]
 pub struct RectIntersectErr;
 
 
