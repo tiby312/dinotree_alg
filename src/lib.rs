@@ -1,66 +1,20 @@
-//!
-//! 
-//!
-//! ~~~~text
-//! 2d Tree Divider Representation:
-//!
-//!
-//!    o   ┆┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┃         ┆         o
-//!  ┈┈┈┈┈┈┆     o      o     ┃     o   ┆   o        o
-//!  ───────o─────────────────┃         o┈┈┈┈┈┈┈┈┈┈┈┈┈
-//!                ┆       o  o   o     ┆
-//!        o       ┆    o     ┃┈┈┈┈┈o┈┈┈┆       o
-//!                ┆   o      ┃         o            o
-//!                ┆┈┈┈┈┈┈┈┈┈┈┃         ┆               
-//!      o         o    o     ┃───────o───────────────
-//!                ┆          ┃                ┆   o
-//!  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┆      o   o   o            ┆┈┈┈┈┈┈
-//!     o          ┆          ┃┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┆        
-//!          o     ┆   o      ┃        o       ┆   o
-//!                ┆          ┃                ┆
-//!
-//! Axis alternates every level.
-//! Divider placement is placed at the median at each level.
-//! Objects that intersect a divider belong to that node.
-//! Every divider keeps track of how thick a line would have to be
-//! to 'cover' all the bots it owns.
-//! All the objects in a node are sorted along that node's axis.
-//!
-//!
-//! ~~~~
 //! # Overview
 //!
 //! This crate hopes to provide an efficient 2D space partitioning data structure and useful query algorithms to perform on it 
 //! in a hopefully simple cohesive api.
 //! It is a hybrid between a [KD Tree](https://en.wikipedia.org/wiki/K-d_tree) and [Sweep and Prune](https://en.wikipedia.org/wiki/Sweep_and_prune).
 //! Uses `no_std`, but uses the `alloc` crate.
+//! Please see the [book](https://dinotree-book.netlify.com) which is a work in-progress high level explanation and analysis
+//! of this crate.
 //!
 //! ## Data Structure
 //!
-//! Using this crate, the user can create three flavors of the same fundamental data structure. They each 
-//! have different characteristics that may make you want to use them over the others. You can make a dinotree
-//! composed of the following:
+//! Using this crate, the user can create three flavors of the same fundamental data structure. 
+//! The different characteristics are exlored more in depth in the book mentioned in the overview section.
 //!
-//!
-//! + `(Rect<N>,&mut T)` is the most well rounded and most performant in most cases.
-//! The aabb's themselves don't have a level of indirection. Broad-phase
-//! algorithms need to look at these very often. It's only when these algorithms
-//! detect a intersection do they need to look further, which doesnt happen as often.
-//! So a level of indirection here is not so bad. The fact that T is a pointer, also
-//! means that more aabb's will be in cache at once, further speeding up algorithms
-//! that need to look at the aabb's very often.
-//!
-//!
-//! + `(Rect<N>,T)` performs slightly better during the querying phase, but suffers
-//! during the construction phase. There is also no easy way to return the elements back
-//! to their original positions on destructing of the tree (something you don't need to worry about with pointers).
-//! One benefit of using this tree, is that it owns the elements completely, so there are no lifetime references to worry about.
-//! The performance of this type of tree is also heavily influenced by the size of T.
-//!
-//! + `&mut (Rect<N>,T)` has comparable tree construction times to `(Rect<N>,&mut T)` given that we are just sorting and swapping
-//! pointers, but there is no cache-coherence during the query phase, so this can 
-//! cause real slow down to query algorithms if there are many overlapping elements.
-//!
+//! + `(Rect<N>,&mut T)` (recommended)
+//! + `(Rect<N>,T)` 
+//! + `&mut (Rect<N>,T)` 
 //!
 //! ## DinoTreeOwned
 //!
@@ -69,14 +23,6 @@
 //! But this might mean that the user has to re-construct the tree more often than it needs to be.
 //! It is composed internally of the equivalent to `(Rect<N>,&mut T)`, the most well-rounded data layout as
 //! described above. 
-//!
-//! ## NotSorted
-//!
-//! For comparison, a normal kd-tree is provided by `NotSorted`. In this tree, the elements are not sorted
-//! along an axis at each level. Construction of `NotSorted` is faster than `DinoTree` since it does not have to
-//! sort bots that belong to each node along an axis. But most query algorithms can usually take advantage of this
-//! extra property.
-//!
 //!
 //! ## User Protection
 //!

@@ -8,7 +8,7 @@ The dinotree_alg_data project generates some graphs using RustGnuPlot. These gra
 
 ### Analysis
 
-Please see the [dinotree_report](https://github.com/tiby312/dinotree_report) github project for a writeup of the design and analysis of the algorithms in this project.
+Please see the [book](https://dinotree-book.netlify.com) for a work in progress writeup of the design and analysis of the algorithms in this project.
 
 ### Example
 

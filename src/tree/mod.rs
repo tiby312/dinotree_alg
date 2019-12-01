@@ -59,7 +59,12 @@ pub mod analyze;
 pub(crate) use self::notsorted::NotSorted;
 mod notsorted{
     use super::*;
+
     ///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
+    /// For comparison, a normal kd-tree is provided by `NotSorted`. In this tree, the elements are not sorted
+    /// along an axis at each level. Construction of `NotSorted` is faster than `DinoTree` since it does not have to
+    /// sort bots that belong to each node along an axis. But most query algorithms can usually take advantage of this
+    /// extra property.
     pub struct NotSorted<A: Axis,N:Node>(pub(crate) DinoTree<A,N>);
 
     impl<'a,T:Aabb + Send + Sync> NotSorted<DefaultA,NodeMut<'a,T>>{
