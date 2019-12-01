@@ -1,4 +1,7 @@
-Provides various query aabb broad phase algorithms such as collision pair finding, raycast, or k_nearest. 
+This crate hopes to provide an efficient 2D space partitioning data structure and useful query algorithms to perform on it in a hopefully simple cohesive api.
+It is a hybrid between a [KD Tree](https://en.wikipedia.org/wiki/K-d_tree) and [Sweep and Prune](https://en.wikipedia.org/wiki/Sweep_and_prune).
+Uses `no_std`, but uses the `alloc` crate.
+Please see the [dinotree-book](https://dinotree-book.netlify.com) which is a work in-progress high level explanation and analysis of this crate.
 
 ### Inner projects
 
