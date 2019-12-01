@@ -223,7 +223,7 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         &mut self,
         rect:Rect<N::Num>,
         ray:raycast::Ray<N::Num>,
-        rtrait: &mut impl raycast::RayTrait<N=N::Num,T=N::T> )->raycast::RayCastResult<N::T>{
+        rtrait: &mut impl raycast::RayCast<N=N::Num,T=N::T> )->raycast::RayCastResult<N::T>{
         raycast::raycast_mut(self,rect,ray,rtrait)
     }
 

@@ -14,9 +14,11 @@ mod inner_prelude {
 }
 
 
-pub use crate::query::raycast::{RaycastSimple,Ray,RayIntersectResult,RayTrait,RayCastResult};
+pub use crate::query::raycast::{RaycastSimple,Ray,RayIntersectResult,RayCast,RayCastResult};
 pub use crate::query::k_nearest::{KnearestSimple,Knearest,KnearestResult};
 pub use crate::query::graphics::DividerDrawer;
+pub use crate::query::rect::MultiRectMut;
+
 #[cfg(feature = "nbody")]
 pub use crate::query::nbody::NodeMassTrait;
 

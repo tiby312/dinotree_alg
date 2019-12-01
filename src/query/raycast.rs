@@ -6,7 +6,7 @@
 //! that return mutable references.
 //!
 //! 
-//! In addition to the tree, the user provides the geometric functions needed by passing an implementation of RayTrait.
+//! In addition to the tree, the user provides the geometric functions needed by passing an implementation of RayCast.
 //! The user must also provide a rectangle within which all objects that the user is interested in possibly
 //! being hit by the raycast must include. 
 //!
@@ -146,7 +146,7 @@ impl<N> RayIntersectResult<N>{
 ///This is the trait that defines raycast specific geometric functions that are needed by this raytracing algorithm.
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying Num to a minimum
 ///of only needing Ord.
-pub trait RayTrait{
+pub trait RayCast{
     type N:Num;
     type T:Aabb<Num=Self::N>;
 
@@ -184,7 +184,7 @@ impl<T:Aabb,F> RaycastSimple<T,F>
         RaycastSimple{_p:PhantomData,func}
     }
 }
-impl<T:Aabb,F> RayTrait for RaycastSimple<T,F>
+impl<T:Aabb,F> RayCast for RaycastSimple<T,F>
     where F:Fn(&Ray<T::Num>,&Rect<T::Num>) -> RayIntersectResult<T::Num>{
     type T=T;
     type N=T::Num;
@@ -215,7 +215,7 @@ struct Closest<'a,T:Aabb>{
     closest:Option<(Vec<PMut<'a,T>>,T::Num)>
 }
 impl<'a,T:Aabb> Closest<'a,T>{
-    fn consider<R:RayTrait<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>, b:PMut<'a,T>,raytrait:&mut R){
+    fn consider<R:RayCast<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>, b:PMut<'a,T>,raytrait:&mut R){
 
         let x=match raytrait.compute_distance_to_bot(ray,b.as_ref()){
             RayIntersectResult::Hit(val)=>{
@@ -262,12 +262,12 @@ impl<'a,T:Aabb> Closest<'a,T>{
 }
 
 
-struct Blap<'a:'b,'b,R:RayTrait>{
+struct Blap<'a:'b,'b,R:RayCast>{
     rtrait:&'b mut R,
     ray:Ray<R::N>,
     closest:Closest<'a,R::T>
 }
-impl<'a:'b,'b,R:RayTrait> Blap<'a,'b,R>{
+impl<'a:'b,'b,R:RayCast> Blap<'a,'b,R>{
     fn should_handle_rect(&mut self,rect:&Rect<R::N>)->bool{
         match self.rtrait.compute_distance_to_rect(&self.ray,rect){
             RayIntersectResult::Hit(val)=>{
@@ -295,9 +295,8 @@ impl<'a:'b,'b,R:RayTrait> Blap<'a,'b,R>{
 //Returns the first object that touches the ray.
 fn recc<'a:'b,'b,
     A: Axis,
-    //T: Aabb,
     N:Node,
-    R: RayTrait<N=N::Num,T=N::T>
+    R: RayCast<N=N::Num,T=N::T>
     >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<N::Num>,blap:&mut Blap<'a,'b,R>){
 
     let ((_depth,nn),rest)=stuff.next();
@@ -406,7 +405,7 @@ mod mutable{
     pub fn raycast_naive_mut<
         'a,
         T:Aabb,
-        >(bots:PMut<'a,[T]>,ray:Ray<T::Num>,rtrait:&mut impl RayTrait<N=T::Num,T=T>)->RayCastResult<'a,T>{
+        >(bots:PMut<'a,[T]>,ray:Ray<T::Num>,rtrait:&mut impl RayCast<N=T::Num,T=T>)->RayCastResult<'a,T>{
         let mut closest=Closest{closest:None};
 
         for b in bots.iter_mut(){
@@ -428,7 +427,7 @@ mod mutable{
         'a,   
         A:Axis,
         N:Node
-        >(tree:&'a mut DinoTree<A,N>,rect:Rect<N::Num>,ray:Ray<N::Num>,rtrait:&mut impl RayTrait<N=N::Num,T=N::T>)->RayCastResult<'a,N::T>{
+        >(tree:&'a mut DinoTree<A,N>,rect:Rect<N::Num>,ray:Ray<N::Num>,rtrait:&mut impl RayCast<N=N::Num,T=N::T>)->RayCastResult<'a,N::T>{
         
         let axis=tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));

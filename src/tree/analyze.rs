@@ -54,7 +54,7 @@ impl<'a,T:Aabb> NaiveAlgs<'a,T>{
     pub fn raycast_mut(
         &mut self,
         ray:raycast::Ray<T::Num>,
-        rtrait: &mut impl raycast::RayTrait<N=T::Num,T=T> )->raycast::RayCastResult<T>{
+        rtrait: &mut impl raycast::RayCast<N=T::Num,T=T> )->raycast::RayCastResult<T>{
         let bots=PMut::new(self.bots);
         raycast::raycast_naive_mut(bots,ray,rtrait)
     }
@@ -200,7 +200,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
         &mut self,
         rect:axgeom::Rect<T::Num>,
         ray:raycast::Ray<T::Num>,
-        rtrait:&mut impl raycast::RayTrait<N=T::Num,T=T>) where T::Inner: HasId, T::Num:core::fmt::Debug{
+        rtrait:&mut impl raycast::RayCast<N=T::Num,T=T>) where T::Inner: HasId, T::Num:core::fmt::Debug{
 
         //TODO need to make sure naive also restricts its search to be in just the rect.
         //Otherwise in some cases this function will panic when it shouldnt.
