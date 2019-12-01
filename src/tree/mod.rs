@@ -161,18 +161,20 @@ impl<A:Axis,N:Node> BoundedDinoTree<'_,A,N>{
     ///
     ///```
     ///use dinotree_alg::prelude::*;
-    ///let border = axgeom::rect(0,100,0,100);
-    ///let mut bots = [axgeom::rect(0,10,0,10),
-    ///                 axgeom::rect(2,5,2,5),
-    ///                 axgeom::rect(4,10,4,10)];
-    ///let mut tree = DinoTree::new(&mut bots1);
+    ///use axgeom::*;
+    ///let border = rect(0,100,0,100);
+    ///let mut bots = [rect(0,10,0,10),
+    ///                rect(2,5,2,5),
+    ///                rect(4,10,4,10)];
+    ///let mut bots_copy=bots.clone();
+    ///let mut tree = DinoTree::new(&mut bots);
     ///
+    ///let mut bounded_tree=tree.as_bounded(border);
+    ///let res = bounded_tree.k_nearest_mut(vec2(0,0),2,|a,b|b.distance_squared_to_point(a).unwrap_or(0));
     ///
-    ///let res = tree.k_nearest_mut(vec2(0,0),2,|a,b|b.distance_to_point_squared(a),border);
-    ///
-    ///assert_eq!(res.len(),2)
-    ///assert_eq!(res[0],bots[0]);
-    ///assert_eq!(res[1],bots[1]);
+    ///assert_eq!(res.len(),2);
+    ///assert_eq!(res[0].bot.get(),&bots_copy[0]);
+    ///assert_eq!(res[1].bot.get(),&bots_copy[1]);
     ///```
     #[must_use]
     pub fn k_nearest_mut(

@@ -35,7 +35,8 @@ fn main(){
 
 		
 		//let mut kk=KnearestSimple::new(|p,r|distance(p,r) );
-		let res = tree.k_nearest_mut(vec2(30,30),2,|a,b|b.distance_squared_to_point(a).unwrap_or(0),border);
+		let mut bounded_tree=tree.as_bounded(border);
+		let res = bounded_tree.k_nearest_mut(vec2(30,30),2,|a,b|b.distance_squared_to_point(a).unwrap_or(0));
 		assert_eq!(res[0].bot.get(),&rect(15,20,15,20)  );
 		assert_eq!(res[1].bot.get(),&rect(5,15,5,15)  );
 
@@ -54,7 +55,7 @@ fn distance(p:axgeom::Vec2<isize>,r:&Rect<isize>)->isize{
 	(r.x.start-p.x).abs()
 }
 
-fn raycast(ray:&Ray<isize>,r:&Rect<isize>)->RayIntersectResult<isize>{
+fn raycast(ray:&axgeom::Ray<isize>,r:&Rect<isize>)->RayIntersectResult<isize>{
 	//This is not a full implementation of the contract of RayCastTrait.
 	//In the same of simplicity of just showing the api, it is hardcoded to give the answer we would expect.
 	RayIntersectResult::Hit(r.x.start-ray.point.x)
