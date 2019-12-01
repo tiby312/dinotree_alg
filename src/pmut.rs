@@ -1,7 +1,7 @@
 
 //! Provides a mutable pointer type that is more restrictive that &mut T, in order
 //! to protect tree invariants.
-//! PMut is short for protected mut reference.
+//! PMut is short for protected mutable reference.
 //!
 //! It prevents the user from violating the invariants of the tree.
 //!

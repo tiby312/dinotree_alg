@@ -4,7 +4,7 @@
 //! in a hopefully simple cohesive api.
 //! It is a hybrid between a [KD Tree](https://en.wikipedia.org/wiki/K-d_tree) and [Sweep and Prune](https://en.wikipedia.org/wiki/Sweep_and_prune).
 //! Uses `no_std`, but uses the `alloc` crate.
-//! Please see the [book](https://dinotree-book.netlify.com) which is a work in-progress high level explanation and analysis
+//! Please see the [dinotree-book](https://dinotree-book.netlify.com) which is a work in-progress high level explanation and analysis
 //! of this crate.
 //!
 //! ## Data Structure
