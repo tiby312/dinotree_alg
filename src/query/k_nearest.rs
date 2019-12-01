@@ -84,7 +84,7 @@ fn range_side<N:Num>(point:Vec2<N>,axis:impl axgeom::Axis,range:&Range<N>)->Orde
 
 /// Returned by k_nearest_mut
 pub struct KnearestResult<'a,T:Aabb>{
-    pub bot:ProtectedBBox<'a,T>,
+    pub bot:PMut<'a,T>,
     pub mag:T::Num
 }
 
@@ -108,7 +108,7 @@ impl<'a,T:Aabb> ClosestCand<'a,T>{
         ClosestCand{bots,num,curr_num:0}
     }
 
-    fn consider(&mut self,a:(ProtectedBBox<'a,T>,T::Num))->bool{
+    fn consider(&mut self,a:(PMut<'a,T>,T::Num))->bool{
         //let a=(a.0 as $ptr,a.1);
         let curr_bot=a.0;
         let curr_dis=a.1;
@@ -346,7 +346,7 @@ pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
     
-    pub fn k_nearest_naive_mut<'a,K:Knearest<T=T,N=T::Num>,T:Aabb>(bots:ProtectedBBoxSlice<'a,T>,point:Vec2<K::N>,num:usize,k:&mut K)->Vec<KnearestResult<'a,K::T>>{
+    pub fn k_nearest_naive_mut<'a,K:Knearest<T=T,N=T::Num>,T:Aabb>(bots:PMut<'a,[T]>,point:Vec2<K::N>,num:usize,k:&mut K)->Vec<KnearestResult<'a,K::T>>{
         //let bots=ProtectedBBoxSlice::new(bots);
 
         let mut closest=ClosestCand::new(num);

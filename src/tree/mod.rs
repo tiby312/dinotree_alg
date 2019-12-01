@@ -95,7 +95,7 @@ mod notsorted{
 
     impl<A:Axis,N:Node + Send + Sync> NotSorted<A,N> where N::T : Send + Sync{
 
-        pub fn find_collisions_mut_par(&mut self,func:impl Fn(ProtectedBBox<N::T>,ProtectedBBox<N::T>) + Send + Sync){
+        pub fn find_collisions_mut_par(&mut self,func:impl Fn(PMut<N::T>,PMut<N::T>) + Send + Sync){
             colfind::NotSortedQueryBuilder::new(self).query_par(|a,b|{
                 func(a,b)
             });
@@ -103,7 +103,7 @@ mod notsorted{
     }
     impl<A:Axis,N:Node> NotSorted<A,N>{
 
-        pub fn find_collisions_mut(&mut self,mut func:impl FnMut(ProtectedBBox<N::T>,ProtectedBBox<N::T>)){
+        pub fn find_collisions_mut(&mut self,mut func:impl FnMut(PMut<N::T>,PMut<N::T>)){
             colfind::NotSortedQueryBuilder::new(self).query_seq(|a,b|{
                 func(a,b)
             });
@@ -183,7 +183,7 @@ impl<'a,A:Axis,T:Aabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
 }
 
 impl<A:Axis,N:Node + Send + Sync> DinoTree<A,N> where N::T : Send + Sync{
-    pub fn find_collisions_mut_par(&mut self,func:impl Fn(ProtectedBBox<N::T>,ProtectedBBox<N::T>) + Send + Sync){
+    pub fn find_collisions_mut_par(&mut self,func:impl Fn(PMut<N::T>,PMut<N::T>) + Send + Sync){
         query::colfind::QueryBuilder::new(self).query_par(|a,b|{
             func(a,b)
         });
@@ -214,7 +214,7 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     pub fn intersect_with_mut<X:Aabb<Num=N::Num>>(
         &mut self,
         other:&mut [X],
-        func: impl Fn(ProtectedBBox<N::T>,ProtectedBBox<X>)){
+        func: impl Fn(PMut<N::T>,PMut<X>)){
         intersect_with::intersect_with_mut(self,other,func)
     }
 
@@ -241,24 +241,24 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     pub fn multi_rect(&mut self)->rect::MultiRectMut<A,N>{
         rect::MultiRectMut::new(self)
     }
-    pub fn for_all_not_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){
+    pub fn for_all_not_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
         rect::for_all_not_in_rect_mut(self,rect,func);
     }
-    pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){
+    pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
         rect::for_all_intersect_rect_mut(self,rect,func);
     }
     
     pub fn for_all_intersect_rect<'a>(&'a self,rect:&Rect<N::Num>,func:impl FnMut(&'a N::T)){
         rect::for_all_intersect_rect(self,rect,func);
     }
-    pub fn for_all_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(ProtectedBBox<N::T>)){
+    pub fn for_all_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
         rect::for_all_in_rect_mut(self,rect,func);
     }
     pub fn for_all_in_rect(&self,rect:&Rect<N::Num>,func:impl FnMut(&N::T)){
         rect::for_all_in_rect(self,rect,func);
     }
 
-    pub fn find_collisions_mut(&mut self,mut func:impl FnMut(ProtectedBBox<N::T>,ProtectedBBox<N::T>)){
+    pub fn find_collisions_mut(&mut self,mut func:impl FnMut(PMut<N::T>,PMut<N::T>)){
         colfind::QueryBuilder::new(self).query_seq(|a,b|{
             func(a,b)
         });
@@ -481,7 +481,7 @@ pub mod node{
         unsafe impl<'a, N:Node> compt::FixedDepthVisitor for VistrMut<'a, N> {}
 
         impl<'a, N:Node> Visitor for VistrMut<'a, N> {
-            type Item = ProtectedNode<'a, N>;
+            type Item = PMut<'a, N>;
 
             
             #[inline(always)]
@@ -492,7 +492,7 @@ pub mod node{
                     Some([left, right]) => Some([VistrMut { inner: left }, VistrMut { inner: right }]),
                     None => None,
                 };
-                (ProtectedNode::new(nn), k)
+                (PMut::new(nn), k)
             }
             
             #[inline(always)]
@@ -505,7 +505,7 @@ pub mod node{
             #[inline(always)]
             fn dfs_preorder(self,mut func:impl FnMut(Self::Item)){
                 self.inner.dfs_preorder(|a|{
-                    func(ProtectedNode::new(a))
+                    func(PMut::new(a))
                 });
             }
         }
@@ -531,7 +531,7 @@ pub mod node{
             NodeRef{bots:self.range,cont:&self.cont,div:&self.div}
         }
         fn get_mut(&mut self)->NodeRefMut<Self::T>{
-            NodeRefMut{bots:ProtectedBBoxSlice::new(self.range),cont:&self.cont,div:&self.div}
+            NodeRefMut{bots:PMut::new(self.range),cont:&self.cont,div:&self.div}
         }
     }
 
@@ -554,7 +554,7 @@ pub mod node{
     ///Mutable reference to a node in the dinotree.
     pub struct NodeRefMut<'a, T:Aabb> {
         ///The bots that belong to this node.
-        pub bots: ProtectedBBoxSlice<'a,T>,
+        pub bots: PMut<'a,[T]>,
 
         ///Is None iff bots is empty.
         pub cont: &'a Option<axgeom::Range<T::Num>>,

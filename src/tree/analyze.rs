@@ -55,7 +55,7 @@ impl<'a,T:Aabb> NaiveAlgs<'a,T>{
         &mut self,
         ray:raycast::Ray<T::Num>,
         rtrait: &mut impl raycast::RayTrait<N=T::Num,T=T> )->raycast::RayCastResult<T>{
-        let bots=ProtectedBBoxSlice::new(self.bots);
+        let bots=PMut::new(self.bots);
         raycast::raycast_naive_mut(bots,ray,rtrait)
     }
 
@@ -65,33 +65,33 @@ impl<'a,T:Aabb> NaiveAlgs<'a,T>{
         point:Vec2<T::Num>,
         num:usize,
         knear:&mut impl k_nearest::Knearest<N=T::Num,T=T>) -> Vec<k_nearest::KnearestResult<T>>{
-        let bots=ProtectedBBoxSlice::new(self.bots);
+        let bots=PMut::new(self.bots);
         k_nearest::k_nearest_naive_mut(bots,point,num,knear)
     }
 
-    pub fn for_all_not_in_rect_mut(&mut self,rect:&Rect<T::Num>,func:impl FnMut(ProtectedBBox<T>)){
-        let bots=ProtectedBBoxSlice::new(self.bots);
+    pub fn for_all_not_in_rect_mut(&mut self,rect:&Rect<T::Num>,func:impl FnMut(PMut<T>)){
+        let bots=PMut::new(self.bots);
         rect::naive_for_all_not_in_rect_mut(bots,rect,func);
     }
 
     #[cfg(feature = "nbody")]
-    pub fn nbody(&mut self,func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+    pub fn nbody(&mut self,func:impl FnMut(PMut<T>,PMut<T>)){
         nbody::naive_mut(self.bots,func);
     }
 
-    pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<T::Num>,func:impl FnMut(ProtectedBBox<T>)){
-        let bots=ProtectedBBoxSlice::new(self.bots);
+    pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<T::Num>,func:impl FnMut(PMut<T>)){
+        let bots=PMut::new(self.bots);
         rect::naive_for_all_intersect_rect_mut(bots,rect,func);
     }
 
-    pub fn find_collisions_mut(&mut self,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
-        let bots=ProtectedBBoxSlice::new(self.bots);
+    pub fn find_collisions_mut(&mut self,mut func:impl FnMut(PMut<T>,PMut<T>)){
+        let bots=PMut::new(self.bots);
         colfind::query_naive_mut(bots,|a,b|{
             func(a,b)
         });
     }
     
-    pub fn find_collisions_sweep_mut<A:Axis>(&mut self,axis:A,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+    pub fn find_collisions_sweep_mut<A:Axis>(&mut self,axis:A,mut func:impl FnMut(PMut<T>,PMut<T>)){
         colfind::query_sweep_mut(axis,self.bots,|a,b|{
             func(a,b)
         });
@@ -105,7 +105,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
     pub fn assert_k_nearest_mut(&mut self,point:Vec2<T::Num>,num:usize,knear:&mut impl k_nearest::Knearest<N=T::Num,T=T>,rect:Rect<T::Num>) where T::Inner: HasId{
 
         let mut res_naive:Vec<_>={
-            let bots=ProtectedBBoxSlice::new(self.bots);
+            let bots=PMut::new(self.bots);
             k_nearest::k_nearest_naive_mut(bots,point,num,knear).drain(..).map(|a|UnitMut2{id:a.bot.inner().get_id(),mag:a.mag}).collect()
         };
         let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
@@ -133,7 +133,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
     pub fn assert_for_all_not_in_rect_mut(&mut self,rect:&axgeom::Rect<T::Num>) where T::Inner:HasId{
         let mut naive_res=Vec::new();
         {
-            let bots=ProtectedBBoxSlice::new(self.bots);
+            let bots=PMut::new(self.bots);
             rect::naive_for_all_not_in_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
         }
 
@@ -155,7 +155,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
     pub fn assert_for_all_in_rect_mut(&mut self,rect:&axgeom::Rect<T::Num>) where T::Inner:HasId{
         let mut naive_res=Vec::new();
         {
-            let bots=ProtectedBBoxSlice::new(self.bots);
+            let bots=PMut::new(self.bots);
             rect::naive_for_all_in_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
         }
         let mut dinotree_res=Vec::new();
@@ -177,7 +177,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
     pub fn assert_for_all_intersect_rect_mut(&mut self,rect:&axgeom::Rect<T::Num>) where T::Inner:HasId{
         let mut naive_res=Vec::new();
         {
-            let bots=ProtectedBBoxSlice::new(self.bots);
+            let bots=PMut::new(self.bots);
             rect::naive_for_all_intersect_rect_mut(bots,rect,|a|naive_res.push(a.inner().get_id()));
         }
         let mut dinotree_res=Vec::new();
@@ -206,7 +206,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
         //Otherwise in some cases this function will panic when it shouldnt.
 
 
-        let res_naive=match raycast::raycast_naive_mut(ProtectedBBoxSlice::new(self.bots),ray,rtrait){
+        let res_naive=match raycast::raycast_naive_mut(PMut::new(self.bots),ray,rtrait){
             raycast::RayCastResult::Hit(mut a,b)=>{
                 Some( (a.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,b) )   
             },
@@ -252,7 +252,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
     pub fn assert_find_collisions_mut(&mut self) where T::Inner: HasId{
         
         let mut naive_pairs=Vec::new();
-        colfind::query_naive_mut(ProtectedBBoxSlice::new(self.bots),|a,b|{
+        colfind::query_naive_mut(PMut::new(self.bots),|a,b|{
             naive_pairs.push(IDPair::new(a.inner().get_id(),b.inner().get_id()));
         });
 

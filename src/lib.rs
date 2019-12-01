@@ -12,7 +12,7 @@
 //! Using this crate, the user can create three flavors of the same fundamental data structure. 
 //! The different characteristics are exlored more in depth in the book mentioned in the overview section.
 //!
-//! + `(Rect<N>,&mut T)` (recommended)
+//! + `(Rect<N>,&mut T)` *recommended
 //! + `(Rect<N>,T)` 
 //! + `&mut (Rect<N>,T)` 
 //!
@@ -62,7 +62,7 @@ extern crate pdqselect;
 ///Prelude to include by using: pub use dinotree::prelude::*
 pub mod prelude{
     pub use crate::*;
-    pub use crate::elem::*;
+    pub use crate::pmut::*;
     pub use crate::bbox::*;  
     pub use crate::query::*;
     pub use crate::par;
@@ -81,7 +81,7 @@ mod inner_prelude {
     pub(crate) use crate::tree::analyze::*;
 
     pub(crate) use crate::tree::*;
-    pub(crate) use crate::elem::*;
+    pub(crate) use crate::pmut::*;
     pub(crate) use crate::bbox::*;
     pub(crate) use crate::par;
 }
@@ -105,7 +105,7 @@ mod oned;
 
 ///Provies a slice that produces BBox's where users can only interact
 ///with through the HasInner trait so as to protect the invariants of the tree.
-pub mod elem;
+pub mod pmut;
 
 ///A collection of different bounding box containers.
 pub mod bbox;

@@ -1,6 +1,141 @@
+//! PMut is short for protected mut reference.
+//! This is basically a pointer that restricts some things the user can do.
+//!  
+//!
+
 use crate::inner_prelude::*;
 
 
+
+pub struct PMut<'a,T:?Sized>{
+    inner:&'a mut T
+}
+impl<'a,T:?Sized> PMut<'a,T>{
+    pub fn new(inner:&'a mut T)->PMut<'a,T>{
+        PMut{inner}
+    }
+    pub fn as_mut(&mut self)->PMut<T>{
+        PMut{inner:self.inner}
+    }
+    
+    pub fn as_ref(&self)->&T{
+        self.inner
+    }
+}
+impl<'a,T:Node> PMut<'a,T>{
+    pub fn get(self)->NodeRef<'a,T::T>{
+        self.inner.get()
+    }
+    pub fn get_mut(self)->NodeRefMut<'a,T::T>{
+        self.inner.get_mut()
+    }
+}
+
+
+unsafe impl<'a,T:Aabb> Aabb for PMut<'a,T>{
+    type Num=T::Num;
+    #[inline(always)]
+    fn get(&self)->&Rect<Self::Num>{
+        self.inner.get()
+    }
+}
+impl<'a,T:HasInner> HasInner for PMut<'a,T>{
+    type Inner=T::Inner;
+    #[inline(always)]
+    fn get_inner(&self)->(&Rect<T::Num>,&Self::Inner){
+        self.inner.get_inner()
+    }
+
+    #[inline(always)]
+    fn get_inner_mut(&mut self)->(&Rect<T::Num>,&mut Self::Inner){
+        self.inner.get_inner_mut()
+    }
+}
+
+impl<'a,T>  PMut<'a,[T]>{
+
+    #[inline(always)]
+    pub fn len(&self)->usize{
+        self.inner.len()
+    }
+
+    #[inline(always)]
+    pub fn is_empty(&self)->bool{
+        self.inner.is_empty()
+    }
+
+    #[inline(always)]
+    pub fn split_first_mut(self)->Option<(PMut<'a,T>,PMut<'a,[T]>)>{
+        self.inner.split_first_mut().map(|(first,inner)|(PMut{inner:first},PMut{inner}))
+    }
+
+
+    #[inline(always)]
+    pub fn truncate_to(self,a:core::ops::RangeTo<usize>)->Self{
+        PMut{inner:&mut self.inner[a]}
+    }
+    #[inline(always)]
+    pub fn truncate_from(self,a:core::ops::RangeFrom<usize>)->Self{
+        PMut{inner:&mut self.inner[a]} 
+    }
+
+
+    #[inline(always)]
+    pub fn truncate(self,a:core::ops::Range<usize>)->Self{
+        PMut{inner:&mut self.inner[a]}
+    }
+
+    #[inline(always)]
+    pub fn iter(self)->core::slice::Iter<'a,T>{
+        self.inner.iter()
+    }
+    #[inline(always)]
+    pub fn iter_mut(self)->PMutIter<'a,T>{
+        PMutIter{inner:self.inner.iter_mut()}
+    }
+}
+
+impl<'a, T> core::iter::IntoIterator for PMut<'a,[T]> {
+    type Item = PMut<'a,T>;
+    type IntoIter = PMutIter<'a,T>;
+
+    #[inline(always)]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
+
+///Iterator produced by `ProtectedBBoxSlice<T>` that generates `ProtectedBBox<T>`
+pub struct PMutIter<'a,T>{
+    inner:core::slice::IterMut<'a,T>
+}
+impl<'a,T> Iterator for PMutIter<'a,T>{
+    type Item=PMut<'a,T>;
+
+    #[inline(always)]
+    fn next(&mut self)->Option<PMut<'a,T>>{
+        self.inner.next().map(|inner|PMut{inner})
+    }
+
+    #[inline(always)]
+    fn size_hint(&self)->(usize,Option<usize>){
+        self.inner.size_hint()
+    }
+}
+
+impl<'a,T> core::iter::FusedIterator for PMutIter<'a,T>{}
+impl<'a,T> core::iter::ExactSizeIterator for PMutIter<'a,T>{}
+
+impl<'a, T> DoubleEndedIterator for PMutIter<'a, T> {
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.inner.next_back().map(|inner|PMut{inner})
+    }
+}
+
+
+/*
 ///Forbids the user from swapping two nodes around.
 #[repr(transparent)]
 pub struct ProtectedNode<'a,T>{
@@ -80,22 +215,12 @@ impl<'a,T> AsRef<T> for ProtectedBBox<'a,T>{
 }
 
 
-
-
-
-
-
-
-
 impl<'a,T> core::borrow::Borrow<[T]> for ProtectedBBoxSlice<'a,T>{
     #[inline(always)]
     fn borrow(&self)->&[T]{
         self.inner
     }
 }
-
-
-
 
 impl<'a, T> core::iter::IntoIterator for ProtectedBBoxSlice<'a,T> {
     type Item = ProtectedBBox<'a,T>;
@@ -202,41 +327,7 @@ impl<'a, T> DoubleEndedIterator for ProtectedBBoxIter<'a, T> {
     }
 }
 
+*/
 
-
-use alloc::vec::Vec;
-
-//They are always send and sync because the only time the vec is used
-//is when it is borrowed for the lifetime.
-unsafe impl<T> core::marker::Send for PreVecMut<T> {}
-unsafe impl<T> core::marker::Sync for PreVecMut<T> {}
-
-///An vec api to avoid excessive dynamic allocation by reusing a Vec
-#[derive(Default)]
-pub struct PreVecMut<T> {
-    vec:Vec<core::ptr::NonNull<T>>
-}
-
-impl<T> PreVecMut<T> {
-    
-    #[inline(always)]
-    pub fn new() -> PreVecMut<T> {
-
-        debug_assert_eq!(core::mem::size_of::<core::ptr::NonNull<T>>() ,core::mem::size_of::<&mut T>() );
-
-        PreVecMut {
-            vec:Vec::new()
-        }
-    }
-
-
-    ///Clears the vec and returns a mutable reference to a vec.
-    #[inline(always)]
-    pub fn get_empty_vec_mut<'a,'b:'a>(&'a mut self) -> &'a mut Vec<ProtectedBBox<'b,T>> {
-        self.vec.clear();
-        let v: &mut Vec<_> = &mut self.vec;
-        unsafe{&mut *(v as *mut _ as *mut Vec<_>)}
-    }    
-}
 
 

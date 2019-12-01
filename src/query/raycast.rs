@@ -91,11 +91,11 @@ impl<N:Num> Ray<N>{
 
 
 pub enum RayCastResult<'a,T:Aabb>{
-    Hit(Vec<ProtectedBBox<'a,T>>,T::Num),
+    Hit(Vec<PMut<'a,T>>,T::Num),
     NoHit
 }
 impl<'a,T:Aabb> RayCastResult<'a,T>{
-    pub fn unwrap(self)->(Vec<ProtectedBBox<'a,T>>,T::Num){
+    pub fn unwrap(self)->(Vec<PMut<'a,T>>,T::Num){
         match self{
             RayCastResult::Hit(a,b)=>(a,b),
             RayCastResult::NoHit=>panic!("Ray did not hit.")
@@ -212,10 +212,10 @@ fn make_rect_from_range<A:Axis,N:Num>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rec
 
      
 struct Closest<'a,T:Aabb>{
-    closest:Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>
+    closest:Option<(Vec<PMut<'a,T>>,T::Num)>
 }
 impl<'a,T:Aabb> Closest<'a,T>{
-    fn consider<R:RayTrait<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>, b:ProtectedBBox<'a,T>,raytrait:&mut R){
+    fn consider<R:RayTrait<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>, b:PMut<'a,T>,raytrait:&mut R){
 
         let x=match raytrait.compute_distance_to_bot(ray,b.as_ref()){
             RayIntersectResult::Hit(val)=>{
@@ -406,7 +406,7 @@ mod mutable{
     pub fn raycast_naive_mut<
         'a,
         T:Aabb,
-        >(bots:ProtectedBBoxSlice<'a,T>,ray:Ray<T::Num>,rtrait:&mut impl RayTrait<N=T::Num,T=T>)->RayCastResult<'a,T>{
+        >(bots:PMut<'a,[T]>,ray:Ray<T::Num>,rtrait:&mut impl RayTrait<N=T::Num,T=T>)->RayCastResult<'a,T>{
         let mut closest=Closest{closest:None};
 
         for b in bots.iter_mut(){

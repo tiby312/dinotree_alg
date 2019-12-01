@@ -1,6 +1,6 @@
 use crate::query::inner_prelude::*;
 use crate::query::colfind::ColMulti;
-use crate::elem::PreVecMut;
+use crate::util::PreVecMut;
 
 struct Bl<'a,A: Axis+'a, F: ColMulti+'a> {
     a: &'a mut F,
@@ -14,8 +14,8 @@ impl<'a,A: Axis+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
 
     #[inline(always)]
     fn collide(&mut self,
-        a:ProtectedBBox<Self::T>,
-        b:ProtectedBBox<Self::T>)
+        a:PMut<Self::T>,
+        b:PMut<Self::T>)
     {
         //only check if the opoosite axis intersects.
         //already know they intersect
@@ -53,7 +53,7 @@ impl<I: Aabb> Sweeper<I> {
     pub(crate) fn find_2d<A: Axis, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
-        bots: ProtectedBBoxSlice<F::T>,
+        bots: PMut<[F::T]>,
         clos2: &mut F,
     ) {
         let mut b: Bl<A, _> = Bl {
@@ -67,8 +67,8 @@ impl<I: Aabb> Sweeper<I> {
     pub(crate) fn find_parallel_2d<A: Axis, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
-        bots1: ProtectedBBoxSlice<F::T>,
-        bots2: ProtectedBBoxSlice<F::T>,
+        bots1: PMut<[F::T]>,
+        bots2: PMut<[F::T]>,
         clos2: &mut F,
     ) {
         let mut b: Bl<A, _> = Bl {
@@ -82,8 +82,8 @@ impl<I: Aabb> Sweeper<I> {
 
     pub(crate) fn find_perp_2d1<A:Axis,F: ColMulti<T=I>>(&mut self,
         _axis:A,
-        mut r1: ProtectedBBoxSlice<F::T>,
-        mut r2: ProtectedBBoxSlice<F::T>,
+        mut r1: PMut<[F::T]>,
+        mut r2: PMut<[F::T]>,
         clos2: &mut F){
         
         for mut inda in r1.as_mut().iter_mut() {
@@ -102,7 +102,7 @@ impl<I: Aabb> Sweeper<I> {
     fn find<'a, A: Axis, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        collision_botids: ProtectedBBoxSlice<'a,I>,
+        collision_botids: PMut<'a,[I]>,
         func: &mut F,
     ) {
         //    Create a new temporary list called “activeList”.
@@ -148,7 +148,7 @@ impl<I: Aabb> Sweeper<I> {
     fn find_bijective_parallel<A: Axis, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
-        cols: (ProtectedBBoxSlice<I>, ProtectedBBoxSlice<I>),
+        cols: (PMut<[I]>, PMut<[I]>),
         func: &mut F,
     ) {
         let mut xs=cols.0.iter_mut().peekable();
@@ -200,7 +200,7 @@ fn test_parallel(){
     };
     impl ColMulti for Test{
         type T=BBox<isize,Bot>;
-        fn collide(&mut self,a:ProtectedBBox<BBox<isize,Bot>>,b:ProtectedBBox<BBox<isize,Bot>>){
+        fn collide(&mut self,a:PMut<BBox<isize,Bot>>,b:PMut<BBox<isize,Bot>>){
             let [a,b]=[a.inner().id,b.inner().id];
 
             let fin=if a<b{
@@ -240,12 +240,12 @@ fn test_parallel(){
 
 
     let mut test1=Test{set:BTreeSet::new()};
-    sweeper.find_bijective_parallel(axgeom::XAXISS,(ProtectedBBoxSlice::new(&mut left),ProtectedBBoxSlice::new(&mut right)),&mut test1);
+    sweeper.find_bijective_parallel(axgeom::XAXISS,(PMut::new(&mut left),PMut::new(&mut right)),&mut test1);
 
 
 
     let mut test2=Test{set:BTreeSet::new()};
-    sweeper.find_bijective_parallel(axgeom::XAXISS,(ProtectedBBoxSlice::new(&mut right),ProtectedBBoxSlice::new(&mut left)),&mut test2);
+    sweeper.find_bijective_parallel(axgeom::XAXISS,(PMut::new(&mut right),PMut::new(&mut left)),&mut test2);
 
     let num=test1.set.symmetric_difference(&test2.set).count();
 
@@ -281,7 +281,7 @@ pub fn get_section<'a, I:Aabb,A: Axis>(axis:A,arr: &'a [I], range: &Range<I::Num
 
 //this can have some false positives.
 //but it will still prune a lot of bots.
-pub fn get_section_mut<'a,I:Aabb, A: Axis>(axis:A,mut arr: ProtectedBBoxSlice<'a,I>, range: &Range<I::Num>) -> ProtectedBBoxSlice<'a,I> {
+pub fn get_section_mut<'a,I:Aabb, A: Axis>(axis:A,mut arr: PMut<'a,[I]>, range: &Range<I::Num>) -> PMut<'a,[I]> {
     let mut start = 0;
     for (e, i) in arr.as_ref().iter().enumerate() {
         let rr = i.get().get_range(axis);

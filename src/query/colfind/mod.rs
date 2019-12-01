@@ -17,13 +17,13 @@ pub trait ColMulti{
     type T: Aabb;
 
     fn collide(&mut self,
-        a: ProtectedBBox<Self::T>,
-        b: ProtectedBBox<Self::T>);
+        a: PMut<Self::T>,
+        b: PMut<Self::T>);
 }
 
 
 ///Naive algorithm.
-pub fn query_naive_mut<T:Aabb>(bots:ProtectedBBoxSlice<T>,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+pub fn query_naive_mut<T:Aabb>(bots:PMut<[T]>,mut func:impl FnMut(PMut<T>,PMut<T>)){
     
     tools::for_every_pair(bots,|a,b|{
         if a.get().intersects_rect(b.get()){
@@ -34,7 +34,7 @@ pub fn query_naive_mut<T:Aabb>(bots:ProtectedBBoxSlice<T>,mut func:impl FnMut(Pr
 
 
 ///Sweep and prune algorithm.
-pub fn query_sweep_mut<T:Aabb>(axis:impl Axis,bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){  
+pub fn query_sweep_mut<T:Aabb>(axis:impl Axis,bots:&mut [T],func:impl FnMut(PMut<T>,PMut<T>)){  
     ///Sorts the bots.
     #[inline(always)]
     fn sweeper_update<I:Aabb,A:Axis>(axis:A,collision_botids: &mut [I]) {
@@ -53,22 +53,22 @@ pub fn query_sweep_mut<T:Aabb>(axis:impl Axis,bots:&mut [T],func:impl FnMut(Prot
     sweeper_update(axis,bots);
 
 
-    struct Bl<T:Aabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> {
+    struct Bl<T:Aabb,F: FnMut(PMut<T>,PMut<T>)> {
         func: F,
         _p:PhantomData<T>
     }
 
-    impl<T:Aabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for Bl<T,F> {
+    impl<T:Aabb,F: FnMut(PMut<T>,PMut<T>)> ColMulti for Bl<T,F> {
         type T = T;
         #[inline(always)]
-        fn collide(&mut self, a: ProtectedBBox<T>, b: ProtectedBBox<T>) {    
+        fn collide(&mut self, a: PMut<T>, b: PMut<T>) {    
             (self.func)(a, b);
         }
        
     }
 
     let mut s=oned::Sweeper::new();
-    let bots=ProtectedBBoxSlice::new(bots);
+    let bots=PMut::new(bots);
     s.find_2d(axis,bots,&mut Bl{func,_p:PhantomData});
 }
 
@@ -86,8 +86,8 @@ impl<'a,A:Axis,N:Node+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N::T:Send+S
 
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
-                    ProtectedBBox<N::T>,
-            ProtectedBBox<N::T>)+Copy+Send+Sync){
+                    PMut<N::T>,
+            PMut<N::T>)+Copy+Send+Sync){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleNoSorted::new(b);
         let height=self.tree.get_height();
@@ -112,8 +112,8 @@ impl<'a,A:Axis,N:Node> NotSortedQueryBuilder<'a,A,N>{
 
     #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
-                    ProtectedBBox<N::T>,
-            ProtectedBBox<N::T>),splitter:&mut impl Splitter){
+                    PMut<N::T>,
+            PMut<N::T>),splitter:&mut impl Splitter){
         let b=inner::QueryFnMut::new(func);        
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -125,8 +125,8 @@ impl<'a,A:Axis,N:Node> NotSortedQueryBuilder<'a,A,N>{
 
     #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(
-        ProtectedBBox<N::T>,
-        ProtectedBBox<N::T>)){
+        PMut<N::T>,
+        PMut<N::T>)){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleNoSorted::new(b);
 
@@ -149,8 +149,8 @@ impl<'a,A:Axis,N:Node+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send+Sync{
     ///Perform the query in parallel
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
-            ProtectedBBox<N::T>,
-            ProtectedBBox<N::T>
+            PMut<N::T>,
+            PMut<N::T>
         )+Clone+Send+Sync){
         let b=inner::QueryFn::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -205,8 +205,8 @@ impl<'a,A:Axis,N:Node> QueryBuilder<'a,A,N>{
     ///Perform the query sequentially.
     #[inline(always)]
     pub fn query_seq(self,func:impl FnMut(
-        ProtectedBBox<N::T>,
-        ProtectedBBox<N::T>
+        PMut<N::T>,
+        PMut<N::T>
         )){
         let b=inner::QueryFnMut::new(func);
         let mut sweeper=HandleSorted::new(b);
@@ -221,8 +221,8 @@ impl<'a,A:Axis,N:Node> QueryBuilder<'a,A,N>{
     ///Perform the query sequentially with a splitter.
     #[inline(always)]
     pub fn query_with_splitter_seq(self,func:impl FnMut(
-        ProtectedBBox<N::T>,
-        ProtectedBBox<N::T>),splitter:&mut impl Splitter){
+        PMut<N::T>,
+        PMut<N::T>),splitter:&mut impl Splitter){
 
         let b=inner::QueryFnMut::new(func);
         

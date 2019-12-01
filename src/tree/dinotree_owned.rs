@@ -64,7 +64,7 @@ impl<T:Aabb> Node for NodePtr<T>{
         NodeRef{bots:unsafe{self.range.as_ref()},cont:&self.cont,div:&self.div}
     }
     fn get_mut(&mut self)->NodeRefMut<Self::T>{
-        NodeRefMut{bots:ProtectedBBoxSlice::new(unsafe{self.range.as_mut()}),cont:&self.cont,div:&self.div}
+        NodeRefMut{bots:PMut::new(unsafe{self.range.as_mut()}),cont:&self.cont,div:&self.div}
     }
 }
 
@@ -147,8 +147,8 @@ impl<A:Axis,N:Num,T> DinoTreeOwned<A,N,T>{
         &mut self.inner
     }
 
-    pub fn get_aabb_bots_mut(&mut self)->ProtectedBBoxSlice<BBoxPtr<N,T>>{
-        ProtectedBBoxSlice::new(&mut self.bots_aabb)
+    pub fn get_aabb_bots_mut(&mut self)->PMut<[BBoxPtr<N,T>]>{
+        PMut::new(&mut self.bots_aabb)
     }
 
     pub unsafe fn get_aabb_bots_mut_not_protected(&mut self)->&mut [BBoxPtr<N,T>]{
