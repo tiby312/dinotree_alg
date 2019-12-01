@@ -155,6 +155,13 @@ pub const fn default_axis()->YAXISS{
 
 
 impl<'a,T:Aabb> DinoTree<DefaultA,NodeMut<'a,T>>{
+    /// # Examples
+    ///
+    ///```
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let tree = dinotree_alg::DinoTree::new(&mut bots);
+    ///
+    ///```
     #[must_use]
     pub fn new(bots:&'a mut [T])->DinoTree<DefaultA,NodeMut<'a,T>>{
         DinoTreeBuilder::new(bots).build_seq()
@@ -162,6 +169,13 @@ impl<'a,T:Aabb> DinoTree<DefaultA,NodeMut<'a,T>>{
 }
 
 impl<'a,T:Aabb + Send + Sync> DinoTree<DefaultA,NodeMut<'a,T>>{
+    /// # Examples
+    ///
+    ///```
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let tree = dinotree_alg::DinoTree::new_par(&mut bots);
+    ///
+    ///```
     #[must_use]
     pub fn new_par(bots:&'a mut [T])->DinoTree<DefaultA,NodeMut<'a,T>>{
         DinoTreeBuilder::new(bots).build_par()
@@ -169,6 +183,13 @@ impl<'a,T:Aabb + Send + Sync> DinoTree<DefaultA,NodeMut<'a,T>>{
 }
 
 impl<'a,A:Axis,T:Aabb> DinoTree<A,NodeMut<'a,T>>{
+    /// # Examples
+    ///
+    ///```
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXISS,&mut bots);
+    ///
+    ///```
     #[must_use]
     pub fn with_axis(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
         DinoTreeBuilder::with_axis(axis,bots).build_seq()
@@ -176,6 +197,13 @@ impl<'a,A:Axis,T:Aabb> DinoTree<A,NodeMut<'a,T>>{
 }
 
 impl<'a,A:Axis,T:Aabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
+    /// # Examples
+    ///
+    ///```
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXISS,&mut bots);
+    ///
+    ///```
     #[must_use]
     pub fn with_axis_par(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
         DinoTreeBuilder::with_axis(axis,bots).build_par()
@@ -183,6 +211,17 @@ impl<'a,A:Axis,T:Aabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
 }
 
 impl<A:Axis,N:Node + Send + Sync> DinoTree<A,N> where N::T : Send + Sync{
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.find_collisions_mut_par(|mut a,mut b|{
+    ///    *a.inner_mut()+=1;
+    ///    *b.inner_mut()+=1;
+    ///});
+    ///```
     pub fn find_collisions_mut_par(&mut self,func:impl Fn(PMut<N::T>,PMut<N::T>) + Send + Sync){
         query::colfind::QueryBuilder::new(self).query_par(|a,b|{
             func(a,b)

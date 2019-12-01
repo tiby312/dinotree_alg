@@ -78,6 +78,9 @@ impl<'a,N:Num,T> HasInner for BBoxMut<'a,N,T>{
 
 
 
+pub fn bbox<N,T>(rect:axgeom::Rect<N>,inner:T)->BBox<N,T>{
+    BBox::new(rect,inner)
+}
 
 #[derive(Copy, Clone)]
 #[repr(C)]
