@@ -23,41 +23,32 @@
 use crate::query::inner_prelude::*;
 use core::cmp::Ordering;
 
+
 ///The geometric functions that the user must provide.
 pub trait Knearest{
     type T:Aabb<Num=Self::N>;
     type N:Num;
+
+    fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N;
     
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
     fn distance_to_bot(&self, point:Vec2<Self::N>,bot:&Self::T)->Self::N{
         self.distance_to_rect(point,bot.get())
     }
-
-    fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N;
-
 }
 
-
-//TODO use this.
-pub struct KnearestSimple<T:Aabb,F>{
-    _p:PhantomData<T>,
-    pub func:F
+pub(crate)struct KnearestWrapper<T:Aabb,K>{
+    pub(crate) inner:K,
+    pub(crate) _p:PhantomData<(T)>
 }
-impl<T:Aabb,F>  KnearestSimple<T,F>
-    where F:Fn(Vec2<T::Num>,&Rect<T::Num>) -> T::Num{
-    pub fn new(func:F)->KnearestSimple<T,F>{
-            KnearestSimple{_p:PhantomData,func}
-    }
-}
-impl<T:Aabb,F> Knearest for KnearestSimple<T,F>
-    where F:Fn(Vec2<T::Num>,&Rect<T::Num>) -> T::Num{
+impl<T:Aabb,K:Fn(Vec2<T::Num>,&Rect<T::Num>)->T::Num> Knearest for KnearestWrapper<T,K>{
     type T=T;
     type N=T::Num;
 
     fn distance_to_rect(&self,point:Vec2<Self::N>,rect:&Rect<Self::N>)->Self::N{
-        (self.func)(point,rect)
-    }
+        (self.inner)(point,rect)
+    }    
 }
 
 

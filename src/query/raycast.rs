@@ -147,8 +147,12 @@ impl<N> RayIntersectResult<N>{
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying Num to a minimum
 ///of only needing Ord.
 pub trait RayCast{
-    type N:Num;
     type T:Aabb<Num=Self::N>;
+     type N:Num;
+  
+    ///Returns true if the ray intersects with this rectangle.
+    ///This function allows as to prune which nodes to visit.
+    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>;
 
     ///Returns the length of ray between its origin, and where it intersects the line provided.
     ///Returns none if the ray doesnt intersect it.
@@ -164,13 +168,27 @@ pub trait RayCast{
         self.compute_distance_to_rect(ray,a.get())
     }
 
-    ///Returns true if the ray intersects with this rectangle.
-    ///This function allows as to prune which nodes to visit.
-    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>;
+}
+
+
+pub(crate)struct RayCastFineWrapper<T:Aabb,K>{
+    pub(crate) inner:K,
+    pub(crate) _p:PhantomData<(T)>
+}
+impl<T:Aabb,K:Fn(&Ray<T::Num>,&Rect<T::Num>)->RayIntersectResult<T::Num>> RayCast for RayCastFineWrapper<T,K>{
+    type T=T;
+    type N=T::Num;
+
+    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>{
+        (self.inner)(ray,a)
+    }    
 }
 
 
 
+
+
+/*
 //TODO use this.
 pub struct RaycastSimple<T:Aabb,F>{
     _p:PhantomData<T>,
@@ -193,6 +211,7 @@ impl<T:Aabb,F> RayCast for RaycastSimple<T,F>
         (self.func)(ray,a)
     }
 }
+*/
 
 
 

@@ -88,6 +88,8 @@ mod inner_prelude {
 
 pub mod query;
 
+//pub mod query_impl;
+
 
 use axgeom::*;
 

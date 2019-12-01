@@ -34,17 +34,17 @@ fn main(){
 		assert_eq!(*rect_collisions[0].get(),rect(0,10,0,10));
 
 		
-		let mut kk=KnearestSimple::new(|p,r|distance(p,r) );
-		let res = tree.k_nearest_mut(vec2(30,30),2,&mut kk,border);
+		//let mut kk=KnearestSimple::new(|p,r|distance(p,r) );
+		let res = tree.k_nearest_mut(vec2(30,30),2,|a,b|b.distance_squared_to_point(a).unwrap_or(0),border);
 		assert_eq!(res[0].bot.get(),&rect(15,20,15,20)  );
 		assert_eq!(res[1].bot.get(),&rect(5,15,5,15)  );
 
-
+		/*
 		let mut kk=RaycastSimple::new(|r,rr|raycast(r,rr));
 		let ray=Ray{point:vec2(-10,1),dir:vec2(1,0)};
 		let res = tree.raycast_mut(border,ray,&mut kk);
 		assert_eq!(res.unwrap().0[0].get(),&rect(0,10,0,10)  );
-		
+		*/
 	}
 }
 

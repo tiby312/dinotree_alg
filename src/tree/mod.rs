@@ -278,7 +278,7 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     }
 
     #[must_use]
-    pub fn raycast_mut(
+    pub fn raycast_fine_mut(
         &mut self,
         rect:Rect<N::Num>,
         ray:raycast::Ray<N::Num>,
@@ -286,8 +286,50 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         raycast::raycast_mut(self,rect,ray,rtrait)
     }
 
+
+    #[must_use]
+    pub fn raycast_mut(
+        &mut self,
+        rect:Rect<N::Num>,
+        ray:raycast::Ray<N::Num>,
+        rtrait: impl Fn(&Ray<N::Num>,&Rect<N::Num>)->RayIntersectResult<N::Num> )->raycast::RayCastResult<N::T>{
+        let mut rtrait = raycast::RayCastFineWrapper{inner:rtrait,_p:PhantomData};
+        
+        raycast::raycast_mut(self,rect,ray,&mut rtrait)
+    }
+
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let border = axgeom::rect(0,100,0,100);
+    ///let mut bots = [axgeom::rect(0,10,0,10),
+    ///                 axgeom::rect(2,5,2,5),
+    ///                 axgeom::rect(4,10,4,10)];
+    ///let mut tree = DinoTree::new(&mut bots1);
+    ///
+    ///
+    ///let res = tree.k_nearest_mut(vec2(0,0),2,|a,b|b.distance_to_point_squared(a),border);
+    ///
+    ///assert_eq!(res.len(),2)
+    ///assert_eq!(res[0],bots[0]);
+    ///assert_eq!(res[1],bots[1]);
+    ///```
     #[must_use]
     pub fn k_nearest_mut(
+        &mut self,
+        point:Vec2<N::Num>,
+        num:usize,
+        distance:impl Fn(Vec2<N::Num>,&Rect<N::Num>)->N::Num ,
+        rect:Rect<N::Num>) -> Vec<k_nearest::KnearestResult<N::T>>{
+        let mut knear=k_nearest::KnearestWrapper{inner:distance,_p:PhantomData};
+        k_nearest::k_nearest_mut(self,point,num,&mut knear,rect)
+    }
+
+
+    #[must_use]
+    pub fn k_nearest_fine_mut(
         &mut self,
         point:Vec2<N::Num>,
         num:usize,
