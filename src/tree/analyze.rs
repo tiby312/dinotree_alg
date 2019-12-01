@@ -91,7 +91,7 @@ impl<'a,T:HasAabb> NaiveAlgs<'a,T>{
         });
     }
     
-    pub fn find_collisions_sweep_mut<A:AxisTrait>(&mut self,axis:A,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+    pub fn find_collisions_sweep_mut<A:Axis>(&mut self,axis:A,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
         colfind::query_sweep_mut(axis,self.bots,|a,b|{
             func(a,b)
         });
@@ -283,14 +283,14 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
 ///where one implementation actually does sort the tree, while the other one
 ///does nothing when sort() is called.
 pub(crate) trait Sorter: Copy + Clone + Send + Sync {
-    fn sort(&self, axis: impl AxisTrait, bots: &mut [impl HasAabb]);
+    fn sort(&self, axis: impl Axis, bots: &mut [impl HasAabb]);
 }
 
 #[derive(Copy, Clone)]
 pub(crate) struct DefaultSorter;
 
 impl Sorter for DefaultSorter {
-    fn sort(&self, axis: impl AxisTrait, bots: &mut [impl HasAabb]) {
+    fn sort(&self, axis: impl Axis, bots: &mut [impl HasAabb]) {
         oned::sweeper_update(axis, bots);
     }
 }
@@ -299,7 +299,7 @@ impl Sorter for DefaultSorter {
 pub(crate) struct NoSorter;
 
 impl Sorter for NoSorter {
-    fn sort(&self, _axis: impl AxisTrait, _bots: &mut [impl HasAabb]) {}
+    fn sort(&self, _axis: impl Axis, _bots: &mut [impl HasAabb]) {}
 }
 
 pub fn nodes_left(depth: usize, height: usize) -> usize {
@@ -379,11 +379,11 @@ impl Splitter for SplitterEmpty {
 
 ///Returns false if the tree's invariants are not met.
 #[must_use]
-pub fn assert_invariants<A:AxisTrait,N:NodeTrait>(tree:&DinoTree<A,N>)->bool{
+pub fn assert_invariants<A:Axis,N:NodeTrait>(tree:&DinoTree<A,N>)->bool{
     inner(tree.axis(), tree.vistr().with_depth(compt::Depth(0))).is_ok()
 }
 
-fn inner<A: AxisTrait, N: NodeTrait>(
+fn inner<A: Axis, N: NodeTrait>(
     axis: A,
     iter: compt::LevelIter<Vistr<N>>,
 ) -> Result<(), ()> {

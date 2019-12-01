@@ -70,7 +70,7 @@ impl<T:HasAabb> NodeTrait for NodePtr<T>{
 
 
 ///An owned dinotree
-pub struct DinoTreeOwned<A:AxisTrait,N:NumTrait,T>{
+pub struct DinoTreeOwned<A:Axis,N:NumTrait,T>{
     inner:DinoTree<A,NodePtr<BBoxPtr<N,T>>>,
     bots_aabb:Vec<BBoxPtr<N,T>>,
     bots:Vec<T>
@@ -86,7 +86,7 @@ impl<N:NumTrait,T : Send + Sync> DinoTreeOwned<DefaultAxis,N,T>{
     }
 }
 
-impl<A:AxisTrait,N:NumTrait,T : Send + Sync> DinoTreeOwned<A,N,T>{
+impl<A:Axis,N:NumTrait,T : Send + Sync> DinoTreeOwned<A,N,T>{
 
     ///Create an owned dinotree in one thread.
     pub fn with_axis_par(
@@ -117,7 +117,7 @@ impl<N:NumTrait,T> DinoTreeOwned<DefaultAxis,N,T>{
         Self::with_axis(default_axis(),bots,aabb_create)
     }
 }
-impl<A:AxisTrait,N:NumTrait,T> DinoTreeOwned<A,N,T>{
+impl<A:Axis,N:NumTrait,T> DinoTreeOwned<A,N,T>{
     
     ///Create an owned dinotree in parallel.
     pub fn with_axis(

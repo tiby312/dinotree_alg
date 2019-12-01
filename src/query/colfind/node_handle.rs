@@ -6,14 +6,14 @@ use crate::query::colfind::oned;
 
 
 
-pub struct DestructuredNode<'a,T:HasAabb,AnchorAxis:AxisTrait>{
+pub struct DestructuredNode<'a,T:HasAabb,AnchorAxis:Axis>{
     pub div:&'a T::Num,
     pub range:ProtectedBBoxSlice<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:AnchorAxis
 }
 
-pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:AxisTrait>{
+pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:Axis>{
     pub range:ProtectedBBoxSlice<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:A
@@ -27,11 +27,11 @@ pub trait NodeHandler{
     
     fn handle_node(
         &mut self,
-        axis:impl AxisTrait,
+        axis:impl Axis,
         bots:ProtectedBBoxSlice<Self::T>
     );
 
-    fn handle_children<A:AxisTrait,B:AxisTrait>(
+    fn handle_children<A:Axis,B:Axis>(
         &mut self,
         anchor:&mut DestructuredNode<Self::T,A>,
         current:&mut DestructuredNodeLeaf<Self::T,B>
@@ -69,7 +69,7 @@ impl<K:ColMulti+Splitter> Splitter for HandleNoSorted<K>{
 
 impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
     type T=K::T;
-    fn handle_node(&mut self,_axis:impl AxisTrait,bots:ProtectedBBoxSlice<Self::T>){
+    fn handle_node(&mut self,_axis:impl Axis,bots:ProtectedBBoxSlice<Self::T>){
         let func=&mut self.func;
         
         tools::for_every_pair(bots,|a,b|{
@@ -78,7 +78,7 @@ impl<K:ColMulti+Splitter> NodeHandler for HandleNoSorted<K>{
             }
         });
     }
-    fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
+    fn handle_children<A:Axis,B:Axis>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
         
         let func=&mut self.func;
         
@@ -138,12 +138,12 @@ impl<K:ColMulti+Splitter> Splitter for HandleSorted<K>{
 impl<K:ColMulti+Splitter> NodeHandler for HandleSorted<K>{
     type T=K::T;
     #[inline(always)]
-    fn handle_node(&mut self,axis:impl AxisTrait,bots:ProtectedBBoxSlice<Self::T>){
+    fn handle_node(&mut self,axis:impl Axis,bots:ProtectedBBoxSlice<Self::T>){
         let func=&mut self.func;
         self.sweeper.find_2d(axis,bots,func);
     }
     #[inline(always)]
-    fn handle_children<A:AxisTrait,B:AxisTrait>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
+    fn handle_children<A:Axis,B:Axis>(&mut self,anchor:&mut DestructuredNode<Self::T,A>,current:&mut DestructuredNodeLeaf<Self::T,B>){
         
         let func=&mut self.func;
 

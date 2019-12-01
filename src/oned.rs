@@ -16,7 +16,7 @@ unsafe fn swap_unchecked<T>(arr: &mut [T], a: usize, b: usize) {
 
 /// Sorts the bots into three bins. Those to the left of the divider, those that intersect with the divider, and those to the right.
 /// They will be laid out in memory s.t.  middile<left<right
-pub fn bin_middle_left_right<'b, A: AxisTrait, X: HasAabb>(
+pub fn bin_middle_left_right<'b, A: Axis, X: HasAabb>(
     axis: A,
     med: &X::Num,
     bots: &'b mut [X],
@@ -71,7 +71,7 @@ pub fn bin_middle_left_right<'b, A: AxisTrait, X: HasAabb>(
 
 /// Sorts the bots into three bins. Those to the left of the divider, those that intersect with the divider, and those to the right.
 /// They will be laid out in memory s.t.  middile<left<right
-pub(crate) unsafe fn bin_middle_left_right_unchecked<'b, A: AxisTrait, X: HasAabb>(
+pub(crate) unsafe fn bin_middle_left_right_unchecked<'b, A: Axis, X: HasAabb>(
     axis: A,
     med: &X::Num,
     bots: &'b mut [X],
@@ -126,7 +126,7 @@ pub(crate) unsafe fn bin_middle_left_right_unchecked<'b, A: AxisTrait, X: HasAab
 }
 
 #[inline(always)]
-pub fn compare_bots<T: HasAabb>(axis: impl AxisTrait, a: &T, b: &T) -> core::cmp::Ordering {
+pub fn compare_bots<T: HasAabb>(axis: impl Axis, a: &T, b: &T) -> core::cmp::Ordering {
     let (p1, p2) = (a.get().get_range(axis).start, b.get().get_range(axis).start);
     if p1 > p2 {
         core::cmp::Ordering::Greater
@@ -137,7 +137,7 @@ pub fn compare_bots<T: HasAabb>(axis: impl AxisTrait, a: &T, b: &T) -> core::cmp
 
 ///Sorts the bots based on an axis.
 #[inline(always)]
-pub fn sweeper_update<I: HasAabb, A: AxisTrait>(axis: A, collision_botids: &mut [I]) {
+pub fn sweeper_update<I: HasAabb, A: Axis>(axis: A, collision_botids: &mut [I]) {
     let sclosure = |a: &I, b: &I| -> core::cmp::Ordering { compare_bots(axis, a, b) };
 
     collision_botids.sort_unstable_by(sclosure);

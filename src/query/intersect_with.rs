@@ -12,7 +12,7 @@ use crate::query::rect::*;
 ///But using the api, it is possible to build up a tree using the current trees dividers
 ///to exploit the divide and conquer properties of this problem.
 ///The two trees could be recursed at the same time to break up the problem.
-pub fn intersect_with_mut<A:AxisTrait,N:NodeTrait,X:HasAabb<Num=N::Num>>(
+pub fn intersect_with_mut<A:Axis,N:NodeTrait,X:HasAabb<Num=N::Num>>(
     tree:&mut DinoTree<A,N>,
     b: &mut [X],
     func: impl Fn(ProtectedBBox<N::T>,ProtectedBBox<X>),

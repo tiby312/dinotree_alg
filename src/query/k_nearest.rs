@@ -64,7 +64,7 @@ impl<T:HasAabb,F> Knearest for KnearestSimple<T,F>
 
 
 
-fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
+fn make_rect_from_range<A:Axis,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
     if axis.is_xaxis(){
         Rect{x:*range,y:rect.y}
     }else{
@@ -73,7 +73,7 @@ fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rec
 }
 
 
-fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::AxisTrait,range:&Range<N>)->Ordering{
+fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::Axis,range:&Range<N>)->Ordering{
     let v = if axis.is_xaxis(){
         point.x
     }else{
@@ -187,7 +187,7 @@ impl<'a:'b,'b,K:Knearest> Blap<'a,'b,K>{
 
 fn recc<'a:'b,'b,
     N:NodeTrait,
-    A: AxisTrait,
+    A: Axis,
     K:Knearest<N=N::Num,T=N::T>,
     >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<K::N>,blap:&mut Blap<'a,'b,K>){
 
@@ -369,7 +369,7 @@ mod mutable{
     
 
     pub fn k_nearest_mut<'a,
-        A:AxisTrait,
+        A:Axis,
         N:NodeTrait,
         >(tree:&'a mut DinoTree<A,N>,point:Vec2<N::Num>,num:usize,knear: &mut impl Knearest<N=N::Num,T=N::T>,rect:Rect<N::Num>)->Vec<KnearestResult<'a,N::T>>{
         

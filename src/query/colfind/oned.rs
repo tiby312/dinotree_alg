@@ -2,14 +2,14 @@ use crate::query::inner_prelude::*;
 use crate::query::colfind::ColMulti;
 use crate::elem::PreVecMut;
 
-struct Bl<'a,A: AxisTrait+'a, F: ColMulti+'a> {
+struct Bl<'a,A: Axis+'a, F: ColMulti+'a> {
     a: &'a mut F,
     axis:A,
 }
 
 
 
-impl<'a,A: AxisTrait+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
+impl<'a,A: Axis+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
     type T = F::T;
 
     #[inline(always)]
@@ -50,7 +50,7 @@ impl<I: HasAabb> Sweeper<I> {
 
     //Bots a sorted along the axis.
     #[inline(always)]
-    pub(crate) fn find_2d<A: AxisTrait, F: ColMulti<T=I>>(
+    pub(crate) fn find_2d<A: Axis, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
         bots: ProtectedBBoxSlice<F::T>,
@@ -64,7 +64,7 @@ impl<I: HasAabb> Sweeper<I> {
     }
 
     #[inline(always)]
-    pub(crate) fn find_parallel_2d<A: AxisTrait, F: ColMulti<T=I>>(
+    pub(crate) fn find_parallel_2d<A: Axis, F: ColMulti<T=I>>(
         &mut self,
         axis:A,
         bots1: ProtectedBBoxSlice<F::T>,
@@ -80,7 +80,7 @@ impl<I: HasAabb> Sweeper<I> {
     }
     
 
-    pub(crate) fn find_perp_2d1<A:AxisTrait,F: ColMulti<T=I>>(&mut self,
+    pub(crate) fn find_perp_2d1<A:Axis,F: ColMulti<T=I>>(&mut self,
         _axis:A,
         mut r1: ProtectedBBoxSlice<F::T>,
         mut r2: ProtectedBBoxSlice<F::T>,
@@ -99,7 +99,7 @@ impl<I: HasAabb> Sweeper<I> {
 
 
     ///Find colliding pairs using the mark and sweep algorithm.
-    fn find<'a, A: AxisTrait, F: ColMulti<T = I>>(
+    fn find<'a, A: Axis, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
         collision_botids: ProtectedBBoxSlice<'a,I>,
@@ -145,7 +145,7 @@ impl<I: HasAabb> Sweeper<I> {
 
 
 
-    fn find_bijective_parallel<A: AxisTrait, F: ColMulti<T = I>>(
+    fn find_bijective_parallel<A: Axis, F: ColMulti<T = I>>(
         &mut self,
         axis:A,
         cols: (ProtectedBBoxSlice<I>, ProtectedBBoxSlice<I>),
@@ -257,7 +257,7 @@ fn test_parallel(){
 
 //this can have some false positives.
 //but it will still prune a lot of bots.
-pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Range<I::Num>) -> &'a [I] {
+pub fn get_section<'a, I:HasAabb,A: Axis>(axis:A,arr: &'a [I], range: &Range<I::Num>) -> &'a [I] {
     let mut start = 0;
     for (e, i) in arr.iter().enumerate() {
         let rr = i.get().get_range(axis);
@@ -281,7 +281,7 @@ pub fn get_section<'a, I:HasAabb,A: AxisTrait>(axis:A,arr: &'a [I], range: &Rang
 
 //this can have some false positives.
 //but it will still prune a lot of bots.
-pub fn get_section_mut<'a,I:HasAabb, A: AxisTrait>(axis:A,mut arr: ProtectedBBoxSlice<'a,I>, range: &Range<I::Num>) -> ProtectedBBoxSlice<'a,I> {
+pub fn get_section_mut<'a,I:HasAabb, A: Axis>(axis:A,mut arr: ProtectedBBoxSlice<'a,I>, range: &Range<I::Num>) -> ProtectedBBoxSlice<'a,I> {
     let mut start = 0;
     for (e, i) in arr.as_ref().iter().enumerate() {
         let rr = i.get().get_range(axis);

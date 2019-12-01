@@ -76,7 +76,7 @@ impl<N> Ray<N>{
 }
 
 impl<N:NumTrait> Ray<N>{
-    fn range_side(&self,axis:impl axgeom::AxisTrait,range:&Range<N>)->Ordering{
+    fn range_side(&self,axis:impl axgeom::Axis,range:&Range<N>)->Ordering{
         
         let v=if axis.is_xaxis(){
             self.point.x
@@ -154,7 +154,7 @@ pub trait RayTrait{
     ///Returns none if the ray doesnt intersect it.
     ///We use this to further prune nodes.If the closest possible distance of a bot in a particular node is 
     ///bigger than what we've already seen, then we dont need to visit that node.
-    //fn compute_distance_to_line<A:AxisTrait>(&mut self,axis:A,line:Self::N)->Option<Self::N>;
+    //fn compute_distance_to_line<A:Axis>(&mut self,axis:A,line:Self::N)->Option<Self::N>;
 
     ///The expensive collision detection
     ///This is where the user can do expensive collision detection on the shape
@@ -200,7 +200,7 @@ impl<T:HasAabb,F> RayTrait for RaycastSimple<T,F>
 
 
 
-fn make_rect_from_range<A:AxisTrait,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
+fn make_rect_from_range<A:Axis,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
     if axis.is_xaxis(){
         Rect{x:*range,y:rect.y}
     }else{
@@ -294,7 +294,7 @@ impl<'a:'b,'b,R:RayTrait> Blap<'a,'b,R>{
 
 //Returns the first object that touches the ray.
 fn recc<'a:'b,'b,
-    A: AxisTrait,
+    A: Axis,
     //T: HasAabb,
     N:NodeTrait,
     R: RayTrait<N=N::Num,T=N::T>
@@ -426,7 +426,7 @@ mod mutable{
 
     pub fn raycast_mut<
         'a,   
-        A:AxisTrait,
+        A:Axis,
         N:NodeTrait
         >(tree:&'a mut DinoTree<A,N>,rect:Rect<N::Num>,ray:Ray<N::Num>,rtrait:&mut impl RayTrait<N=N::Num,T=N::T>)->RayCastResult<'a,N::T>{
         

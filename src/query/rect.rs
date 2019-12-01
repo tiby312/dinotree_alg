@@ -13,7 +13,7 @@ use crate::query::inner_prelude::*;
 macro_rules! rect{
     ($iterator:ty,$colsingle:ty,$get_section:ident,$get_node:ident)=>{     
         fn rect_recurse<'a,
-            A: AxisTrait,
+            A: Axis,
             N:NodeTrait,
             F: FnMut($colsingle),
         >(
@@ -71,8 +71,8 @@ pub fn naive_for_all_not_in_rect_mut<T:HasAabb>(bots:ProtectedBBoxSlice<T>,rect:
     }
 }
 
-pub fn for_all_not_in_rect_mut<A:AxisTrait,N:NodeTrait>(tree:&mut DinoTree<A,N>,rect:&Rect<N::Num>,closure:impl FnMut(ProtectedBBox<N::T>)){
-    fn rect_recurse<A:AxisTrait,N:NodeTrait,F:FnMut(ProtectedBBox<N::T>)>(axis:A,it:VistrMut<N>,rect:&Rect<N::Num>,mut closure:F)->F{
+pub fn for_all_not_in_rect_mut<A:Axis,N:NodeTrait>(tree:&mut DinoTree<A,N>,rect:&Rect<N::Num>,closure:impl FnMut(ProtectedBBox<N::T>)){
+    fn rect_recurse<A:Axis,N:NodeTrait,F:FnMut(ProtectedBBox<N::T>)>(axis:A,it:VistrMut<N>,rect:&Rect<N::Num>,mut closure:F)->F{
         let (nn,rest)=it.next();
         let nn=nn.get_mut();
         //TODO exploit sorted property.
@@ -123,7 +123,7 @@ mod mutable{
     use super::*;
 
     rect!(VistrMut<N>,ProtectedBBox<N::T>,get_section_mut,get_mut);
-    pub fn for_all_intersect_rect_mut<A:AxisTrait,N:NodeTrait>(
+    pub fn for_all_intersect_rect_mut<A:Axis,N:NodeTrait>(
         tree: &mut DinoTree<A,N>,
         rect: &Rect<N::Num>,
         mut closure: impl FnMut(ProtectedBBox<N::T>),
@@ -166,7 +166,7 @@ mod mutable{
         }
 
     }
-    pub fn for_all_in_rect_mut<A:AxisTrait,N:NodeTrait>(
+    pub fn for_all_in_rect_mut<A:Axis,N:NodeTrait>(
         tree: &mut DinoTree<A,N>,
         rect: &Rect<N::Num>,
         mut closure: impl FnMut(ProtectedBBox<N::T>),
@@ -189,7 +189,7 @@ mod constant{
     use super::*;
     rect!(Vistr<'a,N>,&'a N::T,get_section,get);
     
-    pub fn for_all_intersect_rect<'a,A:AxisTrait,N:NodeTrait>(
+    pub fn for_all_intersect_rect<'a,A:Axis,N:NodeTrait>(
         tree:&'a DinoTree<A,N>,
         rect: &Rect<N::Num>,
         mut closure: impl FnMut(&'a N::T),
@@ -205,7 +205,7 @@ mod constant{
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
-    pub fn for_all_in_rect<'a,A:AxisTrait,N:NodeTrait>(
+    pub fn for_all_in_rect<'a,A:Axis,N:NodeTrait>(
         tree:&'a DinoTree<A,N>,
         rect: &Rect<N::Num>,
         mut closure: impl FnMut(&'a N::T),
@@ -246,12 +246,12 @@ pub struct RectIntersectErr;
 ///
 ///Handles a multi rect mut "sessions" within which
 ///the user can query multiple non intersecting rectangles.
-pub struct MultiRectMut<'a,A:AxisTrait,N:NodeTrait> {
+pub struct MultiRectMut<'a,A:Axis,N:NodeTrait> {
     tree:&'a mut DinoTree<A,N>,
     rects: Vec<Rect<N::Num>>,
 }
 
-impl<'a,A:AxisTrait,N:NodeTrait> MultiRectMut<'a,A,N>{
+impl<'a,A:Axis,N:NodeTrait> MultiRectMut<'a,A,N>{
     pub fn new(tree:&'a mut DinoTree<A,N>)->Self{
         MultiRectMut{tree,rects:Vec::new()}
     }

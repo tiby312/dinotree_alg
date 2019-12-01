@@ -5,19 +5,19 @@ use crate::query::inner_prelude::*;
 ///Trait user must implement.
 pub trait DividerDrawer{
     type N:NumTrait;
-    fn draw_divider<A:AxisTrait>(&mut self,axis:A,div:Self::N,cont:[Self::N;2],length:[Self::N;2],depth:usize);
+    fn draw_divider<A:Axis>(&mut self,axis:A,div:Self::N,cont:[Self::N;2],length:[Self::N;2],depth:usize);
 }
 
 
 
 ///Calls the user supplied function on each divider.
 ///Since the leaves do not have dividers, it is not called for the leaves.
-pub fn draw<A:AxisTrait,N:NodeTrait,D:DividerDrawer<N=N::Num>>(
+pub fn draw<A:Axis,N:NodeTrait,D:DividerDrawer<N=N::Num>>(
     gentree: &DinoTree<A,N>,
     dr:&mut D,
     rect:&Rect<N::Num>
 ) {
-    fn recc<A:AxisTrait,N:NodeTrait,D:DividerDrawer<N=N::Num>>
+    fn recc<A:Axis,N:NodeTrait,D:DividerDrawer<N=N::Num>>
         (axis:A,stuff:LevelIter<Vistr<N>>,dr:&mut D,rect:&Rect<N::Num>){
 
         let ((depth,nn),rest)=stuff.next();

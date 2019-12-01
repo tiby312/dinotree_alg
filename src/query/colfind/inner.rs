@@ -3,12 +3,12 @@ use super::node_handle::*;
 use super::*;
 
 //TODO improve this.
-struct GoDownRecurser<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait>{
+struct GoDownRecurser<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:Axis>{
     anchor:DestructuredNode<'a,N::T,B>,
     sweeper:&'a mut NN
 }
 
-impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait> GoDownRecurser<'a,N,NN,B>{
+impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:Axis> GoDownRecurser<'a,N,NN,B>{
 
     #[inline(always)]
     fn new(anchor:DestructuredNode<'a,N::T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,N,NN,B>{
@@ -16,7 +16,7 @@ impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:AxisTrait> GoDownRecurser<'a,N,NN,B
     }
 
     fn go_down<
-        A: AxisTrait, //this axis
+        A: Axis, //this axis
     >(
         &mut self,
         this_axis: A,
@@ -71,7 +71,7 @@ pub struct ColFindRecurser<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter
 }
 impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+Send+Sync> ColFindRecurser<N,K,S>{
 
-    pub fn recurse_par<A:AxisTrait,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:VistrMut<N>,splitter:&mut K){
+    pub fn recurse_par<A:Axis,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:VistrMut<N>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
@@ -148,7 +148,7 @@ impl<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,
     }
 
 
-    pub fn recurse_seq<A:AxisTrait>(&self,this_axis:A,sweeper:&mut S,m:VistrMut<N>,splitter:&mut K){
+    pub fn recurse_seq<A:Axis>(&self,this_axis:A,sweeper:&mut S,m:VistrMut<N>,splitter:&mut K){
 
         sweeper.node_start();
         splitter.node_start();
