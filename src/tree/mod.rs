@@ -327,7 +327,9 @@ impl<A:Axis,N:Node + Send + Sync> DinoTree<A,N> where N::T : Send + Sync{
 
 impl<A:Axis,N:Node> DinoTree<A,N>{
 
-
+    pub fn as_bounded(&mut self,rect:Rect<N::Num>)->BoundedDinoTree<A,N>{
+        BoundedDinoTree{tree:self,rect}
+    }
     pub fn draw(&self,drawer:&mut impl graphics::DividerDrawer<N=N::Num>,rect:&Rect<N::Num>){
         graphics::draw(self,drawer,rect)
     }
