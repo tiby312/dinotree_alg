@@ -99,8 +99,8 @@ impl RigidBody {
 
     pub fn push_away_from_border(&mut self, rect2: &Rect<f32>, _push_rate: f32) {
         let a = self;
-        let xx = rect2.get_range(axgeom::XAXISS);
-        let yy = rect2.get_range(axgeom::YAXISS);
+        let xx = rect2.get_range(axgeom::XAXIS);
+        let yy = rect2.get_range(axgeom::YAXIS);
 
         let (pos, _vel) = &mut a.pos_vel_mut();
 

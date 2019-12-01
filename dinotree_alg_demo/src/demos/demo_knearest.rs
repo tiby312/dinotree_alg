@@ -120,7 +120,7 @@ impl DemoSys for KnearestDemo {
                 g: RefCell::new(g),
                 draw: true,
             };
-            tree.get_mut().k_nearest_mut(cursor, 3, &mut kn, self.dim)
+            tree.get_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
         };
         let mut vv: Vec<_> = vv
             .drain(..)

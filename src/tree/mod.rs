@@ -189,7 +189,7 @@ impl<'a,A:Axis,T:Aabb> DinoTree<A,NodeMut<'a,T>>{
     ///
     ///```
     ///let mut bots = [axgeom::rect(0,10,0,10)];
-    ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXISS,&mut bots);
+    ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
     #[must_use]
@@ -203,7 +203,7 @@ impl<'a,A:Axis,T:Aabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
     ///
     ///```
     ///let mut bots = [axgeom::rect(0,10,0,10)];
-    ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXISS,&mut bots);
+    ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
     #[must_use]

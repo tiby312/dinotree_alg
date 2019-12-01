@@ -240,12 +240,12 @@ fn test_parallel(){
 
 
     let mut test1=Test{set:BTreeSet::new()};
-    sweeper.find_bijective_parallel(axgeom::XAXISS,(PMut::new(&mut left),PMut::new(&mut right)),&mut test1);
+    sweeper.find_bijective_parallel(axgeom::XAXIS,(PMut::new(&mut left),PMut::new(&mut right)),&mut test1);
 
 
 
     let mut test2=Test{set:BTreeSet::new()};
-    sweeper.find_bijective_parallel(axgeom::XAXISS,(PMut::new(&mut right),PMut::new(&mut left)),&mut test2);
+    sweeper.find_bijective_parallel(axgeom::XAXIS,(PMut::new(&mut right),PMut::new(&mut left)),&mut test2);
 
     let num=test1.set.symmetric_difference(&test2.set).count();
 

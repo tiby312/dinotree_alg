@@ -5,7 +5,7 @@ use std;
 use dinotree_alg::query;
 
 type Ray1<T> = duckduckgeo::Ray<T>;
-type Ray2<T> = dinotree_alg::query::Ray<T>;
+type Ray2<T> = axgeom::Ray<T>;
 
 
 struct RayT<'a, 'c: 'a> {
@@ -145,14 +145,14 @@ impl DemoSys for RaycastF32Demo {
                 }
 
                 
-                let res = tree.get_mut().raycast_mut(
-                    self.dim,
+                let res = tree.get_mut().raycast_fine_mut(
                     ray,
                     &mut RayT {
                         radius: self.radius,
                         c: &c,
                         g,
                     },
+                    self.dim,
                 );
 
                 let (ppx,ppy) = match res{

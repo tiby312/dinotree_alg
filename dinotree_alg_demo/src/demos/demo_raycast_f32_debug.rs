@@ -5,7 +5,7 @@ use std;
 use std::cell::RefCell;
 
 type Ray1<T> = duckduckgeo::Ray<T>;
-type Ray2<T> = dinotree_alg::query::Ray<T>;
+type Ray2<T> = axgeom::Ray<T>;
 
 
 mod ray_f32 {
@@ -142,8 +142,7 @@ impl DemoSys for RaycastF32DebugDemo {
             );
         }
 
-        let test = self.tree.get_mut().raycast_mut(
-            self.dim,
+        let test = self.tree.get_mut().raycast_fine_mut(
             ray,
             &mut ray_f32::RayT {
                 draw: true,
@@ -151,6 +150,7 @@ impl DemoSys for RaycastF32DebugDemo {
                 g: RefCell::new(g),
                 height,
             },
+            self.dim,
         );
 
         let ray: Ray2<f32> = ray.inner_into();
