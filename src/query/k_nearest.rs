@@ -25,8 +25,8 @@ use core::cmp::Ordering;
 
 ///The geometric functions that the user must provide.
 pub trait Knearest{
-    type T:HasAabb<Num=Self::N>;
-    type N:NumTrait;
+    type T:Aabb<Num=Self::N>;
+    type N:Num;
     
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
@@ -40,17 +40,17 @@ pub trait Knearest{
 
 
 //TODO use this.
-pub struct KnearestSimple<T:HasAabb,F>{
+pub struct KnearestSimple<T:Aabb,F>{
     _p:PhantomData<T>,
     pub func:F
 }
-impl<T:HasAabb,F>  KnearestSimple<T,F>
+impl<T:Aabb,F>  KnearestSimple<T,F>
     where F:Fn(Vec2<T::Num>,&Rect<T::Num>) -> T::Num{
     pub fn new(func:F)->KnearestSimple<T,F>{
             KnearestSimple{_p:PhantomData,func}
     }
 }
-impl<T:HasAabb,F> Knearest for KnearestSimple<T,F>
+impl<T:Aabb,F> Knearest for KnearestSimple<T,F>
     where F:Fn(Vec2<T::Num>,&Rect<T::Num>) -> T::Num{
     type T=T;
     type N=T::Num;
@@ -64,7 +64,7 @@ impl<T:HasAabb,F> Knearest for KnearestSimple<T,F>
 
 
 
-fn make_rect_from_range<A:Axis,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
+fn make_rect_from_range<A:Axis,N:Num>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
     if axis.is_xaxis(){
         Rect{x:*range,y:rect.y}
     }else{
@@ -73,7 +73,7 @@ fn make_rect_from_range<A:Axis,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)
 }
 
 
-fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::Axis,range:&Range<N>)->Ordering{
+fn range_side<N:Num>(point:Vec2<N>,axis:impl axgeom::Axis,range:&Range<N>)->Ordering{
     let v = if axis.is_xaxis(){
         point.x
     }else{
@@ -83,13 +83,13 @@ fn range_side<N:NumTrait>(point:Vec2<N>,axis:impl axgeom::Axis,range:&Range<N>)-
 }
 
 /// Returned by k_nearest_mut
-pub struct KnearestResult<'a,T:HasAabb>{
+pub struct KnearestResult<'a,T:Aabb>{
     pub bot:ProtectedBBox<'a,T>,
     pub mag:T::Num
 }
 
 
-struct ClosestCand<'a,T:HasAabb>{
+struct ClosestCand<'a,T:Aabb>{
     //Can have multiple bots with the same mag. So the length could be bigger than num.
     bots:Vec<KnearestResult<'a,T>>,
     //The current number of different distances in the vec
@@ -97,7 +97,7 @@ struct ClosestCand<'a,T:HasAabb>{
     //The max number of different distances.
     num:usize
 }
-impl<'a,T:HasAabb> ClosestCand<'a,T>{
+impl<'a,T:Aabb> ClosestCand<'a,T>{
 
     //First is the closest
     fn into_sorted(self)->Vec<KnearestResult<'a,T>>{
@@ -186,7 +186,7 @@ impl<'a:'b,'b,K:Knearest> Blap<'a,'b,K>{
 }
 
 fn recc<'a:'b,'b,
-    N:NodeTrait,
+    N:Node,
     A: Axis,
     K:Knearest<N=N::Num,T=N::T>,
     >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<K::N>,blap:&mut Blap<'a,'b,K>){
@@ -279,11 +279,11 @@ fn recc<'a:'b,'b,
 //}
 
 
-///The dinotree's NumTrait does not inherit any kind of arithmetic traits.
+///The dinotree's Num does not inherit any kind of arithmetic traits.
 ///This showcases that the tree construction and pair finding collision algorithms
 ///do not involves any arithmetic. 
 ///However, when finding the nearest neighbor, we need to do some calculations to
-///compute distance between points. So instead of giving the NumTrait arithmetic and thus
+///compute distance between points. So instead of giving the Num arithmetic and thus
 ///add uneeded bounds for general use of this tree, the user must provide functions for arithmetic
 ///specifically for this function.
 ///The user can also specify what the minimum distance function is minizing based off of. For example
@@ -346,7 +346,7 @@ pub use self::mutable::k_nearest_mut;
 mod mutable{
     use super::*;
     
-    pub fn k_nearest_naive_mut<'a,K:Knearest<T=T,N=T::Num>,T:HasAabb>(bots:ProtectedBBoxSlice<'a,T>,point:Vec2<K::N>,num:usize,k:&mut K)->Vec<KnearestResult<'a,K::T>>{
+    pub fn k_nearest_naive_mut<'a,K:Knearest<T=T,N=T::Num>,T:Aabb>(bots:ProtectedBBoxSlice<'a,T>,point:Vec2<K::N>,num:usize,k:&mut K)->Vec<KnearestResult<'a,K::T>>{
         //let bots=ProtectedBBoxSlice::new(bots);
 
         let mut closest=ClosestCand::new(num);
@@ -370,7 +370,7 @@ mod mutable{
 
     pub fn k_nearest_mut<'a,
         A:Axis,
-        N:NodeTrait,
+        N:Node,
         >(tree:&'a mut DinoTree<A,N>,point:Vec2<N::Num>,num:usize,knear: &mut impl Knearest<N=N::Num,T=N::T>,rect:Rect<N::Num>)->Vec<KnearestResult<'a,N::T>>{
         
         let axis=tree.axis();

@@ -43,7 +43,7 @@ pub struct NaiveAlgs<'a,T>{
     bots:&'a mut [T]
 }
 
-impl<'a,T:HasAabb> NaiveAlgs<'a,T>{
+impl<'a,T:Aabb> NaiveAlgs<'a,T>{
     #[must_use]
     pub fn new(bots:&'a mut [T])->NaiveAlgs<T>{
         NaiveAlgs{bots}
@@ -283,14 +283,14 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
 ///where one implementation actually does sort the tree, while the other one
 ///does nothing when sort() is called.
 pub(crate) trait Sorter: Copy + Clone + Send + Sync {
-    fn sort(&self, axis: impl Axis, bots: &mut [impl HasAabb]);
+    fn sort(&self, axis: impl Axis, bots: &mut [impl Aabb]);
 }
 
 #[derive(Copy, Clone)]
 pub(crate) struct DefaultSorter;
 
 impl Sorter for DefaultSorter {
-    fn sort(&self, axis: impl Axis, bots: &mut [impl HasAabb]) {
+    fn sort(&self, axis: impl Axis, bots: &mut [impl Aabb]) {
         oned::sweeper_update(axis, bots);
     }
 }
@@ -299,7 +299,7 @@ impl Sorter for DefaultSorter {
 pub(crate) struct NoSorter;
 
 impl Sorter for NoSorter {
-    fn sort(&self, _axis: impl Axis, _bots: &mut [impl HasAabb]) {}
+    fn sort(&self, _axis: impl Axis, _bots: &mut [impl Aabb]) {}
 }
 
 pub fn nodes_left(depth: usize, height: usize) -> usize {
@@ -379,15 +379,15 @@ impl Splitter for SplitterEmpty {
 
 ///Returns false if the tree's invariants are not met.
 #[must_use]
-pub fn assert_invariants<A:Axis,N:NodeTrait>(tree:&DinoTree<A,N>)->bool{
+pub fn assert_invariants<A:Axis,N:Node>(tree:&DinoTree<A,N>)->bool{
     inner(tree.axis(), tree.vistr().with_depth(compt::Depth(0))).is_ok()
 }
 
-fn inner<A: Axis, N: NodeTrait>(
+fn inner<A: Axis, N: Node>(
     axis: A,
     iter: compt::LevelIter<Vistr<N>>,
 ) -> Result<(), ()> {
-    fn a_bot_has_value<N: NumTrait>(it: impl Iterator<Item = N>, val: N) -> bool {
+    fn a_bot_has_value<N: Num>(it: impl Iterator<Item = N>, val: N) -> bool {
         for b in it {
             if b == val {
                 return true;

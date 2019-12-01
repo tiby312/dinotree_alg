@@ -14,7 +14,7 @@ use self::inner::*;
 ///The user supplies a struct that implements this trait instead of just a closure
 ///so that the user may also have the struct implement Splitter.
 pub trait ColMulti{
-    type T: HasAabb;
+    type T: Aabb;
 
     fn collide(&mut self,
         a: ProtectedBBox<Self::T>,
@@ -23,7 +23,7 @@ pub trait ColMulti{
 
 
 ///Naive algorithm.
-pub fn query_naive_mut<T:HasAabb>(bots:ProtectedBBoxSlice<T>,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+pub fn query_naive_mut<T:Aabb>(bots:ProtectedBBoxSlice<T>,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
     
     tools::for_every_pair(bots,|a,b|{
         if a.get().intersects_rect(b.get()){
@@ -34,10 +34,10 @@ pub fn query_naive_mut<T:HasAabb>(bots:ProtectedBBoxSlice<T>,mut func:impl FnMut
 
 
 ///Sweep and prune algorithm.
-pub fn query_sweep_mut<T:HasAabb>(axis:impl Axis,bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){  
+pub fn query_sweep_mut<T:Aabb>(axis:impl Axis,bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){  
     ///Sorts the bots.
     #[inline(always)]
-    fn sweeper_update<I:HasAabb,A:Axis>(axis:A,collision_botids: &mut [I]) {
+    fn sweeper_update<I:Aabb,A:Axis>(axis:A,collision_botids: &mut [I]) {
 
         let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
             let (p1,p2)=(a.get().get_range(axis).start,b.get().get_range(axis).start);
@@ -53,12 +53,12 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl Axis,bots:&mut [T],func:impl FnMut(P
     sweeper_update(axis,bots);
 
 
-    struct Bl<T:HasAabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> {
+    struct Bl<T:Aabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> {
         func: F,
         _p:PhantomData<T>
     }
 
-    impl<T:HasAabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for Bl<T,F> {
+    impl<T:Aabb,F: FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for Bl<T,F> {
         type T = T;
         #[inline(always)]
         fn collide(&mut self, a: ProtectedBBox<T>, b: ProtectedBBox<T>) {    
@@ -77,12 +77,12 @@ pub fn query_sweep_mut<T:HasAabb>(axis:impl Axis,bots:&mut [T],func:impl FnMut(P
 
 
 ///Builder for a query on a NotSorted Dinotree.
-pub struct NotSortedQueryBuilder<'a,A:Axis,N:NodeTrait>{
+pub struct NotSortedQueryBuilder<'a,A:Axis,N:Node>{
     switch_height:usize,
     tree:&'a mut NotSorted<A,N>
 }
 
-impl<'a,A:Axis,N:NodeTrait+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N::T:Send+Sync{
+impl<'a,A:Axis,N:Node+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N::T:Send+Sync{
 
     #[inline(always)]
     pub fn query_par(self,func:impl Fn(
@@ -102,7 +102,7 @@ impl<'a,A:Axis,N:NodeTrait+Send+Sync> NotSortedQueryBuilder<'a,A,N> where N::T:S
 
 }
 
-impl<'a,A:Axis,N:NodeTrait> NotSortedQueryBuilder<'a,A,N>{
+impl<'a,A:Axis,N:Node> NotSortedQueryBuilder<'a,A,N>{
 
     #[inline(always)]
     pub fn new(tree:&'a mut NotSorted<A,N>)->NotSortedQueryBuilder<'a,A,N>{
@@ -139,12 +139,12 @@ impl<'a,A:Axis,N:NodeTrait> NotSortedQueryBuilder<'a,A,N>{
 
 
 ///Builder for a query on a DinoTree.
-pub struct QueryBuilder<'a,A:Axis,N:NodeTrait>{
+pub struct QueryBuilder<'a,A:Axis,N:Node>{
     switch_height:usize,
     tree:&'a mut DinoTree<A,N>
 }
 
-impl<'a,A:Axis,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send+Sync{
+impl<'a,A:Axis,N:Node+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send+Sync{
 
     ///Perform the query in parallel
     #[inline(always)]
@@ -185,7 +185,7 @@ impl<'a,A:Axis,N:NodeTrait+Send+Sync> QueryBuilder<'a,A,N> where N::T: Send+Sync
 }
 
 
-impl<'a,A:Axis,N:NodeTrait> QueryBuilder<'a,A,N>{
+impl<'a,A:Axis,N:Node> QueryBuilder<'a,A,N>{
 
     ///Create the builder.
     #[inline(always)]

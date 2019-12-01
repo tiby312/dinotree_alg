@@ -15,8 +15,8 @@ use crate::query::inner_prelude::*;
 
 pub trait NodeMassTrait:Clone{
     type No:Copy+Send;
-    type Num:NumTrait;
-    type Item:HasAabb<Num=Self::Num>;
+    type Num:Num;
+    type Item:Aabb<Num=Self::Num>;
 
     //Returns the bounding rectangle for this node.
     fn get_rect(no:&Self::No)->&Rect<Self::Num>;
@@ -42,7 +42,7 @@ pub trait NodeMassTrait:Clone{
 
 
 ///Naive version simply visits every pair.
-pub fn naive_mut<T:HasAabb>(bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+pub fn naive_mut<T:Aabb>(bots:&mut [T],func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
     let bots=ProtectedBBoxSlice::new(bots);
     tools::for_every_pair(bots,func);
 }
@@ -397,8 +397,8 @@ fn recc<J:par::Joiner,A:Axis,N:NodeMassTrait<Num=F::Num,Item=F::T>+Sync+Send,F:N
 
 trait Bok2{
     type No:Copy;
-    type J:NodeTrait<T=Self::T,Num=<Self::T as HasAabb>::Num>;
-    type T:HasAabb;
+    type J:NodeTrait<T=Self::T,Num=<Self::T as Aabb>::Num>;
+    type T:Aabb;
     type AnchorAxis:Axis;
     fn is_far_enough<A:Axis>(&mut self,axis:A,anchor:&mut Anchor<Self::AnchorAxis,Self::J>,misc:&Self::No)->bool;
     fn handle_node<A:Axis>(&mut self,axis:A,n:ProtectedBBox<Self::T>,anchor:&mut Anchor<Self::AnchorAxis,Self::J>);

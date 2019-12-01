@@ -102,7 +102,7 @@
 //!
 //! `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
 //! that belong to rectangle regions that don't intersect at the same time. This is why
-//! the HasAabb trait is unsafe.
+//! the Aabb trait is unsafe.
 //!
 
 
@@ -174,8 +174,8 @@ pub mod util;
 ///It is auto implemented by all types that satisfy the type constraints.
 ///Notice that no arithmatic is possible. The tree is constructed
 ///using only comparisons and copying.
-pub trait NumTrait: Ord + Copy + Send + Sync {}
-impl<T> NumTrait for T where T: Ord + Copy + Send + Sync {}
+pub trait Num: Ord + Copy + Send + Sync {}
+impl<T> Num for T where T: Ord + Copy + Send + Sync {}
 
 
 ///Trait to signify that this object has an axis aligned bounding box.
@@ -187,12 +187,12 @@ impl<T> NumTrait for T where T: Ord + Copy + Send + Sync {}
 ///return different aabbs.
 ///This is unsafe since we allow query algorithms to assume the following:
 ///If two object's aabb's don't intersect, then they can be mutated at the same time.
-pub unsafe trait HasAabb{
-    type Num: NumTrait;
+pub unsafe trait Aabb{
+    type Num: Num;
     fn get(&self) -> &Rect<Self::Num>;
 }
 
-unsafe impl<N:NumTrait> HasAabb for Rect<N>{
+unsafe impl<N:Num> Aabb for Rect<N>{
     type Num=N;
     fn get(&self)->&Rect<Self::Num>{
         self
@@ -201,7 +201,7 @@ unsafe impl<N:NumTrait> HasAabb for Rect<N>{
 
 ///Trait exposes an api where you can return a read-only reference to the axis-aligned bounding box
 ///and at the same time return a mutable reference to a seperate inner section.
-pub trait HasInner:HasAabb{
+pub trait HasInner:Aabb{
     type Inner;
     #[inline(always)]
     fn inner_mut(&mut self)->&mut Self::Inner{

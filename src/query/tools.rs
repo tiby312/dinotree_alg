@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 
-pub fn for_every_pair<T:HasAabb>(mut arr:ProtectedBBoxSlice<T>,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
+pub fn for_every_pair<T:Aabb>(mut arr:ProtectedBBoxSlice<T>,mut func:impl FnMut(ProtectedBBox<T>,ProtectedBBox<T>)){
     loop{
         let temp=arr;
         match temp.split_first_mut(){

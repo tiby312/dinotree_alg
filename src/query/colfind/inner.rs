@@ -3,12 +3,12 @@ use super::node_handle::*;
 use super::*;
 
 //TODO improve this.
-struct GoDownRecurser<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:Axis>{
+struct GoDownRecurser<'a,N:Node,NN:NodeHandler<T=N::T>,B:Axis>{
     anchor:DestructuredNode<'a,N::T,B>,
     sweeper:&'a mut NN
 }
 
-impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:Axis> GoDownRecurser<'a,N,NN,B>{
+impl<'a,N:Node,NN:NodeHandler<T=N::T>,B:Axis> GoDownRecurser<'a,N,NN,B>{
 
     #[inline(always)]
     fn new(anchor:DestructuredNode<'a,N::T,B>,sweeper:&'a mut NN)->GoDownRecurser<'a,N,NN,B>{
@@ -66,10 +66,10 @@ impl<'a,N:NodeTrait,NN:NodeHandler<T=N::T>,B:Axis> GoDownRecurser<'a,N,NN,B>{
 
 
 
-pub struct ColFindRecurser<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter>{
+pub struct ColFindRecurser<N:Node,K:Splitter,S:NodeHandler<T=N::T>+Splitter>{
     _p:PhantomData<(N,K,S)>
 }
-impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+Send+Sync> ColFindRecurser<N,K,S>{
+impl<N:Node+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+Send+Sync> ColFindRecurser<N,K,S>{
 
     pub fn recurse_par<A:Axis,JJ:par::Joiner>(&self,this_axis:A,par:JJ,sweeper:&mut S,m:VistrMut<N>,splitter:&mut K){
 
@@ -141,7 +141,7 @@ impl<N:NodeTrait+Send+Sync,K:Splitter+Send+Sync,S:NodeHandler<T=N::T>+Splitter+S
     }
 }
 
-impl<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,S>{
+impl<N:Node,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,S>{
     #[inline(always)]
     pub fn new()->ColFindRecurser<N,K,S>{
         ColFindRecurser{_p:PhantomData}
@@ -202,14 +202,14 @@ impl<N:NodeTrait,K:Splitter,S:NodeHandler<T=N::T>+Splitter> ColFindRecurser<N,K,
 
 
 pub struct QueryFnMut<T,F>(F,PhantomData<T>);
-impl<T:HasAabb,F:FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> QueryFnMut<T,F>{
+impl<T:Aabb,F:FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> QueryFnMut<T,F>{
     #[inline(always)]
     pub fn new(func:F)->QueryFnMut<T,F>{
         QueryFnMut(func,PhantomData)
     }
 }
 
-impl<T:HasAabb,F:FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for QueryFnMut<T,F>{
+impl<T:Aabb,F:FnMut(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for QueryFnMut<T,F>{
     type T=T;
     #[inline(always)]
     fn collide(&mut self,a:ProtectedBBox<T>,b:ProtectedBBox<T>){
@@ -233,13 +233,13 @@ impl<T,F> Splitter for QueryFnMut<T,F>{
 
 
 pub struct QueryFn<T,F>(F,PhantomData<T>);
-impl<T:HasAabb,F:Fn(ProtectedBBox<T>,ProtectedBBox<T>)> QueryFn<T,F>{
+impl<T:Aabb,F:Fn(ProtectedBBox<T>,ProtectedBBox<T>)> QueryFn<T,F>{
     #[inline(always)]
     pub fn new(func:F)->QueryFn<T,F>{
         QueryFn(func,PhantomData)
     }
 }
-impl<T:HasAabb,F:Fn(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for QueryFn<T,F>{
+impl<T:Aabb,F:Fn(ProtectedBBox<T>,ProtectedBBox<T>)> ColMulti for QueryFn<T,F>{
     type T=T;
 
     #[inline(always)]

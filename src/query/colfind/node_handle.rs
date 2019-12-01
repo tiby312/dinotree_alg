@@ -6,14 +6,14 @@ use crate::query::colfind::oned;
 
 
 
-pub struct DestructuredNode<'a,T:HasAabb,AnchorAxis:Axis>{
+pub struct DestructuredNode<'a,T:Aabb,AnchorAxis:Axis>{
     pub div:&'a T::Num,
     pub range:ProtectedBBoxSlice<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:AnchorAxis
 }
 
-pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:Axis>{
+pub struct DestructuredNodeLeaf<'a,T:Aabb,A:Axis>{
     pub range:ProtectedBBoxSlice<'a,T>,
     pub cont:&'a axgeom::Range<T::Num>,
     pub axis:A
@@ -23,7 +23,7 @@ pub struct DestructuredNodeLeaf<'a,T:HasAabb,A:Axis>{
 
 
 pub trait NodeHandler{
-    type T:HasAabb;
+    type T:Aabb;
     
     fn handle_node(
         &mut self,

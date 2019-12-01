@@ -13,7 +13,7 @@ impl<'a,T> BBoxIndirect<'a,T>{
 }
 
 
-unsafe impl<'a,T:HasAabb> HasAabb for BBoxIndirect<'a,T> {
+unsafe impl<'a,T:Aabb> Aabb for BBoxIndirect<'a,T> {
     type Num = T::Num;
     #[inline(always)]
     fn get(&self) -> &Rect<Self::Num>{
@@ -53,14 +53,14 @@ impl<'a,N, T> BBoxMut<'a,N, T> {
 }
 
 
-unsafe impl<'a,N: NumTrait, T> HasAabb for BBoxMut<'a,N, T> {
+unsafe impl<'a,N: Num, T> Aabb for BBoxMut<'a,N, T> {
     type Num = N;
     #[inline(always)]
     fn get(&self) -> &Rect<Self::Num>{
         &self.rect
     }
 }
-impl<'a,N:NumTrait,T> HasInner for BBoxMut<'a,N,T>{
+impl<'a,N:Num,T> HasInner for BBoxMut<'a,N,T>{
     type Inner= T;
 
     #[inline(always)]
@@ -97,14 +97,14 @@ impl<N, T> BBox<N, T> {
 
 
 
-unsafe impl<N: NumTrait, T> HasAabb for &mut BBox<N, T> {
+unsafe impl<N: Num, T> Aabb for &mut BBox<N, T> {
     type Num = N;
     #[inline(always)]
     fn get(&self) -> &Rect<Self::Num>{
         &self.rect
     }
 }
-impl<N:NumTrait,T> HasInner for &mut BBox<N,T>{
+impl<N:Num,T> HasInner for &mut BBox<N,T>{
     type Inner= T;
 
     #[inline(always)]
@@ -121,14 +121,14 @@ impl<N:NumTrait,T> HasInner for &mut BBox<N,T>{
 
 
 
-unsafe impl<N: NumTrait, T> HasAabb for BBox<N, T> {
+unsafe impl<N: Num, T> Aabb for BBox<N, T> {
     type Num = N;
     #[inline(always)]
     fn get(&self) -> &Rect<Self::Num>{
         &self.rect
     }
 }
-impl<N:NumTrait,T> HasInner for BBox<N,T>{
+impl<N:Num,T> HasInner for BBox<N,T>{
     type Inner= T;
 
     #[inline(always)]

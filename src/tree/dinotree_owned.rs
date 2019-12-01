@@ -19,7 +19,7 @@ unsafe impl<N,T> Send for BBoxPtr<N,T>{}
 unsafe impl<N,T> Sync for BBoxPtr<N,T>{}
 
 
-unsafe impl<N: NumTrait, T> HasAabb for BBoxPtr<N, T> {
+unsafe impl<N: Num, T> Aabb for BBoxPtr<N, T> {
     type Num = N;
     #[inline(always)]
     fn get(&self) -> &Rect<Self::Num>{
@@ -27,7 +27,7 @@ unsafe impl<N: NumTrait, T> HasAabb for BBoxPtr<N, T> {
     }
 }
 
-impl<N:NumTrait,T> HasInner for BBoxPtr<N,T>{
+impl<N:Num,T> HasInner for BBoxPtr<N,T>{
     type Inner= T;
 
     #[inline(always)]
@@ -43,7 +43,7 @@ impl<N:NumTrait,T> HasInner for BBoxPtr<N,T>{
 
 
 ///A Node in a dinotree.
-pub struct NodePtr<T: HasAabb> {
+pub struct NodePtr<T: Aabb> {
     range: core::ptr::NonNull<[T]>,
 
     //range is empty iff cont is none.
@@ -57,7 +57,7 @@ pub struct NodePtr<T: HasAabb> {
 }
 
 
-impl<T:HasAabb> NodeTrait for NodePtr<T>{
+impl<T:Aabb> Node for NodePtr<T>{
     type T=T;
     type Num=T::Num;
     fn get(&self)->NodeRef<Self::T>{
@@ -70,7 +70,7 @@ impl<T:HasAabb> NodeTrait for NodePtr<T>{
 
 
 ///An owned dinotree
-pub struct DinoTreeOwned<A:Axis,N:NumTrait,T>{
+pub struct DinoTreeOwned<A:Axis,N:Num,T>{
     inner:DinoTree<A,NodePtr<BBoxPtr<N,T>>>,
     bots_aabb:Vec<BBoxPtr<N,T>>,
     bots:Vec<T>
@@ -78,15 +78,15 @@ pub struct DinoTreeOwned<A:Axis,N:NumTrait,T>{
 
 
 
-impl<N:NumTrait,T : Send + Sync> DinoTreeOwned<DefaultAxis,N,T>{
+impl<N:Num,T : Send + Sync> DinoTreeOwned<DefaultA,N,T>{
     pub fn new_par(
         bots:Vec<T>,
-        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultAxis,N,T>{
+        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultA,N,T>{
         Self::with_axis_par(default_axis(),bots,aabb_create)
     }
 }
 
-impl<A:Axis,N:NumTrait,T : Send + Sync> DinoTreeOwned<A,N,T>{
+impl<A:Axis,N:Num,T : Send + Sync> DinoTreeOwned<A,N,T>{
 
     ///Create an owned dinotree in one thread.
     pub fn with_axis_par(
@@ -110,14 +110,14 @@ impl<A:Axis,N:NumTrait,T : Send + Sync> DinoTreeOwned<A,N,T>{
     }
 }
 
-impl<N:NumTrait,T> DinoTreeOwned<DefaultAxis,N,T>{
+impl<N:Num,T> DinoTreeOwned<DefaultA,N,T>{
     pub fn new(
         bots:Vec<T>,
-        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultAxis,N,T>{
+        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultA,N,T>{
         Self::with_axis(default_axis(),bots,aabb_create)
     }
 }
-impl<A:Axis,N:NumTrait,T> DinoTreeOwned<A,N,T>{
+impl<A:Axis,N:Num,T> DinoTreeOwned<A,N,T>{
     
     ///Create an owned dinotree in parallel.
     pub fn with_axis(

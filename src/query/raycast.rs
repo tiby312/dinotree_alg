@@ -75,7 +75,7 @@ impl<N> Ray<N>{
     }
 }
 
-impl<N:NumTrait> Ray<N>{
+impl<N:Num> Ray<N>{
     fn range_side(&self,axis:impl axgeom::Axis,range:&Range<N>)->Ordering{
         
         let v=if axis.is_xaxis(){
@@ -90,11 +90,11 @@ impl<N:NumTrait> Ray<N>{
 
 
 
-pub enum RayCastResult<'a,T:HasAabb>{
+pub enum RayCastResult<'a,T:Aabb>{
     Hit(Vec<ProtectedBBox<'a,T>>,T::Num),
     NoHit
 }
-impl<'a,T:HasAabb> RayCastResult<'a,T>{
+impl<'a,T:Aabb> RayCastResult<'a,T>{
     pub fn unwrap(self)->(Vec<ProtectedBBox<'a,T>>,T::Num){
         match self{
             RayCastResult::Hit(a,b)=>(a,b),
@@ -144,11 +144,11 @@ impl<N> RayIntersectResult<N>{
 }
 
 ///This is the trait that defines raycast specific geometric functions that are needed by this raytracing algorithm.
-///By containing all these functions in this trait, we can keep the trait bounds of the underlying NumTrait to a minimum
+///By containing all these functions in this trait, we can keep the trait bounds of the underlying Num to a minimum
 ///of only needing Ord.
 pub trait RayTrait{
-    type N:NumTrait;
-    type T:HasAabb<Num=Self::N>;
+    type N:Num;
+    type T:Aabb<Num=Self::N>;
 
     ///Returns the length of ray between its origin, and where it intersects the line provided.
     ///Returns none if the ray doesnt intersect it.
@@ -172,19 +172,19 @@ pub trait RayTrait{
 
 
 //TODO use this.
-pub struct RaycastSimple<T:HasAabb,F>{
+pub struct RaycastSimple<T:Aabb,F>{
     _p:PhantomData<T>,
     pub func:F
 }
 
-impl<T:HasAabb,F> RaycastSimple<T,F>
+impl<T:Aabb,F> RaycastSimple<T,F>
     where F:Fn(&Ray<T::Num>,&Rect<T::Num>) -> RayIntersectResult<T::Num>{
 
     pub fn new(func:F)->RaycastSimple<T,F>{
         RaycastSimple{_p:PhantomData,func}
     }
 }
-impl<T:HasAabb,F> RayTrait for RaycastSimple<T,F>
+impl<T:Aabb,F> RayTrait for RaycastSimple<T,F>
     where F:Fn(&Ray<T::Num>,&Rect<T::Num>) -> RayIntersectResult<T::Num>{
     type T=T;
     type N=T::Num;
@@ -200,7 +200,7 @@ impl<T:HasAabb,F> RayTrait for RaycastSimple<T,F>
 
 
 
-fn make_rect_from_range<A:Axis,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
+fn make_rect_from_range<A:Axis,N:Num>(axis:A,range:&Range<N>,rect:&Rect<N>)->Rect<N>{
     if axis.is_xaxis(){
         Rect{x:*range,y:rect.y}
     }else{
@@ -211,10 +211,10 @@ fn make_rect_from_range<A:Axis,N:NumTrait>(axis:A,range:&Range<N>,rect:&Rect<N>)
 
 
      
-struct Closest<'a,T:HasAabb>{
+struct Closest<'a,T:Aabb>{
     closest:Option<(Vec<ProtectedBBox<'a,T>>,T::Num)>
 }
-impl<'a,T:HasAabb> Closest<'a,T>{
+impl<'a,T:Aabb> Closest<'a,T>{
     fn consider<R:RayTrait<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>, b:ProtectedBBox<'a,T>,raytrait:&mut R){
 
         let x=match raytrait.compute_distance_to_bot(ray,b.as_ref()){
@@ -295,8 +295,8 @@ impl<'a:'b,'b,R:RayTrait> Blap<'a,'b,R>{
 //Returns the first object that touches the ray.
 fn recc<'a:'b,'b,
     A: Axis,
-    //T: HasAabb,
-    N:NodeTrait,
+    //T: Aabb,
+    N:Node,
     R: RayTrait<N=N::Num,T=N::T>
     >(axis:A,stuff:LevelIter<VistrMut<'a,N>>,rect:Rect<N::Num>,blap:&mut Blap<'a,'b,R>){
 
@@ -405,7 +405,7 @@ mod mutable{
 
     pub fn raycast_naive_mut<
         'a,
-        T:HasAabb,
+        T:Aabb,
         >(bots:ProtectedBBoxSlice<'a,T>,ray:Ray<T::Num>,rtrait:&mut impl RayTrait<N=T::Num,T=T>)->RayCastResult<'a,T>{
         let mut closest=Closest{closest:None};
 
@@ -427,7 +427,7 @@ mod mutable{
     pub fn raycast_mut<
         'a,   
         A:Axis,
-        N:NodeTrait
+        N:Node
         >(tree:&'a mut DinoTree<A,N>,rect:Rect<N::Num>,ray:Ray<N::Num>,rtrait:&mut impl RayTrait<N=N::Num,T=N::T>)->RayCastResult<'a,N::T>{
         
         let axis=tree.axis();

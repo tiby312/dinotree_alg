@@ -29,17 +29,17 @@ impl<'a,A: Axis+'a, F: ColMulti+'a> ColMulti for Bl<'a,A, F> {
 
 
 ///Provides 1d collision detection.
-pub struct Sweeper<T: HasAabb> {
+pub struct Sweeper<T: Aabb> {
     helper: PreVecMut<T>,
 }
 
-impl<T:HasAabb> core::default::Default for Sweeper<T>{
+impl<T:Aabb> core::default::Default for Sweeper<T>{
     #[inline(always)]
     fn default()->Sweeper<T>{
         Sweeper::new()
     }
 }
-impl<I: HasAabb> Sweeper<I> {
+impl<I: Aabb> Sweeper<I> {
     #[inline(always)]
     pub fn new() -> Sweeper<I> {
         Sweeper {
@@ -257,7 +257,7 @@ fn test_parallel(){
 
 //this can have some false positives.
 //but it will still prune a lot of bots.
-pub fn get_section<'a, I:HasAabb,A: Axis>(axis:A,arr: &'a [I], range: &Range<I::Num>) -> &'a [I] {
+pub fn get_section<'a, I:Aabb,A: Axis>(axis:A,arr: &'a [I], range: &Range<I::Num>) -> &'a [I] {
     let mut start = 0;
     for (e, i) in arr.iter().enumerate() {
         let rr = i.get().get_range(axis);
@@ -281,7 +281,7 @@ pub fn get_section<'a, I:HasAabb,A: Axis>(axis:A,arr: &'a [I], range: &Range<I::
 
 //this can have some false positives.
 //but it will still prune a lot of bots.
-pub fn get_section_mut<'a,I:HasAabb, A: Axis>(axis:A,mut arr: ProtectedBBoxSlice<'a,I>, range: &Range<I::Num>) -> ProtectedBBoxSlice<'a,I> {
+pub fn get_section_mut<'a,I:Aabb, A: Axis>(axis:A,mut arr: ProtectedBBoxSlice<'a,I>, range: &Range<I::Num>) -> ProtectedBBoxSlice<'a,I> {
     let mut start = 0;
     for (e, i) in arr.as_ref().iter().enumerate() {
         let rr = i.get().get_range(axis);
