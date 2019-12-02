@@ -793,16 +793,16 @@ pub mod node{
 
     ///A lifetimed node in a dinotree.
     pub struct NodeMut<'a,T: Aabb> {
-        pub range:&'a mut [T],
+        pub(crate) range:&'a mut [T],
 
         //range is empty iff cont is none.
-        pub cont: Option<axgeom::Range<T::Num>>,
+        pub(crate) cont: Option<axgeom::Range<T::Num>>,
         //for non leafs:
         //  div is some iff mid is nonempty.
         //  div is none iff mid is empty.
         //for leafs:
         //  div is none
-        pub div: Option<T::Num>,
+        pub(crate) div: Option<T::Num>,
     }
 
 
