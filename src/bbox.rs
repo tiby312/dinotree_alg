@@ -3,6 +3,7 @@ use crate::inner_prelude::*;
 
 ///Equivalent to: `&mut (Rect<N>,T)`
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct BBoxIndirect<'a,T>{
     pub inner: &'a mut T
 }
@@ -40,6 +41,7 @@ impl<'a,T:HasInner> HasInner for BBoxIndirect<'a,T>{
 
 ///Equivalent to: `(Rect<N>,&mut T)` 
 #[repr(C)]
+#[derive(Debug)]
 pub struct BBoxMut<'a,N, T> {
     pub rect: axgeom::Rect<N>,
     pub inner: &'a mut T,
@@ -82,7 +84,7 @@ pub fn bbox<N,T>(rect:axgeom::Rect<N>,inner:T)->BBox<N,T>{
     BBox::new(rect,inner)
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug,Copy, Clone)]
 #[repr(C)]
 ///Equivalent to: `(Rect<N>,T)` 
 pub struct BBox<N, T> {

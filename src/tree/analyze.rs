@@ -9,8 +9,10 @@ use crate::inner_prelude::*;
 pub use crate::tree::notsorted::NotSorted;
 pub use crate::query::colfind::QueryBuilder;
 pub use crate::query::colfind::NotSortedQueryBuilder;
+pub use crate::query::colfind::ColMulti;
 
 pub use crate::tree::builder::DinoTreeBuilder;
+
 
 pub trait HasId{
     fn get_id(&self)->usize;
@@ -303,7 +305,7 @@ impl Sorter for NoSorter {
 }
 
 pub fn nodes_left(depth: usize, height: usize) -> usize {
-    let levels = height - depth;
+    let levels = height - 1 - depth;
     2usize.rotate_left(levels as u32) - 1
 }
 

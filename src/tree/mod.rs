@@ -354,20 +354,91 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     pub fn multi_rect(&mut self)->rect::MultiRectMut<A,N>{
         rect::MultiRectMut::new(self)
     }
+
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.for_all_not_in_rect_mut(&axgeom::rect(10,20,10,20),|mut a|{
+    ///    *a.inner_mut()+=1;    
+    ///});
+    ///
+    ///assert_eq!(bots[0].inner,1);
+    ///
+    ///```
     pub fn for_all_not_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
         rect::for_all_not_in_rect_mut(self,rect,func);
     }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.for_all_intersect_rect_mut(&axgeom::rect(9,20,9,20),|mut a|{
+    ///    *a.inner_mut()+=1;    
+    ///});
+    ///
+    ///assert_eq!(bots[0].inner,1);
+    ///
+    ///```
     pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
         rect::for_all_intersect_rect_mut(self,rect,func);
     }
     
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let mut test = Vec::new();
+    ///tree.for_all_intersect_rect(&axgeom::rect(9,20,9,20),|a|{
+    ///    test.push(a);
+    ///});
+    ///
+    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
+    ///
+    ///```
     pub fn for_all_intersect_rect<'a>(&'a self,rect:&Rect<N::Num>,func:impl FnMut(&'a N::T)){
         rect::for_all_intersect_rect(self,rect,func);
     }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.for_all_in_rect_mut(&axgeom::rect(0,10,0,10),|mut a|{
+    ///    *a.inner_mut()+=1;    
+    ///});
+    ///
+    ///assert_eq!(bots[0].inner,1);
+    ///
+    ///```
     pub fn for_all_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
         rect::for_all_in_rect_mut(self,rect,func);
     }
-    pub fn for_all_in_rect(&self,rect:&Rect<N::Num>,func:impl FnMut(&N::T)){
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let mut test = Vec::new();
+    ///tree.for_all_in_rect(&axgeom::rect(0,20,0,20),|a|{
+    ///    test.push(a);
+    ///});
+    ///
+    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
+    ///
+    pub fn for_all_in_rect<'a>(&'a self,rect:&Rect<N::Num>,func:impl FnMut(&'a N::T)){
         rect::for_all_in_rect(self,rect,func);
     }
 
@@ -391,12 +462,35 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         });
     }
 
-
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use axgeom::Axis;
+    ///assert!(tree.axis().is_equal_to(default_axis()));
+    ///```
     #[must_use]
     pub fn axis(&self)->A{
         self.axis
     }
 
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use compt::Visitor;
+    ///for mut b in tree.vistr_mut().dfs_preorder_iter().flat_map(|n|n.get_mut().bots.iter_mut()){
+    ///    *b.inner_mut()+=1;    
+    ///}
+    ///assert_eq!(bots[0].inner,1);
+    ///```
     #[must_use]
     pub fn vistr_mut(&mut self)->VistrMut<N>{
         VistrMut{
@@ -404,16 +498,51 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         }
     }
 
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use compt::Visitor;
+    ///let mut test = Vec::new();
+    ///for b in tree.vistr().dfs_preorder_iter().flat_map(|n|n.get().bots.iter()){
+    ///    test.push(b);
+    ///}
+    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
+    ///```
     #[must_use]
     pub fn vistr(&self)->Vistr<N>{
         self.inner.vistr()
     }
 
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///assert_eq!(tree.get_height(),analyze::compute_tree_height_heuristic(400,analyze::DEFAULT_NUMBER_ELEM_PER_NODE));
+    ///```
+    ///
     #[must_use]
     pub fn get_height(&self)->usize{
         self.inner.get_height()
     }
 
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///assert_eq!(tree.num_nodes(),analyze::nodes_left(0,tree.get_height() ));
+    ///
+    ///```
     #[must_use]
     pub fn num_nodes(&self)->usize{
         self.inner.get_nodes().len()
