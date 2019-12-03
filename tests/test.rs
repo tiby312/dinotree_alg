@@ -102,15 +102,15 @@ fn test_many() {
 
     
     assert_eq!(
-        tree.vistr().dfs_inorder_iter().flat_map(|a|a.range.iter()).count(),
+        tree.vistr().dfs_inorder_iter().flat_map(|a|a.get().bots.iter()).count(),
         1000
     );
 
 
     let mut num_div = 0;
     for b in tree.vistr().dfs_inorder_iter() {
-        if let Some(_) = b.div {
-            if let Some(_) = b.cont {
+        if let Some(_) = b.get().div {
+            if let Some(_) = b.get().cont {
                 num_div += 1;
             }
         }

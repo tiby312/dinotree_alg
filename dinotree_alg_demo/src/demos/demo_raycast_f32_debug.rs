@@ -1,12 +1,9 @@
 use crate::support::prelude::*;
 use dinotree_alg;
-use duckduckgeo;
 use std;
 use std::cell::RefCell;
 
-type Ray1<T> = duckduckgeo::Ray<T>;
-type Ray2<T> = axgeom::Ray<T>;
-
+use axgeom::Ray;
 
 mod ray_f32 {
     use super::*;
@@ -26,9 +23,9 @@ mod ray_f32 {
 
         fn compute_distance_to_bot(
             &self,
-            ray: &Ray2<Self::N>,
+            ray: &Ray<Self::N>,
             bot: &Self::T,
-        ) -> RayIntersectResult<Self::N> {
+        ) -> axgeom::CastResult<Self::N> {
             if self.draw {
                 draw_rect_f32(
                     [1.0, 0.0, 0.0, 0.5],
@@ -42,28 +39,10 @@ mod ray_f32 {
 
         fn compute_distance_to_rect(
             &self,
-            ray: &Ray2<Self::N>,
+            ray: &Ray<Self::N>,
             rect: &Rect<Self::N>,
-        ) -> RayIntersectResult<Self::N> {
-            let ray: Ray1<f32> = Ray1 {
-                point: ray.point.inner_into(),
-                dir: ray.dir.inner_into(),
-            };
-            let rect: &Rect<f32> = rect.as_ref();
-
-            let k = ray_intersects_box(&ray, &rect);
-            match k {
-                IntersectsBotResult::Hit(val) => RayIntersectResult::Hit(val),
-                IntersectsBotResult::NoHit => RayIntersectResult::NoHit,
-                IntersectsBotResult::Inside => {
-                    RayIntersectResult::Hit(0.0)
-
-                    //Return none if you do not want results that intersect the ray origin.
-                    //None
-                }
-            }
-            .inner_try_into()
-            .unwrap()
+        ) -> axgeom::CastResult<Self::N> {
+            ray.cast_to_rect(&rect)
         }
     }
 
@@ -87,10 +66,10 @@ pub struct RaycastF32DebugDemo {
 }
 impl RaycastF32DebugDemo {
     pub fn new(dim: Rect<F32n>) -> RaycastF32DebugDemo {
-        let vv: Vec<_> = (0..3000).map(|id| (Bot2 { id })).collect();
+        let vv: Vec<_> = (0..1000).map(|id| (Bot2 { id })).collect();
 
         let mut ii = UniformRandGen::new(dim.inner_into())
-            .with_radius(1.0, 4.0)
+            .with_radius(1.0, 5.0)
             .map(|(pos, radius)| Rect::from_point(pos, radius).inner_try_into().unwrap());
 
         let tree = DinoTreeOwned::new_par( vv, |_a| ii.next().unwrap());
@@ -113,14 +92,14 @@ impl DemoSys for RaycastF32DebugDemo {
     ) {
         let counter = &mut self.counter;
 
-        let ray: Ray2<F32n> = {
+        let ray: Ray<F32n> = {
             *counter += 0.004;
             let point: Vec2<f32> = cursor.inner_into::<f32>().inner_as();
             //*counter=10.0;
-            let dir = vec2(counter.cos() * 10.0, counter.sin() * 10.0);
+            let mut dir = vec2(counter.cos() * 10.0, counter.sin() * 10.0);
 
             let dir = dir.inner_as();
-            Ray2 { point, dir }.inner_try_into().unwrap()
+            Ray { point, dir }.inner_try_into().unwrap()
         };
 
         for bot in self.tree.get_aabb_bots().iter() {
@@ -153,22 +132,15 @@ impl DemoSys for RaycastF32DebugDemo {
             self.dim,
         );
 
-        let ray: Ray2<f32> = ray.inner_into();
+        let ray: Ray<f32> = ray.inner_into();
 
 
-        let (ppx,ppy) = match test {
-            RayCastResult::Hit(_,dis)=>{
-                let ppx = ray.point.x + ray.dir.x * dis.into_inner();
-                let ppy = ray.point.y + ray.dir.y * dis.into_inner();
-                (ppx, ppy)
-            },
-            RayCastResult::NoHit=>{
-                let ppx = ray.point.x + ray.dir.x * 800.0;
-                let ppy = ray.point.y + ray.dir.y * 800.0;
-                (ppx, ppy)
-            }
+        let dis = match test {
+            RayCastResult::Hit(_,dis)=>dis.into_inner(),
+            RayCastResult::NoHit=>800.0
         };
 
+        let Vec2{x:ppx,y:ppy}=ray.point_at_tval(dis);
 
 
         let arr = [

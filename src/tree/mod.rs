@@ -11,7 +11,6 @@ pub mod bbox_helper{
         bots.iter_mut().map(|a|BBoxIndirect::new(a)).collect()
     }
 
-
     ///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.
     pub fn create_bbox_mut<'a,N:Num,T>(bots:&'a mut [T],mut aabb_create:impl FnMut(&T)->Rect<N>)->Vec<BBoxMut<'a,N,T>>{
         bots.iter_mut()
@@ -68,26 +67,22 @@ mod notsorted{
     pub struct NotSorted<A: Axis,N:Node>(pub(crate) DinoTree<A,N>);
 
     impl<'a,T:Aabb + Send + Sync> NotSorted<DefaultA,NodeMut<'a,T>>{
-       #[must_use]
         pub fn new_par(bots:&'a mut [T])->NotSorted<DefaultA,NodeMut<'a,T>>{
             DinoTreeBuilder::new(bots).build_not_sorted_par()
         }
     }
     impl<'a,T:Aabb> NotSorted<DefaultA,NodeMut<'a,T>>{
-        #[must_use]
         pub fn new(bots:&'a mut [T])->NotSorted<DefaultA,NodeMut<'a,T>>{
             DinoTreeBuilder::new(bots).build_not_sorted_seq()
         }
     }
 
     impl<'a,A:Axis,T:Aabb + Send + Sync> NotSorted<A,NodeMut<'a,T>>{
-       #[must_use]
         pub fn with_axis_par(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
             DinoTreeBuilder::with_axis(axis,bots).build_not_sorted_par()
         }
     }
     impl<'a,A:Axis,T:Aabb> NotSorted<A,NodeMut<'a,T>>{
-        #[must_use]
         pub fn with_axis(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
             DinoTreeBuilder::with_axis(axis,bots).build_not_sorted_seq()
         }
@@ -164,7 +159,6 @@ impl<'a,T:Aabb> DinoTree<DefaultA,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::new(&mut bots);
     ///
     ///```
-    #[must_use]
     pub fn new(bots:&'a mut [T])->DinoTree<DefaultA,NodeMut<'a,T>>{
         DinoTreeBuilder::new(bots).build_seq()
     }
@@ -178,7 +172,6 @@ impl<'a,T:Aabb + Send + Sync> DinoTree<DefaultA,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::new_par(&mut bots);
     ///
     ///```
-    #[must_use]
     pub fn new_par(bots:&'a mut [T])->DinoTree<DefaultA,NodeMut<'a,T>>{
         DinoTreeBuilder::new(bots).build_par()
     }
@@ -192,7 +185,6 @@ impl<'a,A:Axis,T:Aabb> DinoTree<A,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
-    #[must_use]
     pub fn with_axis(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
         DinoTreeBuilder::with_axis(axis,bots).build_seq()
     }
@@ -206,7 +198,6 @@ impl<'a,A:Axis,T:Aabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
-    #[must_use]
     pub fn with_axis_par(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
         DinoTreeBuilder::with_axis(axis,bots).build_par()
     }
@@ -271,7 +262,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(res[0].bot.get(),&bots_copy[0]);
     ///assert_eq!(res[1].bot.get(),&bots_copy[1]);
     ///```
-    #[must_use]
     pub fn k_nearest_mut(
         &mut self,
         point:Vec2<N::Num>,
@@ -281,8 +271,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         k_nearest::k_nearest_mut(self,point,num,&mut knear,border)
     }
 
-
-    #[must_use]
     pub fn k_nearest_fine_mut(
         &mut self,
         point:Vec2<N::Num>,
@@ -291,7 +279,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         k_nearest::k_nearest_mut(self,point,num,knear,border)
     }
 
-    #[must_use]
     pub fn raycast_fine_mut(
         &mut self,
         ray:axgeom::Ray<N::Num>,
@@ -300,11 +287,31 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     }
 
 
-    #[must_use]
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///use axgeom::*;
+    ///let border = rect(0,100,0,100);
+    ///
+    ///let mut bots = [rect(0,10,0,10),
+    ///                rect(2,5,2,5),
+    ///                rect(4,10,4,10)];
+    ///
+    ///let mut bots_copy=bots.clone();
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let ray=ray(vec2(5,-5),vec2(0,1));
+    ///let res = tree.raycast_mut(ray,|ray,r|ray.cast_to_rect(r),border);
+    ///
+    ///let (bots,dis)=res.unwrap();
+    ///assert_eq!(dis,5);
+    ///assert_eq!(bots.len(),1);
+    ///assert_eq!(bots[0].get(),&rect(0,10,0,10));
+    ///```
     pub fn raycast_mut(
         &mut self,
         ray:axgeom::Ray<N::Num>,
-        rtrait: impl Fn(&Ray<N::Num>,&Rect<N::Num>)->RayIntersectResult<N::Num>,border:Rect<N::Num> )->raycast::RayCastResult<N::T>{
+        rtrait: impl Fn(&Ray<N::Num>,&Rect<N::Num>)->axgeom::CastResult<N::Num>,border:Rect<N::Num> )->raycast::RayCastResult<N::T>{
         let mut rtrait = raycast::RayCastFineWrapper{inner:rtrait,_p:PhantomData};
         
         raycast::raycast_mut(self,border,ray,&mut rtrait)
@@ -313,6 +320,7 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     pub fn draw(&self,drawer:&mut impl graphics::DividerDrawer<N=N::Num>,rect:&Rect<N::Num>){
         graphics::draw(self,drawer,rect)
     }
+
 
     /// # Examples
     ///
@@ -472,7 +480,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///use axgeom::Axis;
     ///assert!(tree.axis().is_equal_to(default_axis()));
     ///```
-    #[must_use]
     pub fn axis(&self)->A{
         self.axis
     }
@@ -491,7 +498,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///}
     ///assert_eq!(bots[0].inner,1);
     ///```
-    #[must_use]
     pub fn vistr_mut(&mut self)->VistrMut<N>{
         VistrMut{
             inner:self.inner.vistr_mut()
@@ -512,7 +518,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///}
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///```
-    #[must_use]
     pub fn vistr(&self)->Vistr<N>{
         self.inner.vistr()
     }
@@ -527,7 +532,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(tree.get_height(),analyze::compute_tree_height_heuristic(400,analyze::DEFAULT_NUMBER_ELEM_PER_NODE));
     ///```
     ///
-    #[must_use]
     pub fn get_height(&self)->usize{
         self.inner.get_height()
     }
@@ -543,7 +547,6 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(tree.num_nodes(),analyze::nodes_left(0,tree.get_height() ));
     ///
     ///```
-    #[must_use]
     pub fn num_nodes(&self)->usize{
         self.inner.get_nodes().len()
     }

@@ -36,63 +36,13 @@
 
 use crate::query::inner_prelude::*;
 use core::cmp::Ordering;
-use core::convert::TryFrom;
 use axgeom::Ray;
 
 
 
-pub enum RayCastResult<'a,T:Aabb>{
-    Hit(Vec<PMut<'a,T>>,T::Num),
-    NoHit
-}
-impl<'a,T:Aabb> RayCastResult<'a,T>{
-    pub fn unwrap(self)->(Vec<PMut<'a,T>>,T::Num){
-        match self{
-            RayCastResult::Hit(a,b)=>(a,b),
-            RayCastResult::NoHit=>panic!("Ray did not hit.")
-        }
-    }
-}
 
-///Describes if a ray hit a rectangle.
-#[derive(Copy, Clone, Debug)]
-pub enum RayIntersectResult<N> {
-    Hit(N),
-    NoHit
-}
+pub type RayCastResult<'a,T>=axgeom::CastResult<(Vec<PMut<'a,T>>,<T as Aabb>::Num)>;
 
-impl<N> RayIntersectResult<N>{
-
-    pub fn inner_into<K:From<N>>(self)->RayIntersectResult<K>{
-        use RayIntersectResult::*;
-        match self{
-            Hit(k)=>{
-                Hit(K::from(k))
-            },
-            NoHit=>{
-                NoHit
-            }
-        }
-    }
-    pub fn inner_try_into<K:TryFrom<N>>(self)->Result<RayIntersectResult<K>,K::Error>{
-        use RayIntersectResult::*;
-        match self{
-            Hit(k)=>{
-                match K::try_from(k){
-                    Ok(k)=>{
-                        Ok(Hit(k))
-                    },
-                    Err(k)=>{
-                        Err(k)
-                    }
-                }
-            },
-            NoHit=>{
-                Ok(NoHit)
-            }
-        }
-    }
-}
 
 ///This is the trait that defines raycast specific geometric functions that are needed by this raytracing algorithm.
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying Num to a minimum
@@ -103,7 +53,7 @@ pub trait RayCast{
   
     ///Returns true if the ray intersects with this rectangle.
     ///This function allows as to prune which nodes to visit.
-    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>;
+    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->axgeom::CastResult<Self::N>;
 
     ///Returns the length of ray between its origin, and where it intersects the line provided.
     ///Returns none if the ray doesnt intersect it.
@@ -115,7 +65,7 @@ pub trait RayCast{
     ///This is where the user can do expensive collision detection on the shape
     ///contains within it's bounding box.
     ///Its default implementation just calls compute_distance_to_rect()
-    fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:&Self::T)->RayIntersectResult<Self::N>{
+    fn compute_distance_to_bot(&self,ray:&Ray<Self::N>,a:&Self::T)->axgeom::CastResult<Self::N>{
         self.compute_distance_to_rect(ray,a.get())
     }
 
@@ -126,44 +76,14 @@ pub(crate)struct RayCastFineWrapper<T:Aabb,K>{
     pub(crate) inner:K,
     pub(crate) _p:PhantomData<(T)>
 }
-impl<T:Aabb,K:Fn(&Ray<T::Num>,&Rect<T::Num>)->RayIntersectResult<T::Num>> RayCast for RayCastFineWrapper<T,K>{
+impl<T:Aabb,K:Fn(&Ray<T::Num>,&Rect<T::Num>)->axgeom::CastResult<T::Num>> RayCast for RayCastFineWrapper<T,K>{
     type T=T;
     type N=T::Num;
 
-    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>{
+    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->axgeom::CastResult<Self::N>{
         (self.inner)(ray,a)
     }    
 }
-
-
-
-
-
-/*
-//TODO use this.
-pub struct RaycastSimple<T:Aabb,F>{
-    _p:PhantomData<T>,
-    pub func:F
-}
-
-impl<T:Aabb,F> RaycastSimple<T,F>
-    where F:Fn(&Ray<T::Num>,&Rect<T::Num>) -> RayIntersectResult<T::Num>{
-
-    pub fn new(func:F)->RaycastSimple<T,F>{
-        RaycastSimple{_p:PhantomData,func}
-    }
-}
-impl<T:Aabb,F> RayCast for RaycastSimple<T,F>
-    where F:Fn(&Ray<T::Num>,&Rect<T::Num>) -> RayIntersectResult<T::Num>{
-    type T=T;
-    type N=T::Num;
-
-    fn compute_distance_to_rect(&self,ray:&Ray<Self::N>,a:&Rect<Self::N>)->RayIntersectResult<Self::N>{
-        (self.func)(ray,a)
-    }
-}
-*/
-
 
 
 
@@ -188,10 +108,10 @@ impl<'a,T:Aabb> Closest<'a,T>{
     fn consider<R:RayCast<N=T::Num,T=T>>(&mut self,ray:&Ray<T::Num>, b:PMut<'a,T>,raytrait:&mut R){
 
         let x=match raytrait.compute_distance_to_bot(ray,b.as_ref()){
-            RayIntersectResult::Hit(val)=>{
+            axgeom::CastResult::Hit(val)=>{
                 val
             },
-            RayIntersectResult::NoHit=>{
+            axgeom::CastResult::NoHit=>{
                 return;
             },
         };
@@ -240,7 +160,7 @@ struct Blap<'a:'b,'b,R:RayCast>{
 impl<'a:'b,'b,R:RayCast> Blap<'a,'b,R>{
     fn should_handle_rect(&mut self,rect:&Rect<R::N>)->bool{
         match self.rtrait.compute_distance_to_rect(&self.ray,rect){
-            RayIntersectResult::Hit(val)=>{
+            axgeom::CastResult::Hit(val)=>{
 
                 match self.closest.get_dis(){
                     Some(dis)=>{
@@ -254,7 +174,7 @@ impl<'a:'b,'b,R:RayCast> Blap<'a,'b,R>{
                 }   
                 
             },
-            RayIntersectResult::NoHit=>{
+            axgeom::CastResult::NoHit=>{
 
             }
         }
@@ -385,7 +305,7 @@ mod mutable{
 
         match closest.closest{
             Some((a,b))=>{
-                RayCastResult::Hit(a,b)
+                RayCastResult::Hit((a,b))
             },
             None=>{
                 RayCastResult::NoHit
@@ -409,7 +329,7 @@ mod mutable{
 
         match blap.closest.closest{
             Some((a,b))=>{
-                RayCastResult::Hit(a,b)
+                RayCastResult::Hit((a,b))
             },
             None=>{
                 RayCastResult::NoHit

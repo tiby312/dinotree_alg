@@ -14,7 +14,7 @@ mod inner_prelude {
 }
 
 
-pub use crate::query::raycast::{RayIntersectResult,RayCast,RayCastResult};
+pub use crate::query::raycast::{RayCast,RayCastResult};
 pub use crate::query::k_nearest::{Knearest,KnearestResult};
 pub use crate::query::graphics::DividerDrawer;
 pub use crate::query::rect::{MultiRectMut,RectIntersectErr};

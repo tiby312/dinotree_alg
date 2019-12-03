@@ -1,12 +1,9 @@
 use crate::support::prelude::*;
-use duckduckgeo;
 use std;
 
 use dinotree_alg::query;
 
-type Ray1<T> = duckduckgeo::Ray<T>;
-type Ray2<T> = axgeom::Ray<T>;
-
+use axgeom::Ray;
 
 struct RayT<'a, 'c: 'a> {
     pub radius: f32,
@@ -20,50 +17,19 @@ impl<'a, 'c: 'a> RayCast for RayT<'a, 'c> {
 
     fn compute_distance_to_bot(
         &self,
-        ray: &Ray2<Self::N>,
+        ray: &Ray<Self::N>,
         bot: &Self::T,
-    ) -> RayIntersectResult<Self::N> {
-        let ray: Ray1<f32> = Ray1 {
-            point: ray.point.inner_into(),
-            dir: ray.dir.inner_into(),
-        };
+    ) -> axgeom::CastResult<Self::N> {
 
-        match ray_intersects_circle(&ray, bot.inner().center, self.radius) {
-            IntersectsBotResult::Hit(val) => RayIntersectResult::Hit(val),
-            IntersectsBotResult::NoHit => RayIntersectResult::NoHit,
-            IntersectsBotResult::Inside => {
-                RayIntersectResult::Hit(0.0)
-
-                //Return none if you do not want results that intersect the ray origin.
-                //None
-            }
-        }
-        .inner_try_into()
-        .unwrap()
+        ray.inner_into::<f32>().cast_to_circle(bot.inner().center,self.radius).map(|a|NotNan::new(a).unwrap())
     }
     fn compute_distance_to_rect(
         &self,
-        ray: &Ray2<Self::N>,
+        ray: &Ray<Self::N>,
         rect: &Rect<Self::N>,
-    ) -> RayIntersectResult<Self::N> {
-        let ray: Ray1<f32> = Ray1 {
-            point: ray.point.inner_into(),
-            dir: ray.dir.inner_into(),
-        };
-        let rect: &Rect<f32> = rect.as_ref();
+    ) -> axgeom::CastResult<Self::N> {
 
-        let k = ray_intersects_box(&ray, &rect);
-        match k {
-            IntersectsBotResult::Hit(val) => RayIntersectResult::Hit(val),
-            IntersectsBotResult::NoHit => RayIntersectResult::NoHit,
-            IntersectsBotResult::Inside => {
-                RayIntersectResult::Hit(0.0)
-                //Return none if you do not want results that intersect the ray origin.
-                //None
-            }
-        }
-        .inner_try_into()
-        .unwrap()
+        ray.cast_to_rect(rect)
     }
 }
 
@@ -126,7 +92,7 @@ impl DemoSys for RaycastF32Demo {
 
                 let ray = {
                     let k = vec2(x, y).inner_try_into().unwrap();
-                    Ray2 {
+                    Ray {
                         point: cursor,
                         dir: k,
                     }

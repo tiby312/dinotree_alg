@@ -209,7 +209,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
 
 
         let res_naive=match raycast::raycast_naive_mut(PMut::new(self.bots),ray,rtrait){
-            raycast::RayCastResult::Hit(mut a,b)=>{
+            raycast::RayCastResult::Hit((mut a,b))=>{
                 Some( (a.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,b) )   
             },
             raycast::RayCastResult::NoHit=>{
@@ -220,7 +220,7 @@ impl<'a,T:HasInner> NaiveAlgs<'a,T>{
         let mut tree=DinoTreeBuilder::new(self.bots).build_seq(); 
 
         let res_dinotree=match raycast::raycast_mut(&mut tree,rect,ray,rtrait){
-            raycast::RayCastResult::Hit(mut a,b)=>{
+            raycast::RayCastResult::Hit((mut a,b))=>{
                 Some((a.drain(..).map(|a|a.inner().get_id()).collect::<Vec<_>>() ,b))
             },
             raycast::RayCastResult::NoHit=>{
