@@ -7,8 +7,6 @@ Please see the [dinotree-book](https://dinotree-book.netlify.com) which is a wor
 
 The dinotree_alg_demo inner project is meant to show case the use of these algorithms. It depends on the piston 2d engine to draw to the screen. 
 
-The dinotree_alg_data project generates some graphs using RustGnuPlot. These graphs are used to create the reports in the dinotree_report project that is a seperate project.
-
 ### Analysis
 
 Please see the [book](https://dinotree-book.netlify.com) for a work in progress writeup of the design and analysis of the algorithms in this project.
