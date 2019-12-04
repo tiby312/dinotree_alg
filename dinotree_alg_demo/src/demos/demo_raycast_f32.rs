@@ -121,25 +121,20 @@ impl DemoSys for RaycastF32Demo {
                     self.dim,
                 );
 
-                let (ppx,ppy) = match res{
-                    RayCastResult::Hit(_,dis)=>{
-                        let ppx = ray.point.x + ray.dir.x * dis;
-                        let ppy = ray.point.y + ray.dir.y * dis;
-                        (ppx, ppy)
-                    },
-                    RayCastResult::NoHit=>{
-                        let ppx = ray.point.x + ray.dir.x * 800.0;
-                        let ppy = ray.point.y + ray.dir.y * 800.0;
-                        (ppx, ppy)
-                    }
+
+
+                let dis = match res {
+                    RayCastResult::Hit((_,dis))=>dis.into_inner(),
+                    RayCastResult::NoHit=>800.0
                 };
 
+                let Vec2{x:ppx,y:ppy}=ray.inner_into().point_at_tval(dis);
 
                 let arr = [
                     ray.point.x.into_inner() as f64,
                     ray.point.y.into_inner() as f64,
-                    ppx.into_inner() as f64,
-                    ppy.into_inner() as f64,
+                    ppx as f64,
+                    ppy as f64,
                 ];
                 line(
                     [0.0, 0.0, 1.0, 0.2], // black

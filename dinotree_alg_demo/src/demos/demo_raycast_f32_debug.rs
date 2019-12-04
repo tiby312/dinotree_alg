@@ -136,7 +136,7 @@ impl DemoSys for RaycastF32DebugDemo {
 
 
         let dis = match test {
-            RayCastResult::Hit(_,dis)=>dis.into_inner(),
+            RayCastResult::Hit((_,dis))=>dis.into_inner(),
             RayCastResult::NoHit=>800.0
         };
 
