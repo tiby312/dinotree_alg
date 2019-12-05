@@ -1,5 +1,5 @@
 use crate::support::prelude::*;
-use dinotree_alg;
+
 use duckduckgeo;
 
 #[derive(Copy, Clone)]

@@ -1,7 +1,6 @@
 use crate::support::prelude::*;
 use std;
 
-use dinotree_alg::query;
 
 use axgeom::Ray;
 
@@ -13,7 +12,7 @@ struct RayT<'a, 'c: 'a> {
 
 impl<'a, 'c: 'a> RayCast for RayT<'a, 'c> {
     type N = F32n;
-    type T = BBoxPtr<F32n, Bot>;
+    type T = BBox<F32n, Bot>;
 
     fn compute_distance_to_bot(
         &self,
@@ -46,24 +45,26 @@ impl analyze::HasId for Bot {
 }
 
 pub struct RaycastF32Demo {
-    tree: DinoTreeOwned<DefaultA, F32n, Bot>,
+    tree: DinoTreeOwned<DefaultA, BBox<F32n, Bot>>,
     dim: Rect<F32n>,
     radius: f32,
 }
 impl RaycastF32Demo {
     pub fn new(dim: Rect<F32n>) -> Self {
         let radius = 20.0;
-        let vv = UniformRandGen::new(dim.inner_into())
+        let vv:Vec<_> = UniformRandGen::new(dim.inner_into())
             .enumerate()
-            .map(|(id, center)| Bot { id, center })
+            .map(|(id, center)| {
+                let b=Bot { id, center };
+                let r=Rect::from_point(center, vec2same(radius))
+                .inner_try_into()
+                .unwrap();
+                bbox(r,b)
+            })
             .take(100)
             .collect();
 
-        let tree = DinoTreeOwned::new_par( vv, |a| {
-            Rect::from_point(a.center, vec2same(radius))
-                .inner_try_into()
-                .unwrap()
-        });
+        let tree=DinoTreeOwned::new(vv);
 
         Self { tree, dim, radius }
     }
@@ -78,12 +79,13 @@ impl DemoSys for RaycastF32Demo {
         check_naive: bool,
     ) {
         //Draw bots
-        for bot in self.tree.get_aabb_bots().iter() {
+        for bot in self.tree.get_bots().iter() {
             draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.get().as_ref(), c, g);
         }
 
         let tree = &mut self.tree;
-
+        let dim=self.dim;
+        let radius=self.radius;
         {
             for dir in 0..360i32 {
                 let dir = dir as f32 * (std::f32::consts::PI / 180.0);
@@ -99,19 +101,21 @@ impl DemoSys for RaycastF32Demo {
                 };
 
                 if check_naive {
-                    analyze::NaiveAlgs::new(unsafe { tree.get_aabb_bots_mut_not_protected() }).assert_raycast_mut(
-                        self.dim,
-                        ray,
-                        &mut RayT {
-                            radius: self.radius,
-                            c: &c,
-                            g,
-                        },
-                    );
+                    tree.get_bots_mut(|bots|{
+                        analyze::NaiveAlgs::new(bots).assert_raycast_mut(
+                            dim,
+                            ray,
+                            &mut RayT {
+                                radius,
+                                c: &c,
+                                g,
+                            },
+                        );
+                    });
                 }
 
                 
-                let res = tree.get_mut().raycast_fine_mut(
+                let res = tree.get_tree_mut().raycast_fine_mut(
                     ray,
                     &mut RayT {
                         radius: self.radius,

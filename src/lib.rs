@@ -115,7 +115,6 @@ pub mod util;
 
 
 
-
 ///The underlying number type used for the dinotree.
 ///It is auto implemented by all types that satisfy the type constraints.
 ///Notice that no arithmatic is possible. The tree is constructed

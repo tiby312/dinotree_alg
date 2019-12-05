@@ -279,6 +279,7 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         k_nearest::k_nearest_mut(self,point,num,knear,border)
     }
 
+
     pub fn raycast_fine_mut(
         &mut self,
         ray:axgeom::Ray<N::Num>,

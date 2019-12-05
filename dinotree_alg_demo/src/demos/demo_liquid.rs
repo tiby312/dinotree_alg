@@ -1,5 +1,4 @@
 use crate::support::prelude::*;
-use dinotree_alg;
 use duckduckgeo;
 
 use axgeom::Rect;

@@ -16,7 +16,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct KnearestDemo {
-    tree: DinoTreeOwned<DefaultA, F32n, Bot>,
+    tree: DinoTreeOwned<DefaultA, BBox<F32n, Bot>>,
     dim: Rect<F32n>,
 }
 
@@ -27,15 +27,22 @@ impl KnearestDemo {
             .with_radius(2.0, 50.0)
             .take(40)
             .enumerate()
-            .map(|(id, (pos, radius))| Bot { id, pos, radius })
+            .map(|(id, (pos, radius))| {
+                bbox(Rect::from_point(pos,radius)
+                .inner_try_into()
+                .unwrap(),Bot { id, pos, radius })
+            })
             .collect();
 
+        /*
         let tree = DinoTreeOwned::new_par( bots, |bot| {
             Rect::from_point(bot.pos, bot.radius)
                 .inner_try_into()
                 .unwrap()
         });
-
+        */
+        let tree = DinoTreeOwned::new( bots);
+        
         KnearestDemo { tree, dim }
     }
 }
@@ -50,7 +57,7 @@ impl DemoSys for KnearestDemo {
     ) {
         let tree = &mut self.tree;
 
-        for bot in tree.get_aabb_bots().iter() {
+        for bot in tree.get_bots().iter() {
             draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.get().as_ref(), c, g);
         }
 
@@ -61,7 +68,7 @@ impl DemoSys for KnearestDemo {
         };
 
         impl<'a, 'c: 'a> Knearest for Kn<'a, 'c> {
-            type T = BBoxPtr<F32n, Bot>;
+            type T = BBox<F32n, Bot>;
             type N = F32n;
 
             fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
@@ -120,7 +127,7 @@ impl DemoSys for KnearestDemo {
                 g: RefCell::new(g),
                 draw: true,
             };
-            tree.get_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
+            tree.get_tree_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
         };
         let mut vv: Vec<_> = vv
             .drain(..)
@@ -136,12 +143,15 @@ impl DemoSys for KnearestDemo {
                 g: RefCell::new(g),
                 draw: false,
             };
-            analyze::NaiveAlgs::new(unsafe { tree.get_aabb_bots_mut_not_protected() }).assert_k_nearest_mut(
-                cursor,
-                3,
-                &mut kn,
-                self.dim,
-            );
+            let dim=self.dim;
+            tree.get_bots_mut(|bots|{
+                analyze::NaiveAlgs::new(bots).assert_k_nearest_mut(
+                    cursor,
+                    3,
+                    &mut kn,
+                    dim,
+                );
+            });
         }
 
         let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);

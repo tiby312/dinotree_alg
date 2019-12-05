@@ -1,5 +1,5 @@
 use crate::support::prelude::*;
-use dinotree_alg;
+
 use std;
 use std::cell::RefCell;
 
@@ -7,8 +7,6 @@ use axgeom::Ray;
 
 mod ray_f32 {
     use super::*;
-
-    use duckduckgeo;
 
     pub struct RayT<'a, 'c: 'a> {
         pub c: &'a Context,
@@ -18,7 +16,7 @@ mod ray_f32 {
     }
 
     impl<'a, 'c: 'a> RayCast for RayT<'a, 'c> {
-        type T = BBoxPtr<F32n, Bot2>;
+        type T = BBox<F32n, Bot2>;
         type N = F32n;
 
         fn compute_distance_to_bot(
@@ -60,19 +58,22 @@ impl analyze::HasId for Bot2 {
 }
 
 pub struct RaycastF32DebugDemo {
-    tree: DinoTreeOwned<DefaultA, F32n, Bot2>,
+    tree: DinoTreeOwned<DefaultA, BBox<F32n, Bot2>>,
     counter: f32,
     dim: Rect<F32n>,
 }
 impl RaycastF32DebugDemo {
     pub fn new(dim: Rect<F32n>) -> RaycastF32DebugDemo {
-        let vv: Vec<_> = (0..1000).map(|id| (Bot2 { id })).collect();
-
-        let mut ii = UniformRandGen::new(dim.inner_into())
+        
+        let mut ii:Vec<_> = UniformRandGen::new(dim.inner_into())
             .with_radius(1.0, 5.0)
-            .map(|(pos, radius)| Rect::from_point(pos, radius).inner_try_into().unwrap());
+            .enumerate()
+            .take(500)
+            .map(|(id,(pos, radius))| {
+                bbox(Rect::from_point(pos, radius).inner_try_into().unwrap(),Bot2{id})
+            }).collect();
 
-        let tree = DinoTreeOwned::new_par( vv, |_a| ii.next().unwrap());
+        let tree = DinoTreeOwned::new_par( ii);
 
         RaycastF32DebugDemo {
             tree,
@@ -102,26 +103,29 @@ impl DemoSys for RaycastF32DebugDemo {
             Ray { point, dir }.inner_try_into().unwrap()
         };
 
-        for bot in self.tree.get_aabb_bots().iter() {
+        for bot in self.tree.get_bots().iter() {
             draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.get().as_ref(), c, g);
         }
 
-        let height = self.tree.get_height();
+        let height = self.tree.get_tree().get_height();
 
         if check_naive {
-            analyze::NaiveAlgs::new(unsafe { self.tree.get_aabb_bots_mut_not_protected() }).assert_raycast_mut(
-                self.dim,
-                ray,
-                &mut ray_f32::RayT {
-                    draw: false,
-                    c: &c,
-                    g: RefCell::new(g),
-                    height,
-                },
-            );
+            let dim=self.dim;
+            self.tree.get_bots_mut(|bots|{
+                analyze::NaiveAlgs::new(bots).assert_raycast_mut(
+                    dim,
+                    ray,
+                    &mut ray_f32::RayT {
+                        draw: false,
+                        c: &c,
+                        g: RefCell::new(g),
+                        height,
+                    },
+                );
+            });
         }
 
-        let test = self.tree.get_mut().raycast_fine_mut(
+        let test = self.tree.get_tree_mut().raycast_fine_mut(
             ray,
             &mut ray_f32::RayT {
                 draw: true,
@@ -205,6 +209,6 @@ impl DemoSys for RaycastF32DebugDemo {
         }
 
         let mut dd = Bla { c: &c, g };
-        self.tree.get().draw( &mut dd, &self.dim);
+        self.tree.get_tree().draw( &mut dd, &self.dim);
     }
 }

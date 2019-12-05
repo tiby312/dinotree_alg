@@ -69,106 +69,78 @@ impl<T:Aabb> Node for NodePtr<T>{
 }
 
 
+fn make_owned<A:Axis,T:Aabb>(axis:A,bots:&mut [T])->DinoTree<A,NodePtr<T>>{
+    let inner = DinoTree::with_axis(axis,bots);
+    let inner:Vec<_>=inner.inner.into_nodes().drain(..).map(|node|NodePtr{range:core::ptr::NonNull::new(node.range).unwrap(),cont:node.cont,div:node.div}).collect(); 
+    let inner=compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
+    DinoTree{axis,inner}
+}
+
+fn make_owned_par<A:Axis,T:Aabb+Send+Sync>(axis:A,bots:&mut [T])->DinoTree<A,NodePtr<T>>{
+    let inner = DinoTree::with_axis_par(axis,bots);
+    let inner:Vec<_>=inner.inner.into_nodes().drain(..).map(|node|NodePtr{range:core::ptr::NonNull::new(node.range).unwrap(),cont:node.cont,div:node.div}).collect(); 
+    let inner=compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
+    DinoTree{axis,inner}
+}
+
 ///An owned dinotree
-pub struct DinoTreeOwned<A:Axis,N:Num,T>{
-    inner:DinoTree<A,NodePtr<BBoxPtr<N,T>>>,
-    bots_aabb:Vec<BBoxPtr<N,T>>,
+pub struct DinoTreeOwned<A:Axis,T:Aabb>{
+    tree:Option<DinoTree<A,NodePtr<T>>>,
     bots:Vec<T>
 }
 
-
-
-impl<N:Num,T : Send + Sync> DinoTreeOwned<DefaultA,N,T>{
-    pub fn new_par(
-        bots:Vec<T>,
-        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultA,N,T>{
-        Self::with_axis_par(default_axis(),bots,aabb_create)
+impl<T:Aabb> DinoTreeOwned<DefaultA,T>{
+    pub fn new(bots:Vec<T>)->DinoTreeOwned<DefaultA,T>{
+        Self::with_axis(default_axis(),bots)
+    }
+}
+impl<T:Aabb+Send+Sync> DinoTreeOwned<DefaultA,T>{
+    pub fn new_par(bots:Vec<T>)->DinoTreeOwned<DefaultA,T>{
+        Self::with_axis_par(default_axis(),bots)
     }
 }
 
-impl<A:Axis,N:Num,T : Send + Sync> DinoTreeOwned<A,N,T>{
+impl<A:Axis,T:Aabb+Send+Sync> DinoTreeOwned<A,T>{
 
     ///Create an owned dinotree in one thread.
     pub fn with_axis_par(
         axis:A,
-        mut bots:Vec<T>,
-        mut aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<A,N,T>{
-        let mut bots_aabb:Vec<BBoxPtr<N,T>>=bots.iter_mut().map(|k|BBoxPtr::new(aabb_create(k),core::ptr::NonNull::new(k).unwrap())).collect();
-
-        let inner = DinoTreeBuilder::with_axis(axis,&mut bots_aabb).build_par();
-        
-        let inner:Vec<_>=inner.inner.into_nodes().drain(..).map(|node|NodePtr{range:core::ptr::NonNull::new(node.range).unwrap(),cont:node.cont,div:node.div}).collect(); 
-        let inner=compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
+        mut bots:Vec<T>)->DinoTreeOwned<A,T>{
         DinoTreeOwned{
-            inner:DinoTree{
-                axis,
-                inner
-            },
-            bots_aabb,
-            bots
+            tree:Some(make_owned_par(axis,&mut bots)),
+            bots,
         }
     }
 }
+impl<A:Axis,T:Aabb> DinoTreeOwned<A,T>{
 
-impl<N:Num,T> DinoTreeOwned<DefaultA,N,T>{
-    pub fn new(
-        bots:Vec<T>,
-        aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<DefaultA,N,T>{
-        Self::with_axis(default_axis(),bots,aabb_create)
-    }
-}
-impl<A:Axis,N:Num,T> DinoTreeOwned<A,N,T>{
-    
-    ///Create an owned dinotree in parallel.
+    ///Create an owned dinotree in one thread.
     pub fn with_axis(
         axis:A,
-        mut bots:Vec<T>,
-        mut aabb_create:impl FnMut(&T)->Rect<N>)->DinoTreeOwned<A,N,T>{
-        let mut bots_aabb:Vec<BBoxPtr<N,T>>=bots.iter_mut().map(|k|BBoxPtr::new(aabb_create(k),core::ptr::NonNull::new(k).unwrap())).collect();
-
-        let inner = DinoTreeBuilder::with_axis(axis,&mut bots_aabb).build_seq();
-        
-        let inner:Vec<_>=inner.inner.into_nodes().drain(..).map(|node|NodePtr{range:core::ptr::NonNull::new(node.range).unwrap(),cont:node.cont,div:node.div}).collect(); 
-        let inner=compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
+        mut bots:Vec<T>)->DinoTreeOwned<A,T>{
         DinoTreeOwned{
-            inner:DinoTree{
-                axis,
-                inner
-            },
-            bots_aabb,
-            bots
+            tree:Some(make_owned(axis,&mut bots)),
+            bots,
         }
     }
-
-    pub fn get(&self)->&DinoTree<A,NodePtr<BBoxPtr<N,T>>>{
-        &self.inner
+    
+    pub fn get_tree(&self)->&DinoTree<A,NodePtr<T>>{
+        self.tree.as_ref().unwrap()
     }
-    pub fn get_mut(&mut self)->&mut DinoTree<A,NodePtr<BBoxPtr<N,T>>>{
-        &mut self.inner
+    
+    pub fn get_tree_mut(&mut self)->&mut DinoTree<A,NodePtr<T>>{
+        self.tree.as_mut().unwrap()
     }
-
-    pub fn get_aabb_bots_mut(&mut self)->PMut<[BBoxPtr<N,T>]>{
-        PMut::new(&mut self.bots_aabb)
+    pub fn get_bots(&self)->&[T]{
+        &self.bots
     }
+    pub fn get_bots_mut(&mut self,mut func:impl FnMut(&mut [T])){
+        func(&mut self.bots);
 
-    pub unsafe fn get_aabb_bots_mut_not_protected(&mut self)->&mut [BBoxPtr<N,T>]{
-        &mut self.bots_aabb
+        let axis={
+            let tree = self.tree.take().unwrap();
+            tree.axis()
+        };
+        self.tree=Some(make_owned(axis,&mut self.bots));
     }
-
-
-    pub fn get_aabb_bots(&self)->&[BBoxPtr<N,T>]{
-        &self.bots_aabb
-    }
-    pub fn get_height(&self)->usize{
-        self.inner.get_height()
-    }
-
-    pub fn axis(&self)->A{
-        self.inner.axis()
-    }
-
-    pub fn into_inner(self)->Vec<T>{
-        self.bots
-    }
-}    
-
+}
