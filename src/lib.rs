@@ -160,9 +160,3 @@ pub trait HasInner:Aabb{
     fn get_inner_mut(&mut self)->(&Rect<Self::Num>,&mut Self::Inner);
 }
 
-
-
-
-
-
-

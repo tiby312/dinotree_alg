@@ -83,6 +83,71 @@ fn make_owned_par<A:Axis,T:Aabb+Send+Sync>(axis:A,bots:&mut [T])->DinoTree<A,Nod
     DinoTree{axis,inner}
 }
 
+pub struct DinoTreeOwnedBBoxPtr<A:Axis,N:Num,T>{
+    tree:DinoTreeOwned<A,BBoxPtr<N,T>>,
+    bots:Vec<T>
+}
+
+impl<N:Num,T:Send+Sync> DinoTreeOwnedBBoxPtr<DefaultA,N,T>{
+    pub fn new_par(mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
+        Self::with_axis_par(default_axis(),bots,func)
+    }
+}
+
+impl<N:Num,T> DinoTreeOwnedBBoxPtr<DefaultA,N,T>{
+    pub fn new(mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
+        Self::with_axis(default_axis(),bots,func)
+    }
+}
+impl<A:Axis,N:Num,T:Send+Sync> DinoTreeOwnedBBoxPtr<A,N,T>{
+    pub fn with_axis_par(axis:A,mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
+        use core::ptr::NonNull;
+        
+        let bbox=bots.iter_mut().map(|b|{
+            BBoxPtr::new(func(b),unsafe{NonNull::new_unchecked(b as *mut _)})
+        }).collect();
+        
+        let tree = DinoTreeOwned::with_axis_par(axis,bbox);
+        DinoTreeOwnedBBoxPtr{bots,tree}
+    }
+ 
+}
+impl<A:Axis,N:Num,T> DinoTreeOwnedBBoxPtr<A,N,T>{
+    pub fn with_axis(axis:A,mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
+        use core::ptr::NonNull;
+        
+        let bbox=bots.iter_mut().map(|b|{
+            BBoxPtr::new(func(b),unsafe{NonNull::new_unchecked(b as *mut _)})
+        }).collect();
+        
+        let tree = DinoTreeOwned::with_axis(axis,bbox);
+        DinoTreeOwnedBBoxPtr{bots,tree}
+    }
+}
+impl<A:Axis,N:Num,T> DinoTreeOwnedBBoxPtr<A,N,T>{
+    pub fn get_tree_mut(&mut self)->&mut DinoTree<A,NodePtr<BBoxPtr<N,T>>>{
+        self.tree.get_tree_mut()
+    }
+
+    pub fn get_bots_mut(&mut self)->&mut [T]{
+        &mut self.bots
+    }
+
+    pub fn get_tree(&self)->&DinoTree<A,NodePtr<BBoxPtr<N,T>>>{
+        self.tree.get_tree()
+    }
+    
+    /* TODO implement this
+    pub fn get_bots_mut(&self,func:impl FnMut(&mut T)->Rect<N>){
+        for a in self.bots.iter_mut(){
+            func(a);
+        }
+
+    }
+    */
+
+}
+
 ///An owned dinotree
 pub struct DinoTreeOwned<A:Axis,T:Aabb>{
     tree:Option<DinoTree<A,NodePtr<T>>>,
