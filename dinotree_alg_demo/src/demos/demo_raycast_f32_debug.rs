@@ -107,7 +107,7 @@ impl DemoSys for RaycastF32DebugDemo {
             draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.get().as_ref(), c, g);
         }
 
-        let height = self.tree.get_tree().get_height();
+        let height = self.tree.as_tree().get_height();
 
         if check_naive {
             let dim=self.dim;
@@ -125,7 +125,7 @@ impl DemoSys for RaycastF32DebugDemo {
             });
         }
 
-        let test = self.tree.get_tree_mut().raycast_fine_mut(
+        let test = self.tree.as_tree_mut().raycast_fine_mut(
             ray,
             &mut ray_f32::RayT {
                 draw: true,
@@ -209,6 +209,6 @@ impl DemoSys for RaycastF32DebugDemo {
         }
 
         let mut dd = Bla { c: &c, g };
-        self.tree.get_tree().draw( &mut dd, &self.dim);
+        self.tree.as_tree().draw( &mut dd, &self.dim);
     }
 }

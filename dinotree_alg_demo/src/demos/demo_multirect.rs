@@ -14,7 +14,8 @@ impl analyze::HasId for Bot {
 }
 
 pub struct MultiRectDemo {
-    tree: DinoTreeOwned<DefaultA, BBox<i32,Bot>>,
+    //tree: DinoTreeOwned<DefaultA, BBox<i32,Bot>>,
+    tree: DinoTreeOwnedBBoxPtr<DefaultA,i32,Bot>,
     dim: Rect<i32>,
 }
 impl MultiRectDemo {
@@ -28,12 +29,15 @@ impl MultiRectDemo {
                 let pos = pos.inner_as::<i32>();
                 let radius = radius.inner_as();
                 let b=Bot { pos, radius, id };
-                let r= Rect::from_point(b.pos, b.radius);
-                bbox(r,b)
+                //let r= Rect::from_point(b.pos, b.radius);
+                //bbox(r,b)
+                b
             })
             .collect();
 
-        let tree = DinoTreeOwned::new_par( bots);
+        let tree = DinoTreeOwnedBBoxPtr::new_par( bots,|b|{
+            Rect::from_point(b.pos, b.radius)
+        });
 
         MultiRectDemo {
             dim: dim.inner_into::<f32>().inner_as(),
@@ -50,7 +54,7 @@ impl DemoSys for MultiRectDemo {
         g: &mut piston_window::G2d,
         check_naive: bool,
     ) {
-        for bot in self.tree.get_bots().iter() {
+        for bot in self.tree.as_owned().get_bots().iter() {
             draw_rect_i32([0.0, 0.0, 0.0, 0.3], &bot.get(), c, g);
         }
 
@@ -59,7 +63,7 @@ impl DemoSys for MultiRectDemo {
         let r2 = axgeom::Rect::new(100, 400, 100, 400);
 
         if check_naive {
-            self.tree.get_bots_mut(|bots|{
+            self.tree.as_owned_mut().get_bots_mut(|bots|{
                 let mut na=analyze::NaiveAlgs::new(bots);
                 na.assert_for_all_in_rect_mut(&r1);
                 na.assert_for_all_in_rect_mut(&r2);
@@ -72,7 +76,7 @@ impl DemoSys for MultiRectDemo {
 
         //test MultiRect
         {
-            let mut rects = self.tree.get_tree_mut().multi_rect();
+            let mut rects = self.tree.as_owned_mut().as_tree_mut().multi_rect();
 
             let mut to_draw = Vec::new();
             let _ = rects.for_all_in_rect_mut(r1, |a| to_draw.push(a));
@@ -98,7 +102,7 @@ impl DemoSys for MultiRectDemo {
         }
 
         //test for_all_intersect_rect
-        self.tree.get_tree().for_all_intersect_rect(&r1, |a| {
+        self.tree.as_owned().as_tree().for_all_intersect_rect(&r1, |a| {
             draw_rect_i32([0.0, 0.0, 1.0, 0.3], a.get(), c, g);
         });
 
@@ -107,7 +111,7 @@ impl DemoSys for MultiRectDemo {
         r1.grow(-40);
         draw_rect_i32([1.0, 0.0, 0.0, 0.2], &r1, c, g);
         
-        self.tree.get_tree_mut().for_all_not_in_rect_mut( &r1, |b| {
+        self.tree.as_owned_mut().as_tree_mut().for_all_not_in_rect_mut( &r1, |b| {
             draw_rect_i32([1.0, 0.0, 1.0, 0.5], b.get(), c, g);
         });
     }

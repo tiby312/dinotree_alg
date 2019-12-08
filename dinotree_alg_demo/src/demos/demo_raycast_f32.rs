@@ -115,7 +115,7 @@ impl DemoSys for RaycastF32Demo {
                 }
 
                 
-                let res = tree.get_tree_mut().raycast_fine_mut(
+                let res = tree.as_tree_mut().raycast_fine_mut(
                     ray,
                     &mut RayT {
                         radius: self.radius,

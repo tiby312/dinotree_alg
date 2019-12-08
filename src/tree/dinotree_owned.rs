@@ -1,6 +1,37 @@
+//!
+//! 
+//! 
+//! ```rust
+//! use dinotree_alg::prelude::*;
+//! use dinotree_alg::dinotree_owned::*;
+//! use axgeom::*;
+//! 
+//! fn not_lifetimed()->DinoTreeOwned<DefaultA,Rect<i32>>{
+//!     let a=vec![rect(0,10,0,10)];
+//!     DinoTreeOwned::new(a)
+//! }
+//! 
+//! ```
+//! 
+//! 
+//! 
+//! ```rust
+//! use dinotree_alg::prelude::*;
+//! use dinotree_alg::dinotree_owned::*;
+//! use axgeom::*;
+//! 
+//! fn not_lifetimed()->DinoTreeOwnedBBoxPtr<DefaultA,i32,Vec2<i32>>{
+//!     let rect=vec![vec2(0,10),vec2(3,30)];
+//!     DinoTreeOwnedBBoxPtr::new(rect,|&p|{
+//!         Rect::from_point(p,vec2(10,10))
+//!     })
+//! }
+//! 
+//! ```
+
 use super::*;
-//use crate::inner_prelude::*;
-    
+use core::ptr::NonNull;
+        
 ///Equivalent to: `(Rect<N>,*mut T)` 
 #[repr(C)]
 pub struct BBoxPtr<N, T> {
@@ -83,25 +114,27 @@ fn make_owned_par<A:Axis,T:Aabb+Send+Sync>(axis:A,bots:&mut [T])->DinoTree<A,Nod
     DinoTree{axis,inner}
 }
 
+
+
+///An owned dinotree componsed of `(Rect<N>,*mut T)`
 pub struct DinoTreeOwnedBBoxPtr<A:Axis,N:Num,T>{
     tree:DinoTreeOwned<A,BBoxPtr<N,T>>,
     bots:Vec<T>
 }
 
 impl<N:Num,T:Send+Sync> DinoTreeOwnedBBoxPtr<DefaultA,N,T>{
-    pub fn new_par(mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
+    pub fn new_par(bots:Vec<T>,func:impl FnMut(&T)->Rect<N>)->Self{
         Self::with_axis_par(default_axis(),bots,func)
     }
 }
 
 impl<N:Num,T> DinoTreeOwnedBBoxPtr<DefaultA,N,T>{
-    pub fn new(mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
+    pub fn new(bots:Vec<T>,func:impl FnMut(&T)->Rect<N>)->Self{
         Self::with_axis(default_axis(),bots,func)
     }
 }
 impl<A:Axis,N:Num,T:Send+Sync> DinoTreeOwnedBBoxPtr<A,N,T>{
     pub fn with_axis_par(axis:A,mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
-        use core::ptr::NonNull;
         
         let bbox=bots.iter_mut().map(|b|{
             BBoxPtr::new(func(b),unsafe{NonNull::new_unchecked(b as *mut _)})
@@ -112,9 +145,9 @@ impl<A:Axis,N:Num,T:Send+Sync> DinoTreeOwnedBBoxPtr<A,N,T>{
     }
  
 }
+
 impl<A:Axis,N:Num,T> DinoTreeOwnedBBoxPtr<A,N,T>{
     pub fn with_axis(axis:A,mut bots:Vec<T>,mut func:impl FnMut(&T)->Rect<N>)->Self{
-        use core::ptr::NonNull;
         
         let bbox=bots.iter_mut().map(|b|{
             BBoxPtr::new(func(b),unsafe{NonNull::new_unchecked(b as *mut _)})
@@ -124,31 +157,25 @@ impl<A:Axis,N:Num,T> DinoTreeOwnedBBoxPtr<A,N,T>{
         DinoTreeOwnedBBoxPtr{bots,tree}
     }
 }
-impl<A:Axis,N:Num,T> DinoTreeOwnedBBoxPtr<A,N,T>{
-    pub fn get_tree_mut(&mut self)->&mut DinoTree<A,NodePtr<BBoxPtr<N,T>>>{
-        self.tree.get_tree_mut()
-    }
 
+impl<A:Axis,N:Num,T> DinoTreeOwnedBBoxPtr<A,N,T>{
+    
+    pub fn as_owned(&self)->&DinoTreeOwned<A,BBoxPtr<N,T>>{
+        &self.tree
+    }
+    pub fn as_owned_mut(&mut self)->&mut DinoTreeOwned<A,BBoxPtr<N,T>>{
+        &mut self.tree
+    }
+    pub fn get_bots(&self)->&[T]{
+        &self.bots
+    }
     pub fn get_bots_mut(&mut self)->&mut [T]{
         &mut self.bots
     }
-
-    pub fn get_tree(&self)->&DinoTree<A,NodePtr<BBoxPtr<N,T>>>{
-        self.tree.get_tree()
-    }
-    
-    /* TODO implement this
-    pub fn get_bots_mut(&self,func:impl FnMut(&mut T)->Rect<N>){
-        for a in self.bots.iter_mut(){
-            func(a);
-        }
-
-    }
-    */
-
 }
 
-///An owned dinotree
+
+///An owned dinotree componsed of `T:Aabb`
 pub struct DinoTreeOwned<A:Axis,T:Aabb>{
     tree:Option<DinoTree<A,NodePtr<T>>>,
     bots:Vec<T>
@@ -189,16 +216,17 @@ impl<A:Axis,T:Aabb> DinoTreeOwned<A,T>{
         }
     }
     
-    pub fn get_tree(&self)->&DinoTree<A,NodePtr<T>>{
+    pub fn as_tree(&self)->&DinoTree<A,NodePtr<T>>{
         self.tree.as_ref().unwrap()
     }
     
-    pub fn get_tree_mut(&mut self)->&mut DinoTree<A,NodePtr<T>>{
+    pub fn as_tree_mut(&mut self)->&mut DinoTree<A,NodePtr<T>>{
         self.tree.as_mut().unwrap()
     }
     pub fn get_bots(&self)->&[T]{
         &self.bots
     }
+
     pub fn get_bots_mut(&mut self,mut func:impl FnMut(&mut [T])){
         func(&mut self.bots);
 

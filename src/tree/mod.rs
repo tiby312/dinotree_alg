@@ -242,6 +242,7 @@ impl<A:Axis,N:Node + Send + Sync> DinoTree<A,N> where N::T : Send + Sync{
 
 impl<A:Axis,N:Node> DinoTree<A,N>{
 
+
     /// # Examples
     ///
     ///```
