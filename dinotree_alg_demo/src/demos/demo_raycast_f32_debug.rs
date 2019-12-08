@@ -65,7 +65,7 @@ pub struct RaycastF32DebugDemo {
 impl RaycastF32DebugDemo {
     pub fn new(dim: Rect<F32n>) -> RaycastF32DebugDemo {
         
-        let mut ii:Vec<_> = UniformRandGen::new(dim.inner_into())
+        let ii:Vec<_> = UniformRandGen::new(dim.inner_into())
             .with_radius(1.0, 5.0)
             .enumerate()
             .take(500)
