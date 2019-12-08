@@ -14,7 +14,6 @@
 //! ```
 //! 
 //! 
-//! 
 //! ```rust
 //! use dinotree_alg::prelude::*;
 //! use dinotree_alg::dinotree_owned::*;
