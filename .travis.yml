@@ -1,6 +1,2 @@
-{
-  "os": [
-    "linux"
-  ],
-  "language": "rust"
-}
+language: rust
+cache: cargo
