@@ -319,6 +319,38 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         raycast::raycast_mut(self,border,ray,&mut rtrait)
     }
 
+
+    /// # Examples
+    ///
+    /// ```
+    /// use dinotree_alg::prelude::*;
+    /// use axgeom::*;
+    /// 
+    /// struct Drawer;
+    /// impl DividerDrawer for Drawer{
+    ///     type N=i32;
+    ///     fn draw_divider<A:Axis>(
+    ///             &mut self,
+    ///             axis:A,
+    ///             div:Self::N,
+    ///             cont:[Self::N;2],
+    ///             length:[Self::N;2],
+    ///             depth:usize)
+    ///     {
+    ///         if axis.is_xaxis(){
+    ///             //draw vertical line
+    ///         }else{
+    ///             //draw horizontal line
+    ///         }
+    ///     }
+    /// }
+    /// 
+    /// let border=rect(0,100,0,100);
+    /// let mut bots =[rect(0,10,0,10)];
+    /// let tree=DinoTree::new(&mut bots);
+    /// tree.draw(&mut Drawer,&border);
+    /// ```
+    /// 
     pub fn draw(&self,drawer:&mut impl graphics::DividerDrawer<N=N::Num>,rect:&Rect<N::Num>){
         graphics::draw(self,drawer,rect)
     }
