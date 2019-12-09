@@ -1,30 +1,36 @@
 //!
-//! 
+//! ## An owned `(Rect<N>,T)` example
 //! 
 //! ```rust
-//! use dinotree_alg::prelude::*;
-//! use dinotree_alg::dinotree_owned::*;
+//! use dinotree_alg::{prelude::*,dinotree_owned::*};
 //! use axgeom::*;
 //! 
-//! fn not_lifetimed()->DinoTreeOwned<DefaultA,Rect<i32>>{
-//!     let a=vec![rect(0,10,0,10)];
+//! fn not_lifetimed()->DinoTreeOwned<DefaultA,BBox<i32,f32>>
+//! {
+//!     let a=vec![bbox(rect(0,10,0,10),0.0)];
 //!     DinoTreeOwned::new(a)
 //! }
 //! 
+//! not_lifetimed();
+//! 
 //! ```
 //! 
+//! ## An owned `(Rect<N>,*mut T)` example
 //! 
 //! ```rust
-//! use dinotree_alg::prelude::*;
-//! use dinotree_alg::dinotree_owned::*;
+//! use dinotree_alg::{prelude::*,dinotree_owned::*};
 //! use axgeom::*;
 //! 
-//! fn not_lifetimed()->DinoTreeOwnedBBoxPtr<DefaultA,i32,Vec2<i32>>{
+//! fn not_lifetimed()->DinoTreeOwnedBBoxPtr<DefaultA,i32,Vec2<i32>>
+//! {
 //!     let rect=vec![vec2(0,10),vec2(3,30)];
 //!     DinoTreeOwnedBBoxPtr::new(rect,|&p|{
-//!         Rect::from_point(p,vec2(10,10))
+//!         let radius=vec2(10,10);
+//!         Rect::from_point(p,radius)
 //!     })
 //! }
+//! 
+//! not_lifetimed();
 //! 
 //! ```
 
