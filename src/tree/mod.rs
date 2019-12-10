@@ -280,7 +280,54 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
         k_nearest::k_nearest_mut(self,point,num,knear,border)
     }
 
-
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///use axgeom::*;
+    ///use ordered_float::NotNan;
+    ///
+    /////Egronomic floats that implement Ord 
+    ///type FT=NotNan<f32>;
+    ///fn ft(a:f32)->FT{
+    ///     NotNan::new(a).unwrap()
+    ///}
+    /// 
+    ///
+    ///struct Foo;
+    ///impl RayCast for Foo{
+    ///    type T=BBox<FT,Vec2<FT>>;
+    ///    type N=FT;
+    ///    fn compute_distance_to_rect(&self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
+    ///        ray.cast_to_rect(a)
+    ///    }
+    ///
+    ///    fn compute_distance_to_bot(&self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
+    ///         //Do more fine-grained collision checking.
+    ///         //Here we know the two aabbs intersect, but do an additional check
+    ///         //to see if they intersect as circles.
+    ///         ray.inner_into::<f32>().cast_to_circle(a.inner.inner_into(),5.).map(|a|ft(a))
+    ///    }
+    ///}
+    /// 
+    ///let border = rect(ft(0.),ft(100.),ft(0.),ft(100.));
+    ///
+    ///let mut bots = [bbox(rect(ft(0.),ft(10.),ft(0.),ft(10.)),vec2(ft(5.),ft(5.))),
+    ///                bbox(rect(ft(2.),ft(5.),ft(2.),ft(5.)),vec2(ft(4.),ft(4.))),
+    ///                bbox(rect(ft(4.),ft(10.),ft(4.),ft(10.)),vec2(ft(5.),ft(5.)))];
+    ///
+    /// 
+    ///let mut bots_copy=bots.clone();
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let ray=ray(vec2(ft(5.),ft(-5.)),vec2(ft(0.),ft(1.)));
+    ///let res = tree.raycast_fine_mut(ray,&mut Foo,border);
+    ///
+    ///let (bots,dis)=res.unwrap();
+    ///assert!(dis>ft(4.));
+    ///assert!(dis<ft(5.)); 
+    ///assert_eq!(bots.len(),1);
+    ///assert_eq!(bots[0].get(),&rect(ft(2.),ft(5.),ft(2.),ft(5.)));
+    ///```
     pub fn raycast_fine_mut(
         &mut self,
         ray:axgeom::Ray<N::Num>,
