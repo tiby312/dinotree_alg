@@ -5,7 +5,7 @@ pub mod prelude {
 
     pub use crate::DemoSys;
     pub use ordered_float::NotNan;
-    
+    pub use super::f32n;
     
     pub use super::ColorGenerator;
     pub use duckduckgeo::bot::*;

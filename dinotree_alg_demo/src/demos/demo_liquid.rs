@@ -82,7 +82,7 @@ pub struct LiquidDemo {
 impl LiquidDemo {
     pub fn new(dim: Rect<F32n>) -> LiquidDemo {
         let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .take(1000)
+            .take(2000)
             .map(|pos| Liquid::new(pos))
             .collect();
 

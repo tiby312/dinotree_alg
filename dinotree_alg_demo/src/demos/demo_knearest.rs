@@ -61,35 +61,27 @@ impl DemoSys for KnearestDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys: very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         let tree = &mut self.tree;
 
+        let mut rects=sys.rects([0.0,0.0,0.0]);
         for bot in tree.as_owned().get_bots().iter() {
-            draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.get().as_ref(), c, g);
+            rects.add(bot.get().inner_into(),0.3);
         }
+        rects.draw();
 
-        struct Kn<'a, 'c: 'a> {
-            draw: bool,
-            c: &'a Context,
-            g: RefCell<&'a mut G2d<'c>>,
+        struct Kn<'a> {
+            rects: RefCell<very_simple_2d::very_simple_2d_core::RectSession<'a>>,
         };
 
-        impl<'a, 'c: 'a> Knearest for Kn<'a, 'c> {
+        impl<'a> Knearest for Kn<'a> {
             type T = BBoxPtr<F32n, Bot>;
             type N = F32n;
 
             fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
-                if self.draw {
-                    draw_rect_f32(
-                        [0.0, 0.0, 1.0, 0.5],
-                        bot.get().as_ref(),
-                        self.c,
-                        &mut self.g.borrow_mut(),
-                    );
-                }
+                self.rects.borrow_mut().add(bot.get().inner_into(),0.3);
                 self.distance_to_rect(point, bot.get())
             }
             fn distance_to_rect(&self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N {
@@ -122,22 +114,24 @@ impl DemoSys for KnearestDemo {
         }
 
         let cols = [
-            [1.0, 0.0, 0.0, 0.8], //red closest
-            [0.0, 1.0, 0.0, 0.8], //green second closest
-            [0.0, 0.0, 1.0, 0.8], //blue third closets
+            [1.0, 0.0, 0.0], //red closest
+            [0.0, 1.0, 0.0], //green second closest
+            [0.0, 0.0, 1.0], //blue third closets
         ];
 
         struct Res {
             rect: Rect<F32n>,
             mag: F32n,
         }
+
+        let rects=sys.rects([1.0,0.5,0.3]);
         let mut vv = {
             let mut kn = Kn {
-                c: &c,
-                g: RefCell::new(g),
-                draw: true,
+                rects: RefCell::new(rects),
             };
-            tree.as_owned_mut().as_tree_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
+            let j=tree.as_owned_mut().as_tree_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim);
+            kn.rects.borrow_mut().draw();
+            j
         };
         let mut vv: Vec<_> = vv
             .drain(..)
@@ -148,6 +142,8 @@ impl DemoSys for KnearestDemo {
             .collect();
 
         if check_naive {
+            //unimplemented!()
+            /*
             let mut kn = Kn {
                 c: &c,
                 g: RefCell::new(g),
@@ -162,6 +158,7 @@ impl DemoSys for KnearestDemo {
                     dim,
                 );
             });
+            */
         }
 
 
@@ -170,12 +167,14 @@ impl DemoSys for KnearestDemo {
         for (a, color) in vv_iter.zip(cols.iter()) {
             
             if let Some(k) = a.first(){
-                draw_circle_f32(*color,cursor.inner_into(),k.mag.into_inner().sqrt(),c,g);
+                sys.circles(k.mag.into_inner().sqrt(),*color).add(cursor.inner_into(),0.5).draw();
             }
-            for b in a.iter() {
 
-                draw_rect_f32(*color, b.rect.as_ref(), c, g);
+            let mut rects=sys.rects(*color);
+            for b in a.iter() {
+                rects.add(b.rect.inner_into(),0.5);
             }
+            rects.draw();
         }
     }
 }

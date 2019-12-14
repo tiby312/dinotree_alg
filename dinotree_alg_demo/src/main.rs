@@ -5,7 +5,7 @@ use glutin::event::VirtualKeyCode;
 use glutin::event::Event;
 use glutin::event::WindowEvent;
 use glutin::event_loop::ControlFlow;
-
+use glutin::event::ElementState;
 use axgeom::vec2;
 use axgeom::Vec2;
 use axgeom::*;
@@ -41,9 +41,6 @@ mod demo_iter {
             let area: Rect<F32n> = area.inner_try_into().unwrap();
 
             let k: Box<dyn DemoSys> = match curr {
-                0 => Box::new(demo_grid::GridDemo::new(area)),
-                
-                /*
                 0 => Box::new(demo_raycast_f32::RaycastF32Demo::new(area)),
                 1 => Box::new(demo_raycast_f32_debug::RaycastF32DebugDemo::new(area)),
                 2 => Box::new(demo_liquid::LiquidDemo::new(area)),
@@ -55,8 +52,6 @@ mod demo_iter {
                 8 => Box::new(demo_grid::GridDemo::new(area)),
                 9 => Box::new(demo_nbody::DemoNbody::new(area)),
                 10 => Box::new(demo_raycast_grid::RaycastGridDemo::new(area)),
-                */
-                
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
@@ -90,19 +85,26 @@ fn main() {
     println!("Performance suffers from not batching draw calls (piston's built in rectangle drawing primitives are used instead of vertex buffers). These demos are not meant to showcase the performance of the algorithms. See the dinotree_alg_data project for benches.");
 
 
-    let mut cursor: Vec2<F32n> = vec2(0.0, 0.0).inner_try_into().unwrap();
     let mut check_naive = false;
     let mut cursor=vec2same(0.);
     let mut timer=very_simple_2d::RefreshTimer::new(16);
     events_loop.run(move |event,_,control_flow| {
         match event {
             Event::WindowEvent{ event, .. } => match event {
-                WindowEvent::KeyboardInput{input,..}=>{       
-                    match input.virtual_keycode{
-                        Some(VirtualKeyCode::Escape)=>{
-                            *control_flow=ControlFlow::Exit;
-                        },
-                        _=>{}
+                WindowEvent::KeyboardInput{input,..}=>{
+                    if input.state==ElementState::Released{    
+                        match input.virtual_keycode{
+                            Some(VirtualKeyCode::Escape)=>{
+                                *control_flow=ControlFlow::Exit;
+                            },
+                            Some(VirtualKeyCode::N)=>{
+                                curr=demo_iter.next(area);
+                            },
+                            Some(VirtualKeyCode::C)=>{
+                                check_naive!=check_naive;
+                            }
+                            _=>{}
+                        }
                     }
                 },
                 WindowEvent::CloseRequested => {*control_flow=ControlFlow::Exit;},
