@@ -70,8 +70,7 @@ impl DemoSys for IntersectWithDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys:very_simple_2d::DrawSession,
         _check_naive: bool,
     ) {
         let radius = self.radius;
@@ -155,11 +154,17 @@ impl DemoSys for IntersectWithDemo {
             });
         }
 
+
+        let mut rects=sys.rects([0.7,0.7,0.7]);
         for wall in walls.iter() {
-            draw_rect_f32([0.0, 0.0, 1.0, 0.3], wall.0.as_ref(), c, g);
+            rects.add(wall.0.inner_into(),0.3);
         }
+        rects.draw();
+
+        let mut circles=sys.circles(radius,[1.0,0.0,0.5]);
         for bot in k.iter() {
-            draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.rect.as_ref(), c, g);
+            circles.add(bot.inner().pos,0.3);
         }
+        circles.draw();
     }
 }

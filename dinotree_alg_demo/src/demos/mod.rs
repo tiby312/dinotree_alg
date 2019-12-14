@@ -4,9 +4,11 @@ pub mod demo_multirect;
 pub mod demo_original_order;
 pub mod demo_liquid;
 pub mod demo_nbody;
+pub mod demo_intersect_with;
+pub mod demo_rigid_body;
+pub mod demo_grid;
 
 /*
-pub mod demo_grid;
 
 pub mod demo_knearest;
 
@@ -14,9 +16,7 @@ pub mod demo_knearest;
 
 
 
-pub mod demo_intersect_with;
 
-pub mod demo_rigid_body;
 
 
 

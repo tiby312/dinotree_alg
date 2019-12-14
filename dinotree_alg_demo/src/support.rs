@@ -7,7 +7,7 @@ pub mod prelude {
     pub use ordered_float::NotNan;
     
     
-    
+    pub use super::ColorGenerator;
     pub use duckduckgeo::bot::*;
     pub use duckduckgeo::*;
     pub use very_simple_2d::*;

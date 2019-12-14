@@ -171,8 +171,7 @@ impl DemoSys for GridDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys: very_simple_2d::DrawSession,
         _check_naive: bool,
     ) {
         let radius = self.radius;
@@ -207,15 +206,16 @@ impl DemoSys for GridDemo {
                 let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
             });
 
+
+            let mut squares = sys.squares(self.radius,[1.0,0.5,1.0]);
             for i in 0..self.grid.xdim() {
                 for j in 0..self.grid.ydim() {
                     if self.grid.get(i, j) {
-                        let rect = self.grid.get_rect(i, j);
-                        let cols = [0.0, 0.0, 0.0, 0.4];
-                        draw_rect_f32(cols, &rect, c, g);
+                        squares.add(vec2(i,j).inner_as(),0.3);
                     }
                 }
             }
+            squares.draw();
         }
 
         fn conv(a: u8) -> f32 {
@@ -223,6 +223,7 @@ impl DemoSys for GridDemo {
             a / 256.0
         }
 
+        let mut circles = sys.circles(self.radius,[1.0,0.2,0.2]);
         for (bot, cols) in self.bots.iter_mut().zip(self.colors.iter()) {
             let rect = &axgeom::Rect::from_point(bot.pos, vec2(radius, radius));
 
@@ -252,8 +253,9 @@ impl DemoSys for GridDemo {
                     }
                 }
             }
-
-            draw_rect_f32(cols, rect, c, g);
+            circles.add(bot.pos,0.2);
+            //draw_rect_f32(cols, rect, c, g);
         }
+        circles.draw();
     }
 }

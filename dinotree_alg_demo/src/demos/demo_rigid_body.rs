@@ -207,8 +207,7 @@ impl DemoSys for RigidBodyDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys: very_simple_2d::DrawSession,
         _check_naive: bool,
     ) {
         let radius = self.radius;
@@ -251,9 +250,10 @@ impl DemoSys for RigidBodyDemo {
             duckduckgeo::collide_with_border(b, self.dim.as_ref(), 0.5);
         }
 
+        let mut circles=sys.circles(radius,[0.7,0.7,0.7]);
         for bot in self.bots.iter() {
-            let rect = &axgeom::Rect::from_point(bot.pos, vec2same(radius));
-            draw_rect_f32([0.0, 0.0, 0.0, 1.0], rect, c, g);
+            circles.add(bot.pos,0.5);
         }
+        circles.draw();
     }
 }

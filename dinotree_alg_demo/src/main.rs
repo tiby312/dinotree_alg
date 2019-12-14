@@ -41,7 +41,7 @@ mod demo_iter {
             let area: Rect<F32n> = area.inner_try_into().unwrap();
 
             let k: Box<dyn DemoSys> = match curr {
-                0 => Box::new(demo_nbody::DemoNbody::new(area)),
+                0 => Box::new(demo_grid::GridDemo::new(area)),
                 
                 /*
                 0 => Box::new(demo_raycast_f32::RaycastF32Demo::new(area)),
