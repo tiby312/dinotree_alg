@@ -13,8 +13,6 @@ impl analyze::HasId for Bot{
 
 
 
-
-
 #[test]
 fn test1(){
     for &num_bots in [1000,0,1].iter(){

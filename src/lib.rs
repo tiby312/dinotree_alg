@@ -88,9 +88,6 @@ mod inner_prelude {
 
 pub mod query;
 
-//pub mod query_impl;
-
-
 use axgeom::*;
 
 
@@ -159,4 +156,11 @@ pub trait HasInner:Aabb{
     fn get_inner(&self)->(&Rect<Self::Num>,&Self::Inner);
     fn get_inner_mut(&mut self)->(&Rect<Self::Num>,&mut Self::Inner);
 }
+
+
+
+
+
+
+
 

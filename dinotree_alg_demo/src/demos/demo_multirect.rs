@@ -14,7 +14,6 @@ impl analyze::HasId for Bot {
 }
 
 pub struct MultiRectDemo {
-    //tree: DinoTreeOwned<DefaultA, BBox<i32,Bot>>,
     tree: DinoTreeOwnedBBoxPtr<DefaultA,i32,Bot>,
     dim: Rect<i32>,
 }
@@ -50,13 +49,14 @@ impl DemoSys for MultiRectDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys:very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
+        let mut rects = sys.rects([0.0,1.0,0.0]);
         for bot in self.tree.as_owned().get_bots().iter() {
-            draw_rect_i32([0.0, 0.0, 0.0, 0.3], &bot.get(), c, g);
+            rects.add(bot.get().inner_as(),0.2);
         }
+        rects.draw();
 
         let cc: Vec2<i32> = cursor.inner_into::<f32>().inner_as();
         let r1 = axgeom::Rect::new(cc.x - 100, cc.x + 100, cc.y - 100, cc.y + 100);
@@ -85,34 +85,40 @@ impl DemoSys for MultiRectDemo {
                 to_draw.push(a);
             });
 
+
             match res {
                 Ok(()) => {
-                    draw_rect_i32([0.0, 0.0, 0.0, 0.3], &r1, c, g);
-                    draw_rect_i32([0.0, 0.0, 0.0, 0.3], &r2, c, g);
-
+                    sys.rects([0.0,0.0,0.0]).add(r1.inner_as(),0.5).add(r2.inner_as(),0.5).draw();
+                    
+                    let mut rects=sys.rects([0.0,0.0,0.0]);
                     for r in to_draw.iter() {
-                        draw_rect_i32([1.0, 0.0, 0.0, 0.3], r.get(), c, g);
+                        rects.add(r.get().inner_as(),0.2);
                     }
+                    rects.draw();
                 }
                 Err(_) => {
-                    draw_rect_i32([1.0, 0.0, 0.0, 0.3], &r1, c, g);
-                    draw_rect_i32([1.0, 0.0, 0.0, 0.3], &r2, c, g);
+                    sys.rects([1.0,0.0,0.0]).add(r1.inner_as(),0.5).add(r2.inner_as(),0.5).draw();
                 }
             }
         }
 
         //test for_all_intersect_rect
+        let mut rects=sys.rects([0.0,0.0,1.0]);
         self.tree.as_owned().as_tree().for_all_intersect_rect(&r1, |a| {
-            draw_rect_i32([0.0, 0.0, 1.0, 0.3], a.get(), c, g);
+            rects.add(a.get().inner_as(),0.2);
         });
+        rects.draw();
 
         //test for_all_not_in_rect_mut
         let mut r1 = self.dim.clone();
         r1.grow(-40);
-        draw_rect_i32([1.0, 0.0, 0.0, 0.2], &r1, c, g);
+
+        sys.rects([1.0,0.0,0.0]).add(r1.inner_as(),0.2).draw();
         
+        let mut rects=sys.rects([1.0,0.0,1.0]);
         self.tree.as_owned_mut().as_tree_mut().for_all_not_in_rect_mut( &r1, |b| {
-            draw_rect_i32([1.0, 0.0, 1.0, 0.5], b.get(), c, g);
+            rects.add(b.get().inner_as(),0.5);
         });
+        rects.draw()
     }
 }

@@ -8,14 +8,12 @@ use axgeom::Ray;
 mod ray_f32 {
     use super::*;
 
-    pub struct RayT<'a, 'c: 'a> {
-        pub c: &'a Context,
-        pub g: RefCell<&'a mut G2d<'c>>,
+    pub struct RayT<'a> {
+        pub rects:Option<RefCell<very_simple_2d::very_simple_2d_core::RectSession<'a>>>,
         pub height: usize,
-        pub draw: bool,
     }
 
-    impl<'a, 'c: 'a> RayCast for RayT<'a, 'c> {
+    impl<'a> RayCast for RayT<'a> {
         type T = BBox<F32n, Bot2>;
         type N = F32n;
 
@@ -24,13 +22,8 @@ mod ray_f32 {
             ray: &Ray<Self::N>,
             bot: &Self::T,
         ) -> axgeom::CastResult<Self::N> {
-            if self.draw {
-                draw_rect_f32(
-                    [1.0, 0.0, 0.0, 0.5],
-                    bot.get().as_ref(),
-                    self.c,
-                    &mut self.g.borrow_mut(),
-                );
+            if let Some(r)=&self.rects{
+                r.borrow_mut().add(bot.get().inner_into(),0.2);
             }
             Self::compute_distance_to_rect(self, ray, bot.get())
         }
@@ -87,8 +80,7 @@ impl DemoSys for RaycastF32DebugDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys:very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         let counter = &mut self.counter;
@@ -97,44 +89,49 @@ impl DemoSys for RaycastF32DebugDemo {
             *counter += 0.004;
             let point: Vec2<f32> = cursor.inner_into::<f32>().inner_as();
             //*counter=10.0;
-            let mut dir = vec2(counter.cos() * 10.0, counter.sin() * 10.0);
+            let dir = vec2(counter.cos() * 10.0, counter.sin() * 10.0);
 
             let dir = dir.inner_as();
             Ray { point, dir }.inner_try_into().unwrap()
         };
 
+        let mut rects=sys.rects([0.0,0.0,0.0]);
         for bot in self.tree.get_bots().iter() {
-            draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.get().as_ref(), c, g);
+            rects.add(bot.get().inner_into(),0.3);
         }
+        rects.draw();
 
         let height = self.tree.as_tree().get_height();
 
+        
+
         if check_naive {
+            
             let dim=self.dim;
             self.tree.get_bots_mut(|bots|{
                 analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                     dim,
                     ray,
                     &mut ray_f32::RayT {
-                        draw: false,
-                        c: &c,
-                        g: RefCell::new(g),
+                        rects:None,
                         height,
                     },
                 );
             });
         }
-
+        
+        let rects=sys.rects([4.0,0.0,0.0]);
+        let mut rr=ray_f32::RayT {
+                rects:Some(RefCell::new(rects)),
+                height,
+            };
         let test = self.tree.as_tree_mut().raycast_fine_mut(
             ray,
-            &mut ray_f32::RayT {
-                draw: true,
-                c: &c,
-                g: RefCell::new(g),
-                height,
-            },
+            &mut rr,
             self.dim,
         );
+
+       rr.rects.unwrap().borrow_mut().draw();
 
         let ray: Ray<f32> = ray.inner_into();
 
@@ -144,23 +141,12 @@ impl DemoSys for RaycastF32DebugDemo {
             RayCastResult::NoHit=>800.0
         };
 
-        let Vec2{x:ppx,y:ppy}=ray.point_at_tval(dis);
+        let end=ray.point_at_tval(dis);
 
 
-        let arr = [
-            ray.point.x as f64,
-            ray.point.y as f64,
-            ppx as f64,
-            ppy as f64,
-        ];
-        line(
-            [0.0, 0.0, 0.0, 1.0], // black
-            2.0,                  // radius of line
-            arr,                  // [x0, y0, x1,y1] coordinates of line
-            c.transform,
-            g,
-        );
+        sys.lines(2.0,[1.,1.,1.]).add(ray.point,end,0.2).draw();
 
+        /*
         struct Bla<'a, 'b: 'a> {
             c: &'a Context,
             g: &'a mut G2d<'b>,
@@ -210,5 +196,6 @@ impl DemoSys for RaycastF32DebugDemo {
 
         let mut dd = Bla { c: &c, g };
         self.tree.as_tree().draw( &mut dd, &self.dim);
+        */
     }
 }

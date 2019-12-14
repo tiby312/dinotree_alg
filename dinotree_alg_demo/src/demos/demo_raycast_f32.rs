@@ -4,13 +4,11 @@ use std;
 
 use axgeom::Ray;
 
-struct RayT<'a, 'c: 'a> {
+struct RayT {
     pub radius: f32,
-    pub c: &'a Context,
-    pub g: &'a mut G2d<'c>,
 }
 
-impl<'a, 'c: 'a> RayCast for RayT<'a, 'c> {
+impl RayCast for RayT {
     type N = F32n;
     type T = BBox<F32n, Bot>;
 
@@ -74,19 +72,22 @@ impl DemoSys for RaycastF32Demo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys:very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         //Draw bots
+        let mut r=sys.circles(self.radius,[0.0,0.0,0.0]);
         for bot in self.tree.get_bots().iter() {
-            draw_rect_f32([0.0, 0.0, 0.0, 0.3], bot.get().as_ref(), c, g);
+            r.add(bot.inner().center,0.3);
         }
+        r.draw();
 
         let tree = &mut self.tree;
         let dim=self.dim;
         let radius=self.radius;
         {
+            let mut ray_cast=sys.lines(5.0,[1.0,1.0,1.0]);
+
             for dir in 0..360i32 {
                 let dir = dir as f32 * (std::f32::consts::PI / 180.0);
                 let x = (dir.cos() * 20.0) as f32;
@@ -107,8 +108,6 @@ impl DemoSys for RaycastF32Demo {
                             ray,
                             &mut RayT {
                                 radius,
-                                c: &c,
-                                g,
                             },
                         );
                     });
@@ -119,8 +118,6 @@ impl DemoSys for RaycastF32Demo {
                     ray,
                     &mut RayT {
                         radius: self.radius,
-                        c: &c,
-                        g,
                     },
                     self.dim,
                 );
@@ -132,22 +129,10 @@ impl DemoSys for RaycastF32Demo {
                     RayCastResult::NoHit=>800.0
                 };
 
-                let Vec2{x:ppx,y:ppy}=ray.inner_into().point_at_tval(dis);
-
-                let arr = [
-                    ray.point.x.into_inner() as f64,
-                    ray.point.y.into_inner() as f64,
-                    ppx as f64,
-                    ppy as f64,
-                ];
-                line(
-                    [0.0, 0.0, 1.0, 0.2], // black
-                    1.0,                  // radius of line
-                    arr,                  // [x0, y0, x1,y1] coordinates of line
-                    c.transform,
-                    g,
-                );
+                let end=ray.inner_into().point_at_tval(dis);
+                ray_cast.add(ray.point.inner_into(),end,0.2);
             }
+            ray_cast.draw();
         }
     }
 }

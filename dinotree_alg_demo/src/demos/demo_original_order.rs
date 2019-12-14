@@ -4,7 +4,7 @@ use duckduckgeo;
 
 #[derive(Copy, Clone)]
 pub struct Bot {
-    _id: usize, //id used to verify pairs against naive
+    id: usize, //id used to verify pairs against naive
     pos: Vec2<f32>,
     vel: Vec2<f32>,
     force: Vec2<f32>,
@@ -40,7 +40,6 @@ impl Bot {
 pub struct OrigOrderDemo {
     radius: f32,
     bots: Vec<Bot>,
-    colors: Vec<[u8; 3]>,
     dim: Rect<F32n>,
 }
 impl OrigOrderDemo {
@@ -53,18 +52,17 @@ impl OrigOrderDemo {
             .take(num_bot)
             .enumerate()
             .map(|(id, pos)| Bot {
-                _id: id,
+                id,
                 pos,
                 vel: vec2same(0.0),
                 force: vec2same(0.0),
             })
             .collect();
 
-        let colors = ColorGenerator::new().take(num_bot).collect();
+        //let colors = ColorGenerator::new().take(num_bot).collect();
         OrigOrderDemo {
             radius,
             bots,
-            colors,
             dim,
         }
     }
@@ -74,8 +72,7 @@ impl DemoSys for OrigOrderDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys:very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         let radius = self.radius;
@@ -105,13 +102,17 @@ impl DemoSys for OrigOrderDemo {
         });
 
         {
-            let mut dd = Bla { c: &c, g };
+            let rects=sys.rects([0.0,1.0,1.0]);
+            let mut dd = Bla { rects};
             tree.draw(&mut dd, &self.dim);
+            dd.rects.draw();
         }
 
         //draw lines to the bots.
         {
-            draw_bot_lines(tree.axis(), tree.vistr(), &self.dim, c, g);
+            let mut lines=sys.lines(2.0,[1.0,0.5,1.0]);
+            draw_bot_lines(tree.axis(), tree.vistr(), &self.dim, &mut lines);
+            lines.draw();
         }
 
         if !check_naive {
@@ -190,23 +191,18 @@ impl DemoSys for OrigOrderDemo {
             a / 256.0
         }
 
-        for (bot, cols) in self.bots.iter().zip(self.colors.iter()) {
-            let rect = &axgeom::Rect::from_point(bot.pos, vec2(radius, radius));
-            draw_rect_f32(
-                [conv(cols[0]), conv(cols[1]), conv(cols[2]), 0.6],
-                rect,
-                c,
-                g,
-            );
+        let mut circles=sys.circles(self.radius,[1.0,1.0,0.0]);
+        for bot in self.bots.iter() {
+            circles.add(bot.pos,1.0/((bot.id % 10) as f32));
         }
+        circles.draw();
     }
 }
 
-struct Bla<'a, 'b: 'a> {
-    c: &'a Context,
-    g: &'a mut G2d<'b>,
+struct Bla<'a> {
+    rects:very_simple_2d::very_simple_2d_core::RectSession<'a>
 }
-impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
+impl<'a> DividerDrawer for Bla<'a> {
     type N = F32n;
     fn draw_divider<A: axgeom::Axis>(
         &mut self,
@@ -218,6 +214,7 @@ impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
     ) {
         let div = div.into_inner();
 
+        /*
         let arr = if axis.is_xaxis() {
             [
                 div as f64,
@@ -233,38 +230,32 @@ impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
                 div as f64,
             ]
         };
+        */
+        let cont=Range::new(cont[0],cont[1]).inner_into();
+        let length=Range::new(length[0],length[1]).inner_into();
 
-        let radius = (1isize.max(5 - depth as isize)) as f64;
+        //let radius = (1isize.max(5 - depth as isize)) as f64;
 
-        line(
-            [0.0, 0.0, 0.0, 0.5], // black
-            radius,               // radius of line
-            arr,                  // [x0, y0, x1,y1] coordinates of line
-            self.c.transform,
-            self.g,
-        );
-
-        let [x1, y1, w1, w2] = if axis.is_xaxis() {
-            [cont[0], length[0], cont[1] - cont[0], length[1] - length[0]]
+        
+        
+        let rect = if axis.is_xaxis() {
+            Rect{x:cont,y:length}
         } else {
-            [length[0], cont[0], length[1] - length[0], cont[1] - cont[0]]
+            Rect{x:length,y:cont}
         };
+        
 
-        let square = [
-            x1.into_inner() as f64,
-            y1.into_inner() as f64,
-            w1.into_inner() as f64,
-            w2.into_inner() as f64,
-        ];
-        rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
+        self.rects.add(rect,0.2);
+        //rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
     }
 }
+
+
 fn draw_bot_lines<A: axgeom::Axis>(
     axis: A,
     stuff: Vistr<NodeMut<BBoxMut<F32n, Bot>>>,
     rect: &axgeom::Rect<F32n>,
-    c: &Context,
-    g: &mut G2d,
+    lines:&mut very_simple_2d::very_simple_2d_core::LineSession,
 ) {
     use compt::Visitor;
     let (nn, rest) = stuff.next();
@@ -274,8 +265,8 @@ fn draw_bot_lines<A: axgeom::Axis>(
             Some(div) => {
                 let (a, b) = rect.subdivide(axis, *div);
 
-                draw_bot_lines(axis.next(), start, &a, c, g);
-                draw_bot_lines(axis.next(), end, &b, c, g);
+                draw_bot_lines(axis.next(), start, &a, lines);
+                draw_bot_lines(axis.next(), end, &b, lines);
 
                 let ((x1, x2), (y1, y2)) = rect.inner_into::<f32>().get();
                 let midx = if !axis.is_xaxis() {
@@ -308,16 +299,10 @@ fn draw_bot_lines<A: axgeom::Axis>(
         let color_delta = 1.0 / nn.bots.len() as f32;
         let mut counter = 0.0;
         for b in nn.bots.iter() {
-            let bx = b.inner.pos.x;
-            let by = b.inner.pos.y;
+            let _bx = b.inner.pos.x;
+            let _by = b.inner.pos.y;
 
-            line(
-                [counter, 0.2, 0.0, 0.3],                         // black
-                2.0,                                              // radius of line
-                [midx as f64, midy as f64, bx as f64, by as f64], // [x0, y0, x1,y1] coordinates of line
-                c.transform,
-                g,
-            );
+            lines.add(b.inner.pos,vec2(midx,midy),0.2);
 
             counter += color_delta;
         }

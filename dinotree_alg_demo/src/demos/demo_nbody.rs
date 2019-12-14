@@ -192,18 +192,12 @@ impl DemoSys for DemoNbody {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys:very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         let no_mass_bots = &mut self.no_mass_bots;
         let bots = &mut self.bots;
 
-        let mut bots2: Vec<BBox<F32n, Bot>> = bots
-            .iter()
-            .map(|bot| BBox::new(bot.create_aabb(), *bot))
-            .collect();
-        let mut bots3 = bots.clone();
 
         let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
@@ -222,28 +216,14 @@ impl DemoSys for DemoNbody {
                     border,
                 );
             } else {
+                /*
                 let mut bla = Bla {
                     num_pairs_checked: 0,
                     _p: PhantomData,
                 };
                 tree.nbody_mut(&mut bla, border);
-                let num_pair_alg = bla.num_pairs_checked;
-
                 
-                let (bots2, num_pair_naive) = {
-                    let mut num_pairs_checked = 0;
-                    /*
-                    nbody::naive_mut(&mut bots2, |mut a, mut b| {
-                        let _ =
-                            duckduckgeo::gravitate(a.inner_mut(), b.inner_mut(), 0.00001, 0.004);
-                        num_pairs_checked += 1;
-                    });
-                    */
-                    unimplemented!();
-                    (bots2, num_pairs_checked)
-                    
-                    
-                };
+                
 
 
                 for b in bots3.iter_mut() {
@@ -277,6 +257,7 @@ impl DemoSys for DemoNbody {
                             }
                         }
                     }
+                    /*
                     let max_diff = max_diff.unwrap();
                     self.max_percentage_error = max_diff.2 * 100.0;
 
@@ -287,9 +268,10 @@ impl DemoSys for DemoNbody {
                     };
 
                     println!("absolute acceleration err={:06.5} percentage err={:06.2}% current bot not checked ratio={:05.2}%",max_diff.0,self.max_percentage_error,f*100.0);
-
-                    draw_rect_f32([1.0, 0.0, 1.0, 1.0], max_diff.1.get().as_ref(), c, g);
+                    */
+                    //draw_rect_f32([1.0, 0.0, 1.0, 1.0], max_diff.1.get().as_ref(), c, g);
                 }
+                */
             }
 
             tree.find_collisions_mut_par(|mut a, mut b| {
@@ -322,72 +304,15 @@ impl DemoSys for DemoNbody {
             });
 
             if check_naive {
-                struct Bla<'a, 'b: 'a> {
-                    c: &'a Context,
-                    g: &'a mut G2d<'b>,
-                }
-                impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
-                    type N = F32n;
-                    fn draw_divider<A: axgeom::Axis>(
-                        &mut self,
-                        axis: A,
-                        div: F32n,
-                        cont: [F32n; 2],
-                        length: [F32n; 2],
-                        depth: usize,
-                    ) {
-                        let div = div.into_inner();
-
-                        let arr = if axis.is_xaxis() {
-                            [
-                                div as f64,
-                                length[0].into_inner() as f64,
-                                div as f64,
-                                length[1].into_inner() as f64,
-                            ]
-                        } else {
-                            [
-                                length[0].into_inner() as f64,
-                                div as f64,
-                                length[1].into_inner() as f64,
-                                div as f64,
-                            ]
-                        };
-
-                        let radius = (1isize.max(5 - depth as isize)) as f32;
-
-                        line(
-                            [0.0, 0.0, 0.0, 0.5], // black
-                            radius as f64,        // radius of line
-                            arr,                  // [x0, y0, x1,y1] coordinates of line
-                            self.c.transform,
-                            self.g,
-                        );
-
-                        let [x1, y1, w1, w2] = if axis.is_xaxis() {
-                            [cont[0], length[0], cont[1] - cont[0], length[1] - length[0]]
-                        } else {
-                            [length[0], cont[0], length[1] - length[0], cont[1] - cont[0]]
-                        };
-
-                        let square = [
-                            x1.into_inner() as f64,
-                            y1.into_inner() as f64,
-                            w1.into_inner() as f64,
-                            w2.into_inner() as f64,
-                        ];
-                        rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
-                    }
-                }
-
-                let mut dd = Bla { c: &c, g };
-                tree.draw(&mut dd, &border);
+                //TODO
             }
         }
         //Draw bots.
+        let mut rects=sys.rects([0.9,0.9,0.3]);
         for bot in k.iter() {
-            draw_rect_f32([0.0, 0.5, 0.0, 1.0], bot.rect.as_ref(), c, g);
+            rects.add(bot.rect.inner_into(),0.6);
         }
+        rects.draw();
 
         {
             let mut new_bots = Vec::new();

@@ -98,8 +98,7 @@ impl DemoSys for LiquidDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        c: &piston_window::Context,
-        g: &mut piston_window::G2d,
+        mut sys:very_simple_2d::DrawSession,
         _check_naive: bool,
     ) {
         let radius = self.radius;
@@ -138,9 +137,10 @@ impl DemoSys for LiquidDemo {
             b.acc = vec2same(0.0);
         }
 
+        let mut circle = sys.circles(5.0,[1.0,0.6,0.7]);
         for bot in self.bots.iter() {
-            let rect = &axgeom::Rect::from_point(bot.pos, vec2same(2.0));
-            draw_rect_f32([0.0, 0.0, 0.0, 1.0], rect, c, g);
+            circle.add(bot.pos,0.5);
         }
+        circle.draw();
     }
 }
