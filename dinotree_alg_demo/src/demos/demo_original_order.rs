@@ -102,7 +102,7 @@ impl DemoSys for OrigOrderDemo {
         });
 
         {
-            let rects=sys.rects([0.0,1.0,1.0]);
+            let rects=sys.rects([0.0,1.0,1.0,0.6]);
             let mut dd = Bla { rects};
             tree.draw(&mut dd, &self.dim);
             dd.rects.draw();
@@ -110,7 +110,7 @@ impl DemoSys for OrigOrderDemo {
 
         //draw lines to the bots.
         {
-            let mut lines=sys.lines(2.0,[1.0,0.5,1.0]);
+            let mut lines=sys.lines(2.0,[1.0,0.5,1.0,0.6]);
             draw_bot_lines(tree.axis(), tree.vistr(), &self.dim, &mut lines);
             lines.draw();
         }
@@ -191,9 +191,9 @@ impl DemoSys for OrigOrderDemo {
             a / 256.0
         }
 
-        let mut circles=sys.circles(self.radius,[1.0,1.0,0.0]);
+        let mut circles=sys.circles(self.radius,[1.0,1.0,0.0,0.6]);
         for bot in self.bots.iter() {
-            circles.add(bot.pos,1.0/((bot.id % 10) as f32));
+            circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }
         circles.draw();
     }
@@ -245,7 +245,8 @@ impl<'a> DividerDrawer for Bla<'a> {
         };
         
 
-        self.rects.add(rect,0.2);
+        self.rects.add(rect);
+
         //rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
     }
 }
@@ -302,7 +303,7 @@ fn draw_bot_lines<A: axgeom::Axis>(
             let _bx = b.inner.pos.x;
             let _by = b.inner.pos.y;
 
-            lines.add(b.inner.pos,vec2(midx,midy),0.2);
+            lines.add(b.inner.pos,vec2(midx,midy));
 
             counter += color_delta;
         }

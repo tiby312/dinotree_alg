@@ -308,11 +308,12 @@ impl DemoSys for DemoNbody {
             }
         }
         //Draw bots.
-        let mut rects=sys.rects([0.9,0.9,0.3]);
+        let mut rects=sys.rects([0.9,0.9,0.3,0.6]);
         for bot in k.iter() {
-            rects.add(bot.rect.inner_into(),0.6);
+            rects.add(bot.rect.inner_into());
         }
         rects.draw();
+        //drop(rects);
 
         {
             let mut new_bots = Vec::new();

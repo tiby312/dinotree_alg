@@ -207,15 +207,15 @@ impl DemoSys for GridDemo {
             });
 
 
-            let mut squares = sys.squares(self.radius,[1.0,0.5,1.0]);
+            let mut squares = sys.squares(self.radius,[1.0,0.5,1.0,0.3]);
             for i in 0..self.grid.xdim() {
                 for j in 0..self.grid.ydim() {
                     if self.grid.get(i, j) {
-                        squares.add(vec2(i,j).inner_as(),0.3);
+                        squares.add(vec2(i,j).inner_as());
                     }
                 }
             }
-            squares.draw();
+            drop(squares)
         }
 
         fn conv(a: u8) -> f32 {
@@ -223,7 +223,7 @@ impl DemoSys for GridDemo {
             a / 256.0
         }
 
-        let mut circles = sys.circles(self.radius,[1.0,0.2,0.2]);
+        let mut circles = sys.circles(self.radius,[1.0,0.2,0.2,0.6]);
         for (bot, cols) in self.bots.iter_mut().zip(self.colors.iter()) {
             let rect = &axgeom::Rect::from_point(bot.pos, vec2(radius, radius));
 
@@ -253,7 +253,7 @@ impl DemoSys for GridDemo {
                     }
                 }
             }
-            circles.add(bot.pos,0.2);
+            circles.add(bot.pos);
             //draw_rect_f32(cols, rect, c, g);
         }
         circles.draw();

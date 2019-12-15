@@ -23,7 +23,7 @@ mod ray_f32 {
             bot: &Self::T,
         ) -> axgeom::CastResult<Self::N> {
             if let Some(r)=&self.rects{
-                r.borrow_mut().add(bot.get().inner_into(),0.2);
+                r.borrow_mut().add(bot.get().inner_into());
             }
             Self::compute_distance_to_rect(self, ray, bot.get())
         }
@@ -95,11 +95,12 @@ impl DemoSys for RaycastF32DebugDemo {
             Ray { point, dir }.inner_try_into().unwrap()
         };
 
-        let mut rects=sys.rects([0.0,0.0,0.0]);
+        let mut rects=sys.rects([0.0,0.0,0.0,0.3]);
         for bot in self.tree.get_bots().iter() {
-            rects.add(bot.get().inner_into(),0.3);
+            rects.add(bot.get().inner_into());
         }
         rects.draw();
+        drop(rects);
 
         let height = self.tree.as_tree().get_height();
 
@@ -120,19 +121,23 @@ impl DemoSys for RaycastF32DebugDemo {
             });
         }
         
-        let rects=sys.rects([4.0,0.0,0.0]);
-        let mut rr=ray_f32::RayT {
-                rects:Some(RefCell::new(rects)),
-                height,
-            };
-        let test = self.tree.as_tree_mut().raycast_fine_mut(
-            ray,
-            &mut rr,
-            self.dim,
-        );
 
-       rr.rects.unwrap().borrow_mut().draw();
+        let test={
+            let rects=sys.rects([4.0,0.0,0.0,0.4]);
+            let mut rr=ray_f32::RayT {
+                    rects:Some(RefCell::new(rects)),
+                    height,
+                };
+            let test = self.tree.as_tree_mut().raycast_fine_mut(
+                ray,
+                &mut rr,
+                self.dim,
+            );
+            rr.rects.unwrap().borrow_mut().draw();
+            test    
+        };
 
+        
         let ray: Ray<f32> = ray.inner_into();
 
 
@@ -144,7 +149,7 @@ impl DemoSys for RaycastF32DebugDemo {
         let end=ray.point_at_tval(dis);
 
 
-        sys.lines(2.0,[1.,1.,1.]).add(ray.point,end,0.2).draw();
+        sys.lines(2.0,[1.,1.,1.,0.2]).add(ray.point,end).draw();
 
         /*
         struct Bla<'a, 'b: 'a> {

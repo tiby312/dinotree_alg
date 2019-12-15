@@ -155,15 +155,16 @@ impl DemoSys for IntersectWithDemo {
         }
 
 
-        let mut rects=sys.rects([0.7,0.7,0.7]);
+        let mut rects=sys.rects([0.7,0.7,0.7,0.3]);
         for wall in walls.iter() {
-            rects.add(wall.0.inner_into(),0.3);
+            rects.add(wall.0.inner_into());
         }
         rects.draw();
-
-        let mut circles=sys.circles(radius,[1.0,0.0,0.5]);
+        drop(rects);
+        
+        let mut circles=sys.circles(radius,[1.0,0.0,0.5,0.3]);
         for bot in k.iter() {
-            circles.add(bot.inner().pos,0.3);
+            circles.add(bot.inner().pos);
         }
         circles.draw();
     }

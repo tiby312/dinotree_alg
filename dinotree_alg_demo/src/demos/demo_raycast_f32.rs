@@ -76,17 +76,18 @@ impl DemoSys for RaycastF32Demo {
         check_naive: bool,
     ) {
         //Draw bots
-        let mut r=sys.circles(self.radius,[0.0,0.0,0.0]);
+        let mut r=sys.circles(self.radius,[0.0,0.0,0.0,0.3]);
         for bot in self.tree.get_bots().iter() {
-            r.add(bot.inner().center,0.3);
+            r.add(bot.inner().center);
         }
         r.draw();
+        drop(r);
 
         let tree = &mut self.tree;
         let dim=self.dim;
         let radius=self.radius;
         {
-            let mut ray_cast=sys.lines(5.0,[1.0,1.0,1.0]);
+            let mut ray_cast=sys.lines(5.0,[1.0,1.0,1.0,0.3]);
 
             for dir in 0..360i32 {
                 let dir = dir as f32 * (std::f32::consts::PI / 180.0);
@@ -130,7 +131,8 @@ impl DemoSys for RaycastF32Demo {
                 };
 
                 let end=ray.inner_into().point_at_tval(dis);
-                ray_cast.add(ray.point.inner_into(),end,0.2);
+                ray_cast.add(ray.point.inner_into(),end);
+                
             }
             ray_cast.draw();
         }

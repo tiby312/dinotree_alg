@@ -30,24 +30,8 @@ impl KnearestDemo {
             .map(|(id, (pos, radius))| {
                 Bot{id,pos,radius}
             })
-            /*
-            .map(|(id, (pos, radius))| {
-                bbox(Rect::from_point(pos,radius)
-                .inner_try_into()
-                .unwrap(),Bot { id, pos, radius })
-            })
-            */
             .collect();
 
-        /*
-        let tree = DinoTreeOwned::new_par( bots, |bot| {
-            Rect::from_point(bot.pos, bot.radius)
-                .inner_try_into()
-                .unwrap()
-        });
-        */
-
-        //let tree = DinoTreeOwned::new( bots);
         let tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {
             Rect::from_point(bot.pos, bot.radius)
                 .inner_try_into()
@@ -66,11 +50,12 @@ impl DemoSys for KnearestDemo {
     ) {
         let tree = &mut self.tree;
 
-        let mut rects=sys.rects([0.0,0.0,0.0]);
+        let mut rects=sys.rects([0.0,0.0,0.0,0.3]);
         for bot in tree.as_owned().get_bots().iter() {
-            rects.add(bot.get().inner_into(),0.3);
+            rects.add(bot.get().inner_into());
         }
         rects.draw();
+        drop(rects);
 
         struct Kn<'a> {
             rects: RefCell<very_simple_2d::very_simple_2d_core::RectSession<'a>>,
@@ -81,9 +66,10 @@ impl DemoSys for KnearestDemo {
             type N = F32n;
 
             fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
-                self.rects.borrow_mut().add(bot.get().inner_into(),0.3);
+                self.rects.borrow_mut().add(bot.get().inner_into());
                 self.distance_to_rect(point, bot.get())
             }
+
             fn distance_to_rect(&self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N {
                 let dis = rect.as_ref().distance_squared_to_point(point.inner_into());
                 let dis = match dis {
@@ -106,7 +92,6 @@ impl DemoSys for KnearestDemo {
                         //for the cases that the point is inside of the rect.
 
                         0.0
-                        //-(bot.inner.pos-point.inner_into()).magnitude2()
                     }
                 };
                 f32n(dis)
@@ -114,9 +99,9 @@ impl DemoSys for KnearestDemo {
         }
 
         let cols = [
-            [1.0, 0.0, 0.0], //red closest
-            [0.0, 1.0, 0.0], //green second closest
-            [0.0, 0.0, 1.0], //blue third closets
+            [1.0, 0.0, 0.0,0.6], //red closest
+            [0.0, 1.0, 0.0,0.6], //green second closest
+            [0.0, 0.0, 1.0,0.6], //blue third closets
         ];
 
         struct Res {
@@ -124,15 +109,14 @@ impl DemoSys for KnearestDemo {
             mag: F32n,
         }
 
-        let rects=sys.rects([1.0,0.5,0.3]);
         let mut vv = {
+            let rects=sys.rects([1.0,0.5,0.3,0.3]);
             let mut kn = Kn {
                 rects: RefCell::new(rects),
             };
-            let j=tree.as_owned_mut().as_tree_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim);
-            kn.rects.borrow_mut().draw();
-            j
+            tree.as_owned_mut().as_tree_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
         };
+
         let mut vv: Vec<_> = vv
             .drain(..)
             .map(|a| Res {
@@ -161,18 +145,18 @@ impl DemoSys for KnearestDemo {
             */
         }
 
-
+        vv.reverse();
         let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
         for (a, color) in vv_iter.zip(cols.iter()) {
             
             if let Some(k) = a.first(){
-                sys.circles(k.mag.into_inner().sqrt(),*color).add(cursor.inner_into(),0.5).draw();
+                sys.circles(k.mag.into_inner().sqrt(),*color).add(cursor.inner_into()).draw();
             }
 
             let mut rects=sys.rects(*color);
             for b in a.iter() {
-                rects.add(b.rect.inner_into(),0.5);
+                rects.add(b.rect.inner_into());
             }
             rects.draw();
         }
