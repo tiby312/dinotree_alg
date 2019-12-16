@@ -70,20 +70,19 @@ fn main() {
         .build_global()
         .unwrap();
 
-    let area = vec2(1024, 768);
+    let area = vec2(800, 600);
 
     let events_loop = glutin::event_loop::EventLoop::new();
 
-    let mut sys = very_simple_2d::System::new(rect(0.,1024.,0.,768.),&events_loop);
+    let mut sys = very_simple_2d::WindowedSystem::new(area.inner_as(),&events_loop);
+    //let mut sys=very_simple_2d::FullScreenSystem::new(&events_loop);
+    //sys.set_viewport_min(600.);
 
     let mut demo_iter = demo_iter::DemoIter::new();
 
     let mut curr = demo_iter.next(area);
 
     println!("Press \"N\" to go to the next example");
-    //println!("Press \"C\" to turn off verification against naive algorithms.");
-    println!("Performance suffers from not batching draw calls (piston's built in rectangle drawing primitives are used instead of vertex buffers). These demos are not meant to showcase the performance of the algorithms. See the dinotree_alg_data project for benches.");
-
 
     let mut check_naive = false;
     let mut cursor=vec2same(0.);
