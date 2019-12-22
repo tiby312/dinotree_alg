@@ -131,7 +131,7 @@ fn main() {
             },
             Event::EventsCleared=>{
                 if timer.is_ready(){
-                    curr.step(cursor.inner_try_into().unwrap(),sys.get_sys(),check_naive);
+                    curr.step(cursor.inner_try_into().unwrap(),sys.session(),check_naive);
                     sys.swap_buffers();
                 }
             },
