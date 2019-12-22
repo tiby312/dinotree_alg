@@ -46,11 +46,7 @@ impl<'b> NodeMassTrait for Bla<'b> {
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(
-        &self,
-        mut a: PMut<Self::Item>,
-        mut b: PMut<Self::Item>,
-    ) {
+    fn handle_bot_with_bot(&self, mut a: PMut<Self::Item>, mut b: PMut<Self::Item>) {
         //self.num_pairs_checked+=1;
         let _ = duckduckgeo::gravitate(a.inner_mut(), b.inner_mut(), 0.0001, 0.004);
     }
@@ -192,18 +188,16 @@ impl DemoSys for DemoNbody {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        mut sys:very_simple_2d::DrawSession,
+        mut sys: very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         let no_mass_bots = &mut self.no_mass_bots;
         let bots = &mut self.bots;
 
-
         let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
         {
-            let mut tree = DinoTree::new_par( &mut k);
-           
+            let mut tree = DinoTree::new_par(&mut k);
 
             let border = self.dim;
 
@@ -222,8 +216,8 @@ impl DemoSys for DemoNbody {
                     _p: PhantomData,
                 };
                 tree.nbody_mut(&mut bla, border);
-                
-                
+
+
 
 
                 for b in bots3.iter_mut() {
@@ -308,7 +302,7 @@ impl DemoSys for DemoNbody {
             }
         }
         //Draw bots.
-        let mut rects=sys.rects([0.9,0.9,0.3,0.6]);
+        let mut rects = sys.rects([0.9, 0.9, 0.3, 0.6]);
         for bot in k.iter() {
             rects.add(bot.rect.inner_into());
         }

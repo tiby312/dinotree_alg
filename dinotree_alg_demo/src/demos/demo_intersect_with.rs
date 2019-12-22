@@ -70,7 +70,7 @@ impl DemoSys for IntersectWithDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        mut sys:very_simple_2d::DrawSession,
+        mut sys: very_simple_2d::DrawSession,
         _check_naive: bool,
     ) {
         let radius = self.radius;
@@ -104,40 +104,37 @@ impl DemoSys for IntersectWithDemo {
         });
 
         {
-            let mut walls=bbox_helper::create_bbox_mut(walls,|wall| wall.0);
-            let mut tree = DinoTree::new_par( &mut k);
+            let mut walls = bbox_helper::create_bbox_mut(walls, |wall| wall.0);
+            let mut tree = DinoTree::new_par(&mut k);
 
-            tree.intersect_with_mut(
-                &mut walls,
-                |mut bot, wall| {
-                    let fric = 0.8;
+            tree.intersect_with_mut(&mut walls, |mut bot, wall| {
+                let fric = 0.8;
 
-                    let wallx = &wall.get().x;
-                    let wally = &wall.get().y;
-                    let vel = bot.inner().vel;
+                let wallx = &wall.get().x;
+                let wally = &wall.get().y;
+                let vel = bot.inner().vel;
 
-                    let ret = match duckduckgeo::collide_with_rect::<f32>(
-                        bot.get().as_ref(),
-                        wall.get().as_ref(),
-                    )
-                    .unwrap()
-                    {
-                        duckduckgeo::WallSide::Above => {
-                            [None, Some((wally.start - radius, -vel.y * fric))]
-                        }
-                        duckduckgeo::WallSide::Below => {
-                            [None, Some((wally.end + radius, -vel.y * fric))]
-                        }
-                        duckduckgeo::WallSide::LeftOf => {
-                            [Some((wallx.start - radius, -vel.x * fric)), None]
-                        }
-                        duckduckgeo::WallSide::RightOf => {
-                            [Some((wallx.end + radius, -vel.x * fric)), None]
-                        }
-                    };
-                    bot.inner_mut().wall_move = ret;
-                },
-            );
+                let ret = match duckduckgeo::collide_with_rect::<f32>(
+                    bot.get().as_ref(),
+                    wall.get().as_ref(),
+                )
+                .unwrap()
+                {
+                    duckduckgeo::WallSide::Above => {
+                        [None, Some((wally.start - radius, -vel.y * fric))]
+                    }
+                    duckduckgeo::WallSide::Below => {
+                        [None, Some((wally.end + radius, -vel.y * fric))]
+                    }
+                    duckduckgeo::WallSide::LeftOf => {
+                        [Some((wallx.start - radius, -vel.x * fric)), None]
+                    }
+                    duckduckgeo::WallSide::RightOf => {
+                        [Some((wallx.end + radius, -vel.x * fric)), None]
+                    }
+                };
+                bot.inner_mut().wall_move = ret;
+            });
 
             let cc = cursor.inner_into();
             tree.for_all_in_rect_mut(
@@ -154,15 +151,14 @@ impl DemoSys for IntersectWithDemo {
             });
         }
 
-
-        let mut rects=sys.rects([0.7,0.7,0.7,0.3]);
+        let mut rects = sys.rects([0.7, 0.7, 0.7, 0.3]);
         for wall in walls.iter() {
             rects.add(wall.0.inner_into());
         }
         rects.draw();
         drop(rects);
-        
-        let mut circles=sys.circles([1.0,0.0,0.5,0.3],radius);
+
+        let mut circles = sys.circles([1.0, 0.0, 0.5, 0.3], radius);
         for bot in k.iter() {
             circles.add(bot.inner().pos);
         }

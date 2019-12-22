@@ -1,23 +1,21 @@
 //! Module contains query related structs.
 
-
 mod inner_prelude {
-    pub use alloc::vec::Vec;
     pub use crate::inner_prelude::*;
-    pub use axgeom;    
+    pub(crate) use crate::query::tools;
+    pub use alloc::vec::Vec;
+    pub use axgeom;
     pub use axgeom::*;
     pub use compt;
     pub use compt::*;
     pub use core::marker::PhantomData;
     pub use itertools::Itertools;
-    pub(crate) use crate::query::tools;
 }
 
-
-pub use crate::query::raycast::{RayCast,RayCastResult};
-pub use crate::query::k_nearest::{Knearest,KnearestResult};
 pub use crate::query::graphics::DividerDrawer;
-pub use crate::query::rect::{MultiRectMut,RectIntersectErr};
+pub use crate::query::k_nearest::{Knearest, KnearestResult};
+pub use crate::query::raycast::{RayCast, RayCastResult};
+pub use crate::query::rect::{MultiRectMut, RectIntersectErr};
 
 #[cfg(feature = "nbody")]
 pub use crate::query::nbody::NodeMassTrait;
@@ -30,7 +28,6 @@ pub(crate) mod graphics;
 
 ///Contains all k_nearest code.
 pub(crate) mod k_nearest;
-
 
 ///Contains all raycast code.
 pub(crate) mod raycast;
@@ -47,4 +44,3 @@ pub(crate) mod rect;
 
 ///Contains misc tools
 pub(crate) mod tools;
-

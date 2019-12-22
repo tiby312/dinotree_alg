@@ -98,7 +98,7 @@ impl DemoSys for LiquidDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        mut sys:very_simple_2d::DrawSession,
+        mut sys: very_simple_2d::DrawSession,
         _check_naive: bool,
     ) {
         let radius = self.radius;
@@ -111,7 +111,7 @@ impl DemoSys for LiquidDemo {
                 .unwrap()
         });
 
-        let mut tree = DinoTree::new_par( &mut k);
+        let mut tree = DinoTree::new_par(&mut k);
 
         tree.find_collisions_mut_par(|mut a, mut b| {
             let _ = a.inner_mut().solve(b.inner_mut(), radius);
@@ -119,14 +119,14 @@ impl DemoSys for LiquidDemo {
 
         let vv = vec2same(100.0).inner_try_into().unwrap();
         let cc = cursor.inner_into();
-        
-        tree.for_all_in_rect_mut( &axgeom::Rect::from_point(cursor, vv), |mut b| {
+
+        tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
             let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 100.0);
         });
 
         {
             let dim2 = self.dim.inner_into();
-            tree.for_all_not_in_rect_mut( &self.dim, |mut a| {
+            tree.for_all_not_in_rect_mut(&self.dim, |mut a| {
                 duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
             });
         }
@@ -137,7 +137,7 @@ impl DemoSys for LiquidDemo {
             b.acc = vec2same(0.0);
         }
 
-        let mut circle = sys.circles([1.0,0.6,0.7,0.5],2.0);
+        let mut circle = sys.circles([1.0, 0.6, 0.7, 0.5], 2.0);
         for bot in self.bots.iter() {
             circle.add(bot.pos);
         }

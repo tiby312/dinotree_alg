@@ -32,11 +32,7 @@ pub fn bin_middle_left_right<'b, A: Axis, X: Aabb>(
     //              middile_end    left_end                      index_at
 
     for index_at in 0..bot_len {
-        match bots[index_at]
-            .get()
-            .get_range(axis)
-            .contains_ext(*med)
-        {
+        match bots[index_at].get().get_range(axis).contains_ext(*med) {
             //If the divider is less than the bot
             core::cmp::Ordering::Equal => {
                 //left
@@ -130,7 +126,7 @@ pub fn compare_bots<T: Aabb>(axis: impl Axis, a: &T, b: &T) -> core::cmp::Orderi
     let (p1, p2) = (a.get().get_range(axis).start, b.get().get_range(axis).start);
     if p1 > p2 {
         core::cmp::Ordering::Greater
-    }else{
+    } else {
         core::cmp::Ordering::Less
     }
 }

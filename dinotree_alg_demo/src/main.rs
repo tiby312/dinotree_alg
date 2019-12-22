@@ -1,28 +1,20 @@
-
-
-use very_simple_2d::glutin;
-use glutin::event::VirtualKeyCode;
-use glutin::event::Event;
-use glutin::event::WindowEvent;
-use glutin::event_loop::ControlFlow;
-use glutin::event::ElementState;
 use axgeom::vec2;
 use axgeom::Vec2;
 use axgeom::*;
+use glutin::event::ElementState;
+use glutin::event::Event;
+use glutin::event::VirtualKeyCode;
+use glutin::event::WindowEvent;
+use glutin::event_loop::ControlFlow;
+use very_simple_2d::glutin;
 
 #[macro_use]
 pub(crate) mod support;
 pub(crate) mod demos;
 use duckduckgeo::F32n;
 
-
 pub trait DemoSys {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        sys: very_simple_2d::DrawSession,
-        check_naive: bool,
-    );
+    fn step(&mut self, cursor: Vec2<F32n>, sys: very_simple_2d::DrawSession, check_naive: bool);
 }
 
 mod demo_iter {
@@ -74,7 +66,7 @@ fn main() {
 
     let events_loop = glutin::event_loop::EventLoop::new();
 
-    let mut sys = very_simple_2d::WindowedSystem::new(area.inner_as(),&events_loop);
+    let mut sys = very_simple_2d::WindowedSystem::new(area.inner_as(), &events_loop);
     //let mut sys=very_simple_2d::FullScreenSystem::new(&events_loop);
     //sys.set_viewport_min(600.);
 
@@ -85,58 +77,65 @@ fn main() {
     println!("Press \"N\" to go to the next example");
 
     let mut check_naive = false;
-    let mut cursor=vec2same(0.);
-    let mut timer=very_simple_2d::RefreshTimer::new(16);
-    events_loop.run(move |event,_,control_flow| {
+    let mut cursor = vec2same(0.);
+    let mut timer = very_simple_2d::RefreshTimer::new(16);
+    events_loop.run(move |event, _, control_flow| {
         match event {
-            Event::WindowEvent{ event, .. } => match event {
-                WindowEvent::KeyboardInput{input,..}=>{
-                    if input.state==ElementState::Released{    
-                        match input.virtual_keycode{
-                            Some(VirtualKeyCode::Escape)=>{
-                                *control_flow=ControlFlow::Exit;
-                            },
-                            Some(VirtualKeyCode::N)=>{
-                                curr=demo_iter.next(area);
-                            },
-                            Some(VirtualKeyCode::C)=>{
-                                check_naive!=check_naive;
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::KeyboardInput { input, .. } => {
+                    if input.state == ElementState::Released {
+                        match input.virtual_keycode {
+                            Some(VirtualKeyCode::Escape) => {
+                                *control_flow = ControlFlow::Exit;
                             }
-                            _=>{}
+                            Some(VirtualKeyCode::N) => {
+                                curr = demo_iter.next(area);
+                            }
+                            Some(VirtualKeyCode::C) => {
+                                check_naive != check_naive;
+                            }
+                            _ => {}
                         }
                     }
-                },
-                WindowEvent::CloseRequested => {*control_flow=ControlFlow::Exit;},
-                WindowEvent::Resized(_logical_size) => {
-                    
-                },
-                WindowEvent::CursorMoved{modifiers:_,device_id:_,position:logical_position} => {
-                    let glutin::dpi::LogicalPosition{x,y}=logical_position;
-                    cursor=vec2(x as f32,y as f32);
-                },
-                WindowEvent::MouseInput{modifiers:_,device_id:_,state,button}=>{
-                    if button==glutin::event::MouseButton::Left{
-                        match state{
-                            glutin::event::ElementState::Pressed=>{  
-                                //mouse_active=true;  
-                                
+                }
+                WindowEvent::CloseRequested => {
+                    *control_flow = ControlFlow::Exit;
+                }
+                WindowEvent::Resized(_logical_size) => {}
+                WindowEvent::CursorMoved {
+                    modifiers: _,
+                    device_id: _,
+                    position: logical_position,
+                } => {
+                    let glutin::dpi::LogicalPosition { x, y } = logical_position;
+                    cursor = vec2(x as f32, y as f32);
+                }
+                WindowEvent::MouseInput {
+                    modifiers: _,
+                    device_id: _,
+                    state,
+                    button,
+                } => {
+                    if button == glutin::event::MouseButton::Left {
+                        match state {
+                            glutin::event::ElementState::Pressed => {
+                                //mouse_active=true;
                             }
-                            glutin::event::ElementState::Released=>{
+                            glutin::event::ElementState::Released => {
                                 //mouse_active=false;
                             }
                         }
                     }
-                },
-                _=>{}
+                }
+                _ => {}
             },
-            Event::EventsCleared=>{
-                if timer.is_ready(){
-                    curr.step(cursor.inner_try_into().unwrap(),sys.session(),check_naive);
+            Event::EventsCleared => {
+                if timer.is_ready() {
+                    curr.step(cursor.inner_try_into().unwrap(), sys.session(), check_naive);
                     sys.swap_buffers();
                 }
-            },
-            _ => {},
-        }    
+            }
+            _ => {}
+        }
     });
-
 }

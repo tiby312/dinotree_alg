@@ -9,7 +9,7 @@ mod ray_f32 {
     use super::*;
 
     pub struct RayT<'a> {
-        pub rects:Option<RefCell<very_simple_2d::very_simple_2d_core::RectSession<'a>>>,
+        pub rects: Option<RefCell<very_simple_2d::very_simple_2d_core::RectSession<'a>>>,
         pub height: usize,
     }
 
@@ -22,7 +22,7 @@ mod ray_f32 {
             ray: &Ray<Self::N>,
             bot: &Self::T,
         ) -> axgeom::CastResult<Self::N> {
-            if let Some(r)=&self.rects{
+            if let Some(r) = &self.rects {
                 r.borrow_mut().add(bot.get().inner_into());
             }
             Self::compute_distance_to_rect(self, ray, bot.get())
@@ -36,7 +36,6 @@ mod ray_f32 {
             ray.cast_to_rect(&rect)
         }
     }
-
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -57,16 +56,19 @@ pub struct RaycastF32DebugDemo {
 }
 impl RaycastF32DebugDemo {
     pub fn new(dim: Rect<F32n>) -> RaycastF32DebugDemo {
-        
-        let ii:Vec<_> = UniformRandGen::new(dim.inner_into())
+        let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
             .with_radius(1.0, 5.0)
             .enumerate()
             .take(500)
-            .map(|(id,(pos, radius))| {
-                bbox(Rect::from_point(pos, radius).inner_try_into().unwrap(),Bot2{id})
-            }).collect();
+            .map(|(id, (pos, radius))| {
+                bbox(
+                    Rect::from_point(pos, radius).inner_try_into().unwrap(),
+                    Bot2 { id },
+                )
+            })
+            .collect();
 
-        let tree = DinoTreeOwned::new_par( ii);
+        let tree = DinoTreeOwned::new_par(ii);
 
         RaycastF32DebugDemo {
             tree,
@@ -80,7 +82,7 @@ impl DemoSys for RaycastF32DebugDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        mut sys:very_simple_2d::DrawSession,
+        mut sys: very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         let counter = &mut self.counter;
@@ -95,7 +97,7 @@ impl DemoSys for RaycastF32DebugDemo {
             Ray { point, dir }.inner_try_into().unwrap()
         };
 
-        let mut rects=sys.rects([0.0,0.0,0.0,0.3]);
+        let mut rects = sys.rects([0.0, 0.0, 0.0, 0.3]);
         for bot in self.tree.get_bots().iter() {
             rects.add(bot.get().inner_into());
         }
@@ -104,52 +106,44 @@ impl DemoSys for RaycastF32DebugDemo {
 
         let height = self.tree.as_tree().get_height();
 
-        
-
         if check_naive {
-            
-            let dim=self.dim;
-            self.tree.get_bots_mut(|bots|{
+            let dim = self.dim;
+            self.tree.get_bots_mut(|bots| {
                 analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                     dim,
                     ray,
                     &mut ray_f32::RayT {
-                        rects:None,
+                        rects: None,
                         height,
                     },
                 );
             });
         }
-        
 
-        let test={
-            let rects=sys.rects([4.0,0.0,0.0,0.4]);
-            let mut rr=ray_f32::RayT {
-                    rects:Some(RefCell::new(rects)),
-                    height,
-                };
-            let test = self.tree.as_tree_mut().raycast_fine_mut(
-                ray,
-                &mut rr,
-                self.dim,
-            );
+        let test = {
+            let rects = sys.rects([4.0, 0.0, 0.0, 0.4]);
+            let mut rr = ray_f32::RayT {
+                rects: Some(RefCell::new(rects)),
+                height,
+            };
+            let test = self
+                .tree
+                .as_tree_mut()
+                .raycast_fine_mut(ray, &mut rr, self.dim);
             rr.rects.unwrap().borrow_mut().draw();
-            test    
+            test
         };
 
-        
         let ray: Ray<f32> = ray.inner_into();
 
-
         let dis = match test {
-            RayCastResult::Hit((_,dis))=>dis.into_inner(),
-            RayCastResult::NoHit=>800.0
+            RayCastResult::Hit((_, dis)) => dis.into_inner(),
+            RayCastResult::NoHit => 800.0,
         };
 
-        let end=ray.point_at_tval(dis);
+        let end = ray.point_at_tval(dis);
 
-
-        sys.lines([1.,1.,1.,0.2],2.0).add(ray.point,end).draw();
+        sys.lines([1., 1., 1., 0.2], 2.0).add(ray.point, end).draw();
 
         /*
         struct Bla<'a, 'b: 'a> {

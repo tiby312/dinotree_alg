@@ -1,6 +1,6 @@
 //! # Overview
 //!
-//! This crate hopes to provide an efficient 2D space partitioning data structure and useful query algorithms to perform on it 
+//! This crate hopes to provide an efficient 2D space partitioning data structure and useful query algorithms to perform on it
 //! in a hopefully simple cohesive api.
 //! It is a hybrid between a [KD Tree](https://en.wikipedia.org/wiki/K-d_tree) and [Sweep and Prune](https://en.wikipedia.org/wiki/Sweep_and_prune).
 //! Uses `no_std`, but uses the `alloc` crate.
@@ -9,12 +9,12 @@
 //!
 //! ## Data Structure
 //!
-//! Using this crate, the user can create three flavors of the same fundamental data structure. 
+//! Using this crate, the user can create three flavors of the same fundamental data structure.
 //! The different characteristics are exlored more in depth in the book mentioned in the overview section.
 //!
 //! + `(Rect<N>,&mut T)` *recommended
-//! + `(Rect<N>,T)` 
-//! + `&mut (Rect<N>,T)` 
+//! + `(Rect<N>,T)`
+//! + `&mut (Rect<N>,T)`
 //!
 //! ## DinoTreeOwned
 //!
@@ -22,7 +22,7 @@
 //! The user is encouraged to use the lifetimed version, though, as that does not use unsafe{}.
 //! But this might mean that the user has to re-construct the tree more often than it needs to be.
 //! It is composed internally of the equivalent to `(Rect<N>,&mut T)`, the most well-rounded data layout as
-//! described above. 
+//! described above.
 //!
 //! ## User Protection
 //!
@@ -43,14 +43,13 @@
 //!
 //! That said, an aabb is composed of half-open ranges [start,end). So one could simulate a "point",
 //! by putting in a very small epsilon value to ensure that end>start.
-//! 
+//!
 //! ## Unsafety
 //!
 //! `MultiRectMut` uses unsafety to allow the user to have mutable references to elements
 //! that belong to rectangle regions that don't intersect at the same time. This is why
 //! the Aabb trait is unsafe.
 //!
-
 
 #![no_std]
 
@@ -60,36 +59,34 @@ extern crate is_sorted;
 extern crate pdqselect;
 
 ///Prelude to include by using: pub use dinotree::prelude::*
-pub mod prelude{
-    pub use crate::*;
-    pub use crate::pmut::*;
-    pub use crate::bbox::*;  
-    pub use crate::query::*;
+pub mod prelude {
+    pub use crate::bbox::*;
     pub use crate::par;
+    pub use crate::pmut::*;
+    pub use crate::query::*;
     pub use crate::tree::node::*;
+    pub use crate::*;
 }
 
-
 mod inner_prelude {
-    pub use axgeom::*;
-    pub use core::iter::*;
-    pub use core::marker::PhantomData;
-    pub use alloc::vec::Vec;
     pub(crate) use super::*;
-    pub(crate) use compt::Visitor;
     pub(crate) use crate::tree;
     pub(crate) use crate::tree::analyze::*;
+    pub use alloc::vec::Vec;
+    pub use axgeom::*;
+    pub(crate) use compt::Visitor;
+    pub use core::iter::*;
+    pub use core::marker::PhantomData;
 
-    pub(crate) use crate::tree::*;
-    pub(crate) use crate::pmut::*;
     pub(crate) use crate::bbox::*;
     pub(crate) use crate::par;
+    pub(crate) use crate::pmut::*;
+    pub(crate) use crate::tree::*;
 }
 
 pub mod query;
 
 use axgeom::*;
-
 
 ///Contains generic code used in all dinotree versions
 pub use self::tree::*;
@@ -110,15 +107,12 @@ pub mod bbox;
 ///Generic slice utillity functions.
 pub mod util;
 
-
-
 ///The underlying number type used for the dinotree.
 ///It is auto implemented by all types that satisfy the type constraints.
 ///Notice that no arithmatic is possible. The tree is constructed
 ///using only comparisons and copying.
 pub trait Num: Ord + Copy + Send + Sync {}
 impl<T> Num for T where T: Ord + Copy + Send + Sync {}
-
 
 ///Trait to signify that this object has an axis aligned bounding box.
 ///get() must return a aabb with the same value in it while the element
@@ -129,38 +123,30 @@ impl<T> Num for T where T: Ord + Copy + Send + Sync {}
 ///return different aabbs.
 ///This is unsafe since we allow query algorithms to assume the following:
 ///If two object's aabb's don't intersect, then they can be mutated at the same time.
-pub unsafe trait Aabb{
+pub unsafe trait Aabb {
     type Num: Num;
     fn get(&self) -> &Rect<Self::Num>;
 }
 
-unsafe impl<N:Num> Aabb for Rect<N>{
-    type Num=N;
-    fn get(&self)->&Rect<Self::Num>{
+unsafe impl<N: Num> Aabb for Rect<N> {
+    type Num = N;
+    fn get(&self) -> &Rect<Self::Num> {
         self
     }
 }
 
 ///Trait exposes an api where you can return a read-only reference to the axis-aligned bounding box
 ///and at the same time return a mutable reference to a seperate inner section.
-pub trait HasInner:Aabb{
+pub trait HasInner: Aabb {
     type Inner;
     #[inline(always)]
-    fn inner_mut(&mut self)->&mut Self::Inner{
+    fn inner_mut(&mut self) -> &mut Self::Inner {
         self.get_inner_mut().1
     }
     #[inline(always)]
-    fn inner(&self)->&Self::Inner{
+    fn inner(&self) -> &Self::Inner {
         self.get_inner().1
     }
-    fn get_inner(&self)->(&Rect<Self::Num>,&Self::Inner);
-    fn get_inner_mut(&mut self)->(&Rect<Self::Num>,&mut Self::Inner);
+    fn get_inner(&self) -> (&Rect<Self::Num>, &Self::Inner);
+    fn get_inner_mut(&mut self) -> (&Rect<Self::Num>, &mut Self::Inner);
 }
-
-
-
-
-
-
-
-

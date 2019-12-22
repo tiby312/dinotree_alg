@@ -60,11 +60,7 @@ impl OrigOrderDemo {
             .collect();
 
         //let colors = ColorGenerator::new().take(num_bot).collect();
-        OrigOrderDemo {
-            radius,
-            bots,
-            dim,
-        }
+        OrigOrderDemo { radius, bots, dim }
     }
 }
 
@@ -72,7 +68,7 @@ impl DemoSys for OrigOrderDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        mut sys:very_simple_2d::DrawSession,
+        mut sys: very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         let radius = self.radius;
@@ -86,31 +82,31 @@ impl DemoSys for OrigOrderDemo {
                 .inner_try_into()
                 .unwrap()
         });
-        let mut tree = DinoTree::new_par( &mut k);
+        let mut tree = DinoTree::new_par(&mut k);
 
         {
             let dim2 = self.dim.inner_into();
-            tree.for_all_not_in_rect_mut( &self.dim, |mut a| {
+            tree.for_all_not_in_rect_mut(&self.dim, |mut a| {
                 duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
             });
         }
 
         let vv = vec2same(100.0).inner_try_into().unwrap();
         let cc = cursor.inner_into();
-        tree.for_all_in_rect_mut( &axgeom::Rect::from_point(cursor, vv), |mut b| {
+        tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
             let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 20.0);
         });
 
         {
-            let rects=sys.rects([0.0,1.0,1.0,0.6]);
-            let mut dd = Bla { rects};
+            let rects = sys.rects([0.0, 1.0, 1.0, 0.6]);
+            let mut dd = Bla { rects };
             tree.draw(&mut dd, &self.dim);
             dd.rects.draw();
         }
 
         //draw lines to the bots.
         {
-            let mut lines=sys.lines([1.0,0.5,1.0,0.6],2.0);
+            let mut lines = sys.lines([1.0, 0.5, 1.0, 0.6], 2.0);
             draw_bot_lines(tree.axis(), tree.vistr(), &self.dim, &mut lines);
             lines.draw();
         }
@@ -191,7 +187,7 @@ impl DemoSys for OrigOrderDemo {
             a / 256.0
         }
 
-        let mut circles=sys.circles([1.0,1.0,0.0,0.6],self.radius);
+        let mut circles = sys.circles([1.0, 1.0, 0.0, 0.6], self.radius);
         for bot in self.bots.iter() {
             circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }
@@ -200,7 +196,7 @@ impl DemoSys for OrigOrderDemo {
 }
 
 struct Bla<'a> {
-    rects:very_simple_2d::very_simple_2d_core::RectSession<'a>
+    rects: very_simple_2d::very_simple_2d_core::RectSession<'a>,
 }
 impl<'a> DividerDrawer for Bla<'a> {
     type N = F32n;
@@ -231,19 +227,16 @@ impl<'a> DividerDrawer for Bla<'a> {
             ]
         };
         */
-        let cont=Range::new(cont[0],cont[1]).inner_into();
-        let length=Range::new(length[0],length[1]).inner_into();
+        let cont = Range::new(cont[0], cont[1]).inner_into();
+        let length = Range::new(length[0], length[1]).inner_into();
 
         //let radius = (1isize.max(5 - depth as isize)) as f64;
 
-        
-        
         let rect = if axis.is_xaxis() {
-            Rect{x:cont,y:length}
+            Rect { x: cont, y: length }
         } else {
-            Rect{x:length,y:cont}
+            Rect { x: length, y: cont }
         };
-        
 
         self.rects.add(rect);
 
@@ -251,12 +244,11 @@ impl<'a> DividerDrawer for Bla<'a> {
     }
 }
 
-
 fn draw_bot_lines<A: axgeom::Axis>(
     axis: A,
     stuff: Vistr<NodeMut<BBoxMut<F32n, Bot>>>,
     rect: &axgeom::Rect<F32n>,
-    lines:&mut very_simple_2d::very_simple_2d_core::LineSession,
+    lines: &mut very_simple_2d::very_simple_2d_core::LineSession,
 ) {
     use compt::Visitor;
     let (nn, rest) = stuff.next();
@@ -303,7 +295,7 @@ fn draw_bot_lines<A: axgeom::Axis>(
             let _bx = b.inner.pos.x;
             let _by = b.inner.pos.y;
 
-            lines.add(b.inner.pos,vec2(midx,midy));
+            lines.add(b.inner.pos, vec2(midx, midy));
 
             counter += color_delta;
         }

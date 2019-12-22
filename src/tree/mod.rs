@@ -1,62 +1,81 @@
-
 use crate::inner_prelude::*;
 
 ///Helper module for creating Vecs of different types of BBoxes.
-pub mod bbox_helper{
+pub mod bbox_helper {
     use crate::inner_prelude::*;
 
     ///Convenience function to create a `&mut (Rect<N>,T)` from a `(Rect<N>,T)` bounding box.
-    pub fn create_bbox_indirect<'a,N:Num,T>(bots:&'a mut [BBox<N,T>])->Vec<BBoxIndirect<'a,BBox<N,T>>>
-    {
-        bots.iter_mut().map(|a|BBoxIndirect::new(a)).collect()
+    pub fn create_bbox_indirect<'a, N: Num, T>(
+        bots: &'a mut [BBox<N, T>],
+    ) -> Vec<BBoxIndirect<'a, BBox<N, T>>> {
+        bots.iter_mut().map(|a| BBoxIndirect::new(a)).collect()
     }
 
     ///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.
-    pub fn create_bbox_mut<'a,N:Num,T>(bots:&'a mut [T],mut aabb_create:impl FnMut(&T)->Rect<N>)->Vec<BBoxMut<'a,N,T>>{
+    pub fn create_bbox_mut<'a, N: Num, T>(
+        bots: &'a mut [T],
+        mut aabb_create: impl FnMut(&T) -> Rect<N>,
+    ) -> Vec<BBoxMut<'a, N, T>> {
         bots.iter_mut()
-            .map(move |k| BBoxMut::new(aabb_create(k),k))
+            .map(move |k| BBoxMut::new(aabb_create(k), k))
             .collect()
-    }    
-
+    }
 
     ///Helper struct to construct a DinoTree of `(Rect<N>,T)` from a dinotree of `(Rect<N>,&mut T)`
-    pub struct IntoDirectHelper<N,T>(Vec<BBox<N,T>>);
+    pub struct IntoDirectHelper<N, T>(Vec<BBox<N, T>>);
 
     ///Convenience function to create a list of `(Rect<N>,T)` from a `(Rect<N>,&mut T)`. `T` must implement Copy.
-    pub fn generate_direct<A:Axis,N:Num,T:Copy>(tree:&DinoTree<A,NodeMut<BBoxMut<N,T>>>)->IntoDirectHelper<N,T>{
-        IntoDirectHelper(tree.inner.get_nodes().iter().flat_map(|a|a.range.iter()).map(|a|BBox::new(a.rect,*a.inner)).collect())
+    pub fn generate_direct<A: Axis, N: Num, T: Copy>(
+        tree: &DinoTree<A, NodeMut<BBoxMut<N, T>>>,
+    ) -> IntoDirectHelper<N, T> {
+        IntoDirectHelper(
+            tree.inner
+                .get_nodes()
+                .iter()
+                .flat_map(|a| a.range.iter())
+                .map(|a| BBox::new(a.rect, *a.inner))
+                .collect(),
+        )
     }
 
     ///Take a DinoTree of `(Rect<N>,&mut T)` and creates a new one of type `(Rect<N>,T)`
-    pub fn into_direct<'a,A:Axis,N:Num,T>(tree:&DinoTree<A,NodeMut<BBoxMut<N,T>>>,bots:&'a mut IntoDirectHelper<N,T>)->DinoTree<A,NodeMut<'a,BBox<N,T>>>{
-        let mut bots=&mut bots.0 as &'a mut [_];
-        let nodes:Vec<_> = tree.inner.get_nodes().iter().map(|node|{
-            let mut k:&mut [_]=&mut [];
-            core::mem::swap(&mut bots,&mut k);
-            let (first,mut rest) = k.split_at_mut(node.range.len());
-            core::mem::swap(&mut bots,&mut rest);
-            NodeMut{range:first,cont:node.cont,div:node.div}
-        }).collect();
+    pub fn into_direct<'a, A: Axis, N: Num, T>(
+        tree: &DinoTree<A, NodeMut<BBoxMut<N, T>>>,
+        bots: &'a mut IntoDirectHelper<N, T>,
+    ) -> DinoTree<A, NodeMut<'a, BBox<N, T>>> {
+        let mut bots = &mut bots.0 as &'a mut [_];
+        let nodes: Vec<_> = tree
+            .inner
+            .get_nodes()
+            .iter()
+            .map(|node| {
+                let mut k: &mut [_] = &mut [];
+                core::mem::swap(&mut bots, &mut k);
+                let (first, mut rest) = k.split_at_mut(node.range.len());
+                core::mem::swap(&mut bots, &mut rest);
+                NodeMut {
+                    range: first,
+                    cont: node.cont,
+                    div: node.div,
+                }
+            })
+            .collect();
 
-        DinoTree{
-            inner:compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
-            axis:tree.axis
+        DinoTree {
+            inner: compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
+            axis: tree.axis,
         }
     }
 }
 
-
-
 ///A version of dinotree that is not lifetimed and uses unsafe{} to own the elements
-///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`. 
+///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`.
 pub mod dinotree_owned;
-
 
 pub mod analyze;
 
-
 pub(crate) use self::notsorted::NotSorted;
-mod notsorted{
+mod notsorted {
     use super::*;
 
     ///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
@@ -64,80 +83,75 @@ mod notsorted{
     /// along an axis at each level. Construction of `NotSorted` is faster than `DinoTree` since it does not have to
     /// sort bots that belong to each node along an axis. But most query algorithms can usually take advantage of this
     /// extra property.
-    pub struct NotSorted<A: Axis,N:Node>(pub(crate) DinoTree<A,N>);
+    pub struct NotSorted<A: Axis, N: Node>(pub(crate) DinoTree<A, N>);
 
-    impl<'a,T:Aabb + Send + Sync> NotSorted<DefaultA,NodeMut<'a,T>>{
-        pub fn new_par(bots:&'a mut [T])->NotSorted<DefaultA,NodeMut<'a,T>>{
+    impl<'a, T: Aabb + Send + Sync> NotSorted<DefaultA, NodeMut<'a, T>> {
+        pub fn new_par(bots: &'a mut [T]) -> NotSorted<DefaultA, NodeMut<'a, T>> {
             DinoTreeBuilder::new(bots).build_not_sorted_par()
         }
     }
-    impl<'a,T:Aabb> NotSorted<DefaultA,NodeMut<'a,T>>{
-        pub fn new(bots:&'a mut [T])->NotSorted<DefaultA,NodeMut<'a,T>>{
+    impl<'a, T: Aabb> NotSorted<DefaultA, NodeMut<'a, T>> {
+        pub fn new(bots: &'a mut [T]) -> NotSorted<DefaultA, NodeMut<'a, T>> {
             DinoTreeBuilder::new(bots).build_not_sorted_seq()
         }
     }
 
-    impl<'a,A:Axis,T:Aabb + Send + Sync> NotSorted<A,NodeMut<'a,T>>{
-        pub fn with_axis_par(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
-            DinoTreeBuilder::with_axis(axis,bots).build_not_sorted_par()
+    impl<'a, A: Axis, T: Aabb + Send + Sync> NotSorted<A, NodeMut<'a, T>> {
+        pub fn with_axis_par(axis: A, bots: &'a mut [T]) -> NotSorted<A, NodeMut<'a, T>> {
+            DinoTreeBuilder::with_axis(axis, bots).build_not_sorted_par()
         }
     }
-    impl<'a,A:Axis,T:Aabb> NotSorted<A,NodeMut<'a,T>>{
-        pub fn with_axis(axis:A,bots:&'a mut [T])->NotSorted<A,NodeMut<'a,T>>{
-            DinoTreeBuilder::with_axis(axis,bots).build_not_sorted_seq()
+    impl<'a, A: Axis, T: Aabb> NotSorted<A, NodeMut<'a, T>> {
+        pub fn with_axis(axis: A, bots: &'a mut [T]) -> NotSorted<A, NodeMut<'a, T>> {
+            DinoTreeBuilder::with_axis(axis, bots).build_not_sorted_seq()
         }
     }
 
-    impl<A:Axis,N:Node + Send + Sync> NotSorted<A,N> where N::T : Send + Sync{
-
-        pub fn find_collisions_mut_par(&mut self,func:impl Fn(PMut<N::T>,PMut<N::T>) + Send + Sync){
-            colfind::NotSortedQueryBuilder::new(self).query_par(|a,b|{
-                func(a,b)
-            });
+    impl<A: Axis, N: Node + Send + Sync> NotSorted<A, N>
+    where
+        N::T: Send + Sync,
+    {
+        pub fn find_collisions_mut_par(
+            &mut self,
+            func: impl Fn(PMut<N::T>, PMut<N::T>) + Send + Sync,
+        ) {
+            colfind::NotSortedQueryBuilder::new(self).query_par(|a, b| func(a, b));
         }
     }
-    impl<A:Axis,N:Node> NotSorted<A,N>{
-
-        pub fn find_collisions_mut(&mut self,mut func:impl FnMut(PMut<N::T>,PMut<N::T>)){
-            colfind::NotSortedQueryBuilder::new(self).query_seq(|a,b|{
-                func(a,b)
-            });
+    impl<A: Axis, N: Node> NotSorted<A, N> {
+        pub fn find_collisions_mut(&mut self, mut func: impl FnMut(PMut<N::T>, PMut<N::T>)) {
+            colfind::NotSortedQueryBuilder::new(self).query_seq(|a, b| func(a, b));
         }
 
         #[inline(always)]
-        pub fn axis(&self)->A{
+        pub fn axis(&self) -> A {
             self.0.axis()
         }
 
         #[inline(always)]
-        pub fn get_height(&self)->usize{
+        pub fn get_height(&self) -> usize {
             self.0.get_height()
         }
 
         #[inline(always)]
-        pub fn vistr(&self)->Vistr<N>{
+        pub fn vistr(&self) -> Vistr<N> {
             self.0.inner.vistr()
         }
 
         #[inline(always)]
-        pub fn vistr_mut(&mut self)->VistrMut<N>{
-            VistrMut{
-                inner:self.0.inner.vistr_mut()
+        pub fn vistr_mut(&mut self) -> VistrMut<N> {
+            VistrMut {
+                inner: self.0.inner.vistr_mut(),
             }
         }
-
     }
 }
 
-
 use crate::query::*;
 
-
-
-
 ///The data structure this crate revoles around.
-pub struct DinoTree<A:Axis,N:Node>{
-    axis:A,
+pub struct DinoTree<A: Axis, N: Node> {
+    axis: A,
     inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
 }
 
@@ -145,13 +159,12 @@ pub struct DinoTree<A:Axis,N:Node>{
 ///If it is the y axis, then the first divider will be a horizontal line,
 ///since it is partioning space based off of objects y value.
 pub type DefaultA = YAXIS;
-///Constructor of the default axis type. Needed since you cannot construct from type alias's. 
-pub const fn default_axis()->YAXIS{
+///Constructor of the default axis type. Needed since you cannot construct from type alias's.
+pub const fn default_axis() -> YAXIS {
     YAXIS
 }
 
-
-impl<'a,T:Aabb> DinoTree<DefaultA,NodeMut<'a,T>>{
+impl<'a, T: Aabb> DinoTree<DefaultA, NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -159,12 +172,12 @@ impl<'a,T:Aabb> DinoTree<DefaultA,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::new(&mut bots);
     ///
     ///```
-    pub fn new(bots:&'a mut [T])->DinoTree<DefaultA,NodeMut<'a,T>>{
+    pub fn new(bots: &'a mut [T]) -> DinoTree<DefaultA, NodeMut<'a, T>> {
         DinoTreeBuilder::new(bots).build_seq()
     }
 }
 
-impl<'a,T:Aabb + Send + Sync> DinoTree<DefaultA,NodeMut<'a,T>>{
+impl<'a, T: Aabb + Send + Sync> DinoTree<DefaultA, NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -172,12 +185,12 @@ impl<'a,T:Aabb + Send + Sync> DinoTree<DefaultA,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::new_par(&mut bots);
     ///
     ///```
-    pub fn new_par(bots:&'a mut [T])->DinoTree<DefaultA,NodeMut<'a,T>>{
+    pub fn new_par(bots: &'a mut [T]) -> DinoTree<DefaultA, NodeMut<'a, T>> {
         DinoTreeBuilder::new(bots).build_par()
     }
 }
 
-impl<'a,A:Axis,T:Aabb> DinoTree<A,NodeMut<'a,T>>{
+impl<'a, A: Axis, T: Aabb> DinoTree<A, NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -185,12 +198,12 @@ impl<'a,A:Axis,T:Aabb> DinoTree<A,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
-    pub fn with_axis(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::with_axis(axis,bots).build_seq()
+    pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTree<A, NodeMut<'a, T>> {
+        DinoTreeBuilder::with_axis(axis, bots).build_seq()
     }
 }
 
-impl<'a,A:Axis,T:Aabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
+impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<A, NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -198,12 +211,15 @@ impl<'a,A:Axis,T:Aabb + Send + Sync> DinoTree<A,NodeMut<'a,T>>{
     ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
-    pub fn with_axis_par(axis:A,bots:&'a mut [T])->DinoTree<A,NodeMut<'a,T>>{
-        DinoTreeBuilder::with_axis(axis,bots).build_par()
+    pub fn with_axis_par(axis: A, bots: &'a mut [T]) -> DinoTree<A, NodeMut<'a, T>> {
+        DinoTreeBuilder::with_axis(axis, bots).build_par()
     }
 }
 
-impl<A:Axis,N:Node + Send + Sync> DinoTree<A,N> where N::T : Send + Sync{
+impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
+where
+    N::T: Send + Sync,
+{
     /// # Examples
     ///
     ///```
@@ -218,31 +234,37 @@ impl<A:Axis,N:Node + Send + Sync> DinoTree<A,N> where N::T : Send + Sync{
     ///assert_eq!(bots[0].inner,1);
     ///assert_eq!(bots[1].inner,1);
     ///```
-    pub fn find_collisions_mut_par(&mut self,func:impl Fn(PMut<N::T>,PMut<N::T>) + Send + Sync){
-        query::colfind::QueryBuilder::new(self).query_par(|a,b|{
-            func(a,b)
-        });
+    pub fn find_collisions_mut_par(&mut self, func: impl Fn(PMut<N::T>, PMut<N::T>) + Send + Sync) {
+        query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a, b));
     }
 
     #[cfg(feature = "nbody")]
-    pub fn nbody_mut_par<X:query::nbody::NodeMassTrait<Num=N::Num,Item=N::T>+Sync+Send>(
-        &mut self,ncontext:&X,rect:Rect<N::Num>) where X::No:Send, N::T:Send+Copy{
-        query::nbody::nbody_par(self,ncontext,rect)
+    pub fn nbody_mut_par<X: query::nbody::NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send>(
+        &mut self,
+        ncontext: &X,
+        rect: Rect<N::Num>,
+    ) where
+        X::No: Send,
+        N::T: Send + Copy,
+    {
+        query::nbody::nbody_par(self, ncontext, rect)
     }
-
 
     //TODO remove send/sync trait bounds
     #[cfg(feature = "nbody")]
-    pub fn nbody_mut<X:query::nbody::NodeMassTrait<Num=N::Num,Item=N::T>+Sync+Send>(
-        &mut self,ncontext:&X,rect:Rect<N::Num>) where X::No:Send, N::T:Send+Sync{
-        query::nbody::nbody(self,ncontext,rect)
+    pub fn nbody_mut<X: query::nbody::NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send>(
+        &mut self,
+        ncontext: &X,
+        rect: Rect<N::Num>,
+    ) where
+        X::No: Send,
+        N::T: Send + Sync,
+    {
+        query::nbody::nbody(self, ncontext, rect)
     }
-
 }
 
-impl<A:Axis,N:Node> DinoTree<A,N>{
-
-
+impl<A: Axis, N: Node> DinoTree<A, N> {
     /// # Examples
     ///
     ///```
@@ -265,13 +287,17 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///```
     pub fn k_nearest_mut(
         &mut self,
-        point:Vec2<N::Num>,
-        num:usize,
-        distance:impl Fn(Vec2<N::Num>,&Rect<N::Num>)->N::Num,border:Rect<N::Num>) -> Vec<k_nearest::KnearestResult<N::T>>{
-        let mut knear=k_nearest::KnearestWrapper{inner:distance,_p:PhantomData};
-        k_nearest::k_nearest_mut(self,point,num,&mut knear,border)
+        point: Vec2<N::Num>,
+        num: usize,
+        distance: impl Fn(Vec2<N::Num>, &Rect<N::Num>) -> N::Num,
+        border: Rect<N::Num>,
+    ) -> Vec<k_nearest::KnearestResult<N::T>> {
+        let mut knear = k_nearest::KnearestWrapper {
+            inner: distance,
+            _p: PhantomData,
+        };
+        k_nearest::k_nearest_mut(self, point, num, &mut knear, border)
     }
-
 
     /// # Examples
     ///
@@ -290,7 +316,7 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///
     ///     fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N{
     ///         //Do more fine-grained checking here.
-    ///         //At this point we know the aabbs intersect. 
+    ///         //At this point we know the aabbs intersect.
     ///         //Do additional checking to see if they intersect as circles
     ///         bot.inner.distance_squared_to_point(point)
     ///     }
@@ -310,10 +336,12 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///```
     pub fn k_nearest_fine_mut(
         &mut self,
-        point:Vec2<N::Num>,
-        num:usize,
-        knear:&mut impl k_nearest::Knearest<N=N::Num,T=N::T>,border:Rect<N::Num>) -> Vec<k_nearest::KnearestResult<N::T>>{
-        k_nearest::k_nearest_mut(self,point,num,knear,border)
+        point: Vec2<N::Num>,
+        num: usize,
+        knear: &mut impl k_nearest::Knearest<N = N::Num, T = N::T>,
+        border: Rect<N::Num>,
+    ) -> Vec<k_nearest::KnearestResult<N::T>> {
+        k_nearest::k_nearest_mut(self, point, num, knear, border)
     }
 
     /// # Examples
@@ -337,14 +365,14 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///         ray.inner_as::<f32>().cast_to_circle(a.inner.inner_as(),5.).map(|a|a as i32)
     ///    }
     ///}
-    /// 
+    ///
     ///let border = rect(0,100,0,100);
     ///
     ///let mut bots = [bbox(rect(0,10,0,10),vec2(5,5)),
     ///                bbox(rect(2,5,2,5),vec2(4,4)),
     ///                bbox(rect(4,10,4,10),vec2(5,5))];
     ///
-    /// 
+    ///
     ///let mut bots_copy=bots.clone();
     ///let mut tree = DinoTree::new(&mut bots);
     ///let ray=ray(vec2(5,-5),vec2(0,1));
@@ -357,11 +385,12 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///```
     pub fn raycast_fine_mut(
         &mut self,
-        ray:axgeom::Ray<N::Num>,
-        rtrait: &mut impl raycast::RayCast<N=N::Num,T=N::T> ,border:Rect<N::Num>)->raycast::RayCastResult<N::T>{
-        raycast::raycast_mut(self,border,ray,rtrait)
+        ray: axgeom::Ray<N::Num>,
+        rtrait: &mut impl raycast::RayCast<N = N::Num, T = N::T>,
+        border: Rect<N::Num>,
+    ) -> raycast::RayCastResult<N::T> {
+        raycast::raycast_mut(self, border, ray, rtrait)
     }
-
 
     /// # Examples
     ///
@@ -386,20 +415,24 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///```
     pub fn raycast_mut(
         &mut self,
-        ray:axgeom::Ray<N::Num>,
-        rtrait: impl Fn(&Ray<N::Num>,&Rect<N::Num>)->axgeom::CastResult<N::Num>,border:Rect<N::Num> )->raycast::RayCastResult<N::T>{
-        let mut rtrait = raycast::RayCastFineWrapper{inner:rtrait,_p:PhantomData};
-        
-        raycast::raycast_mut(self,border,ray,&mut rtrait)
-    }
+        ray: axgeom::Ray<N::Num>,
+        rtrait: impl Fn(&Ray<N::Num>, &Rect<N::Num>) -> axgeom::CastResult<N::Num>,
+        border: Rect<N::Num>,
+    ) -> raycast::RayCastResult<N::T> {
+        let mut rtrait = raycast::RayCastFineWrapper {
+            inner: rtrait,
+            _p: PhantomData,
+        };
 
+        raycast::raycast_mut(self, border, ray, &mut rtrait)
+    }
 
     /// # Examples
     ///
     /// ```
     /// use dinotree_alg::prelude::*;
     /// use axgeom::*;
-    /// 
+    ///
     /// struct Drawer;
     /// impl DividerDrawer for Drawer{
     ///     type N=i32;
@@ -418,17 +451,16 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///         }
     ///     }
     /// }
-    /// 
+    ///
     /// let border=rect(0,100,0,100);
     /// let mut bots =[rect(0,10,0,10)];
     /// let tree=DinoTree::new(&mut bots);
     /// tree.draw(&mut Drawer,&border);
     /// ```
-    /// 
-    pub fn draw(&self,drawer:&mut impl graphics::DividerDrawer<N=N::Num>,rect:&Rect<N::Num>){
-        graphics::draw(self,drawer,rect)
+    ///
+    pub fn draw(&self, drawer: &mut impl graphics::DividerDrawer<N = N::Num>, rect: &Rect<N::Num>) {
+        graphics::draw(self, drawer, rect)
     }
-
 
     /// # Examples
     ///
@@ -446,13 +478,13 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(bots1[0].inner,1);
     ///assert_eq!(bots2[0].inner,2);
     ///```
-    pub fn intersect_with_mut<X:Aabb<Num=N::Num>>(
+    pub fn intersect_with_mut<X: Aabb<Num = N::Num>>(
         &mut self,
-        other:&mut [X],
-        func: impl Fn(PMut<N::T>,PMut<X>)){
-        intersect_with::intersect_with_mut(self,other,func)
+        other: &mut [X],
+        func: impl Fn(PMut<N::T>, PMut<X>),
+    ) {
+        intersect_with::intersect_with_mut(self, other, func)
     }
-
 
     /// # Examples
     ///
@@ -467,10 +499,9 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(res,Err(RectIntersectErr));
     ///```
     #[must_use]
-    pub fn multi_rect(&mut self)->rect::MultiRectMut<A,N>{
+    pub fn multi_rect(&mut self) -> rect::MultiRectMut<A, N> {
         rect::MultiRectMut::new(self)
     }
-
 
     /// # Examples
     ///
@@ -485,8 +516,8 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(bots[0].inner,1);
     ///
     ///```
-    pub fn for_all_not_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
-        rect::for_all_not_in_rect_mut(self,rect,func);
+    pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<N::Num>, func: impl FnMut(PMut<N::T>)) {
+        rect::for_all_not_in_rect_mut(self, rect, func);
     }
 
     /// # Examples
@@ -502,10 +533,14 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(bots[0].inner,1);
     ///
     ///```
-    pub fn for_all_intersect_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
-        rect::for_all_intersect_rect_mut(self,rect,func);
+    pub fn for_all_intersect_rect_mut(
+        &mut self,
+        rect: &Rect<N::Num>,
+        func: impl FnMut(PMut<N::T>),
+    ) {
+        rect::for_all_intersect_rect_mut(self, rect, func);
     }
-    
+
     /// # Examples
     ///
     ///```
@@ -520,8 +555,8 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///
     ///```
-    pub fn for_all_intersect_rect<'a>(&'a self,rect:&Rect<N::Num>,func:impl FnMut(&'a N::T)){
-        rect::for_all_intersect_rect(self,rect,func);
+    pub fn for_all_intersect_rect<'a>(&'a self, rect: &Rect<N::Num>, func: impl FnMut(&'a N::T)) {
+        rect::for_all_intersect_rect(self, rect, func);
     }
 
     /// # Examples
@@ -537,8 +572,8 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(bots[0].inner,1);
     ///
     ///```
-    pub fn for_all_in_rect_mut(&mut self,rect:&Rect<N::Num>,func:impl FnMut(PMut<N::T>)){
-        rect::for_all_in_rect_mut(self,rect,func);
+    pub fn for_all_in_rect_mut(&mut self, rect: &Rect<N::Num>, func: impl FnMut(PMut<N::T>)) {
+        rect::for_all_in_rect_mut(self, rect, func);
     }
 
     /// # Examples
@@ -554,8 +589,8 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///
-    pub fn for_all_in_rect<'a>(&'a self,rect:&Rect<N::Num>,func:impl FnMut(&'a N::T)){
-        rect::for_all_in_rect(self,rect,func);
+    pub fn for_all_in_rect<'a>(&'a self, rect: &Rect<N::Num>, func: impl FnMut(&'a N::T)) {
+        rect::for_all_in_rect(self, rect, func);
     }
 
     /// # Examples
@@ -572,10 +607,8 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(bots[0].inner,1);
     ///assert_eq!(bots[1].inner,1);
     ///```
-    pub fn find_collisions_mut(&mut self,mut func:impl FnMut(PMut<N::T>,PMut<N::T>)){
-        colfind::QueryBuilder::new(self).query_seq(|a,b|{
-            func(a,b)
-        });
+    pub fn find_collisions_mut(&mut self, mut func: impl FnMut(PMut<N::T>, PMut<N::T>)) {
+        colfind::QueryBuilder::new(self).query_seq(|a, b| func(a, b));
     }
 
     /// # Examples
@@ -588,10 +621,9 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///use axgeom::Axis;
     ///assert!(tree.axis().is_equal_to(default_axis()));
     ///```
-    pub fn axis(&self)->A{
+    pub fn axis(&self) -> A {
         self.axis
     }
-
 
     /// # Examples
     ///
@@ -606,9 +638,9 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///}
     ///assert_eq!(bots[0].inner,1);
     ///```
-    pub fn vistr_mut(&mut self)->VistrMut<N>{
-        VistrMut{
-            inner:self.inner.vistr_mut()
+    pub fn vistr_mut(&mut self) -> VistrMut<N> {
+        VistrMut {
+            inner: self.inner.vistr_mut(),
         }
     }
 
@@ -626,7 +658,7 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///}
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///```
-    pub fn vistr(&self)->Vistr<N>{
+    pub fn vistr(&self) -> Vistr<N> {
         self.inner.vistr()
     }
 
@@ -640,10 +672,9 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(tree.get_height(),analyze::compute_tree_height_heuristic(400,analyze::DEFAULT_NUMBER_ELEM_PER_NODE));
     ///```
     ///
-    pub fn get_height(&self)->usize{
+    pub fn get_height(&self) -> usize {
         self.inner.get_height()
     }
-
 
     /// # Examples
     ///
@@ -655,15 +686,13 @@ impl<A:Axis,N:Node> DinoTree<A,N>{
     ///assert_eq!(tree.num_nodes(),analyze::nodes_left(0,tree.get_height() ));
     ///
     ///```
-    pub fn num_nodes(&self)->usize{
+    pub fn num_nodes(&self) -> usize {
         self.inner.get_nodes().len()
     }
 }
 
-
-
 use self::builder::DinoTreeBuilder;
-mod builder{
+mod builder {
     use super::*;
 
     ///Builder pattern for dinotree.
@@ -675,44 +704,60 @@ mod builder{
         height_switch_seq: usize,
     }
 
-
-    impl<'a,A: Axis, T:Aabb+Send+Sync>
-        DinoTreeBuilder<'a,A,  T>
-    {
+    impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
         ///Build not sorted in parallel
-        pub fn build_not_sorted_par(&mut self) -> NotSorted<A,NodeMut<'a,T>> {
-            let mut bots:&mut [T]=&mut [];
-            core::mem::swap(&mut bots,&mut self.bots);
-            
+        pub fn build_not_sorted_par(&mut self) -> NotSorted<A, NodeMut<'a, T>> {
+            let mut bots: &mut [T] = &mut [];
+            core::mem::swap(&mut bots, &mut self.bots);
+
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
-            let inner = create_tree_par(self.axis,dlevel, bots, NoSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-            NotSorted(DinoTree{axis:self.axis,inner})
+            let inner = create_tree_par(
+                self.axis,
+                dlevel,
+                bots,
+                NoSorter,
+                &mut SplitterEmpty,
+                self.height,
+                self.rebal_strat,
+            );
+            NotSorted(DinoTree {
+                axis: self.axis,
+                inner,
+            })
         }
 
         ///Build in parallel
-        pub fn build_par(&mut self) -> DinoTree<A,NodeMut<'a,T>> {
-            let mut bots:&mut [T]=&mut [];
-            core::mem::swap(&mut bots,&mut self.bots);
-            
+        pub fn build_par(&mut self) -> DinoTree<A, NodeMut<'a, T>> {
+            let mut bots: &mut [T] = &mut [];
+            core::mem::swap(&mut bots, &mut self.bots);
+
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
-            let inner = create_tree_par(self.axis,dlevel, bots, DefaultSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-            DinoTree{axis:self.axis,inner}
+            let inner = create_tree_par(
+                self.axis,
+                dlevel,
+                bots,
+                DefaultSorter,
+                &mut SplitterEmpty,
+                self.height,
+                self.rebal_strat,
+            );
+            DinoTree {
+                axis: self.axis,
+                inner,
+            }
         }
     }
 
-    
-    impl<'a, T:Aabb> DinoTreeBuilder<'a,DefaultA,T>{
+    impl<'a, T: Aabb> DinoTreeBuilder<'a, DefaultA, T> {
         ///Create a new builder with a slice of elements that implement `Aabb`.
-        pub fn new(bots: &'a mut [T]) -> DinoTreeBuilder<'a,DefaultA, T> {
-            Self::with_axis(default_axis(),bots)
+        pub fn new(bots: &'a mut [T]) -> DinoTreeBuilder<'a, DefaultA, T> {
+            Self::with_axis(default_axis(), bots)
         }
     }
 
-
-    impl<'a, A: Axis, T:Aabb> DinoTreeBuilder<'a,A,T>{
-
+    impl<'a, A: Axis, T: Aabb> DinoTreeBuilder<'a, A, T> {
         ///Create a new builder with a slice of elements that implement `Aabb`.
-        pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTreeBuilder<'a,A, T> {
+        pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTreeBuilder<'a, A, T> {
             let rebal_strat = BinStrat::NotChecked;
 
             //we want each node to have space for around num_per_node bots.
@@ -725,7 +770,7 @@ mod builder{
             //and you will end up with just sweep and prune.
             //This number was chosen emprically from running the dinotree_alg_data project,
             //on two different machines.
-            let height = compute_tree_height_heuristic(bots.len(),DEFAULT_NUMBER_ELEM_PER_NODE);
+            let height = compute_tree_height_heuristic(bots.len(), DEFAULT_NUMBER_ELEM_PER_NODE);
 
             let height_switch_seq = par::SWITCH_SEQUENTIAL_DEFAULT;
 
@@ -738,24 +783,42 @@ mod builder{
             }
         }
 
-
         ///Build not sorted sequentially
-        pub fn build_not_sorted_seq(&mut self) -> NotSorted<A,NodeMut<'a,T>> {
-            let mut bots:&mut [T]=&mut [];
-            core::mem::swap(&mut bots,&mut self.bots);
-            
-            let inner = create_tree_seq(self.axis, bots, NoSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-            NotSorted(DinoTree{axis:self.axis,inner})
+        pub fn build_not_sorted_seq(&mut self) -> NotSorted<A, NodeMut<'a, T>> {
+            let mut bots: &mut [T] = &mut [];
+            core::mem::swap(&mut bots, &mut self.bots);
+
+            let inner = create_tree_seq(
+                self.axis,
+                bots,
+                NoSorter,
+                &mut SplitterEmpty,
+                self.height,
+                self.rebal_strat,
+            );
+            NotSorted(DinoTree {
+                axis: self.axis,
+                inner,
+            })
         }
 
         ///Build sequentially
-        pub fn build_seq(&mut self)->DinoTree<A,NodeMut<'a,T>>{
-            let mut bots:&mut [T]=&mut [];
-            core::mem::swap(&mut bots,&mut self.bots);
-            let inner = create_tree_seq(self.axis, bots, DefaultSorter, &mut SplitterEmpty, self.height, self.rebal_strat);
-            DinoTree{axis:self.axis,inner}
+        pub fn build_seq(&mut self) -> DinoTree<A, NodeMut<'a, T>> {
+            let mut bots: &mut [T] = &mut [];
+            core::mem::swap(&mut bots, &mut self.bots);
+            let inner = create_tree_seq(
+                self.axis,
+                bots,
+                DefaultSorter,
+                &mut SplitterEmpty,
+                self.height,
+                self.rebal_strat,
+            );
+            DinoTree {
+                axis: self.axis,
+                inner,
+            }
         }
-
 
         #[inline(always)]
         pub fn with_bin_strat(&mut self, strat: BinStrat) -> &mut Self {
@@ -782,46 +845,50 @@ mod builder{
         pub fn build_with_splitter_seq<S: Splitter>(
             &mut self,
             splitter: &mut S,
-        ) -> DinoTree<A,NodeMut<'a,T>> {
-            let mut bots:&mut [T]=&mut [];
-            core::mem::swap(&mut bots,&mut self.bots);
-            
-            let inner = create_tree_seq(self.axis, bots, DefaultSorter, splitter, self.height, self.rebal_strat);
-            DinoTree{axis:self.axis,inner} 
+        ) -> DinoTree<A, NodeMut<'a, T>> {
+            let mut bots: &mut [T] = &mut [];
+            core::mem::swap(&mut bots, &mut self.bots);
+
+            let inner = create_tree_seq(
+                self.axis,
+                bots,
+                DefaultSorter,
+                splitter,
+                self.height,
+                self.rebal_strat,
+            );
+            DinoTree {
+                axis: self.axis,
+                inner,
+            }
         }
     }
 }
 
-
-
 pub(crate) use self::node::*;
 ///Contains node-level building block structs and visitors used for a DinoTree.
-pub mod node{
+pub mod node {
     use super::*;
-
 
     ///When we traverse the tree in read-only mode, we can simply return a reference to each node.
     ///We don't need to protect the user from only mutating parts of the BBox's since they can't
     ///change anything.
-    pub type Vistr<'a,N> = compt::dfs_order::Vistr<'a,N,compt::dfs_order::PreOrder>;
+    pub type Vistr<'a, N> = compt::dfs_order::Vistr<'a, N, compt::dfs_order::PreOrder>;
 
-    mod vistr_mut{
+    mod vistr_mut {
         use crate::inner_prelude::*;
 
         //Cannot use since we need create_wrap_mut()
         //We must create our own new type.
         //pub type VistrMut<'a,N> = compt::MapStruct<compt::dfs_order::VistrMut<'a,N,compt::dfs_order::PreOrder>,Foo<'a,N>>;
 
-
-
         /// Tree Iterator that returns a protected mutable reference to each node.
         #[repr(transparent)]
-        pub struct VistrMut<'a, N:Node> {
+        pub struct VistrMut<'a, N: Node> {
             pub(crate) inner: compt::dfs_order::VistrMut<'a, N, compt::dfs_order::PreOrder>,
         }
 
-        impl<'a, N:Node> VistrMut<'a, N> {
-
+        impl<'a, N: Node> VistrMut<'a, N> {
             ///It is safe to borrow the iterator and then produce mutable references from that
             ///as long as by the time the borrow ends, all the produced references also go away.
             #[inline(always)]
@@ -830,81 +897,81 @@ pub mod node{
                     inner: self.inner.create_wrap_mut(),
                 }
             }
-
         }
 
-
-        impl<'a, N:Node> core::ops::Deref for VistrMut<'a, N> {
+        impl<'a, N: Node> core::ops::Deref for VistrMut<'a, N> {
             type Target = Vistr<'a, N>;
-            
+
             #[inline(always)]
             fn deref(&self) -> &Vistr<'a, N> {
                 unsafe { &*(self as *const VistrMut<_> as *const Vistr<_>) }
             }
         }
 
+        unsafe impl<'a, N: Node> compt::FixedDepthVisitor for VistrMut<'a, N> {}
 
-
-        unsafe impl<'a, N:Node> compt::FixedDepthVisitor for VistrMut<'a, N> {}
-
-        impl<'a, N:Node> Visitor for VistrMut<'a, N> {
+        impl<'a, N: Node> Visitor for VistrMut<'a, N> {
             type Item = PMut<'a, N>;
 
-            
             #[inline(always)]
             fn next(self) -> (Self::Item, Option<[Self; 2]>) {
                 let (nn, rest) = self.inner.next();
 
                 let k = match rest {
-                    Some([left, right]) => Some([VistrMut { inner: left }, VistrMut { inner: right }]),
+                    Some([left, right]) => {
+                        Some([VistrMut { inner: left }, VistrMut { inner: right }])
+                    }
                     None => None,
                 };
                 (PMut::new(nn), k)
             }
-            
+
             #[inline(always)]
             fn level_remaining_hint(&self) -> (usize, Option<usize>) {
                 self.inner.level_remaining_hint()
             }
 
-
-            
             #[inline(always)]
-            fn dfs_preorder(self,mut func:impl FnMut(Self::Item)){
-                self.inner.dfs_preorder(|a|{
-                    func(PMut::new(a))
-                });
+            fn dfs_preorder(self, mut func: impl FnMut(Self::Item)) {
+                self.inner.dfs_preorder(|a| func(PMut::new(a)));
             }
         }
     }
     pub use vistr_mut::VistrMut;
 
-
     ///Expose a node trait api so that we can have nodes made up of both
     ///&mut [T] and *mut [T].
-    ///We ideally want to use the lifetimed version of `NodeMut`, but 
+    ///We ideally want to use the lifetimed version of `NodeMut`, but
     ///but for `DinoTreeOwned` we must use `NodePtr`.
-    pub trait Node{
-        type T:Aabb<Num=Self::Num>;
-        type Num:Num;
-        fn get(&self)->NodeRef<Self::T>;
-        fn get_mut(&mut self)->NodeRefMut<Self::T>;
+    pub trait Node {
+        type T: Aabb<Num = Self::Num>;
+        type Num: Num;
+        fn get(&self) -> NodeRef<Self::T>;
+        fn get_mut(&mut self) -> NodeRefMut<Self::T>;
     }
 
-    impl<'a,T:Aabb> Node for NodeMut<'a,T>{
-        type T=T;
-        type Num=T::Num;
-        fn get(&self)->NodeRef<Self::T>{
-            NodeRef{bots:self.range,cont:&self.cont,div:&self.div}
+    impl<'a, T: Aabb> Node for NodeMut<'a, T> {
+        type T = T;
+        type Num = T::Num;
+        fn get(&self) -> NodeRef<Self::T> {
+            NodeRef {
+                bots: self.range,
+                cont: &self.cont,
+                div: &self.div,
+            }
         }
-        fn get_mut(&mut self)->NodeRefMut<Self::T>{
-            NodeRefMut{bots:PMut::new(self.range),cont:&self.cont,div:&self.div}
+        fn get_mut(&mut self) -> NodeRefMut<Self::T> {
+            NodeRefMut {
+                bots: PMut::new(self.range),
+                cont: &self.cont,
+                div: &self.div,
+            }
         }
     }
 
     ///A lifetimed node in a dinotree.
-    pub struct NodeMut<'a,T: Aabb> {
-        pub(crate) range:&'a mut [T],
+    pub struct NodeMut<'a, T: Aabb> {
+        pub(crate) range: &'a mut [T],
 
         //range is empty iff cont is none.
         pub(crate) cont: Option<axgeom::Range<T::Num>>,
@@ -916,12 +983,10 @@ pub mod node{
         pub(crate) div: Option<T::Num>,
     }
 
-
-
     ///Mutable reference to a node in the dinotree.
-    pub struct NodeRefMut<'a, T:Aabb> {
+    pub struct NodeRefMut<'a, T: Aabb> {
         ///The bots that belong to this node.
-        pub bots: PMut<'a,[T]>,
+        pub bots: PMut<'a, [T]>,
 
         ///Is None iff bots is empty.
         pub cont: &'a Option<axgeom::Range<T::Num>>,
@@ -930,9 +995,8 @@ pub mod node{
         pub div: &'a Option<T::Num>,
     }
 
-
     ///Reference to a node in the dinotree.
-    pub struct NodeRef<'a, T:Aabb> {
+    pub struct NodeRef<'a, T: Aabb> {
         ///The bots that belong to this node.
         pub bots: &'a [T],
 
@@ -942,32 +1006,18 @@ pub mod node{
         ///Is None if node is a leaf, or there are no bots in this node or in any decendants.
         pub div: &'a Option<T::Num>,
     }
-
-
-
-
-
 }
 
-
-
-
-
-
-
-
-
-
-fn create_tree_seq<'a,A:Axis,T:Aabb,K:Splitter>(
-        div_axis: A,
-        rest: &'a mut [T],
-        sorter: impl Sorter,
-        splitter: &mut K,
-        height: usize,
-        binstrat: BinStrat,
-        ) -> compt::dfs_order::CompleteTreeContainer<NodeMut<'a,T>, compt::dfs_order::PreOrder>{
+fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
+    div_axis: A,
+    rest: &'a mut [T],
+    sorter: impl Sorter,
+    splitter: &mut K,
+    height: usize,
+    binstrat: BinStrat,
+) -> compt::dfs_order::CompleteTreeContainer<NodeMut<'a, T>, compt::dfs_order::PreOrder> {
     let num_bots = rest.len();
-    
+
     let mut nodes = Vec::with_capacity(tree::nodes_left(0, height));
 
     let r = Recurser {
@@ -978,12 +1028,7 @@ fn create_tree_seq<'a,A:Axis,T:Aabb,K:Splitter>(
     };
     r.recurse_preorder_seq(div_axis, rest, &mut nodes, splitter, 0);
 
-    let tree =
-        compt::dfs_order::CompleteTreeContainer::from_preorder(
-            nodes
-        )
-        .unwrap();
-
+    let tree = compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap();
 
     let k = tree
         .get_nodes()
@@ -994,17 +1039,23 @@ fn create_tree_seq<'a,A:Axis,T:Aabb,K:Splitter>(
     tree
 }
 
-fn create_tree_par<'a,A:Axis,JJ:par::Joiner,T:Aabb+Send+Sync,K:Splitter+Send+Sync>(
-        div_axis: A,
-        dlevel: JJ,
-        rest: &'a mut [T],
-        sorter: impl Sorter,
-        splitter: &mut K,
-        height: usize,
-        binstrat: BinStrat,
-        ) -> compt::dfs_order::CompleteTreeContainer<NodeMut<'a,T>, compt::dfs_order::PreOrder>{
+fn create_tree_par<
+    'a,
+    A: Axis,
+    JJ: par::Joiner,
+    T: Aabb + Send + Sync,
+    K: Splitter + Send + Sync,
+>(
+    div_axis: A,
+    dlevel: JJ,
+    rest: &'a mut [T],
+    sorter: impl Sorter,
+    splitter: &mut K,
+    height: usize,
+    binstrat: BinStrat,
+) -> compt::dfs_order::CompleteTreeContainer<NodeMut<'a, T>, compt::dfs_order::PreOrder> {
     let num_bots = rest.len();
-    
+
     let mut nodes = Vec::with_capacity(tree::nodes_left(0, height));
 
     let r = Recurser {
@@ -1015,12 +1066,7 @@ fn create_tree_par<'a,A:Axis,JJ:par::Joiner,T:Aabb+Send+Sync,K:Splitter+Send+Syn
     };
     r.recurse_preorder(div_axis, dlevel, rest, &mut nodes, splitter, 0);
 
-    let tree =
-        compt::dfs_order::CompleteTreeContainer::from_preorder(
-            nodes
-        )
-        .unwrap();
-
+    let tree = compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap();
 
     let k = tree
         .get_nodes()
@@ -1035,25 +1081,27 @@ struct Recurser<'a, T: Aabb, K: Splitter, S: Sorter> {
     height: usize,
     binstrat: BinStrat,
     sorter: S,
-    _p :PhantomData<(K,&'a T)>
+    _p: PhantomData<(K, &'a T)>,
 }
 
+impl<'a, T: Aabb, K: Splitter, S: Sorter> Recurser<'a, T, K, S> {
+    fn create_leaf<A: Axis>(&self, axis: A, rest: &'a mut [T]) -> NodeMut<'a, T> {
+        self.sorter.sort(axis.next(), rest);
 
-impl<'a, T: Aabb, K: Splitter , S: Sorter> Recurser<'a, T, K, S> {
-
-    fn create_leaf<A:Axis>(&self,axis:A,rest:&'a mut [T]) -> NodeMut<'a,T>{
-        self.sorter.sort(axis.next(),rest);
-                
-        let cont = create_cont(axis,rest);
+        let cont = create_cont(axis, rest);
 
         NodeMut {
-            range:rest,
+            range: rest,
             cont,
             div: None,
         }
     }
 
-    fn create_non_leaf<A:Axis>(&self,axis:A,rest:&'a mut [T]) -> (NodeMut<'a,T>,&'a mut [T],&'a mut [T]){
+    fn create_non_leaf<A: Axis>(
+        &self,
+        axis: A,
+        rest: &'a mut [T],
+    ) -> (NodeMut<'a, T>, &'a mut [T], &'a mut [T]) {
         match construct_non_leaf(self.binstrat, self.sorter, axis, rest) {
             ConstructResult::NonEmpty {
                 cont,
@@ -1075,83 +1123,67 @@ impl<'a, T: Aabb, K: Splitter , S: Sorter> Recurser<'a, T, K, S> {
                 //let (b,c) = tools::duplicate_empty_slice(empty);
                 let node = NodeMut {
                     range: empty,
-                    cont:None,
+                    cont: None,
                     div: None,
                 };
 
-                (node,&mut [],&mut [])
+                (node, &mut [], &mut [])
             }
         }
     }
 
-    fn recurse_preorder_seq<A:Axis>(
+    fn recurse_preorder_seq<A: Axis>(
         &self,
         axis: A,
         rest: &'a mut [T],
-        nodes: &mut Vec<NodeMut<'a,T>>,
-        splitter: &mut K,
-        depth: usize,
-        )
-    {
-        splitter.node_start();
-
-        if depth < self.height - 1 {
-            let (node, left, right) = self.create_non_leaf(axis,rest); 
-            nodes.push(node);
-
-            let mut splitter2 = splitter.div();
-
-            self.recurse_preorder_seq(
-                axis.next(),
-                left,
-                nodes,
-                splitter,
-                depth + 1,
-            );
-            self.recurse_preorder_seq(
-                axis.next(),
-                right,
-                nodes,
-                &mut splitter2,
-                depth + 1,
-            );
-            
-            splitter.add(splitter2);
-        } else {
-            let node = self.create_leaf(axis,rest);
-            nodes.push(node);
-            splitter.node_end();
-        }
-    }
-}
-impl<'a, T: Aabb + Send + Sync, K: Splitter + Send+ Sync , S: Sorter> Recurser<'a, T, K, S> {
-
-
-
-    fn recurse_preorder<A: Axis, JJ: par::Joiner>(
-        &self,
-        axis: A,
-        dlevel: JJ,
-        rest: &'a mut [T],
-        nodes: &mut Vec<NodeMut<'a,T>>,
+        nodes: &mut Vec<NodeMut<'a, T>>,
         splitter: &mut K,
         depth: usize,
     ) {
         splitter.node_start();
 
         if depth < self.height - 1 {
-            let (node, left, right) = self.create_non_leaf(axis,rest);
-                
+            let (node, left, right) = self.create_non_leaf(axis, rest);
             nodes.push(node);
 
             let mut splitter2 = splitter.div();
 
-            let splitter = match dlevel.next(){
-                par::ParResult::Parallel([dleft,dright])=>{
+            self.recurse_preorder_seq(axis.next(), left, nodes, splitter, depth + 1);
+            self.recurse_preorder_seq(axis.next(), right, nodes, &mut splitter2, depth + 1);
+
+            splitter.add(splitter2);
+        } else {
+            let node = self.create_leaf(axis, rest);
+            nodes.push(node);
+            splitter.node_end();
+        }
+    }
+}
+impl<'a, T: Aabb + Send + Sync, K: Splitter + Send + Sync, S: Sorter> Recurser<'a, T, K, S> {
+    fn recurse_preorder<A: Axis, JJ: par::Joiner>(
+        &self,
+        axis: A,
+        dlevel: JJ,
+        rest: &'a mut [T],
+        nodes: &mut Vec<NodeMut<'a, T>>,
+        splitter: &mut K,
+        depth: usize,
+    ) {
+        splitter.node_start();
+
+        if depth < self.height - 1 {
+            let (node, left, right) = self.create_non_leaf(axis, rest);
+
+            nodes.push(node);
+
+            let mut splitter2 = splitter.div();
+
+            let splitter = match dlevel.next() {
+                par::ParResult::Parallel([dleft, dright]) => {
                     let splitter2 = &mut splitter2;
 
                     //dbg!("PAR SPLIT");
-                    
+
                     let ((splitter, nodes), mut nodes2) = rayon::join(
                         move || {
                             self.recurse_preorder(
@@ -1181,38 +1213,24 @@ impl<'a, T: Aabb + Send + Sync, K: Splitter + Send+ Sync , S: Sorter> Recurser<'
 
                     nodes.append(&mut nodes2);
                     splitter
-                },
-                par::ParResult::Sequential(_)=>{
-                    
+                }
+                par::ParResult::Sequential(_) => {
                     //dbg!("SEQ SPLIT");
-                    
-                    self.recurse_preorder_seq(
-                        axis.next(),
-                        left,
-                        nodes,
-                        splitter,
-                        depth + 1,
-                    );
-                    self.recurse_preorder_seq(
-                        axis.next(),
-                        right,
-                        nodes,
-                        &mut splitter2,
-                        depth + 1,
-                    );
+
+                    self.recurse_preorder_seq(axis.next(), left, nodes, splitter, depth + 1);
+                    self.recurse_preorder_seq(axis.next(), right, nodes, &mut splitter2, depth + 1);
                     splitter
                 }
             };
 
             splitter.add(splitter2);
         } else {
-            let node = self.create_leaf(axis,rest);
+            let node = self.create_leaf(axis, rest);
             nodes.push(node);
             splitter.node_end();
         }
     }
 }
-
 
 #[bench]
 #[cfg(all(feature = "unstable", test))]
@@ -1271,7 +1289,7 @@ fn bench_cont2(b: &mut test::Bencher) {
     let bots: Vec<_> = s
         .as_isize()
         .take(100_000)
-        .map(|pos|  BBox::new(aabb_create_isize(pos, 5), ()) )
+        .map(|pos| BBox::new(aabb_create_isize(pos, 5), ()))
         .collect();
 
     b.iter(|| {
@@ -1281,8 +1299,8 @@ fn bench_cont2(b: &mut test::Bencher) {
 }
 
 fn create_cont<A: Axis, T: Aabb>(axis: A, middle: &[T]) -> Option<axgeom::Range<T::Num>> {
-    match middle.split_first(){
-        Some((first,rest))=>{
+    match middle.split_first() {
+        Some((first, rest)) => {
             let mut min = first.get().get_range(axis).start;
             let mut max = first.get().get_range(axis).end;
 
@@ -1303,15 +1321,10 @@ fn create_cont<A: Axis, T: Aabb>(axis: A, middle: &[T]) -> Option<axgeom::Range<
                 start: min,
                 end: max,
             })
-        },
-        None=>{
-            None
         }
+        None => None,
     }
-    
-
 }
-
 
 enum ConstructResult<'a, T: Aabb> {
     NonEmpty {
@@ -1361,11 +1374,11 @@ fn construct_non_leaf<T: Aabb>(
 
     //debug_assert!(!binned.middle.is_empty());
     sorter.sort(div_axis.next(), binned.middle);
-            
+
     let cont = create_cont(div_axis, binned.middle);
 
     //We already know that the middile is non zero in length.
-    
+
     ConstructResult::NonEmpty {
         mid: binned.middle,
         cont,

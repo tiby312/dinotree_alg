@@ -1,7 +1,6 @@
 use crate::support::prelude::*;
 use std;
 
-
 use axgeom::Ray;
 
 struct RayT {
@@ -17,15 +16,15 @@ impl RayCast for RayT {
         ray: &Ray<Self::N>,
         bot: &Self::T,
     ) -> axgeom::CastResult<Self::N> {
-
-        ray.inner_into::<f32>().cast_to_circle(bot.inner().center,self.radius).map(|a|NotNan::new(a).unwrap())
+        ray.inner_into::<f32>()
+            .cast_to_circle(bot.inner().center, self.radius)
+            .map(|a| NotNan::new(a).unwrap())
     }
     fn compute_distance_to_rect(
         &self,
         ray: &Ray<Self::N>,
         rect: &Rect<Self::N>,
     ) -> axgeom::CastResult<Self::N> {
-
         ray.cast_to_rect(rect)
     }
 }
@@ -50,19 +49,19 @@ pub struct RaycastF32Demo {
 impl RaycastF32Demo {
     pub fn new(dim: Rect<F32n>) -> Self {
         let radius = 20.0;
-        let vv:Vec<_> = UniformRandGen::new(dim.inner_into())
+        let vv: Vec<_> = UniformRandGen::new(dim.inner_into())
             .enumerate()
             .map(|(id, center)| {
-                let b=Bot { id, center };
-                let r=Rect::from_point(center, vec2same(radius))
-                .inner_try_into()
-                .unwrap();
-                bbox(r,b)
+                let b = Bot { id, center };
+                let r = Rect::from_point(center, vec2same(radius))
+                    .inner_try_into()
+                    .unwrap();
+                bbox(r, b)
             })
             .take(100)
             .collect();
 
-        let tree=DinoTreeOwned::new(vv);
+        let tree = DinoTreeOwned::new(vv);
 
         Self { tree, dim, radius }
     }
@@ -72,11 +71,11 @@ impl DemoSys for RaycastF32Demo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        mut sys:very_simple_2d::DrawSession,
+        mut sys: very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
         //Draw bots
-        let mut r=sys.circles([0.0,0.0,0.0,0.3],self.radius);
+        let mut r = sys.circles([0.0, 0.0, 0.0, 0.3], self.radius);
         for bot in self.tree.get_bots().iter() {
             r.add(bot.inner().center);
         }
@@ -84,10 +83,10 @@ impl DemoSys for RaycastF32Demo {
         drop(r);
 
         let tree = &mut self.tree;
-        let dim=self.dim;
-        let radius=self.radius;
+        let dim = self.dim;
+        let radius = self.radius;
         {
-            let mut ray_cast=sys.lines([1.0,1.0,1.0,0.3],5.0);
+            let mut ray_cast = sys.lines([1.0, 1.0, 1.0, 0.3], 5.0);
 
             for dir in 0..360i32 {
                 let dir = dir as f32 * (std::f32::consts::PI / 180.0);
@@ -103,18 +102,15 @@ impl DemoSys for RaycastF32Demo {
                 };
 
                 if check_naive {
-                    tree.get_bots_mut(|bots|{
+                    tree.get_bots_mut(|bots| {
                         analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                             dim,
                             ray,
-                            &mut RayT {
-                                radius,
-                            },
+                            &mut RayT { radius },
                         );
                     });
                 }
 
-                
                 let res = tree.as_tree_mut().raycast_fine_mut(
                     ray,
                     &mut RayT {
@@ -123,16 +119,13 @@ impl DemoSys for RaycastF32Demo {
                     self.dim,
                 );
 
-
-
                 let dis = match res {
-                    RayCastResult::Hit((_,dis))=>dis.into_inner(),
-                    RayCastResult::NoHit=>800.0
+                    RayCastResult::Hit((_, dis)) => dis.into_inner(),
+                    RayCastResult::NoHit => 800.0,
                 };
 
-                let end=ray.inner_into().point_at_tval(dis);
-                ray_cast.add(ray.point.inner_into(),end);
-                
+                let end = ray.inner_into().point_at_tval(dis);
+                ray_cast.add(ray.point.inner_into(), end);
             }
             ray_cast.draw();
         }

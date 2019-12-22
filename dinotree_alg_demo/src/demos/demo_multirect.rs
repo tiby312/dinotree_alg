@@ -14,7 +14,7 @@ impl analyze::HasId for Bot {
 }
 
 pub struct MultiRectDemo {
-    tree: DinoTreeOwnedBBoxPtr<DefaultA,i32,Bot>,
+    tree: DinoTreeOwnedBBoxPtr<DefaultA, i32, Bot>,
     dim: Rect<i32>,
 }
 impl MultiRectDemo {
@@ -27,16 +27,14 @@ impl MultiRectDemo {
                 let pos: Vec2<f32> = pos;
                 let pos = pos.inner_as::<i32>();
                 let radius = radius.inner_as();
-                let b=Bot { pos, radius, id };
+                let b = Bot { pos, radius, id };
                 //let r= Rect::from_point(b.pos, b.radius);
                 //bbox(r,b)
                 b
             })
             .collect();
 
-        let tree = DinoTreeOwnedBBoxPtr::new_par( bots,|b|{
-            Rect::from_point(b.pos, b.radius)
-        });
+        let tree = DinoTreeOwnedBBoxPtr::new_par(bots, |b| Rect::from_point(b.pos, b.radius));
 
         MultiRectDemo {
             dim: dim.inner_into::<f32>().inner_as(),
@@ -49,10 +47,10 @@ impl DemoSys for MultiRectDemo {
     fn step(
         &mut self,
         cursor: Vec2<F32n>,
-        mut sys:very_simple_2d::DrawSession,
+        mut sys: very_simple_2d::DrawSession,
         check_naive: bool,
     ) {
-        let mut rects = sys.rects([0.0,1.0,0.0,0.2]);
+        let mut rects = sys.rects([0.0, 1.0, 0.0, 0.2]);
         for bot in self.tree.as_owned().get_bots().iter() {
             rects.add(bot.get().inner_as());
         }
@@ -64,15 +62,14 @@ impl DemoSys for MultiRectDemo {
         let r2 = axgeom::Rect::new(100, 400, 100, 400);
 
         if check_naive {
-            self.tree.as_owned_mut().get_bots_mut(|bots|{
-                let mut na=analyze::NaiveAlgs::new(bots);
+            self.tree.as_owned_mut().get_bots_mut(|bots| {
+                let mut na = analyze::NaiveAlgs::new(bots);
                 na.assert_for_all_in_rect_mut(&r1);
                 na.assert_for_all_in_rect_mut(&r2);
                 na.assert_for_all_intersect_rect_mut(&r1);
                 na.assert_for_all_intersect_rect_mut(&r2);
                 na.assert_for_all_not_in_rect_mut(&r1);
             });
-            
         }
 
         //test MultiRect
@@ -86,27 +83,35 @@ impl DemoSys for MultiRectDemo {
                 to_draw.push(a);
             });
 
-
             match res {
                 Ok(()) => {
-                    sys.rects([0.0,0.0,0.0,0.5]).add(r1.inner_as()).add(r2.inner_as()).draw();
-                    
-                    let mut rects=sys.rects([0.0,0.0,0.0,0.2]);
+                    sys.rects([0.0, 0.0, 0.0, 0.5])
+                        .add(r1.inner_as())
+                        .add(r2.inner_as())
+                        .draw();
+
+                    let mut rects = sys.rects([0.0, 0.0, 0.0, 0.2]);
                     for r in to_draw.iter() {
                         rects.add(r.get().inner_as());
                     }
                 }
                 Err(_) => {
-                    sys.rects([1.0,0.0,0.0,0.5]).add(r1.inner_as()).add(r2.inner_as()).draw();
+                    sys.rects([1.0, 0.0, 0.0, 0.5])
+                        .add(r1.inner_as())
+                        .add(r2.inner_as())
+                        .draw();
                 }
             }
         }
 
         //test for_all_intersect_rect
-        let mut rects=sys.rects([0.0,0.0,1.0,0.2]);
-        self.tree.as_owned().as_tree().for_all_intersect_rect(&r1, |a| {
-            rects.add(a.get().inner_as());
-        });
+        let mut rects = sys.rects([0.0, 0.0, 1.0, 0.2]);
+        self.tree
+            .as_owned()
+            .as_tree()
+            .for_all_intersect_rect(&r1, |a| {
+                rects.add(a.get().inner_as());
+            });
         rects.draw();
         drop(rects);
 
@@ -114,12 +119,15 @@ impl DemoSys for MultiRectDemo {
         let mut r1 = self.dim.clone();
         r1.grow(-40);
 
-        sys.rects([1.0,0.0,0.0,0.2]).add(r1.inner_as()).draw();
-        
-        let mut rects=sys.rects([1.0,0.0,1.0,0.5]);
-        self.tree.as_owned_mut().as_tree_mut().for_all_not_in_rect_mut( &r1, |b| {
-            rects.add(b.get().inner_as());
-        });
+        sys.rects([1.0, 0.0, 0.0, 0.2]).add(r1.inner_as()).draw();
+
+        let mut rects = sys.rects([1.0, 0.0, 1.0, 0.5]);
+        self.tree
+            .as_owned_mut()
+            .as_tree_mut()
+            .for_all_not_in_rect_mut(&r1, |b| {
+                rects.add(b.get().inner_as());
+            });
         rects.draw();
     }
 }

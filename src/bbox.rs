@@ -1,97 +1,85 @@
 use crate::inner_prelude::*;
 
-
 ///Equivalent to: `&mut (Rect<N>,T)`
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct BBoxIndirect<'a,T>{
-    pub inner: &'a mut T
+pub struct BBoxIndirect<'a, T> {
+    pub inner: &'a mut T,
 }
-impl<'a,T> BBoxIndirect<'a,T>{
-    pub fn new(inner:&'a mut T)->Self{
-        BBoxIndirect{inner}
+impl<'a, T> BBoxIndirect<'a, T> {
+    pub fn new(inner: &'a mut T) -> Self {
+        BBoxIndirect { inner }
     }
 }
 
-
-unsafe impl<'a,T:Aabb> Aabb for BBoxIndirect<'a,T> {
+unsafe impl<'a, T: Aabb> Aabb for BBoxIndirect<'a, T> {
     type Num = T::Num;
     #[inline(always)]
-    fn get(&self) -> &Rect<Self::Num>{
+    fn get(&self) -> &Rect<Self::Num> {
         self.inner.get()
     }
 }
-impl<'a,T:HasInner> HasInner for BBoxIndirect<'a,T>{
-    type Inner= T::Inner;
+impl<'a, T: HasInner> HasInner for BBoxIndirect<'a, T> {
+    type Inner = T::Inner;
 
     #[inline(always)]
-    fn get_inner(&self)->(&Rect<T::Num>,&Self::Inner){
+    fn get_inner(&self) -> (&Rect<T::Num>, &Self::Inner) {
         self.inner.get_inner()
     }
 
     #[inline(always)]
-    fn get_inner_mut(&mut self)->(&Rect<T::Num>,&mut Self::Inner){
+    fn get_inner_mut(&mut self) -> (&Rect<T::Num>, &mut Self::Inner) {
         self.inner.get_inner_mut()
     }
 }
 
-
-
-
-
-///Equivalent to: `(Rect<N>,&mut T)` 
+///Equivalent to: `(Rect<N>,&mut T)`
 #[repr(C)]
 #[derive(Debug)]
-pub struct BBoxMut<'a,N, T> {
+pub struct BBoxMut<'a, N, T> {
     pub rect: axgeom::Rect<N>,
     pub inner: &'a mut T,
 }
 
-impl<'a,N, T> BBoxMut<'a,N, T> {
+impl<'a, N, T> BBoxMut<'a, N, T> {
     #[inline(always)]
-    pub fn new(rect: axgeom::Rect<N>, inner: &'a mut T) -> BBoxMut<'a,N, T> {
+    pub fn new(rect: axgeom::Rect<N>, inner: &'a mut T) -> BBoxMut<'a, N, T> {
         BBoxMut { rect, inner }
     }
 }
 
-
-unsafe impl<'a,N: Num, T> Aabb for BBoxMut<'a,N, T> {
+unsafe impl<'a, N: Num, T> Aabb for BBoxMut<'a, N, T> {
     type Num = N;
     #[inline(always)]
-    fn get(&self) -> &Rect<Self::Num>{
+    fn get(&self) -> &Rect<Self::Num> {
         &self.rect
     }
 }
-impl<'a,N:Num,T> HasInner for BBoxMut<'a,N,T>{
-    type Inner= T;
+impl<'a, N: Num, T> HasInner for BBoxMut<'a, N, T> {
+    type Inner = T;
 
     #[inline(always)]
-    fn get_inner(&self)->(&Rect<N>,&Self::Inner){
-        (&self.rect,self.inner)
+    fn get_inner(&self) -> (&Rect<N>, &Self::Inner) {
+        (&self.rect, self.inner)
     }
 
     #[inline(always)]
-    fn get_inner_mut(&mut self)->(&Rect<N>,&mut Self::Inner){
-        (&self.rect,self.inner)
+    fn get_inner_mut(&mut self) -> (&Rect<N>, &mut Self::Inner) {
+        (&self.rect, self.inner)
     }
 }
 
-
-
-
-
-pub fn bbox<N,T>(rect:axgeom::Rect<N>,inner:T)->BBox<N,T>{
-    BBox::new(rect,inner)
+pub fn bbox<N, T>(rect: axgeom::Rect<N>, inner: T) -> BBox<N, T> {
+    BBox::new(rect, inner)
 }
 
-#[derive(Debug,Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
-///Equivalent to: `(Rect<N>,T)` 
+///Equivalent to: `(Rect<N>,T)`
 pub struct BBox<N, T> {
     pub rect: axgeom::Rect<N>,
     pub inner: T,
 }
-
 
 impl<N, T> BBox<N, T> {
     #[inline(always)]
@@ -100,50 +88,44 @@ impl<N, T> BBox<N, T> {
     }
 }
 
-
-
 unsafe impl<N: Num, T> Aabb for &mut BBox<N, T> {
     type Num = N;
     #[inline(always)]
-    fn get(&self) -> &Rect<Self::Num>{
+    fn get(&self) -> &Rect<Self::Num> {
         &self.rect
     }
 }
-impl<N:Num,T> HasInner for &mut BBox<N,T>{
-    type Inner= T;
+impl<N: Num, T> HasInner for &mut BBox<N, T> {
+    type Inner = T;
 
     #[inline(always)]
-    fn get_inner(&self)->(&Rect<N>,&Self::Inner){
-        (&self.rect,&self.inner)
+    fn get_inner(&self) -> (&Rect<N>, &Self::Inner) {
+        (&self.rect, &self.inner)
     }
 
     #[inline(always)]
-    fn get_inner_mut(&mut self)->(&Rect<N>,&mut Self::Inner){
-        (&self.rect,&mut self.inner)
+    fn get_inner_mut(&mut self) -> (&Rect<N>, &mut Self::Inner) {
+        (&self.rect, &mut self.inner)
     }
 }
-
-
-
 
 unsafe impl<N: Num, T> Aabb for BBox<N, T> {
     type Num = N;
     #[inline(always)]
-    fn get(&self) -> &Rect<Self::Num>{
+    fn get(&self) -> &Rect<Self::Num> {
         &self.rect
     }
 }
-impl<N:Num,T> HasInner for BBox<N,T>{
-    type Inner= T;
+impl<N: Num, T> HasInner for BBox<N, T> {
+    type Inner = T;
 
     #[inline(always)]
-    fn get_inner(&self)->(&Rect<N>,&Self::Inner){
-        (&self.rect,&self.inner)
+    fn get_inner(&self) -> (&Rect<N>, &Self::Inner) {
+        (&self.rect, &self.inner)
     }
 
     #[inline(always)]
-    fn get_inner_mut(&mut self)->(&Rect<N>,&mut Self::Inner){
-        (&self.rect,&mut self.inner)
+    fn get_inner_mut(&mut self) -> (&Rect<N>, &mut Self::Inner) {
+        (&self.rect, &mut self.inner)
     }
 }
-

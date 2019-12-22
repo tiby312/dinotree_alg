@@ -1,7 +1,6 @@
 use crate::support::prelude::*;
 use std::cell::RefCell;
 
-
 #[derive(Copy, Clone)]
 struct Bot {
     id: usize,
@@ -16,10 +15,9 @@ impl analyze::HasId for Bot {
 }
 
 pub struct KnearestDemo {
-    tree: DinoTreeOwnedBBoxPtr<DefaultA,F32n,Bot>,
+    tree: DinoTreeOwnedBBoxPtr<DefaultA, F32n, Bot>,
     dim: Rect<F32n>,
 }
-
 
 impl KnearestDemo {
     pub fn new(dim: Rect<F32n>) -> KnearestDemo {
@@ -27,9 +25,7 @@ impl KnearestDemo {
             .with_radius(2.0, 50.0)
             .take(40)
             .enumerate()
-            .map(|(id, (pos, radius))| {
-                Bot{id,pos,radius}
-            })
+            .map(|(id, (pos, radius))| Bot { id, pos, radius })
             .collect();
 
         let tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {
@@ -50,7 +46,7 @@ impl DemoSys for KnearestDemo {
     ) {
         let tree = &mut self.tree;
 
-        let mut rects=sys.rects([0.0,0.0,0.0,0.3]);
+        let mut rects = sys.rects([0.0, 0.0, 0.0, 0.3]);
         for bot in tree.as_owned().get_bots().iter() {
             rects.add(bot.get().inner_into());
         }
@@ -99,9 +95,9 @@ impl DemoSys for KnearestDemo {
         }
 
         let cols = [
-            [1.0, 0.0, 0.0,0.6], //red closest
-            [0.0, 1.0, 0.0,0.6], //green second closest
-            [0.0, 0.0, 1.0,0.6], //blue third closets
+            [1.0, 0.0, 0.0, 0.6], //red closest
+            [0.0, 1.0, 0.0, 0.6], //green second closest
+            [0.0, 0.0, 1.0, 0.6], //blue third closets
         ];
 
         struct Res {
@@ -110,11 +106,13 @@ impl DemoSys for KnearestDemo {
         }
 
         let mut vv = {
-            let rects=sys.rects([1.0,0.5,0.3,0.3]);
+            let rects = sys.rects([1.0, 0.5, 0.3, 0.3]);
             let mut kn = Kn {
                 rects: RefCell::new(rects),
             };
-            tree.as_owned_mut().as_tree_mut().k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
+            tree.as_owned_mut()
+                .as_tree_mut()
+                .k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
         };
 
         let mut vv: Vec<_> = vv
@@ -149,12 +147,13 @@ impl DemoSys for KnearestDemo {
         let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
         for (a, color) in vv_iter.zip(cols.iter()) {
-            
-            if let Some(k) = a.first(){
-                sys.circles(*color,k.mag.into_inner().sqrt()).add(cursor.inner_into()).draw();
+            if let Some(k) = a.first() {
+                sys.circles(*color, k.mag.into_inner().sqrt())
+                    .add(cursor.inner_into())
+                    .draw();
             }
 
-            let mut rects=sys.rects(*color);
+            let mut rects = sys.rects(*color);
             for b in a.iter() {
                 rects.add(b.rect.inner_into());
             }

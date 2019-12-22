@@ -1,26 +1,26 @@
-use std;
 use axgeom::*;
+use std;
 
 pub mod prelude {
 
+    pub use super::f32n;
     pub use crate::DemoSys;
     pub use ordered_float::NotNan;
-    pub use super::f32n;
-    
+
     pub use super::ColorGenerator;
+    pub use axgeom::*;
     pub use duckduckgeo::bot::*;
+    pub use duckduckgeo::F32n;
     pub use duckduckgeo::*;
     pub use very_simple_2d::*;
-    pub use axgeom::*;
-    pub use duckduckgeo::F32n;
 
     pub use dists;
 
-    pub use dists::uniform_rand::UniformRandGen;
-    pub use duckduckgeo::array2_inner_into;
-    pub use dinotree_alg::prelude::*;
     pub use dinotree_alg::analyze;
     pub use dinotree_alg::dinotree_owned::*;
+    pub use dinotree_alg::prelude::*;
+    pub use dists::uniform_rand::UniformRandGen;
+    pub use duckduckgeo::array2_inner_into;
 }
 
 pub struct ColorGenerator {
@@ -50,6 +50,3 @@ use ordered_float::NotNan;
 pub fn f32n(a: f32) -> F32n {
     NotNan::new(a).unwrap()
 }
-
-
-
