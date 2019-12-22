@@ -8,14 +8,13 @@ publish = false
 [dependencies]
 dists= "0.3"
 duckduckgeo = "0.3"
-#piston_window = "0.105.0"
 bit-vec = "0.6"
 num_cpus = "1.10"
 rayon = "1.2"
 axgeom="1.2"
 ordered-float = "1.0.2"
 compt = "1.6"
-very_simple_2d ={path="../../very_simple_2d"}
+very_simple_2d ="0.1"
 
 [dependencies.dinotree_alg]
 path = ".."
