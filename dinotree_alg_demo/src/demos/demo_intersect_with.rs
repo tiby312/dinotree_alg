@@ -162,7 +162,7 @@ impl DemoSys for IntersectWithDemo {
         rects.draw();
         drop(rects);
         
-        let mut circles=sys.circles(radius,[1.0,0.0,0.5,0.3]);
+        let mut circles=sys.circles([1.0,0.0,0.5,0.3],radius);
         for bot in k.iter() {
             circles.add(bot.inner().pos);
         }

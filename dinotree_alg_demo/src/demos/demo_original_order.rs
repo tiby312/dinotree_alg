@@ -110,7 +110,7 @@ impl DemoSys for OrigOrderDemo {
 
         //draw lines to the bots.
         {
-            let mut lines=sys.lines(2.0,[1.0,0.5,1.0,0.6]);
+            let mut lines=sys.lines([1.0,0.5,1.0,0.6],2.0);
             draw_bot_lines(tree.axis(), tree.vistr(), &self.dim, &mut lines);
             lines.draw();
         }
@@ -191,7 +191,7 @@ impl DemoSys for OrigOrderDemo {
             a / 256.0
         }
 
-        let mut circles=sys.circles(self.radius,[1.0,1.0,0.0,0.6]);
+        let mut circles=sys.circles([1.0,1.0,0.0,0.6],self.radius);
         for bot in self.bots.iter() {
             circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }

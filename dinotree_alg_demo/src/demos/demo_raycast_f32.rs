@@ -76,7 +76,7 @@ impl DemoSys for RaycastF32Demo {
         check_naive: bool,
     ) {
         //Draw bots
-        let mut r=sys.circles(self.radius,[0.0,0.0,0.0,0.3]);
+        let mut r=sys.circles([0.0,0.0,0.0,0.3],self.radius);
         for bot in self.tree.get_bots().iter() {
             r.add(bot.inner().center);
         }
@@ -87,7 +87,7 @@ impl DemoSys for RaycastF32Demo {
         let dim=self.dim;
         let radius=self.radius;
         {
-            let mut ray_cast=sys.lines(5.0,[1.0,1.0,1.0,0.3]);
+            let mut ray_cast=sys.lines([1.0,1.0,1.0,0.3],5.0);
 
             for dir in 0..360i32 {
                 let dir = dir as f32 * (std::f32::consts::PI / 180.0);

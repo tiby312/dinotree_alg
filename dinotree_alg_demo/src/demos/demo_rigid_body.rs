@@ -250,7 +250,7 @@ impl DemoSys for RigidBodyDemo {
             duckduckgeo::collide_with_border(b, self.dim.as_ref(), 0.5);
         }
 
-        let mut circles=sys.circles(radius,[0.7,0.7,0.7,0.5]);
+        let mut circles=sys.circles([0.7,0.7,0.7,0.5],radius);
         for bot in self.bots.iter() {
             circles.add(bot.pos);
         }

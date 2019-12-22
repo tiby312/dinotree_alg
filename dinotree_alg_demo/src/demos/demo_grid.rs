@@ -207,7 +207,7 @@ impl DemoSys for GridDemo {
             });
 
 
-            let mut squares = sys.squares(self.radius,[1.0,0.5,1.0,0.3]);
+            let mut squares = sys.squares([1.0,0.5,1.0,0.3],self.radius);
             for i in 0..self.grid.xdim() {
                 for j in 0..self.grid.ydim() {
                     if self.grid.get(i, j) {
@@ -223,7 +223,7 @@ impl DemoSys for GridDemo {
             a / 256.0
         }
 
-        let mut circles = sys.circles(self.radius,[1.0,0.2,0.2,0.6]);
+        let mut circles = sys.circles([1.0,0.2,0.2,0.6],self.radius);
         for (bot, cols) in self.bots.iter_mut().zip(self.colors.iter()) {
             let rect = &axgeom::Rect::from_point(bot.pos, vec2(radius, radius));
 

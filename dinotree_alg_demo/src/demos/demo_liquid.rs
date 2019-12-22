@@ -137,7 +137,7 @@ impl DemoSys for LiquidDemo {
             b.acc = vec2same(0.0);
         }
 
-        let mut circle = sys.circles(2.0,[1.0,0.6,0.7,0.5]);
+        let mut circle = sys.circles([1.0,0.6,0.7,0.5],2.0);
         for bot in self.bots.iter() {
             circle.add(bot.pos);
         }

@@ -149,7 +149,7 @@ impl DemoSys for RaycastF32DebugDemo {
         let end=ray.point_at_tval(dis);
 
 
-        sys.lines(2.0,[1.,1.,1.,0.2]).add(ray.point,end).draw();
+        sys.lines([1.,1.,1.,0.2],2.0).add(ray.point,end).draw();
 
         /*
         struct Bla<'a, 'b: 'a> {

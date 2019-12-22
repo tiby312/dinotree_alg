@@ -151,7 +151,7 @@ impl DemoSys for KnearestDemo {
         for (a, color) in vv_iter.zip(cols.iter()) {
             
             if let Some(k) = a.first(){
-                sys.circles(k.mag.into_inner().sqrt(),*color).add(cursor.inner_into()).draw();
+                sys.circles(*color,k.mag.into_inner().sqrt()).add(cursor.inner_into()).draw();
             }
 
             let mut rects=sys.rects(*color);
