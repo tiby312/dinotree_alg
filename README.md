@@ -1,3 +1,5 @@
+### Overview
+
 This crate hopes to provide an efficient 2D space partitioning data structure and useful query algorithms to perform on it in a hopefully simple cohesive api.
 It is a hybrid between a [KD Tree](https://en.wikipedia.org/wiki/K-d_tree) and [Sweep and Prune](https://en.wikipedia.org/wiki/Sweep_and_prune).
 Uses `no_std`, but uses the `alloc` crate.
@@ -10,6 +12,10 @@ The dinotree_alg_demo inner project is meant to show case the use of these algor
 ### Analysis
 
 Please see the [book](https://dinotree-book.netlify.com) for a work in progress writeup of the design and analysis of the algorithms in this project.
+
+### Screenshot
+
+<img src="./assets/screenshot.gif" alt="screenshot">
 
 ### Example
 

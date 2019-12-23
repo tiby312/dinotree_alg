@@ -50,6 +50,10 @@
 //! that belong to rectangle regions that don't intersect at the same time. This is why
 //! the Aabb trait is unsafe.
 //!
+//! ## Screenshot
+//!
+//! ![](https://raw.githubusercontent.com/tiby312/dinotree_alg/master/assets/screenshot.gif)
+
 
 #![no_std]
 
