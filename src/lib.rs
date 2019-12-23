@@ -7,6 +7,11 @@
 //! Please see the [dinotree-book](https://dinotree-book.netlify.com) which is a work in-progress high level explanation and analysis
 //! of this crate.
 //!
+//! ## Screenshot
+//!
+//! Screenshot from the dinotree_alg_demo inner project from the [github repo of this crate](https://github.com/tiby312/dinotree_alg).
+//! ![](https://raw.githubusercontent.com/tiby312/dinotree_alg/master/assets/screenshot.gif)
+//!
 //! ## Data Structure
 //!
 //! Using this crate, the user can create three flavors of the same fundamental data structure.
@@ -50,9 +55,6 @@
 //! that belong to rectangle regions that don't intersect at the same time. This is why
 //! the Aabb trait is unsafe.
 //!
-//! ## Screenshot
-//!
-//! ![](https://raw.githubusercontent.com/tiby312/dinotree_alg/master/assets/screenshot.gif)
 
 
 #![no_std]
