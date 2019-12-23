@@ -15,6 +15,8 @@ Please see the [book](https://dinotree-book.netlify.com) for a work in progress 
 
 ### Screenshot
 
+Screen capture from the inner dinotree_alg_demo project.
+
 <img src="./assets/screenshot.gif" alt="screenshot">
 
 ### Example
