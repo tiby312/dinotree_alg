@@ -33,50 +33,27 @@ impl Bot {
 #[derive(Copy, Clone)]
 struct Wall(axgeom::Rect<F32n>);
 
-pub struct IntersectWithDemo {
-    radius: f32,
-    bots: Vec<Bot>,
-    walls: Vec<Wall>,
-    dim: Rect<F32n>,
-}
-impl IntersectWithDemo {
-    pub fn new(dim: Rect<F32n>) -> IntersectWithDemo {
-        let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .take(4000)
-            .map(|pos| Bot {
-                pos,
-                vel: vec2same(0.0),
-                force: vec2same(0.0),
-                wall_move: [None; 2],
-            })
-            .collect();
 
-        let walls = UniformRandGen::new(dim.inner_into())
-            .with_radius(10.0, 60.0)
-            .take(40)
-            .map(|(pos, radius)| Wall(Rect::from_point(pos, radius).inner_try_into().unwrap()))
-            .collect();
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let radius=5.0;
+    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+        .take(4000)
+        .map(|pos| Bot {
+            pos,
+            vel: vec2same(0.0),
+            force: vec2same(0.0),
+            wall_move: [None; 2],
+        })
+        .collect();
 
-        IntersectWithDemo {
-            radius: 5.0,
-            bots,
-            walls,
-            dim,
-        }
-    }
-}
+    let mut walls:Vec<_> = UniformRandGen::new(dim.inner_into())
+        .with_radius(10.0, 60.0)
+        .take(40)
+        .map(|(pos, radius)| Wall(Rect::from_point(pos, radius).inner_try_into().unwrap()))
+        .collect();
 
-impl DemoSys for IntersectWithDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        _check_naive: bool,
-    ) {
-        let radius = self.radius;
-        let bots = &mut self.bots;
-        let walls = &mut self.walls;
-
+    Demo::new(move |cursor,sys,check_naive|{
+        
         for b in bots.iter_mut() {
             b.update();
 
@@ -93,18 +70,18 @@ impl DemoSys for IntersectWithDemo {
             b.wall_move[0] = None;
             b.wall_move[1] = None;
 
-            duckduckgeo::wrap_position(&mut b.pos, self.dim.inner_into());
+            duckduckgeo::wrap_position(&mut b.pos, dim.inner_into());
         }
         bots[0].pos = cursor.inner_into();
 
-        let mut k = bbox_helper::create_bbox_mut(bots, |b| {
+        let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
         });
 
         {
-            let mut walls = bbox_helper::create_bbox_mut(walls, |wall| wall.0);
+            let mut walls = bbox_helper::create_bbox_mut(&mut walls, |wall| wall.0);
             let mut tree = DinoTree::new_par(&mut k);
 
             tree.intersect_with_mut(&mut walls, |mut bot, wall| {
@@ -155,13 +132,44 @@ impl DemoSys for IntersectWithDemo {
         for wall in walls.iter() {
             rects.add(wall.0.inner_into());
         }
-        rects.draw();
+        rects.send_and_draw();
         drop(rects);
 
         let mut circles = sys.circles([1.0, 0.0, 0.5, 0.3], radius);
         for bot in k.iter() {
             circles.add(bot.inner().pos);
         }
-        circles.draw();
+        circles.send_and_draw();
+
+    })
+
+}
+/*
+pub struct IntersectWithDemo {
+    radius: f32,
+    bots: Vec<Bot>,
+    walls: Vec<Wall>,
+    dim: Rect<F32n>,
+}
+impl IntersectWithDemo {
+    pub fn new(dim: Rect<F32n>) -> IntersectWithDemo {
+        
+        IntersectWithDemo {
+            radius: 5.0,
+            bots,
+            walls,
+            dim,
+        }
     }
 }
+
+impl DemoSys for IntersectWithDemo {
+    fn step(
+        &mut self,
+        cursor: Vec2<F32n>,
+        sys: &mut MySys,
+        _check_naive: bool,
+    ) {
+    }
+}
+*/

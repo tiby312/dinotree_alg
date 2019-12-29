@@ -14,43 +14,28 @@ impl analyze::HasId for Bot {
     }
 }
 
-pub struct KnearestDemo {
-    tree: DinoTreeOwnedBBoxPtr<DefaultA, F32n, Bot>,
-    dim: Rect<F32n>,
-}
 
-impl KnearestDemo {
-    pub fn new(dim: Rect<F32n>) -> KnearestDemo {
-        let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .with_radius(2.0, 50.0)
-            .take(40)
-            .enumerate()
-            .map(|(id, (pos, radius))| Bot { id, pos, radius })
-            .collect();
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+        .with_radius(2.0, 50.0)
+        .take(40)
+        .enumerate()
+        .map(|(id, (pos, radius))| Bot { id, pos, radius })
+        .collect();
 
-        let tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {
-            Rect::from_point(bot.pos, bot.radius)
-                .inner_try_into()
-                .unwrap()
-        });
-        KnearestDemo { tree, dim }
-    }
-}
+    let mut tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {
+        Rect::from_point(bot.pos, bot.radius)
+            .inner_try_into()
+            .unwrap()
+    });
 
-impl DemoSys for KnearestDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        check_naive: bool,
-    ) {
-        let tree = &mut self.tree;
-
+    Demo::new(move |cursor,sys,check_naive|{
+        
         let mut rects = sys.rects([0.0, 0.0, 0.0, 0.3]);
         for bot in tree.as_owned().get_bots().iter() {
             rects.add(bot.get().inner_into());
         }
-        rects.draw();
+        rects.send_and_draw();
         drop(rects);
 
         struct Kn<'a> {
@@ -112,7 +97,7 @@ impl DemoSys for KnearestDemo {
             };
             tree.as_owned_mut()
                 .as_tree_mut()
-                .k_nearest_fine_mut(cursor, 3, &mut kn, self.dim)
+                .k_nearest_fine_mut(cursor, 3, &mut kn, dim)
         };
 
         let mut vv: Vec<_> = vv
@@ -150,14 +135,16 @@ impl DemoSys for KnearestDemo {
             if let Some(k) = a.first() {
                 sys.circles(*color, k.mag.into_inner().sqrt())
                     .add(cursor.inner_into())
-                    .draw();
+                    .send_and_draw();
             }
 
             let mut rects = sys.rects(*color);
             for b in a.iter() {
                 rects.add(b.rect.inner_into());
             }
-            rects.draw();
+            rects.send_and_draw();
         }
-    }
+    
+    })
 }
+

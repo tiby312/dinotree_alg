@@ -152,54 +152,36 @@ impl duckduckgeo::GravityTrait for Bot {
     }
 }
 
-pub struct DemoNbody {
-    dim: Rect<F32n>,
-    bots: Vec<Bot>,
-    no_mass_bots: Vec<Bot>,
-    max_percentage_error: f32,
-}
-impl DemoNbody {
-    pub fn new(dim: Rect<F32n>) -> DemoNbody {
-        let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .take(4000)
-            .map(|pos| Bot {
-                mass: 100.0,
-                pos,
-                vel: vec2same(0.0),
-                force: vec2same(0.0),
-            })
-            .collect();
 
-        //Make one of the bots have a lot of mass.
-        bots.last_mut().unwrap().mass = 10000.0;
 
-        let no_mass_bots: Vec<Bot> = Vec::new();
 
-        DemoNbody {
-            dim,
-            bots,
-            no_mass_bots,
-            max_percentage_error: 0.0,
-        }
-    }
-}
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+        .take(4000)
+        .map(|pos| Bot {
+            mass: 100.0,
+            pos,
+            vel: vec2same(0.0),
+            force: vec2same(0.0),
+        })
+        .collect();
 
-impl DemoSys for DemoNbody {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        check_naive: bool,
-    ) {
-        let no_mass_bots = &mut self.no_mass_bots;
-        let bots = &mut self.bots;
+    //Make one of the bots have a lot of mass.
+    bots.last_mut().unwrap().mass = 10000.0;
+
+    let mut no_mass_bots: Vec<Bot> = Vec::new();
+
+
+    Demo::new(move |cursor,sys,check_naive|{
+        let no_mass_bots = &mut no_mass_bots;
+        let bots = &mut bots;
 
         let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
         {
             let mut tree = DinoTree::new_par(&mut k);
 
-            let border = self.dim;
+            let border = dim;
 
             if !check_naive {
                 tree.nbody_mut(
@@ -306,7 +288,7 @@ impl DemoSys for DemoNbody {
         for bot in k.iter() {
             rects.add(bot.rect.inner_into());
         }
-        rects.draw();
+        rects.send_and_draw();
         //drop(rects);
 
         {
@@ -324,7 +306,7 @@ impl DemoSys for DemoNbody {
         //Update bot locations.
         for bot in bots.iter_mut() {
             Bot::handle(bot);
-            duckduckgeo::wrap_position(&mut bot.pos, *self.dim.as_ref());
+            duckduckgeo::wrap_position(&mut bot.pos, *dim.as_ref());
         }
 
         if let Some(mut b) = no_mass_bots.pop() {
@@ -334,5 +316,7 @@ impl DemoSys for DemoNbody {
             b.vel = vec2(1.0, 0.0);
             bots.push(b);
         }
-    }
+
+    })
 }
+

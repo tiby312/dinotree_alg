@@ -49,46 +49,27 @@ impl analyze::HasId for Bot2 {
     }
 }
 
-pub struct RaycastF32DebugDemo {
-    tree: DinoTreeOwned<DefaultA, BBox<F32n, Bot2>>,
-    counter: f32,
-    dim: Rect<F32n>,
-}
-impl RaycastF32DebugDemo {
-    pub fn new(dim: Rect<F32n>) -> RaycastF32DebugDemo {
-        let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .with_radius(1.0, 5.0)
-            .enumerate()
-            .take(500)
-            .map(|(id, (pos, radius))| {
-                bbox(
-                    Rect::from_point(pos, radius).inner_try_into().unwrap(),
-                    Bot2 { id },
-                )
-            })
-            .collect();
 
-        let tree = DinoTreeOwned::new_par(ii);
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
+        .with_radius(1.0, 5.0)
+        .enumerate()
+        .take(500)
+        .map(|(id, (pos, radius))| {
+            bbox(
+                Rect::from_point(pos, radius).inner_try_into().unwrap(),
+                Bot2 { id },
+            )
+        })
+        .collect();
 
-        RaycastF32DebugDemo {
-            tree,
-            counter: 0.0,
-            dim,
-        }
-    }
-}
+    let mut counter:f32=0.0;
+    let mut tree = DinoTreeOwned::new_par(ii);
 
-impl DemoSys for RaycastF32DebugDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        check_naive: bool,
-    ) {
-        let counter = &mut self.counter;
-
+    Demo::new(move |cursor,sys,check_naive|{
+        
         let ray: Ray<F32n> = {
-            *counter += 0.004;
+            counter += 0.004;
             let point: Vec2<f32> = cursor.inner_into::<f32>().inner_as();
             //*counter=10.0;
             let dir = vec2(counter.cos() * 10.0, counter.sin() * 10.0);
@@ -98,17 +79,16 @@ impl DemoSys for RaycastF32DebugDemo {
         };
 
         let mut rects = sys.rects([0.0, 0.0, 0.0, 0.3]);
-        for bot in self.tree.get_bots().iter() {
+        for bot in tree.get_bots().iter() {
             rects.add(bot.get().inner_into());
         }
-        rects.draw();
+        rects.send_and_draw();
         drop(rects);
 
-        let height = self.tree.as_tree().get_height();
+        let height = tree.as_tree().get_height();
 
         if check_naive {
-            let dim = self.dim;
-            self.tree.get_bots_mut(|bots| {
+            tree.get_bots_mut(|bots| {
                 analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                     dim,
                     ray,
@@ -126,11 +106,11 @@ impl DemoSys for RaycastF32DebugDemo {
                 rects: Some(RefCell::new(rects)),
                 height,
             };
-            let test = self
-                .tree
+            let test = 
+                tree
                 .as_tree_mut()
-                .raycast_fine_mut(ray, &mut rr, self.dim);
-            rr.rects.unwrap().borrow_mut().draw();
+                .raycast_fine_mut(ray, &mut rr, dim);
+            rr.rects.unwrap().borrow_mut().send_and_draw();
             test
         };
 
@@ -143,7 +123,7 @@ impl DemoSys for RaycastF32DebugDemo {
 
         let end = ray.point_at_tval(dis);
 
-        sys.lines([1., 1., 1., 0.2], 2.0).add(ray.point, end).draw();
+        sys.lines([1., 1., 1., 0.2], 2.0).add(ray.point, end).send_and_draw();
 
         /*
         struct Bla<'a, 'b: 'a> {
@@ -196,5 +176,7 @@ impl DemoSys for RaycastF32DebugDemo {
         let mut dd = Bla { c: &c, g };
         self.tree.as_tree().draw( &mut dd, &self.dim);
         */
-    }
+
+    })
+
 }

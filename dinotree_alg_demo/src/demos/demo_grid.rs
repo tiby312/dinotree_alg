@@ -122,65 +122,42 @@ impl Bot {
     }
 }
 
-pub struct GridDemo {
-    radius: f32,
-    bots: Vec<Bot>,
-    colors: Vec<[u8; 3]>,
-    dim: Rect<F32n>,
-    grid: GridDim2D,
-}
-impl GridDemo {
-    pub fn new(dim: Rect<F32n>) -> GridDemo {
-        let num_bot = 4000;
 
-        let radius = 5.0;
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let num_bot = 4000;
 
-        let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .take(num_bot)
-            .enumerate()
-            .map(|(id, pos)| Bot {
-                id,
-                pos,
-                vel: vec2same(0.0),
-                force: vec2same(0.0),
-            })
-            .collect();
+    let radius = 5.0;
 
-        let colors = ColorGenerator::new().take(num_bot).collect();
+    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+        .take(num_bot)
+        .enumerate()
+        .map(|(id, pos)| Bot {
+            id,
+            pos,
+            vel: vec2same(0.0),
+            force: vec2same(0.0),
+        })
+        .collect();
 
-        let mut grid = GridDim2D::new(20, 20, dim);
+    let colors:Vec<_> = ColorGenerator::new().take(num_bot).collect();
 
-        for a in 0..20 {
-            grid.set(a, a);
-        }
-        for a in 0..20 {
-            grid.set(a, 5);
-        }
+    let mut grid = GridDim2D::new(20, 20, dim);
 
-        GridDemo {
-            radius,
-            bots,
-            colors,
-            dim,
-            grid,
-        }
+    for a in 0..20 {
+        grid.set(a, a);
     }
-}
+    for a in 0..20 {
+        grid.set(a, 5);
+    }
 
-impl DemoSys for GridDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        _check_naive: bool,
-    ) {
-        let radius = self.radius;
 
-        for b in self.bots.iter_mut() {
+    Demo::new(move |cursor,sys,_check_naive|{
+        
+        for b in bots.iter_mut() {
             b.update();
         }
 
-        let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |b| {
+        let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
@@ -190,8 +167,8 @@ impl DemoSys for GridDemo {
             let mut tree = DinoTree::new_par(&mut k);
 
             {
-                let dim2 = self.dim.inner_into();
-                tree.for_all_not_in_rect_mut(&self.dim, |mut a| {
+                let dim2 = dim.inner_into();
+                tree.for_all_not_in_rect_mut(&dim, |mut a| {
                     duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
                 });
             }
@@ -206,10 +183,10 @@ impl DemoSys for GridDemo {
                 let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
             });
 
-            let mut squares = sys.squares([1.0, 0.5, 1.0, 0.3], self.radius);
-            for i in 0..self.grid.xdim() {
-                for j in 0..self.grid.ydim() {
-                    if self.grid.get(i, j) {
+            let mut squares = sys.squares([1.0, 0.5, 1.0, 0.3], radius);
+            for i in 0..grid.xdim() {
+                for j in 0..grid.ydim() {
+                    if grid.get(i, j) {
                         squares.add(vec2(i, j).inner_as());
                     }
                 }
@@ -222,13 +199,13 @@ impl DemoSys for GridDemo {
             a / 256.0
         }
 
-        let mut circles = sys.circles([1.0, 0.2, 0.2, 0.6], self.radius);
-        for (bot, cols) in self.bots.iter_mut().zip(self.colors.iter()) {
+        let mut circles = sys.circles([1.0, 0.2, 0.2, 0.6], radius);
+        for (bot, cols) in bots.iter_mut().zip(colors.iter()) {
             let rect = &axgeom::Rect::from_point(bot.pos, vec2(radius, radius));
 
             let cols = [conv(cols[0]), conv(cols[1]), conv(cols[2]), 0.6];
 
-            if let Some(rr) = self.grid.detect_collision(bot, radius) {
+            if let Some(rr) = grid.detect_collision(bot, radius) {
                 if let Some(k) = collide_with_rect::<f32>(rect, &rr) {
                     let wallx = rr.x;
                     let wally = rr.y;
@@ -255,6 +232,32 @@ impl DemoSys for GridDemo {
             circles.add(bot.pos);
             //draw_rect_f32(cols, rect, c, g);
         }
-        circles.draw();
+        circles.send_and_draw();
+
+    })
+
+}
+
+/*
+pub struct GridDemo {
+    radius: f32,
+    bots: Vec<Bot>,
+    colors: Vec<[u8; 3]>,
+    dim: Rect<F32n>,
+    grid: GridDim2D,
+}
+impl GridDemo {
+    pub fn new(dim: Rect<F32n>) -> GridDemo {
     }
 }
+
+impl DemoSys for GridDemo {
+    fn step(
+        &mut self,
+        cursor: Vec2<F32n>,
+        sys: &mut MySys,
+        _check_naive: bool,
+    ) {
+    }
+}
+*/

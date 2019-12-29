@@ -13,8 +13,18 @@ pub(crate) mod support;
 pub(crate) mod demos;
 use duckduckgeo::F32n;
 
-pub trait DemoSys {
-    fn step(&mut self, cursor: Vec2<F32n>, sys: very_simple_2d::DrawSession, check_naive: bool);
+use self::support::prelude::*;
+
+
+
+pub struct Demo(Box<dyn FnMut(Vec2<F32n>,&mut MySys,bool)>);
+impl Demo{
+    pub fn new(func:impl FnMut(Vec2<F32n>,&mut MySys,bool)+'static)->Self{
+        Demo(Box::new(func))
+    }
+    pub fn step(&mut self,point:Vec2<F32n>,sys:&mut MySys,check_naive:bool){
+        self.0(point,sys,check_naive);
+    }
 }
 
 mod demo_iter {
@@ -26,24 +36,24 @@ mod demo_iter {
         pub fn new() -> DemoIter {
             DemoIter(0)
         }
-        pub fn next(&mut self, area: Vec2<u32>) -> Box<dyn DemoSys> {
+        pub fn next(&mut self, area: Vec2<u32>) -> Demo {
             let curr = self.0;
 
             let area = Rect::new(0.0, area.x as f32, 0.0, area.y as f32);
             let area: Rect<F32n> = area.inner_try_into().unwrap();
 
-            let k: Box<dyn DemoSys> = match curr {
-                0 => Box::new(demo_raycast_f32::RaycastF32Demo::new(area)),
-                1 => Box::new(demo_raycast_f32_debug::RaycastF32DebugDemo::new(area)),
-                2 => Box::new(demo_liquid::LiquidDemo::new(area)),
-                3 => Box::new(demo_multirect::MultiRectDemo::new(area)),
-                4 => Box::new(demo_original_order::OrigOrderDemo::new(area)),
-                5 => Box::new(demo_intersect_with::IntersectWithDemo::new(area)),
-                6 => Box::new(demo_knearest::KnearestDemo::new(area)),
-                7 => Box::new(demo_rigid_body::RigidBodyDemo::new(area)),
-                8 => Box::new(demo_grid::GridDemo::new(area)),
-                9 => Box::new(demo_nbody::DemoNbody::new(area)),
-                10 => Box::new(demo_raycast_grid::RaycastGridDemo::new(area)),
+            let k: Demo = match curr {
+                0 => demo_raycast_f32::make_demo(area),
+                1 => demo_raycast_f32_debug::make_demo(area),
+                2 => demo_liquid::make_demo(area),
+                3 => demo_multirect::make_demo(area),
+                4 => demo_original_order::make_demo(area),
+                5 => demo_intersect_with::make_demo(area),
+                6 => demo_knearest::make_demo(area),
+                7 => demo_rigid_body::make_demo(area),
+                8 => demo_grid::make_demo(area),
+                9 => demo_nbody::make_demo(area),
+                10 =>demo_raycast_grid::make_demo(area),
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
@@ -131,7 +141,9 @@ fn main() {
             },
             Event::EventsCleared => {
                 if timer.is_ready() {
-                    curr.step(cursor.inner_try_into().unwrap(), sys.session(), check_naive);
+                    let k=sys.inner_mut();
+                    k.clear_color([0.2,0.2,0.2]);
+                    curr.step(cursor.inner_try_into().unwrap(), k, check_naive);
                     sys.swap_buffers();
                 }
             }

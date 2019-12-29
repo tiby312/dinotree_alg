@@ -3,23 +3,12 @@ use crate::support::prelude::*;
 use duckduckgeo::grid::raycast::*;
 use duckduckgeo::grid::*;
 
-pub struct RaycastGridDemo {
-    dim: Rect<F32n>,
-}
-impl RaycastGridDemo {
-    pub fn new(dim: Rect<F32n>) -> RaycastGridDemo {
-        RaycastGridDemo { dim }
-    }
-}
 
-impl DemoSys for RaycastGridDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        _check_naive: bool,
-    ) {
-        let dim = self.dim.inner_into();
+
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+
+    Demo::new(move |cursor,sys,check_naive|{
+        let dim = dim.inner_into();
         let radius = 3.0;
         let viewport = GridViewPort {
             spacing: 60.0,
@@ -40,7 +29,7 @@ impl DemoSys for RaycastGridDemo {
             let rect = axgeom::Rect::new(xx, xx + 1.0, dim.y.start, dim.y.end);
             rects.add(rect);
         }
-        rects.draw();
+        rects.send_and_draw();
         drop(rects);
 
         //let point=vec2(300.0,300.0);
@@ -58,7 +47,7 @@ impl DemoSys for RaycastGridDemo {
         //let ray=Ray{point:pos,dir:vel};
 
         let rect = axgeom::Rect::from_point(ray.point, vec2same(radius));
-        sys.rects([1.0, 0.0, 0.0, 0.5]).add(rect).draw();
+        sys.rects([1.0, 0.0, 0.0, 0.5]).add(rect).send_and_draw();
 
         let mut rects = sys.rects([1.0, 1.0, 0.5, 0.2]);
         for (count, a) in RayCaster::new(&viewport, ray).enumerate().take(50) {
@@ -93,6 +82,8 @@ impl DemoSys for RaycastGridDemo {
             let rect = axgeom::Rect::new(arr[0], arr[1], arr[2], arr[3]);
             rects.add(rect);
         }
-        rects.draw();
-    }
+        rects.send_and_draw();
+
+    })
 }
+

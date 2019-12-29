@@ -181,42 +181,25 @@ pub fn handle_rigid_body(
     }
 }
 
-pub struct RigidBodyDemo {
-    radius: f32,
-    bots: Vec<RigidBody>,
-    dim: Rect<F32n>,
-}
-impl RigidBodyDemo {
-    pub fn new(dim: Rect<F32n>) -> RigidBodyDemo {
-        let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+
+
+
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
             .take(1000)
             .map(|pos| RigidBody::new(pos))
             .collect();
 
-        bots[0].vel = vec2(1., 1.);
+    bots[0].vel = vec2(1., 1.);
+    let radius=6.0;
 
-        RigidBodyDemo {
-            radius: 6.0,
-            bots,
-            dim,
-        }
-    }
-}
-
-impl DemoSys for RigidBodyDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        _check_naive: bool,
-    ) {
-        let radius = self.radius;
-
+    Demo::new(move |cursor,sys,check_naive|{
+        
         handle_rigid_body(
-            &self.dim,
-            &mut self.bots,
-            self.radius,
-            self.radius * 0.2,
+            &dim,
+            &mut bots,
+            radius,
+            radius * 0.2,
             2,
             4,
             |a, b, _dis| {
@@ -224,7 +207,7 @@ impl DemoSys for RigidBodyDemo {
             },
         );
 
-        let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |bot| bot.create_loose(radius));
+        let mut k = bbox_helper::create_bbox_mut(&mut bots, |bot| bot.create_loose(radius));
 
         let mut tree = DinoTree::new(&mut k);
 
@@ -240,20 +223,23 @@ impl DemoSys for RigidBodyDemo {
             },
         );
 
-        for b in self.bots.iter_mut() {
+        for b in bots.iter_mut() {
             //b.acc+=vec2(0.0,0.01);
             b.vel += b.acc;
 
             b.pos += b.vel;
             b.acc = vec2same(0.0);
 
-            duckduckgeo::collide_with_border(b, self.dim.as_ref(), 0.5);
+            duckduckgeo::collide_with_border(b, dim.as_ref(), 0.5);
         }
 
         let mut circles = sys.circles([0.7, 0.7, 0.7, 0.5], radius);
-        for bot in self.bots.iter() {
+        for bot in bots.iter() {
             circles.add(bot.pos);
         }
-        circles.draw();
-    }
+        circles.send_and_draw();
+
+    })
+
 }
+

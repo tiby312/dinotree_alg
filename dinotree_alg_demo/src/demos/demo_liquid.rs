@@ -74,36 +74,18 @@ impl duckduckgeo::RepelTrait for Liquid {
     }
 }
 
-pub struct LiquidDemo {
-    radius: f32,
-    bots: Vec<Liquid>,
-    dim: Rect<F32n>,
-}
-impl LiquidDemo {
-    pub fn new(dim: Rect<F32n>) -> LiquidDemo {
-        let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+
+
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let radius=50.0;
+    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
             .take(2000)
             .map(|pos| Liquid::new(pos))
             .collect();
 
-        LiquidDemo {
-            radius: 50.0,
-            bots,
-            dim,
-        }
-    }
-}
-
-impl DemoSys for LiquidDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        _check_naive: bool,
-    ) {
-        let radius = self.radius;
-
-        let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |bot| {
+    Demo::new(move |cursor,sys,check_naive|{
+        
+        let mut k = bbox_helper::create_bbox_mut(&mut bots, |bot| {
             let p = bot.pos;
             let r = radius;
             Rect::new(p.x - r, p.x + r, p.y - r, p.y + r)
@@ -125,22 +107,24 @@ impl DemoSys for LiquidDemo {
         });
 
         {
-            let dim2 = self.dim.inner_into();
-            tree.for_all_not_in_rect_mut(&self.dim, |mut a| {
+            let dim2 = dim.inner_into();
+            tree.for_all_not_in_rect_mut(&dim, |mut a| {
                 duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
             });
         }
 
-        for b in self.bots.iter_mut() {
+        for b in bots.iter_mut() {
             b.pos += b.vel;
             b.vel += b.acc;
             b.acc = vec2same(0.0);
         }
 
         let mut circle = sys.circles([1.0, 0.6, 0.7, 0.5], 2.0);
-        for bot in self.bots.iter() {
+        for bot in bots.iter() {
             circle.add(bot.pos);
         }
-        circle.draw();
-    }
+        circle.send_and_draw();
+
+    })
 }
+

@@ -41,50 +41,31 @@ impl analyze::HasId for Bot {
     }
 }
 
-pub struct RaycastF32Demo {
-    tree: DinoTreeOwned<DefaultA, BBox<F32n, Bot>>,
-    dim: Rect<F32n>,
-    radius: f32,
-}
-impl RaycastF32Demo {
-    pub fn new(dim: Rect<F32n>) -> Self {
-        let radius = 20.0;
-        let vv: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .enumerate()
-            .map(|(id, center)| {
-                let b = Bot { id, center };
-                let r = Rect::from_point(center, vec2same(radius))
-                    .inner_try_into()
-                    .unwrap();
-                bbox(r, b)
-            })
-            .take(100)
-            .collect();
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let radius = 20.0;
+    let vv: Vec<_> = UniformRandGen::new(dim.inner_into())
+        .enumerate()
+        .map(|(id, center)| {
+            let b = Bot { id, center };
+            let r = Rect::from_point(center, vec2same(radius))
+                .inner_try_into()
+                .unwrap();
+            bbox(r, b)
+        })
+        .take(100)
+        .collect();
 
-        let tree = DinoTreeOwned::new(vv);
+    let mut tree = DinoTreeOwned::new(vv);
 
-        Self { tree, dim, radius }
-    }
-}
-
-impl DemoSys for RaycastF32Demo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        check_naive: bool,
-    ) {
+    Demo::new(move|cursor,sys,check_naive|{
         //Draw bots
-        let mut r = sys.circles([0.0, 0.0, 0.0, 0.3], self.radius);
-        for bot in self.tree.get_bots().iter() {
+        let mut r = sys.circles([0.0, 0.0, 0.0, 0.3], radius);
+        for bot in tree.get_bots().iter() {
             r.add(bot.inner().center);
         }
-        r.draw();
+        r.send_and_draw();
         drop(r);
 
-        let tree = &mut self.tree;
-        let dim = self.dim;
-        let radius = self.radius;
         {
             let mut ray_cast = sys.lines([1.0, 1.0, 1.0, 0.3], 5.0);
 
@@ -114,9 +95,9 @@ impl DemoSys for RaycastF32Demo {
                 let res = tree.as_tree_mut().raycast_fine_mut(
                     ray,
                     &mut RayT {
-                        radius: self.radius,
+                        radius,
                     },
-                    self.dim,
+                    dim,
                 );
 
                 let dis = match res {
@@ -127,7 +108,8 @@ impl DemoSys for RaycastF32Demo {
                 let end = ray.inner_into().point_at_tval(dis);
                 ray_cast.add(ray.point.inner_into(), end);
             }
-            ray_cast.draw();
+            ray_cast.send_and_draw();
         }
-    }
+
+    })
 }

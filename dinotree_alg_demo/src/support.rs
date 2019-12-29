@@ -3,8 +3,10 @@ use std;
 
 pub mod prelude {
 
+    pub use crate::Demo;
+
+    pub use very_simple_2d::very_simple_2d_core::*;
     pub use super::f32n;
-    pub use crate::DemoSys;
     pub use ordered_float::NotNan;
 
     pub use super::ColorGenerator;

@@ -37,47 +37,31 @@ impl Bot {
     }
 }
 
-pub struct OrigOrderDemo {
-    radius: f32,
-    bots: Vec<Bot>,
-    dim: Rect<F32n>,
-}
-impl OrigOrderDemo {
-    pub fn new(dim: Rect<F32n>) -> OrigOrderDemo {
-        let num_bot = 4000;
 
-        let radius = 5.0;
 
-        let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .take(num_bot)
-            .enumerate()
-            .map(|(id, pos)| Bot {
-                id,
-                pos,
-                vel: vec2same(0.0),
-                force: vec2same(0.0),
-            })
-            .collect();
+pub fn make_demo(dim:Rect<F32n>)->Demo{
+    let num_bot = 4000;
 
-        //let colors = ColorGenerator::new().take(num_bot).collect();
-        OrigOrderDemo { radius, bots, dim }
-    }
-}
+    let radius = 5.0;
 
-impl DemoSys for OrigOrderDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        mut sys: very_simple_2d::DrawSession,
-        check_naive: bool,
-    ) {
-        let radius = self.radius;
+    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+        .take(num_bot)
+        .enumerate()
+        .map(|(id, pos)| Bot {
+            id,
+            pos,
+            vel: vec2same(0.0),
+            force: vec2same(0.0),
+        })
+        .collect();
 
-        for b in self.bots.iter_mut() {
+    Demo::new(move |cursor,sys,check_naive|{
+        
+        for b in bots.iter_mut() {
             b.update();
         }
 
-        let mut k = bbox_helper::create_bbox_mut(&mut self.bots, |b| {
+        let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
@@ -85,8 +69,8 @@ impl DemoSys for OrigOrderDemo {
         let mut tree = DinoTree::new_par(&mut k);
 
         {
-            let dim2 = self.dim.inner_into();
-            tree.for_all_not_in_rect_mut(&self.dim, |mut a| {
+            let dim2 = dim.inner_into();
+            tree.for_all_not_in_rect_mut(&dim, |mut a| {
                 duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
             });
         }
@@ -100,15 +84,15 @@ impl DemoSys for OrigOrderDemo {
         {
             let rects = sys.rects([0.0, 1.0, 1.0, 0.6]);
             let mut dd = Bla { rects };
-            tree.draw(&mut dd, &self.dim);
-            dd.rects.draw();
+            tree.draw(&mut dd, &dim);
+            dd.rects.send_and_draw();
         }
 
         //draw lines to the bots.
         {
             let mut lines = sys.lines([1.0, 0.5, 1.0, 0.6], 2.0);
-            draw_bot_lines(tree.axis(), tree.vistr(), &self.dim, &mut lines);
-            lines.draw();
+            draw_bot_lines(tree.axis(), tree.vistr(), &dim, &mut lines);
+            lines.send_and_draw();
         }
 
         if !check_naive {
@@ -187,12 +171,14 @@ impl DemoSys for OrigOrderDemo {
             a / 256.0
         }
 
-        let mut circles = sys.circles([1.0, 1.0, 0.0, 0.6], self.radius);
-        for bot in self.bots.iter() {
+        let mut circles = sys.circles([1.0, 1.0, 0.0, 0.6], radius);
+        for bot in bots.iter() {
             circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }
-        circles.draw();
-    }
+        circles.send_and_draw();
+
+    })
+
 }
 
 struct Bla<'a> {

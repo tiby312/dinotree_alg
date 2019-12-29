@@ -14,7 +14,7 @@ rayon = "1.2"
 axgeom="1.2"
 ordered-float = "1.0.2"
 compt = "1.6"
-very_simple_2d ="0.1"
+very_simple_2d ="0.2"
 
 [dependencies.dinotree_alg]
 path = ".."
