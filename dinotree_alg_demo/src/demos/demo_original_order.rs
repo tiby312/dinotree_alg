@@ -173,6 +173,12 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }
         circles.send_and_draw();
+        drop(circles);
+        let mut lines = sys.lines([0.0,0.0,1.0,0.5],radius*0.5);
+        for bot in bots.iter(){
+            lines.add(bot.pos,bot.pos+vec2(0.0,(bot.id % 100) as f32)*0.1);
+        }
+        lines.send_and_draw();
     })
 }
 

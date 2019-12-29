@@ -22,10 +22,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let pos: Vec2<f32> = pos;
             let pos = pos.inner_as::<i32>();
             let radius = radius.inner_as();
-            let b = Bot { pos, radius, id };
-            //let r= Rect::from_point(b.pos, b.radius);
-            //bbox(r,b)
-            b
+            Bot { pos, radius, id }
         })
         .collect();
 
