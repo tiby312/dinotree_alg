@@ -14,8 +14,7 @@ impl analyze::HasId for Bot {
     }
 }
 
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(2.0, 50.0)
         .take(40)
@@ -29,8 +28,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             .unwrap()
     });
 
-    Demo::new(move |cursor,sys,check_naive|{
-        
+    Demo::new(move |cursor, sys, check_naive| {
         let mut rects = sys.rects([0.0, 0.0, 0.0, 0.3]);
         for bot in tree.as_owned().get_bots().iter() {
             rects.add(bot.get().inner_into());
@@ -144,7 +142,5 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             }
             rects.send_and_draw();
         }
-    
     })
 }
-

@@ -1,13 +1,12 @@
-use axgeom::*;
 use std;
 
 pub mod prelude {
 
     pub use crate::Demo;
 
-    pub use very_simple_2d::very_simple_2d_core::*;
     pub use super::f32n;
     pub use ordered_float::NotNan;
+    pub use very_simple_2d::very_simple_2d_core::*;
 
     pub use super::ColorGenerator;
     pub use axgeom::*;

@@ -181,31 +181,19 @@ pub fn handle_rigid_body(
     }
 }
 
-
-
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .take(1000)
-            .map(|pos| RigidBody::new(pos))
-            .collect();
+        .take(1000)
+        .map(|pos| RigidBody::new(pos))
+        .collect();
 
     bots[0].vel = vec2(1., 1.);
-    let radius=6.0;
+    let radius = 6.0;
 
-    Demo::new(move |cursor,sys,check_naive|{
-        
-        handle_rigid_body(
-            &dim,
-            &mut bots,
-            radius,
-            radius * 0.2,
-            2,
-            4,
-            |a, b, _dis| {
-                a.handle_collision(b);
-            },
-        );
+    Demo::new(move |cursor, sys, _check_naive| {
+        handle_rigid_body(&dim, &mut bots, radius, radius * 0.2, 2, 4, |a, b, _dis| {
+            a.handle_collision(b);
+        });
 
         let mut k = bbox_helper::create_bbox_mut(&mut bots, |bot| bot.create_loose(radius));
 
@@ -238,8 +226,5 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             circles.add(bot.pos);
         }
         circles.send_and_draw();
-
     })
-
 }
-

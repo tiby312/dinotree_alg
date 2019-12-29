@@ -1,5 +1,5 @@
 use crate::support::prelude::*;
-use dinotree_alg;
+
 use duckduckgeo;
 use duckduckgeo::GravityTrait;
 
@@ -152,10 +152,7 @@ impl duckduckgeo::GravityTrait for Bot {
     }
 }
 
-
-
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(4000)
         .map(|pos| Bot {
@@ -171,8 +168,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
 
     let mut no_mass_bots: Vec<Bot> = Vec::new();
 
-
-    Demo::new(move |cursor,sys,check_naive|{
+    Demo::new(move |cursor, sys, check_naive| {
         let no_mass_bots = &mut no_mass_bots;
         let bots = &mut bots;
 
@@ -316,7 +312,5 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             b.vel = vec2(1.0, 0.0);
             bots.push(b);
         }
-
     })
 }
-

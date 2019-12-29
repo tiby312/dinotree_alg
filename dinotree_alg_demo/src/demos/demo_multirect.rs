@@ -13,9 +13,8 @@ impl analyze::HasId for Bot {
     }
 }
 
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
-    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
+    let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(5.0, 20.0)
         .take(200)
         .enumerate()
@@ -32,7 +31,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
 
     let mut tree = DinoTreeOwnedBBoxPtr::new_par(bots, |b| Rect::from_point(b.pos, b.radius));
 
-    Demo::new(move |cursor,sys,check_naive|{
+    Demo::new(move |cursor, sys, check_naive| {
         let mut rects = sys.rects([0.0, 1.0, 0.0, 0.2]);
         for bot in tree.as_owned().get_bots().iter() {
             rects.add(bot.get().inner_as());
@@ -89,12 +88,9 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
 
         //test for_all_intersect_rect
         let mut rects = sys.rects([0.0, 0.0, 1.0, 0.2]);
-        tree
-            .as_owned()
-            .as_tree()
-            .for_all_intersect_rect(&r1, |a| {
-                rects.add(a.get().inner_as());
-            });
+        tree.as_owned().as_tree().for_all_intersect_rect(&r1, |a| {
+            rects.add(a.get().inner_as());
+        });
         rects.send_and_draw();
         drop(rects);
 
@@ -102,18 +98,16 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         let mut r1 = dim.inner_into::<f32>().inner_as::<i32>().clone();
         r1.grow(-40);
 
-        sys.rects([1.0, 0.0, 0.0, 0.2]).add(r1.inner_as()).send_and_draw();
+        sys.rects([1.0, 0.0, 0.0, 0.2])
+            .add(r1.inner_as())
+            .send_and_draw();
 
         let mut rects = sys.rects([1.0, 0.0, 1.0, 0.5]);
-        tree
-            .as_owned_mut()
+        tree.as_owned_mut()
             .as_tree_mut()
             .for_all_not_in_rect_mut(&r1, |b| {
                 rects.add(b.get().inner_as());
             });
         rects.send_and_draw();
-
     })
 }
-
-

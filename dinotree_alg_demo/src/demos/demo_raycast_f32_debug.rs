@@ -49,8 +49,7 @@ impl analyze::HasId for Bot2 {
     }
 }
 
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(1.0, 5.0)
         .enumerate()
@@ -63,11 +62,10 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         })
         .collect();
 
-    let mut counter:f32=0.0;
+    let mut counter: f32 = 0.0;
     let mut tree = DinoTreeOwned::new_par(ii);
 
-    Demo::new(move |cursor,sys,check_naive|{
-        
+    Demo::new(move |cursor, sys, check_naive| {
         let ray: Ray<F32n> = {
             counter += 0.004;
             let point: Vec2<f32> = cursor.inner_into::<f32>().inner_as();
@@ -106,10 +104,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
                 rects: Some(RefCell::new(rects)),
                 height,
             };
-            let test = 
-                tree
-                .as_tree_mut()
-                .raycast_fine_mut(ray, &mut rr, dim);
+            let test = tree.as_tree_mut().raycast_fine_mut(ray, &mut rr, dim);
             rr.rects.unwrap().borrow_mut().send_and_draw();
             test
         };
@@ -123,7 +118,9 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
 
         let end = ray.point_at_tval(dis);
 
-        sys.lines([1., 1., 1., 0.2], 2.0).add(ray.point, end).send_and_draw();
+        sys.lines([1., 1., 1., 0.2], 2.0)
+            .add(ray.point, end)
+            .send_and_draw();
 
         /*
         struct Bla<'a, 'b: 'a> {
@@ -176,7 +173,5 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         let mut dd = Bla { c: &c, g };
         self.tree.as_tree().draw( &mut dd, &self.dim);
         */
-
     })
-
 }

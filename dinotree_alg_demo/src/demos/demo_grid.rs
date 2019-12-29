@@ -122,8 +122,7 @@ impl Bot {
     }
 }
 
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let num_bot = 4000;
 
     let radius = 5.0;
@@ -139,7 +138,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         })
         .collect();
 
-    let colors:Vec<_> = ColorGenerator::new().take(num_bot).collect();
+    let colors: Vec<_> = ColorGenerator::new().take(num_bot).collect();
 
     let mut grid = GridDim2D::new(20, 20, dim);
 
@@ -150,9 +149,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         grid.set(a, 5);
     }
 
-
-    Demo::new(move |cursor,sys,_check_naive|{
-        
+    Demo::new(move |cursor, sys, _check_naive| {
         for b in bots.iter_mut() {
             b.update();
         }
@@ -203,7 +200,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         for (bot, cols) in bots.iter_mut().zip(colors.iter()) {
             let rect = &axgeom::Rect::from_point(bot.pos, vec2(radius, radius));
 
-            let cols = [conv(cols[0]), conv(cols[1]), conv(cols[2]), 0.6];
+            let _cols = [conv(cols[0]), conv(cols[1]), conv(cols[2]), 0.6];
 
             if let Some(rr) = grid.detect_collision(bot, radius) {
                 if let Some(k) = collide_with_rect::<f32>(rect, &rr) {
@@ -233,9 +230,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             //draw_rect_f32(cols, rect, c, g);
         }
         circles.send_and_draw();
-
     })
-
 }
 
 /*

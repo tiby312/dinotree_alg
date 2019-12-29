@@ -33,9 +33,8 @@ impl Bot {
 #[derive(Copy, Clone)]
 struct Wall(axgeom::Rect<F32n>);
 
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
-    let radius=5.0;
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
+    let radius = 5.0;
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(4000)
         .map(|pos| Bot {
@@ -46,14 +45,13 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         })
         .collect();
 
-    let mut walls:Vec<_> = UniformRandGen::new(dim.inner_into())
+    let mut walls: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(10.0, 60.0)
         .take(40)
         .map(|(pos, radius)| Wall(Rect::from_point(pos, radius).inner_try_into().unwrap()))
         .collect();
 
-    Demo::new(move |cursor,sys,check_naive|{
-        
+    Demo::new(move |cursor, sys, _check_naive| {
         for b in bots.iter_mut() {
             b.update();
 
@@ -140,9 +138,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             circles.add(bot.inner().pos);
         }
         circles.send_and_draw();
-
     })
-
 }
 /*
 pub struct IntersectWithDemo {
@@ -153,7 +149,7 @@ pub struct IntersectWithDemo {
 }
 impl IntersectWithDemo {
     pub fn new(dim: Rect<F32n>) -> IntersectWithDemo {
-        
+
         IntersectWithDemo {
             radius: 5.0,
             bots,

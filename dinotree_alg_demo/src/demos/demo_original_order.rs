@@ -37,9 +37,7 @@ impl Bot {
     }
 }
 
-
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let num_bot = 4000;
 
     let radius = 5.0;
@@ -55,8 +53,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
         })
         .collect();
 
-    Demo::new(move |cursor,sys,check_naive|{
-        
+    Demo::new(move |cursor, sys, check_naive| {
         for b in bots.iter_mut() {
             b.update();
         }
@@ -176,9 +173,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }
         circles.send_and_draw();
-
     })
-
 }
 
 struct Bla<'a> {
@@ -192,9 +187,9 @@ impl<'a> DividerDrawer for Bla<'a> {
         div: F32n,
         cont: [F32n; 2],
         length: [F32n; 2],
-        depth: usize,
+        _depth: usize,
     ) {
-        let div = div.into_inner();
+        let _div = div.into_inner();
 
         /*
         let arr = if axis.is_xaxis() {

@@ -3,11 +3,8 @@ use crate::support::prelude::*;
 use duckduckgeo::grid::raycast::*;
 use duckduckgeo::grid::*;
 
-
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
-
-    Demo::new(move |cursor,sys,check_naive|{
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
+    Demo::new(move |cursor, sys, _check_naive| {
         let dim = dim.inner_into();
         let radius = 3.0;
         let viewport = GridViewPort {
@@ -56,7 +53,7 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             let cell = a.cell;
             let topstart = viewport.to_world_topleft(cell);
 
-            let kk = (count as f32) * 0.8;
+            let _kk = (count as f32) * 0.8;
 
             let rect = axgeom::Rect::from_point(point, vec2same(radius));
             rects.add(rect);
@@ -83,7 +80,5 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             rects.add(rect);
         }
         rects.send_and_draw();
-
     })
 }
-

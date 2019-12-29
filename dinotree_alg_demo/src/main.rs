@@ -15,15 +15,13 @@ use duckduckgeo::F32n;
 
 use self::support::prelude::*;
 
-
-
-pub struct Demo(Box<dyn FnMut(Vec2<F32n>,&mut MySys,bool)>);
-impl Demo{
-    pub fn new(func:impl FnMut(Vec2<F32n>,&mut MySys,bool)+'static)->Self{
+pub struct Demo(Box<dyn FnMut(Vec2<F32n>, &mut MySys, bool)>);
+impl Demo {
+    pub fn new(func: impl FnMut(Vec2<F32n>, &mut MySys, bool) + 'static) -> Self {
         Demo(Box::new(func))
     }
-    pub fn step(&mut self,point:Vec2<F32n>,sys:&mut MySys,check_naive:bool){
-        self.0(point,sys,check_naive);
+    pub fn step(&mut self, point: Vec2<F32n>, sys: &mut MySys, check_naive: bool) {
+        self.0(point, sys, check_naive);
     }
 }
 
@@ -53,7 +51,7 @@ mod demo_iter {
                 7 => demo_rigid_body::make_demo(area),
                 8 => demo_grid::make_demo(area),
                 9 => demo_nbody::make_demo(area),
-                10 =>demo_raycast_grid::make_demo(area),
+                10 => demo_raycast_grid::make_demo(area),
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
@@ -86,7 +84,7 @@ fn main() {
 
     println!("Press \"N\" to go to the next example");
 
-    let mut check_naive = false;
+    let check_naive = false;
     let mut cursor = vec2same(0.);
     let mut timer = very_simple_2d::RefreshTimer::new(16);
     events_loop.run(move |event, _, control_flow| {
@@ -141,8 +139,8 @@ fn main() {
             },
             Event::EventsCleared => {
                 if timer.is_ready() {
-                    let k=sys.inner_mut();
-                    k.clear_color([0.2,0.2,0.2]);
+                    let k = sys.inner_mut();
+                    k.clear_color([0.2, 0.2, 0.2]);
                     curr.step(cursor.inner_try_into().unwrap(), k, check_naive);
                     sys.swap_buffers();
                 }

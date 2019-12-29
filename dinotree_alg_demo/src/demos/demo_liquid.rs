@@ -74,17 +74,14 @@ impl duckduckgeo::RepelTrait for Liquid {
     }
 }
 
-
-
-pub fn make_demo(dim:Rect<F32n>)->Demo{
-    let radius=50.0;
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
+    let radius = 50.0;
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-            .take(2000)
-            .map(|pos| Liquid::new(pos))
-            .collect();
+        .take(2000)
+        .map(|pos| Liquid::new(pos))
+        .collect();
 
-    Demo::new(move |cursor,sys,check_naive|{
-        
+    Demo::new(move |cursor, sys, _check_naive| {
         let mut k = bbox_helper::create_bbox_mut(&mut bots, |bot| {
             let p = bot.pos;
             let r = radius;
@@ -124,7 +121,5 @@ pub fn make_demo(dim:Rect<F32n>)->Demo{
             circle.add(bot.pos);
         }
         circle.send_and_draw();
-
     })
 }
-
