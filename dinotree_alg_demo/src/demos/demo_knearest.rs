@@ -28,16 +28,16 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             .unwrap()
     });
 
-    Demo::new(move |cursor, sys, check_naive| {
-        let mut rects = sys.rects([0.0, 0.0, 0.0, 0.3]);
+    Demo::new(move |cursor, canvas, check_naive| {
+        let mut rects = canvas.rects();
         for bot in tree.as_owned().get_bots().iter() {
             rects.add(bot.get().inner_into());
         }
-        rects.send_and_draw();
+        rects.send_and_draw([0.0, 0.0, 0.0, 0.3]);
         drop(rects);
 
         struct Kn<'a> {
-            rects: RefCell<very_simple_2d::very_simple_2d_core::RectSession<'a>>,
+            rects: RefCell<very_simple_2d::shapes::RectSession<'a>>,
         };
 
         impl<'a> Knearest for Kn<'a> {
@@ -89,13 +89,15 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         }
 
         let mut vv = {
-            let rects = sys.rects([1.0, 0.5, 0.3, 0.3]);
+            let rects = canvas.rects();
             let mut kn = Kn {
                 rects: RefCell::new(rects),
             };
-            tree.as_owned_mut()
+            let k=tree.as_owned_mut()
                 .as_tree_mut()
-                .k_nearest_fine_mut(cursor, 3, &mut kn, dim)
+                .k_nearest_fine_mut(cursor, 3, &mut kn, dim);
+            kn.rects.into_inner().send_and_draw([1.0, 0.5, 0.3, 0.3]);
+            k
         };
 
         let mut vv: Vec<_> = vv
@@ -131,16 +133,16 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         for (a, color) in vv_iter.zip(cols.iter()) {
             if let Some(k) = a.first() {
-                sys.circles(*color, k.mag.into_inner().sqrt())
+                canvas.circles( k.mag.into_inner().sqrt())
                     .add(cursor.inner_into())
-                    .send_and_draw();
+                    .send_and_draw(*color,);
             }
 
-            let mut rects = sys.rects(*color);
+            let mut rects = canvas.rects();
             for b in a.iter() {
                 rects.add(b.rect.inner_into());
             }
-            rects.send_and_draw();
+            rects.send_and_draw(*color);
         }
     })
 }

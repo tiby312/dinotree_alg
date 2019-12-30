@@ -81,7 +81,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         .map(|pos| Liquid::new(pos))
         .collect();
 
-    Demo::new(move |cursor, sys, _check_naive| {
+    Demo::new(move |cursor, canvas, _check_naive| {
         let mut k = bbox_helper::create_bbox_mut(&mut bots, |bot| {
             let p = bot.pos;
             let r = radius;
@@ -116,10 +116,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             b.acc = vec2same(0.0);
         }
 
-        let mut circle = sys.circles([1.0, 0.6, 0.7, 0.5], 2.0);
+        let mut circle = canvas.circles(2.0);
         for bot in bots.iter() {
             circle.add(bot.pos);
         }
-        circle.send_and_draw();
+        circle.send_and_draw([1.0, 0.6, 0.7, 0.5], );
     })
 }

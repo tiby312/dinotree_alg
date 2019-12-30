@@ -51,7 +51,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         .map(|(pos, radius)| Wall(Rect::from_point(pos, radius).inner_try_into().unwrap()))
         .collect();
 
-    Demo::new(move |cursor, sys, _check_naive| {
+    Demo::new(move |cursor, canvas, _check_naive| {
         for b in bots.iter_mut() {
             b.update();
 
@@ -126,18 +126,18 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             });
         }
 
-        let mut rects = sys.rects([0.7, 0.7, 0.7, 0.3]);
+        let mut rects = canvas.rects();
         for wall in walls.iter() {
             rects.add(wall.0.inner_into());
         }
-        rects.send_and_draw();
+        rects.send_and_draw([0.7, 0.7, 0.7, 0.3]);
         drop(rects);
 
-        let mut circles = sys.circles([1.0, 0.0, 0.5, 0.3], radius);
+        let mut circles = canvas.circles( radius);
         for bot in k.iter() {
             circles.add(bot.inner().pos);
         }
-        circles.send_and_draw();
+        circles.send_and_draw([1.0, 0.0, 0.5, 0.3]);
     })
 }
 /*

@@ -15,12 +15,12 @@ use duckduckgeo::F32n;
 
 use self::support::prelude::*;
 
-pub struct Demo(Box<dyn FnMut(Vec2<F32n>, &mut MySys, bool)>);
+pub struct Demo(Box<dyn FnMut(Vec2<F32n>, &mut SimpleCanvas, bool)>);
 impl Demo {
-    pub fn new(func: impl FnMut(Vec2<F32n>, &mut MySys, bool) + 'static) -> Self {
+    pub fn new(func: impl FnMut(Vec2<F32n>, &mut SimpleCanvas, bool) + 'static) -> Self {
         Demo(Box::new(func))
     }
-    pub fn step(&mut self, point: Vec2<F32n>, sys: &mut MySys, check_naive: bool) {
+    pub fn step(&mut self, point: Vec2<F32n>, sys: &mut SimpleCanvas, check_naive: bool) {
         self.0(point, sys, check_naive);
     }
 }
@@ -49,14 +49,13 @@ mod demo_iter {
                 5 => demo_intersect_with::make_demo(area),
                 6 => demo_knearest::make_demo(area),
                 7 => demo_rigid_body::make_demo(area),
-                8 => demo_grid::make_demo(area),
-                9 => demo_nbody::make_demo(area),
-                10 => demo_raycast_grid::make_demo(area),
+                8 => demo_nbody::make_demo(area),
+                9 => demo_raycast_grid::make_demo(area),
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
 
-            if self.0 == 11 {
+            if self.0 == 10 {
                 self.0 = 0
             }
             k
@@ -139,7 +138,7 @@ fn main() {
             },
             Event::EventsCleared => {
                 if timer.is_ready() {
-                    let k = sys.inner_mut();
+                    let k = sys.canvas_mut();
                     k.clear_color([0.2, 0.2, 0.2]);
                     curr.step(cursor.inner_try_into().unwrap(), k, check_naive);
                     sys.swap_buffers();

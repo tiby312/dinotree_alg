@@ -28,12 +28,12 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     let mut tree = DinoTreeOwnedBBoxPtr::new_par(bots, |b| Rect::from_point(b.pos, b.radius));
 
-    Demo::new(move |cursor, sys, check_naive| {
-        let mut rects = sys.rects([0.0, 1.0, 0.0, 0.2]);
+    Demo::new(move |cursor, canvas, check_naive| {
+        let mut rects = canvas.rects();
         for bot in tree.as_owned().get_bots().iter() {
             rects.add(bot.get().inner_as());
         }
-        rects.send_and_draw();
+        rects.send_and_draw([0.0, 1.0, 0.0, 0.2]);
         drop(rects);
 
         let cc: Vec2<i32> = cursor.inner_into::<f32>().inner_as();
@@ -64,47 +64,48 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
             match res {
                 Ok(()) => {
-                    sys.rects([0.0, 0.0, 0.0, 0.5])
+                    canvas.rects()
                         .add(r1.inner_as())
                         .add(r2.inner_as())
-                        .send_and_draw();
+                        .send_and_draw([0.0, 0.0, 0.0, 0.5]);
 
-                    let mut rects = sys.rects([0.0, 0.0, 0.0, 0.2]);
+                    let mut rects = canvas.rects();
                     for r in to_draw.iter() {
                         rects.add(r.get().inner_as());
                     }
+                    rects.send_and_draw([0.0, 0.0, 0.0, 0.2]);
                 }
                 Err(_) => {
-                    sys.rects([1.0, 0.0, 0.0, 0.5])
+                    canvas.rects()
                         .add(r1.inner_as())
                         .add(r2.inner_as())
-                        .send_and_draw();
+                        .send_and_draw([1.0, 0.0, 0.0, 0.5]);
                 }
             }
         }
 
         //test for_all_intersect_rect
-        let mut rects = sys.rects([0.0, 0.0, 1.0, 0.2]);
+        let mut rects = canvas.rects();
         tree.as_owned().as_tree().for_all_intersect_rect(&r1, |a| {
             rects.add(a.get().inner_as());
         });
-        rects.send_and_draw();
+        rects.send_and_draw([0.0, 0.0, 1.0, 0.2]);
         drop(rects);
 
         //test for_all_not_in_rect_mut
         let mut r1 = dim.inner_into::<f32>().inner_as::<i32>().clone();
         r1.grow(-40);
 
-        sys.rects([1.0, 0.0, 0.0, 0.2])
+        canvas.rects()
             .add(r1.inner_as())
-            .send_and_draw();
+            .send_and_draw([1.0, 0.0, 0.0, 0.2]);
 
-        let mut rects = sys.rects([1.0, 0.0, 1.0, 0.5]);
+        let mut rects = canvas.rects();
         tree.as_owned_mut()
             .as_tree_mut()
             .for_all_not_in_rect_mut(&r1, |b| {
                 rects.add(b.get().inner_as());
             });
-        rects.send_and_draw();
+        rects.send_and_draw([1.0, 0.0, 1.0, 0.5]);
     })
 }

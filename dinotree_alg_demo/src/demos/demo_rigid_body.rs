@@ -190,7 +190,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
     bots[0].vel = vec2(1., 1.);
     let radius = 6.0;
 
-    Demo::new(move |cursor, sys, _check_naive| {
+    Demo::new(move |cursor, canvas, _check_naive| {
         handle_rigid_body(&dim, &mut bots, radius, radius * 0.2, 2, 4, |a, b, _dis| {
             a.handle_collision(b);
         });
@@ -221,10 +221,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             duckduckgeo::collide_with_border(b, dim.as_ref(), 0.5);
         }
 
-        let mut circles = sys.circles([0.7, 0.7, 0.7, 0.5], radius);
+        let mut circles = canvas.circles(radius);
         for bot in bots.iter() {
             circles.add(bot.pos);
         }
-        circles.send_and_draw();
+        circles.send_and_draw([0.7, 0.7, 0.7, 0.5]);
     })
 }

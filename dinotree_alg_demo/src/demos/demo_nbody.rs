@@ -168,7 +168,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     let mut no_mass_bots: Vec<Bot> = Vec::new();
 
-    Demo::new(move |cursor, sys, check_naive| {
+    Demo::new(move |cursor, canvas, check_naive| {
         let no_mass_bots = &mut no_mass_bots;
         let bots = &mut bots;
 
@@ -280,11 +280,11 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             }
         }
         //Draw bots.
-        let mut rects = sys.rects([0.9, 0.9, 0.3, 0.6]);
+        let mut rects = canvas.rects();
         for bot in k.iter() {
             rects.add(bot.rect.inner_into());
         }
-        rects.send_and_draw();
+        rects.send_and_draw([0.9, 0.9, 0.3, 0.6]);
         //drop(rects);
 
         {

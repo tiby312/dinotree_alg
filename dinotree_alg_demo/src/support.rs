@@ -6,8 +6,7 @@ pub mod prelude {
 
     pub use super::f32n;
     pub use ordered_float::NotNan;
-    pub use very_simple_2d::very_simple_2d_core::*;
-
+    pub use very_simple_2d::*;
     pub use super::ColorGenerator;
     pub use axgeom::*;
     pub use duckduckgeo::bot::*;

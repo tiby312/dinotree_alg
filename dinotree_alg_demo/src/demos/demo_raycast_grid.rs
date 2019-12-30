@@ -4,7 +4,7 @@ use duckduckgeo::grid::raycast::*;
 use duckduckgeo::grid::*;
 
 pub fn make_demo(dim: Rect<F32n>) -> Demo {
-    Demo::new(move |cursor, sys, _check_naive| {
+    Demo::new(move |cursor, canvas, _check_naive| {
         let dim = dim.inner_into();
         let radius = 3.0;
         let viewport = GridViewPort {
@@ -12,7 +12,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             origin: vec2(0.0, 0.0),
         };
 
-        let mut rects = sys.rects([1.0, 0.6, 0.6, 1.0]);
+        let mut rects = canvas.rects();
         for y in 0..100 {
             let yy: f32 = viewport.origin.y + (y as f32) * viewport.spacing;
 
@@ -26,7 +26,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let rect = axgeom::Rect::new(xx, xx + 1.0, dim.y.start, dim.y.end);
             rects.add(rect);
         }
-        rects.send_and_draw();
+        rects.send_and_draw([1.0, 0.6, 0.6, 1.0]);
         drop(rects);
 
         //let point=vec2(300.0,300.0);
@@ -44,9 +44,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         //let ray=Ray{point:pos,dir:vel};
 
         let rect = axgeom::Rect::from_point(ray.point, vec2same(radius));
-        sys.rects([1.0, 0.0, 0.0, 0.5]).add(rect).send_and_draw();
+        canvas.rects().add(rect).send_and_draw([1.0, 0.0, 0.0, 0.5]);
 
-        let mut rects = sys.rects([1.0, 1.0, 0.5, 0.2]);
+        let mut rects = canvas.rects();
         for (count, a) in RayCaster::new(&viewport, ray).enumerate().take(50) {
             let point = ray.point + ray.dir * a.tval;
 
@@ -79,6 +79,6 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let rect = axgeom::Rect::new(arr[0], arr[1], arr[2], arr[3]);
             rects.add(rect);
         }
-        rects.send_and_draw();
+        rects.send_and_draw([1.0, 1.0, 0.5, 0.2]);
     })
 }

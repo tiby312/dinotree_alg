@@ -9,7 +9,7 @@ mod ray_f32 {
     use super::*;
 
     pub struct RayT<'a> {
-        pub rects: Option<RefCell<very_simple_2d::very_simple_2d_core::RectSession<'a>>>,
+        pub rects: Option<RefCell<very_simple_2d::shapes::RectSession<'a>>>,
         pub height: usize,
     }
 
@@ -65,7 +65,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let mut counter: f32 = 0.0;
     let mut tree = DinoTreeOwned::new_par(ii);
 
-    Demo::new(move |cursor, sys, check_naive| {
+    Demo::new(move |cursor, canvas, check_naive| {
         let ray: Ray<F32n> = {
             counter += 0.004;
             let point: Vec2<f32> = cursor.inner_into::<f32>().inner_as();
@@ -76,11 +76,11 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             Ray { point, dir }.inner_try_into().unwrap()
         };
 
-        let mut rects = sys.rects([0.0, 0.0, 0.0, 0.3]);
+        let mut rects = canvas.rects();
         for bot in tree.get_bots().iter() {
             rects.add(bot.get().inner_into());
         }
-        rects.send_and_draw();
+        rects.send_and_draw([0.0, 0.0, 0.0, 0.3]);
         drop(rects);
 
         let height = tree.as_tree().get_height();
@@ -99,13 +99,13 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         }
 
         let test = {
-            let rects = sys.rects([4.0, 0.0, 0.0, 0.4]);
+            let rects = canvas.rects();
             let mut rr = ray_f32::RayT {
                 rects: Some(RefCell::new(rects)),
                 height,
             };
             let test = tree.as_tree_mut().raycast_fine_mut(ray, &mut rr, dim);
-            rr.rects.unwrap().borrow_mut().send_and_draw();
+            rr.rects.unwrap().borrow_mut().send_and_draw([4.0, 0.0, 0.0, 0.4]);
             test
         };
 
@@ -118,9 +118,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         let end = ray.point_at_tval(dis);
 
-        sys.lines([1., 1., 1., 0.2], 2.0)
+        canvas.lines(2.0)
             .add(ray.point, end)
-            .send_and_draw();
+            .send_and_draw([1., 1., 1., 0.2]);
 
         /*
         struct Bla<'a, 'b: 'a> {

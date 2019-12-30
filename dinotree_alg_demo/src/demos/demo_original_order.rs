@@ -53,7 +53,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         })
         .collect();
 
-    Demo::new(move |cursor, sys, check_naive| {
+    Demo::new(move |cursor, canvas, check_naive| {
         for b in bots.iter_mut() {
             b.update();
         }
@@ -79,17 +79,17 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         });
 
         {
-            let rects = sys.rects([0.0, 1.0, 1.0, 0.6]);
+            let rects = canvas.rects();
             let mut dd = Bla { rects };
             tree.draw(&mut dd, &dim);
-            dd.rects.send_and_draw();
+            dd.rects.send_and_draw([0.0, 1.0, 1.0, 0.6]);
         }
 
         //draw lines to the bots.
         {
-            let mut lines = sys.lines([1.0, 0.5, 1.0, 0.6], 2.0);
+            let mut lines = canvas.lines( 2.0);
             draw_bot_lines(tree.axis(), tree.vistr(), &dim, &mut lines);
-            lines.send_and_draw();
+            lines.send_and_draw([1.0, 0.5, 1.0, 0.6]);
         }
 
         if !check_naive {
@@ -168,22 +168,22 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             a / 256.0
         }
 
-        let mut circles = sys.circles([1.0, 1.0, 0.0, 0.6], radius);
+        let mut circles = canvas.circles(radius);
         for bot in bots.iter() {
             circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }
-        circles.send_and_draw();
+        circles.send_and_draw([1.0, 1.0, 0.0, 0.6]);
         drop(circles);
-        let mut lines = sys.lines([0.0,0.0,1.0,0.5],radius*0.5);
+        let mut lines = canvas.lines(radius*0.5);
         for bot in bots.iter(){
             lines.add(bot.pos,bot.pos+vec2(0.0,(bot.id % 100) as f32)*0.1);
         }
-        lines.send_and_draw();
+        lines.send_and_draw([0.0,0.0,1.0,0.5]);
     })
 }
 
 struct Bla<'a> {
-    rects: very_simple_2d::very_simple_2d_core::RectSession<'a>,
+    rects: very_simple_2d::shapes::RectSession<'a>,
 }
 impl<'a> DividerDrawer for Bla<'a> {
     type N = F32n;
@@ -235,7 +235,7 @@ fn draw_bot_lines<A: axgeom::Axis>(
     axis: A,
     stuff: Vistr<NodeMut<BBoxMut<F32n, Bot>>>,
     rect: &axgeom::Rect<F32n>,
-    lines: &mut very_simple_2d::very_simple_2d_core::LineSession,
+    lines: &mut very_simple_2d::shapes::LineSession,
 ) {
     use compt::Visitor;
     let (nn, rest) = stuff.next();

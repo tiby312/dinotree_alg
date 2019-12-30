@@ -57,17 +57,17 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     let mut tree = DinoTreeOwned::new(vv);
 
-    Demo::new(move |cursor, sys, check_naive| {
+    Demo::new(move |cursor, canvas, check_naive| {
         //Draw bots
-        let mut r = sys.circles([0.0, 0.0, 0.0, 0.3], radius);
+        let mut r = canvas.circles(radius);
         for bot in tree.get_bots().iter() {
             r.add(bot.inner().center);
         }
-        r.send_and_draw();
+        r.send_and_draw([0.0, 0.0, 0.0, 0.3]);
         drop(r);
 
         {
-            let mut ray_cast = sys.lines([1.0, 1.0, 1.0, 0.3], 5.0);
+            let mut ray_cast = canvas.lines(5.0);
 
             for dir in 0..360i32 {
                 let dir = dir as f32 * (std::f32::consts::PI / 180.0);
@@ -104,7 +104,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                 let end = ray.inner_into().point_at_tval(dis);
                 ray_cast.add(ray.point.inner_into(), end);
             }
-            ray_cast.send_and_draw();
+            ray_cast.send_and_draw([1.0, 1.0, 1.0, 0.3]);
         }
     })
 }
