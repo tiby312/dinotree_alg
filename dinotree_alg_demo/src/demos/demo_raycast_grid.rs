@@ -3,45 +3,44 @@ use crate::support::prelude::*;
 use duckduckgeo::grid::raycast::*;
 use duckduckgeo::grid::*;
 
-pub fn make_demo(dim: Rect<F32n>) -> Demo {
+pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
+
+    let dim = dim.inner_into();
+    let radius = 3.0;
+    let viewport = GridViewPort {
+        spacing: 60.0,
+        origin: vec2(0.0, 0.0),
+    };
+
+
+    let mut rects = canvas.rects();
+    for y in 0..100 {
+        let yy: f32 = viewport.origin.y + (y as f32) * viewport.spacing;
+
+        let rect = axgeom::Rect::new(dim.x.start, dim.x.end, yy, yy + 1.0);
+        rects.add(rect);
+    }
+
+    for x in 0..100 {
+        let xx: f32 = viewport.origin.x + (x as f32) * viewport.spacing;
+
+        let rect = axgeom::Rect::new(xx, xx + 1.0, dim.y.start, dim.y.end);
+        rects.add(rect);
+    }
+
+    let rects_save=rects.save();
+
     Demo::new(move |cursor, canvas, _check_naive| {
-        let dim = dim.inner_into();
-        let radius = 3.0;
-        let viewport = GridViewPort {
-            spacing: 60.0,
-            origin: vec2(0.0, 0.0),
-        };
+        
+        rects_save.draw(canvas,[1.0, 0.6, 0.6, 1.0]);
 
-        let mut rects = canvas.rects();
-        for y in 0..100 {
-            let yy: f32 = viewport.origin.y + (y as f32) * viewport.spacing;
-
-            let rect = axgeom::Rect::new(dim.x.start, dim.x.end, yy, yy + 1.0);
-            rects.add(rect);
-        }
-
-        for x in 0..100 {
-            let xx: f32 = viewport.origin.x + (x as f32) * viewport.spacing;
-
-            let rect = axgeom::Rect::new(xx, xx + 1.0, dim.y.start, dim.y.end);
-            rects.add(rect);
-        }
-        rects.send_and_draw([1.0, 0.6, 0.6, 1.0]);
-        drop(rects);
-
-        //let point=vec2(300.0,300.0);
         let point = viewport.origin + vec2same(viewport.spacing * 5.0); //vec2(310.0,310.0);
-
-        //let pos=vec2(10.0,10.0);
-        //let pos=vec2(86.70752,647.98);
-        //let vel=vec2(-0.03991765,0.22951305);
 
         let cursor = cursor.inner_into();
         let ray = axgeom::Ray {
             point,
             dir: (cursor - point).normalize_to(1.0),
         };
-        //let ray=Ray{point:pos,dir:vel};
 
         let rect = axgeom::Rect::from_point(ray.point, vec2same(radius));
         canvas.rects().add(rect).send_and_draw([1.0, 0.0, 0.0, 0.5]);

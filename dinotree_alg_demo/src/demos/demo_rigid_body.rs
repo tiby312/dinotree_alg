@@ -161,7 +161,7 @@ pub fn handle_rigid_body(
                 let mm = body.push_vec.magnitude();
                 if mm > 0.0000001 {
                     if mm > push_rate {
-                        body.push_vec.normalize_to(push_rate);
+                        body.push_vec=body.push_vec.normalize_to(push_rate);
                     }
                     body.pos += body.push_vec;
                     body.push_vec = vec2same(0.0);

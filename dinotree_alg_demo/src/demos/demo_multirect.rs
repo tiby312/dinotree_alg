@@ -13,7 +13,7 @@ impl analyze::HasId for Bot {
     }
 }
 
-pub fn make_demo(dim: Rect<F32n>) -> Demo {
+pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(5.0, 20.0)
         .take(200)
@@ -28,14 +28,18 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     let mut tree = DinoTreeOwnedBBoxPtr::new_par(bots, |b| Rect::from_point(b.pos, b.radius));
 
-    Demo::new(move |cursor, canvas, check_naive| {
-        let mut rects = canvas.rects();
-        for bot in tree.as_owned().get_bots().iter() {
-            rects.add(bot.get().inner_as());
-        }
-        rects.send_and_draw([0.0, 1.0, 0.0, 0.2]);
-        drop(rects);
+    let mut rects = canvas.rects();
+    for bot in tree.as_owned().get_bots().iter() {
+        rects.add(bot.get().inner_as());
+    }
+    let rect_save=rects.save();
 
+
+
+    Demo::new(move |cursor, canvas, check_naive| {
+
+        rect_save.draw(canvas,[0.0, 1.0, 0.0, 0.2]);
+        
         let cc: Vec2<i32> = cursor.inner_into::<f32>().inner_as();
         let r1 = axgeom::Rect::new(cc.x - 100, cc.x + 100, cc.y - 100, cc.y + 100);
         let r2 = axgeom::Rect::new(100, 400, 100, 400);

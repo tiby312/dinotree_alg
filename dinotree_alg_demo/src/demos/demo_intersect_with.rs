@@ -33,7 +33,7 @@ impl Bot {
 #[derive(Copy, Clone)]
 struct Wall(axgeom::Rect<F32n>);
 
-pub fn make_demo(dim: Rect<F32n>) -> Demo {
+pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let radius = 5.0;
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(4000)
@@ -50,6 +50,14 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         .take(40)
         .map(|(pos, radius)| Wall(Rect::from_point(pos, radius).inner_try_into().unwrap()))
         .collect();
+
+    let mut rects = canvas.rects();
+    for wall in walls.iter() {
+        rects.add(wall.0.inner_into());
+    }
+    let rect_save=rects.save();
+
+
 
     Demo::new(move |cursor, canvas, _check_naive| {
         for b in bots.iter_mut() {
@@ -126,12 +134,8 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             });
         }
 
-        let mut rects = canvas.rects();
-        for wall in walls.iter() {
-            rects.add(wall.0.inner_into());
-        }
-        rects.send_and_draw([0.7, 0.7, 0.7, 0.3]);
-        drop(rects);
+        
+        rect_save.draw(canvas,[0.7,0.7,0.7,0.3]);
 
         let mut circles = canvas.circles( radius);
         for bot in k.iter() {

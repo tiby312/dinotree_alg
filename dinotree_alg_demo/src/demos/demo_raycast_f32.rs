@@ -41,7 +41,7 @@ impl analyze::HasId for Bot {
     }
 }
 
-pub fn make_demo(dim: Rect<F32n>) -> Demo {
+pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let radius = 20.0;
     let vv: Vec<_> = UniformRandGen::new(dim.inner_into())
         .enumerate()
@@ -57,15 +57,19 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     let mut tree = DinoTreeOwned::new(vv);
 
-    Demo::new(move |cursor, canvas, check_naive| {
-        //Draw bots
-        let mut r = canvas.circles(radius);
-        for bot in tree.get_bots().iter() {
-            r.add(bot.inner().center);
-        }
-        r.send_and_draw([0.0, 0.0, 0.0, 0.3]);
-        drop(r);
+    //Draw bots
+    let mut r = canvas.circles(radius);
+    for bot in tree.get_bots().iter() {
+        r.add(bot.inner().center);
+    }
+    let circle_save=r.save();
 
+    
+
+
+    Demo::new(move |cursor, canvas, check_naive| {
+        circle_save.draw(canvas,[0.0, 0.0, 0.0, 0.3]);
+    
         {
             let mut ray_cast = canvas.lines(5.0);
 

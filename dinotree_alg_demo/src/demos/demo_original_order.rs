@@ -163,10 +163,6 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             unimplemented!()
         }
 
-        fn conv(a: u8) -> f32 {
-            let a: f32 = a as f32;
-            a / 256.0
-        }
 
         let mut circles = canvas.circles(radius);
         for bot in bots.iter() {
@@ -276,15 +272,12 @@ fn draw_bot_lines<A: axgeom::Axis>(
     };
 
     if let Some((midx, midy)) = mid {
-        let color_delta = 1.0 / nn.bots.len() as f32;
-        let mut counter = 0.0;
+        //let color_delta = 1.0 / nn.bots.len() as f32;
         for b in nn.bots.iter() {
             let _bx = b.inner.pos.x;
             let _by = b.inner.pos.y;
-
             lines.add(b.inner.pos, vec2(midx, midy));
-
-            counter += color_delta;
+            //counter += color_delta;
         }
     }
 }

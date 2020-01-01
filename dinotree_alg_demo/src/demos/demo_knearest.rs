@@ -14,7 +14,7 @@ impl analyze::HasId for Bot {
     }
 }
 
-pub fn make_demo(dim: Rect<F32n>) -> Demo {
+pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(2.0, 50.0)
         .take(40)
@@ -28,14 +28,14 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             .unwrap()
     });
 
-    Demo::new(move |cursor, canvas, check_naive| {
-        let mut rects = canvas.rects();
-        for bot in tree.as_owned().get_bots().iter() {
-            rects.add(bot.get().inner_into());
-        }
-        rects.send_and_draw([0.0, 0.0, 0.0, 0.3]);
-        drop(rects);
+    let mut rects = canvas.rects();
+    for bot in tree.as_owned().get_bots().iter() {
+        rects.add(bot.get().inner_into());
+    }
+    let rect_save=rects.save();
 
+
+    Demo::new(move |cursor, canvas, check_naive| {
         struct Kn<'a> {
             rects: RefCell<very_simple_2d::shapes::RectSession<'a>>,
         };
@@ -131,6 +131,8 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         vv.reverse();
         let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
+        rect_save.draw(canvas,[0.0,0.0,0.0,0.3]);    
+        
         for (a, color) in vv_iter.zip(cols.iter()) {
             if let Some(k) = a.first() {
                 canvas.circles( k.mag.into_inner().sqrt())
