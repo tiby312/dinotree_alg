@@ -137,11 +137,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         
         rect_save.draw(canvas,[0.7,0.7,0.7,0.3]);
 
-        let mut circles = canvas.circles( radius);
+        let mut circles = canvas.circles();
         for bot in k.iter() {
             circles.add(bot.inner().pos);
         }
-        circles.send_and_draw([1.0, 0.0, 0.5, 0.3]);
+        circles.send_and_draw([1.0, 0.0, 0.5, 0.3],radius);
     })
 }
 /*

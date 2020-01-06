@@ -87,7 +87,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         //draw lines to the bots.
         {
-            let mut lines = canvas.lines( 2.0);
+            let mut lines = canvas.lines(2.0);
             draw_bot_lines(tree.axis(), tree.vistr(), &dim, &mut lines);
             lines.send_and_draw([1.0, 0.5, 1.0, 0.6]);
         }
@@ -164,11 +164,11 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         }
 
 
-        let mut circles = canvas.circles(radius);
+        let mut circles = canvas.circles();
         for bot in bots.iter() {
             circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
         }
-        circles.send_and_draw([1.0, 1.0, 0.0, 0.6]);
+        circles.send_and_draw([1.0, 1.0, 0.0, 0.6],radius);
         drop(circles);
         let mut lines = canvas.lines(radius*0.5);
         for bot in bots.iter(){

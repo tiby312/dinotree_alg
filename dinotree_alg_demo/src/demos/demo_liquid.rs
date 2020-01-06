@@ -116,10 +116,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             b.acc = vec2same(0.0);
         }
 
-        let mut circle = canvas.circles(2.0);
+        let mut circle = canvas.circles();
         for bot in bots.iter() {
             circle.add(bot.pos);
         }
-        circle.send_and_draw([1.0, 0.6, 0.7, 0.5], );
+        circle.send_and_draw([1.0, 0.6, 0.7, 0.5],2.0);
     })
 }

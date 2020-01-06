@@ -135,9 +135,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         
         for (a, color) in vv_iter.zip(cols.iter()) {
             if let Some(k) = a.first() {
-                canvas.circles( k.mag.into_inner().sqrt())
+                canvas.circles()
                     .add(cursor.inner_into())
-                    .send_and_draw(*color,);
+                    .send_and_draw(*color,k.mag.into_inner().sqrt());
             }
 
             let mut rects = canvas.rects();

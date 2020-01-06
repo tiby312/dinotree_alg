@@ -58,7 +58,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let mut tree = DinoTreeOwned::new(vv);
 
     //Draw bots
-    let mut r = canvas.circles(radius);
+    let mut r = canvas.circles();
     for bot in tree.get_bots().iter() {
         r.add(bot.inner().center);
     }
@@ -68,7 +68,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, check_naive| {
-        circle_save.draw(canvas,[0.0, 0.0, 0.0, 0.3]);
+        circle_save.draw(canvas,[0.0, 0.0, 0.0, 0.3],radius);
     
         {
             let mut ray_cast = canvas.lines(5.0);

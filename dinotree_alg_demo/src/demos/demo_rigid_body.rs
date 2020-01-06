@@ -221,10 +221,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             duckduckgeo::collide_with_border(b, dim.as_ref(), 0.5);
         }
 
-        let mut circles = canvas.circles(radius);
+        let mut circles = canvas.circles();
         for bot in bots.iter() {
             circles.add(bot.pos);
         }
-        circles.send_and_draw([0.7, 0.7, 0.7, 0.5]);
+        circles.send_and_draw([0.7, 0.7, 0.7, 0.5],radius);
     })
 }
