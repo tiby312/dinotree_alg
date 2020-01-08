@@ -53,7 +53,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
     let mut rects = canvas.rects();
     for wall in walls.iter() {
-        rects.add(wall.0.inner_into());
+        rects.add(wall.0.inner_into().as_arr());
     }
     let rect_save=rects.save();
 
@@ -135,13 +135,13 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         }
 
         
-        rect_save.draw(canvas,[0.7,0.7,0.7,0.3]);
+        rect_save.uniforms(canvas).with_color([0.7,0.7,0.7,0.3]).draw();
 
         let mut circles = canvas.circles();
         for bot in k.iter() {
-            circles.add(bot.inner().pos);
+            circles.add(bot.inner().pos.as_arr());
         }
-        circles.send_and_draw([1.0, 0.0, 0.5, 0.3],radius);
+        circles.uniforms(radius).with_color([1.0, 0.0, 0.5, 0.3]).send_and_draw();
     })
 }
 /*

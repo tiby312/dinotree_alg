@@ -6,7 +6,7 @@ use glutin::event::Event;
 use glutin::event::VirtualKeyCode;
 use glutin::event::WindowEvent;
 use glutin::event_loop::ControlFlow;
-use very_simple_2d::glutin;
+use egaku2d::glutin;
 
 #[macro_use]
 pub(crate) mod support;
@@ -73,7 +73,7 @@ fn main() {
 
     let events_loop = glutin::event_loop::EventLoop::new();
 
-    let mut sys = very_simple_2d::WindowedSystem::new(area.inner_as(), &events_loop,"dinotree_alg demo");
+    let mut sys = egaku2d::WindowedSystem::new([800,600], &events_loop,"dinotree_alg demo");
     //let mut sys=very_simple_2d::FullScreenSystem::new(&events_loop);
     //sys.set_viewport_min(600.);
 
@@ -85,7 +85,7 @@ fn main() {
 
     let check_naive = false;
     let mut cursor = vec2same(0.);
-    let mut timer = very_simple_2d::RefreshTimer::new(16);
+    let mut timer = egaku2d::RefreshTimer::new(16);
     events_loop.run(move |event, _, control_flow| {
         match event {
             Event::WindowEvent { event, .. } => match event {
@@ -112,11 +112,11 @@ fn main() {
                 WindowEvent::CursorMoved {
                     modifiers: _,
                     device_id: _,
-                    position: logical_position,
+                    position: position,
                 } => {
-                    let dpi=sys.get_hidpi_factor();
-                    let glutin::dpi::PhysicalPosition { x, y } = logical_position.to_physical(dpi);
-                    cursor = vec2(x as f32, y as f32);
+                    //let dpi=sys.get_hidpi_factor();
+                    //let glutin::dpi::PhysicalPosition { x, y } = logical_position.to_physical(dpi);
+                    cursor = vec2(position.x as f32, position.y as f32);
                 }
                 WindowEvent::MouseInput {
                     modifiers: _,
@@ -137,7 +137,7 @@ fn main() {
                 }
                 _ => {}
             },
-            Event::EventsCleared => {
+            Event::MainEventsCleared => {
                 if timer.is_ready() {
                     let k = sys.canvas_mut();
                     k.clear_color([0.2, 0.2, 0.2]);

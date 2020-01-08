@@ -21,7 +21,7 @@ is_sorted = "0.1"
 itertools = "0.8"
 rayon = "1.2"
 compt = "1.6"
-axgeom = "1.4"
+axgeom = "1.5"
 pdqselect = "0.1"
 
 
@@ -29,3 +29,5 @@ pdqselect = "0.1"
 nbody = []
 
 
+[patch.crates-io]
+axgeom = {path="../axgeom"}

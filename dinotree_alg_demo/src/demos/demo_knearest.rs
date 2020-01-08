@@ -30,14 +30,14 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
     let mut rects = canvas.rects();
     for bot in tree.as_owned().get_bots().iter() {
-        rects.add(bot.get().inner_into());
+        rects.add(bot.get().inner_into().as_arr());
     }
     let rect_save=rects.save();
 
 
     Demo::new(move |cursor, canvas, check_naive| {
         struct Kn<'a> {
-            rects: RefCell<very_simple_2d::shapes::RectSession<'a>>,
+            rects: RefCell<egaku2d::shapes::RectSession<'a>>,
         };
 
         impl<'a> Knearest for Kn<'a> {
@@ -45,7 +45,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             type N = F32n;
 
             fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
-                self.rects.borrow_mut().add(bot.get().inner_into());
+                self.rects.borrow_mut().add(bot.get().inner_into().as_arr());
                 self.distance_to_rect(point, bot.get())
             }
 
@@ -96,7 +96,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let k=tree.as_owned_mut()
                 .as_tree_mut()
                 .k_nearest_fine_mut(cursor, 3, &mut kn, dim);
-            kn.rects.into_inner().send_and_draw([1.0, 0.5, 0.3, 0.3]);
+            kn.rects.into_inner().uniforms().with_color([1.0, 0.5, 0.3, 0.3]).send_and_draw();
             k
         };
 
@@ -131,20 +131,22 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         vv.reverse();
         let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
-        rect_save.draw(canvas,[0.0,0.0,0.0,0.3]);    
+        rect_save.uniforms(canvas).with_color([0.0,0.0,0.0,0.3]).draw();    
         
         for (a, color) in vv_iter.zip(cols.iter()) {
             if let Some(k) = a.first() {
                 canvas.circles()
-                    .add(cursor.inner_into())
-                    .send_and_draw(*color,k.mag.into_inner().sqrt());
+                    .add(cursor.inner_into().as_arr())
+                    .uniforms(k.mag.into_inner().sqrt()*2.0)
+                    .with_color(*color)
+                    .send_and_draw();
             }
 
             let mut rects = canvas.rects();
             for b in a.iter() {
-                rects.add(b.rect.inner_into());
+                rects.add(b.rect.inner_into().as_arr());
             }
-            rects.send_and_draw(*color);
+            rects.uniforms().with_color(*color).send_and_draw();
         }
     })
 }

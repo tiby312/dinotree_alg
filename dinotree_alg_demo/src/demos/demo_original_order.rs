@@ -78,19 +78,19 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 20.0);
         });
 
-        {
-            let rects = canvas.rects();
-            let mut dd = Bla { rects };
-            tree.draw(&mut dd, &dim);
-            dd.rects.send_and_draw([0.0, 1.0, 1.0, 0.6]);
-        }
+        
+        let rects = canvas.rects();
+        let mut dd = Bla { rects };
+        tree.draw(&mut dd, &dim);
+        dd.rects.uniforms().with_color([0.0, 1.0, 1.0, 0.6]).send_and_draw();
+    
 
         //draw lines to the bots.
-        {
-            let mut lines = canvas.lines(2.0);
-            draw_bot_lines(tree.axis(), tree.vistr(), &dim, &mut lines);
-            lines.send_and_draw([1.0, 0.5, 1.0, 0.6]);
-        }
+        
+        let mut lines = canvas.lines(2.0);
+        draw_bot_lines(tree.axis(), tree.vistr(), &dim, &mut lines);
+        lines.uniforms().with_color([1.0, 0.5, 1.0, 0.6]).send_and_draw();
+    
 
         if !check_naive {
             tree.find_collisions_mut_par(|mut a, mut b| {
@@ -166,20 +166,20 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         let mut circles = canvas.circles();
         for bot in bots.iter() {
-            circles.add(bot.pos); //TODO we're not testing that the bots were draw in the right order
+            circles.add(bot.pos.as_arr()); //TODO we're not testing that the bots were draw in the right order
         }
-        circles.send_and_draw([1.0, 1.0, 0.0, 0.6],radius);
-        drop(circles);
+        circles.uniforms(radius).with_color([1.0, 1.0, 0.0, 0.6]).send_and_draw();
+        
         let mut lines = canvas.lines(radius*0.5);
         for bot in bots.iter(){
-            lines.add(bot.pos,bot.pos+vec2(0.0,(bot.id % 100) as f32)*0.1);
+            lines.add(bot.pos.as_arr(),  (bot.pos+vec2(0.0,(bot.id % 100) as f32)*0.1).as_arr() );
         }
-        lines.send_and_draw([0.0,0.0,1.0,0.5]);
+        lines.uniforms().with_color([0.0,0.0,1.0,0.5]).send_and_draw();
     })
 }
 
 struct Bla<'a> {
-    rects: very_simple_2d::shapes::RectSession<'a>,
+    rects: egaku2d::shapes::RectSession<'a>,
 }
 impl<'a> DividerDrawer for Bla<'a> {
     type N = F32n;
@@ -221,7 +221,7 @@ impl<'a> DividerDrawer for Bla<'a> {
             Rect { x: length, y: cont }
         };
 
-        self.rects.add(rect);
+        self.rects.add(rect.as_arr());
 
         //rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
     }
@@ -231,7 +231,7 @@ fn draw_bot_lines<A: axgeom::Axis>(
     axis: A,
     stuff: Vistr<NodeMut<BBoxMut<F32n, Bot>>>,
     rect: &axgeom::Rect<F32n>,
-    lines: &mut very_simple_2d::shapes::LineSession,
+    lines: &mut egaku2d::shapes::LineSession,
 ) {
     use compt::Visitor;
     let (nn, rest) = stuff.next();
@@ -276,7 +276,7 @@ fn draw_bot_lines<A: axgeom::Axis>(
         for b in nn.bots.iter() {
             let _bx = b.inner.pos.x;
             let _by = b.inner.pos.y;
-            lines.add(b.inner.pos, vec2(midx, midy));
+            lines.add(b.inner.pos.as_arr(), vec2(midx, midy).as_arr());
             //counter += color_delta;
         }
     }

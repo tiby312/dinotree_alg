@@ -60,7 +60,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     //Draw bots
     let mut r = canvas.circles();
     for bot in tree.get_bots().iter() {
-        r.add(bot.inner().center);
+        r.add(bot.inner().center.as_arr());
     }
     let circle_save=r.save();
 
@@ -68,7 +68,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, check_naive| {
-        circle_save.draw(canvas,[0.0, 0.0, 0.0, 0.3],radius);
+        circle_save.uniforms(canvas,radius).with_color([0.0, 0.0, 0.0, 0.3]).draw();
     
         {
             let mut ray_cast = canvas.lines(5.0);
@@ -106,9 +106,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 };
 
                 let end = ray.inner_into().point_at_tval(dis);
-                ray_cast.add(ray.point.inner_into(), end);
+                ray_cast.add(ray.point.inner_into().as_arr(), end.as_arr());
             }
-            ray_cast.send_and_draw([1.0, 1.0, 1.0, 0.3]);
+            ray_cast.uniforms().with_color([1.0, 1.0, 1.0, 0.3]).send_and_draw();
         }
     })
 }

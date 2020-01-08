@@ -118,8 +118,8 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         let mut circle = canvas.circles();
         for bot in bots.iter() {
-            circle.add(bot.pos);
+            circle.add(bot.pos.as_arr());
         }
-        circle.send_and_draw([1.0, 0.6, 0.7, 0.5],2.0);
+        circle.uniforms(2.0).with_color([1.0, 0.6, 0.7, 0.5]).send_and_draw();
     })
 }
