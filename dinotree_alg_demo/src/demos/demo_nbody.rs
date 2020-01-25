@@ -1,7 +1,6 @@
 use crate::support::prelude::*;
 
 use duckduckgeo;
-use duckduckgeo::GravityTrait;
 
 #[derive(Copy, Clone)]
 struct NodeMass {
@@ -9,19 +8,6 @@ struct NodeMass {
     center: Vec2<f32>,
     mass: f32,
     force: Vec2<f32>,
-}
-
-impl duckduckgeo::GravityTrait for NodeMass {
-    type N = f32;
-    fn pos(&self) -> Vec2<f32> {
-        self.center
-    }
-    fn mass(&self) -> f32 {
-        self.mass
-    }
-    fn apply_force(&mut self, a: Vec2<f32>) {
-        self.force += a;
-    }
 }
 
 use core::marker::PhantomData;
@@ -42,18 +28,20 @@ impl<'b> NodeMassTrait for Bla<'b> {
 
     //gravitate this nodemass with another node mass
     fn handle_node_with_node(&self, a: &mut Self::No, b: &mut Self::No) {
-        let _ = duckduckgeo::gravitate(a, b, 0.0001, 0.004);
+        let _ = duckduckgeo::gravitate([(a.center,a.mass,&mut a.force),(b.center,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
     //gravitate a bot with a bot
     fn handle_bot_with_bot(&self, mut a: PMut<Self::Item>, mut b: PMut<Self::Item>) {
-        //self.num_pairs_checked+=1;
-        let _ = duckduckgeo::gravitate(a.inner_mut(), b.inner_mut(), 0.0001, 0.004);
+        let a=a.inner_mut();
+        let b=b.inner_mut();
+        let _ = duckduckgeo::gravitate([(a.pos,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
     //gravitate a nodemass with a bot
     fn handle_node_with_bot(&self, a: &mut Self::No, mut b: PMut<Self::Item>) {
-        let _ = duckduckgeo::gravitate(a, b.inner_mut(), 0.0001, 0.004);
+        let b=b.inner_mut();
+        let _ = duckduckgeo::gravitate([(a.center,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
     fn new<'a, I: Iterator<Item = &'a Self::Item>>(
@@ -66,7 +54,7 @@ impl<'b> NodeMassTrait for Bla<'b> {
         let mut total_mass = 0.0;
 
         for i in it {
-            let m = i.inner().mass();
+            let m = i.inner().mass;
             total_mass += m;
             total_x += m * i.inner().pos.x;
             total_y += m * i.inner().pos.y;
@@ -97,7 +85,8 @@ impl<'b> NodeMassTrait for Bla<'b> {
             for mut i in it {
                 let forcex = total_forcex * (i.inner().mass / a.mass);
                 let forcey = total_forcey * (i.inner().mass / a.mass);
-                i.as_mut().inner_mut().apply_force(vec2(forcex, forcey));
+
+                i.as_mut().inner_mut().force+=vec2(forcex, forcey);
             }
         }
     }
@@ -137,18 +126,6 @@ impl Bot {
         axgeom::Rect::from_point(self.pos, vec2same(r))
             .inner_try_into()
             .unwrap()
-    }
-}
-impl duckduckgeo::GravityTrait for Bot {
-    type N = f32;
-    fn pos(&self) -> Vec2<f32> {
-        self.pos
-    }
-    fn mass(&self) -> f32 {
-        self.mass
-    }
-    fn apply_force(&mut self, a: Vec2<f32>) {
-        self.force += a;
     }
 }
 

@@ -10,13 +10,6 @@ pub struct RigidBody {
     pub acc: Vec2<f32>,
 }
 
-impl duckduckgeo::BorderCollideTrait for RigidBody {
-    type N = f32;
-    fn pos_vel_mut(&mut self) -> (&mut Vec2<f32>, &mut Vec2<f32>) {
-        (&mut self.pos, &mut self.vel)
-    }
-}
-
 impl RigidBody {
     pub fn new(pos: Vec2<f32>) -> RigidBody {
         let a = vec2same(0.0);
@@ -102,8 +95,9 @@ impl RigidBody {
         let xx = rect2.get_range(axgeom::XAXIS);
         let yy = rect2.get_range(axgeom::YAXIS);
 
-        let (pos, _vel) = &mut a.pos_vel_mut();
+        let pos=&mut a.pos;
 
+        
         if pos.x < xx.start {
             pos.x = xx.start;
         }
@@ -218,7 +212,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             b.pos += b.vel;
             b.acc = vec2same(0.0);
 
-            duckduckgeo::collide_with_border(b, dim.as_ref(), 0.5);
+            duckduckgeo::collide_with_border(&mut b.pos,&mut b.vel, dim.as_ref(), 0.5);
         }
 
         let mut circles = canvas.circles();

@@ -57,23 +57,6 @@ impl Liquid {
     }
 }
 
-impl duckduckgeo::BorderCollideTrait for Liquid {
-    type N = f32;
-    fn pos_vel_mut(&mut self) -> (&mut Vec2<f32>, &mut Vec2<f32>) {
-        (&mut self.pos, &mut self.vel)
-    }
-}
-
-impl duckduckgeo::RepelTrait for Liquid {
-    type N = f32;
-    fn pos(&self) -> Vec2<f32> {
-        self.pos
-    }
-    fn add_force(&mut self, acc: Vec2<f32>) {
-        self.acc += acc;
-    }
-}
-
 pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let radius = 50.0;
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
@@ -100,13 +83,15 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         let cc = cursor.inner_into();
 
         tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
-            let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 100.0);
+            let b=b.inner_mut();
+            let _ = duckduckgeo::repel_one(b.pos,&mut b.acc, cc, 0.001, 100.0);
         });
 
         {
             let dim2 = dim.inner_into();
             tree.for_all_not_in_rect_mut(&dim, |mut a| {
-                duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
+                let a=a.inner_mut();
+                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.5);
             });
         }
 

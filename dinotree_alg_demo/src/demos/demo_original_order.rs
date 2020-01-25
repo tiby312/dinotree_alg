@@ -10,23 +10,6 @@ pub struct Bot {
     force: Vec2<f32>,
 }
 
-impl duckduckgeo::BorderCollideTrait for Bot {
-    type N = f32;
-    fn pos_vel_mut(&mut self) -> (&mut Vec2<f32>, &mut Vec2<f32>) {
-        (&mut self.pos, &mut self.vel)
-    }
-}
-
-impl duckduckgeo::RepelTrait for Bot {
-    type N = f32;
-    fn pos(&self) -> Vec2<f32> {
-        self.pos
-    }
-    fn add_force(&mut self, force: Vec2<f32>) {
-        self.force += force;
-    }
-}
-
 impl Bot {
     fn update(&mut self) {
         self.vel += self.force;
@@ -68,14 +51,16 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         {
             let dim2 = dim.inner_into();
             tree.for_all_not_in_rect_mut(&dim, |mut a| {
-                duckduckgeo::collide_with_border(a.inner_mut(), &dim2, 0.5);
+                let a=a.inner_mut();
+                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.5);
             });
         }
 
         let vv = vec2same(100.0).inner_try_into().unwrap();
         let cc = cursor.inner_into();
         tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
-            let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 20.0);
+            let b=b.inner_mut();
+            let _ = duckduckgeo::repel_one(b.pos,&mut b.force, cc, 0.001, 20.0);
         });
 
         
@@ -94,7 +79,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         if !check_naive {
             tree.find_collisions_mut_par(|mut a, mut b| {
-                let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
+                let a=a.inner_mut();
+                let b=b.inner_mut();
+                let _ = duckduckgeo::repel([(a.pos,&mut a.force), (b.pos,&mut b.force)], 0.001, 2.0);
             });
         } else {
             /*

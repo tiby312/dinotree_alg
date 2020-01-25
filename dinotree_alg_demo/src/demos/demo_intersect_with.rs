@@ -8,15 +8,6 @@ pub struct Bot {
     force: Vec2<f32>,
     wall_move: [Option<(F32n, f32)>; 2],
 }
-impl duckduckgeo::RepelTrait for Bot {
-    type N = f32;
-    fn pos(&self) -> Vec2<f32> {
-        self.pos
-    }
-    fn add_force(&mut self, force: Vec2<f32>) {
-        self.force += force;
-    }
-}
 
 impl Bot {
     fn update(&mut self) {
@@ -125,12 +116,15 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     .inner_try_into()
                     .unwrap(),
                 |mut b| {
-                    let _ = duckduckgeo::repel_one(b.inner_mut(), cc, 0.001, 20.0);
+                    let b=b.inner_mut();
+                    let _ = duckduckgeo::repel_one(b.pos,&mut b.force, cc, 0.001, 20.0);
                 },
             );
 
             tree.find_collisions_mut_par(|mut a, mut b| {
-                let _ = duckduckgeo::repel(a.inner_mut(), b.inner_mut(), 0.001, 2.0);
+                let a=a.inner_mut();
+                let b=b.inner_mut();
+                let _ = duckduckgeo::repel([(a.pos,&mut a.force),(b.pos,&mut b.force)], 0.001, 2.0);
             });
         }
 
