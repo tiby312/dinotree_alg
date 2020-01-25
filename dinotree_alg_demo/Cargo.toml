@@ -11,8 +11,7 @@ duckduckgeo = "0.3"
 bit-vec = "0.6"
 num_cpus = "1.10"
 rayon = "1.2"
-axgeom="1.5"
-ordered-float = "1.0.2"
+axgeom="1.6"
 compt = "1.6"
 egaku2d = {path="../../egaku2d"}
 

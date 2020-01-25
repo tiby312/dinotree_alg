@@ -110,19 +110,19 @@ fn main() {
                 }
                 WindowEvent::Resized(_logical_size) => {}
                 WindowEvent::CursorMoved {
-                    modifiers: _,
                     device_id: _,
                     position: position,
+                    ..
                 } => {
                     //let dpi=sys.get_hidpi_factor();
                     //let glutin::dpi::PhysicalPosition { x, y } = logical_position.to_physical(dpi);
                     cursor = vec2(position.x as f32, position.y as f32);
                 }
                 WindowEvent::MouseInput {
-                    modifiers: _,
                     device_id: _,
                     state,
                     button,
+                    ..
                 } => {
                     if button == glutin::event::MouseButton::Left {
                         match state {

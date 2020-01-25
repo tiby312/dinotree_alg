@@ -38,7 +38,7 @@ pub trait Knearest {
 
 pub(crate) struct KnearestWrapper<T: Aabb, K> {
     pub(crate) inner: K,
-    pub(crate) _p: PhantomData<(T)>,
+    pub(crate) _p: PhantomData<T>,
 }
 impl<T: Aabb, K: Fn(Vec2<T::Num>, &Rect<T::Num>) -> T::Num> Knearest for KnearestWrapper<T, K> {
     type T = T;
