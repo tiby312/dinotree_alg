@@ -53,9 +53,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
     let mut rects = canvas.rects();
     for wall in walls.iter() {
-        rects.add(wall.0.inner_into().as_arr());
+        rects.add(wall.0.inner_into().into());
     }
-    let rect_save=rects.save();
+    let rect_save=rects.save(canvas);
 
 
 
@@ -139,37 +139,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
         let mut circles = canvas.circles();
         for bot in k.iter() {
-            circles.add(bot.inner().pos.as_arr());
+            circles.add(bot.inner().pos.into());
         }
-        circles.uniforms(radius).with_color([1.0, 0.0, 0.5, 0.3]).send_and_draw();
+        circles.send_and_uniforms(canvas,radius).with_color([1.0, 0.0, 0.5, 0.3]).draw();
     })
 }
-/*
-pub struct IntersectWithDemo {
-    radius: f32,
-    bots: Vec<Bot>,
-    walls: Vec<Wall>,
-    dim: Rect<F32n>,
-}
-impl IntersectWithDemo {
-    pub fn new(dim: Rect<F32n>) -> IntersectWithDemo {
-
-        IntersectWithDemo {
-            radius: 5.0,
-            bots,
-            walls,
-            dim,
-        }
-    }
-}
-
-impl DemoSys for IntersectWithDemo {
-    fn step(
-        &mut self,
-        cursor: Vec2<F32n>,
-        sys: &mut MySys,
-        _check_naive: bool,
-    ) {
-    }
-}
-*/

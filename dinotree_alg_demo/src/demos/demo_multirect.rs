@@ -30,9 +30,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
     let mut rects = canvas.rects();
     for bot in tree.as_owned().get_bots().iter() {
-        rects.add(bot.get().inner_as().as_arr());
+        rects.add(bot.get().inner_as().into());
     }
-    let rect_save=rects.save();
+    let rect_save=rects.save(canvas);
 
 
 
@@ -69,25 +69,25 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             match res {
                 Ok(()) => {
                     canvas.rects()
-                        .add(r1.inner_as().as_arr())
-                        .add(r2.inner_as().as_arr())
-                        .uniforms()
+                        .add(r1.inner_as().into())
+                        .add(r2.inner_as().into())
+                        .send_and_uniforms(canvas)
                         .with_color([0.0, 0.0, 0.0, 0.5])
-                        .send_and_draw();
+                        .draw();
 
                     let mut rects = canvas.rects();
                     for r in to_draw.iter() {
-                        rects.add(r.get().inner_as().as_arr());
+                        rects.add(r.get().inner_as().into());
                     }
-                    rects.uniforms().with_color([0.0, 0.0, 0.0, 0.2]).send_and_draw();
+                    rects.send_and_uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.2]).draw();
                 }
                 Err(_) => {
                     canvas.rects()
-                        .add(r1.inner_as().as_arr())
-                        .add(r2.inner_as().as_arr())
-                        .uniforms()
+                        .add(r1.inner_as().into())
+                        .add(r2.inner_as().into())
+                        .send_and_uniforms(canvas)
                         .with_color([1.0, 0.0, 0.0, 0.5])
-                        .send_and_draw();
+                        .draw();
                 }
             }
         }
@@ -95,9 +95,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         //test for_all_intersect_rect
         let mut rects = canvas.rects();
         tree.as_owned().as_tree().for_all_intersect_rect(&r1, |a| {
-            rects.add(a.get().inner_as().as_arr());
+            rects.add(a.get().inner_as().into());
         });
-        rects.uniforms().with_color([0.0, 0.0, 1.0, 0.2]).send_and_draw();
+        rects.send_and_uniforms(canvas).with_color([0.0, 0.0, 1.0, 0.2]).draw();
         
 
         //test for_all_not_in_rect_mut
@@ -105,16 +105,16 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         r1.grow(-40);
 
         canvas.rects()
-            .add(r1.inner_as().as_arr())
-            .uniforms().with_color([1.0, 0.0, 0.0, 0.2])
-            .send_and_draw();
+            .add(r1.inner_as().into())
+            .send_and_uniforms(canvas).with_color([1.0, 0.0, 0.0, 0.2])
+            .draw();
 
         let mut rects = canvas.rects();
         tree.as_owned_mut()
             .as_tree_mut()
             .for_all_not_in_rect_mut(&r1, |b| {
-                rects.add(b.get().inner_as().as_arr());
+                rects.add(b.get().inner_as().into());
             });
-        rects.uniforms().with_color([1.0, 0.0, 1.0, 0.5]).send_and_draw();
+        rects.send_and_uniforms(canvas).with_color([1.0, 0.0, 1.0, 0.5]).draw();
     })
 }

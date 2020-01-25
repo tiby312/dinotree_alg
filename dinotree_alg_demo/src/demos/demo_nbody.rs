@@ -282,9 +282,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         //Draw bots.
         let mut rects = canvas.rects();
         for bot in k.iter() {
-            rects.add(bot.rect.inner_into().as_arr());
+            rects.add(bot.rect.inner_into().into());
         }
-        rects.uniforms().with_color([0.9, 0.9, 0.3, 0.6]).send_and_draw();
+        rects.send_and_uniforms(canvas).with_color([0.9, 0.9, 0.3, 0.6]).draw();
 
         {
             let mut new_bots = Vec::new();

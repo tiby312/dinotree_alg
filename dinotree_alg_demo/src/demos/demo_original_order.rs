@@ -82,14 +82,14 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         let rects = canvas.rects();
         let mut dd = Bla { rects };
         tree.draw(&mut dd, &dim);
-        dd.rects.uniforms().with_color([0.0, 1.0, 1.0, 0.6]).send_and_draw();
+        dd.rects.send_and_uniforms(canvas).with_color([0.0, 1.0, 1.0, 0.6]).draw();
     
 
         //draw lines to the bots.
         
         let mut lines = canvas.lines(2.0);
         draw_bot_lines(tree.axis(), tree.vistr(), &dim, &mut lines);
-        lines.uniforms().with_color([1.0, 0.5, 1.0, 0.6]).send_and_draw();
+        lines.send_and_uniforms(canvas).with_color([1.0, 0.5, 1.0, 0.6]).draw();
     
 
         if !check_naive {
@@ -166,22 +166,22 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         let mut circles = canvas.circles();
         for bot in bots.iter() {
-            circles.add(bot.pos.as_arr()); //TODO we're not testing that the bots were draw in the right order
+            circles.add(bot.pos.into()); //TODO we're not testing that the bots were draw in the right order
         }
-        circles.uniforms(radius).with_color([1.0, 1.0, 0.0, 0.6]).send_and_draw();
+        circles.send_and_uniforms(canvas,radius).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
         let mut lines = canvas.lines(radius*0.5);
         for bot in bots.iter(){
-            lines.add(bot.pos.as_arr(),  (bot.pos+vec2(0.0,(bot.id % 100) as f32)*0.1).as_arr() );
+            lines.add(bot.pos.into(),  (bot.pos+vec2(0.0,(bot.id % 100) as f32)*0.1).into() );
         }
-        lines.uniforms().with_color([0.0,0.0,1.0,0.5]).send_and_draw();
+        lines.send_and_uniforms(canvas).with_color([0.0,0.0,1.0,0.5]).draw();
     })
 }
 
-struct Bla<'a> {
-    rects: egaku2d::shapes::RectSession<'a>,
+struct Bla {
+    rects: egaku2d::shapes::RectSession,
 }
-impl<'a> DividerDrawer for Bla<'a> {
+impl DividerDrawer for Bla {
     type N = F32n;
     fn draw_divider<A: axgeom::Axis>(
         &mut self,
@@ -221,7 +221,7 @@ impl<'a> DividerDrawer for Bla<'a> {
             Rect { x: length, y: cont }
         };
 
-        self.rects.add(rect.as_arr());
+        self.rects.add(rect.into());
 
         //rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
     }
@@ -276,7 +276,7 @@ fn draw_bot_lines<A: axgeom::Axis>(
         for b in nn.bots.iter() {
             let _bx = b.inner.pos.x;
             let _by = b.inner.pos.y;
-            lines.add(b.inner.pos.as_arr(), vec2(midx, midy).as_arr());
+            lines.add(b.inner.pos.into(), vec2(midx, midy).into());
             //counter += color_delta;
         }
     }

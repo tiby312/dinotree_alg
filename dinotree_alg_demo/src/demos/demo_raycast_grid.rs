@@ -18,17 +18,17 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let yy: f32 = viewport.origin.y + (y as f32) * viewport.spacing;
 
         let rect = axgeom::Rect::new(dim.x.start, dim.x.end, yy, yy + 1.0);
-        rects.add(rect.as_arr());
+        rects.add(rect.into());
     }
 
     for x in 0..100 {
         let xx: f32 = viewport.origin.x + (x as f32) * viewport.spacing;
 
         let rect = axgeom::Rect::new(xx, xx + 1.0, dim.y.start, dim.y.end);
-        rects.add(rect.as_arr());
+        rects.add(rect.into());
     }
 
-    let rects_save=rects.save();
+    let rects_save=rects.save(canvas);
 
     Demo::new(move |cursor, canvas, _check_naive| {
         
@@ -43,7 +43,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         };
 
         let rect = axgeom::Rect::from_point(ray.point, vec2same(radius));
-        canvas.rects().add(rect.as_arr()).uniforms().with_color([1.0, 0.0, 0.0, 0.5]).send_and_draw();
+        canvas.rects().add(rect.into()).send_and_uniforms(canvas).with_color([1.0, 0.0, 0.0, 0.5]).draw();
 
         let mut rects = canvas.rects();
         for (count, a) in RayCaster::new(&viewport, ray).enumerate().take(50) {
@@ -55,7 +55,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let _kk = (count as f32) * 0.8;
 
             let rect = axgeom::Rect::from_point(point, vec2same(radius));
-            rects.add(rect.as_arr());
+            rects.add(rect.into());
 
             let cell_rect = axgeom::Rect::new(
                 topstart.x,
@@ -63,7 +63,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 topstart.y,
                 topstart.y + viewport.spacing,
             );
-            rects.add(cell_rect.as_arr());
+            rects.add(cell_rect.into());
 
             use CardDir::*;
             let l = 3.0;
@@ -76,8 +76,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             };
 
             let rect = axgeom::Rect::new(arr[0], arr[1], arr[2], arr[3]);
-            rects.add(rect.as_arr());
+            rects.add(rect.into());
         }
-        rects.uniforms().with_color([1.0, 1.0, 0.5, 0.2]).send_and_draw();
+        rects.send_and_uniforms(canvas).with_color([1.0, 1.0, 0.5, 0.2]).draw();
     })
 }

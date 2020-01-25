@@ -8,12 +8,12 @@ use axgeom::Ray;
 mod ray_f32 {
     use super::*;
 
-    pub struct RayT<'a> {
-        pub rects: Option<RefCell<egaku2d::shapes::RectSession<'a>>>,
+    pub struct RayT {
+        pub rects: Option<RefCell<egaku2d::shapes::RectSession>>,
         pub height: usize,
     }
 
-    impl<'a> RayCast for RayT<'a> {
+    impl RayCast for RayT{
         type T = BBox<F32n, Bot2>;
         type N = F32n;
 
@@ -23,7 +23,7 @@ mod ray_f32 {
             bot: &Self::T,
         ) -> axgeom::CastResult<Self::N> {
             if let Some(r) = &self.rects {
-                r.borrow_mut().add(bot.get().inner_into().as_arr());
+                r.borrow_mut().add(bot.get().inner_into().into());
             }
             Self::compute_distance_to_rect(self, ray, bot.get())
         }
@@ -67,9 +67,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
     let mut rects = canvas.rects();
     for bot in tree.get_bots().iter() {
-        rects.add(bot.get().inner_into().as_arr());
+        rects.add(bot.get().inner_into().into());
     }
-    let rect_save=rects.save();
+    let rect_save=rects.save(canvas);
 
 
 
@@ -108,7 +108,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 height,
             };
             let test = tree.as_tree_mut().raycast_fine_mut(ray, &mut rr, dim);
-            rr.rects.unwrap().borrow_mut().uniforms().with_color([4.0, 0.0, 0.0, 0.4]).send_and_draw();
+            rr.rects.unwrap().borrow_mut().send_and_uniforms(canvas).with_color([4.0, 0.0, 0.0, 0.4]).draw();
             test
         };
 
@@ -122,10 +122,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let end = ray.point_at_tval(dis);
 
         canvas.lines(2.0)
-            .add(ray.point.as_arr(), end.as_arr())
-            .uniforms()
+            .add(ray.point.into(), end.into())
+            .send_and_uniforms(canvas)
             .with_color([1., 1., 1., 0.2])
-            .send_and_draw();
+            .draw();
 
         /*
         struct Bla<'a, 'b: 'a> {
