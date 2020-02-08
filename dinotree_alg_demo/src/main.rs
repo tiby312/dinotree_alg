@@ -41,7 +41,8 @@ mod demo_iter {
             let area: Rect<F32n> = area.inner_try_into().unwrap();
 
             let k: Demo = match curr {
-                0 => demo_raycast_f32::make_demo(area,canvas),
+                //0 => demo_raycast_f32::make_demo(area,canvas),
+                0 => demo_linear_push::make_demo(area),
                 1 => demo_raycast_f32_debug::make_demo(area,canvas),
                 2 => demo_liquid::make_demo(area),
                 3 => demo_multirect::make_demo(area,canvas),
