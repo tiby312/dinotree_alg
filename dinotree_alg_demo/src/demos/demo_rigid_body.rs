@@ -2,6 +2,20 @@ use crate::support::prelude::*;
 
 use duckduckgeo;
 
+/*
+    sequential impulse solver
+    http://myselph.de/gamePhysics/equalityConstraints.html
+ Constraint Solver
+
+    As mentioned during the overvie, modern physic engines seem to use mostly iterative solvers that work as follows (pseudocode): 
+
+for i = 1 to nIterations
+    for c in constraints
+        P = computeImpulses(c);
+        c.bodies.applyImpulses(P);
+
+*/
+
 #[derive(Copy, Clone)]
 pub struct Bot {
     pos: Vec2<f32>,
