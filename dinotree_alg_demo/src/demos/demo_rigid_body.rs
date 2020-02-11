@@ -20,66 +20,32 @@ for i = 1 to nIterations
 pub struct Bot {
     pos: Vec2<f32>,
     vel: Vec2<f32>, 
-    impulse: Vec2<f32>, 
-    impulse_avg: Vec2<f32>,
-    force: Vec2<f32>,
 }
-impl Bot{
-
-    pub fn handle_collision(&mut self, b: &mut Bot) {
-        let a = self;
-
-        let cc = 0.5;
-
-        let pos_diff = b.pos - a.pos;
-
-        let pos_diff_norm = pos_diff.normalize_to(1.0);
-
-        let vel_diff = b.vel - a.vel;
-
-        let im1 = 1.0;
-        let im2 = 1.0;
-
-        let vn = vel_diff.dot(pos_diff_norm);
-        if vn > 0.0 {
-            return;
-        }
-
-        let i = (-(1.0 + cc) * vn) / (im1 + im2);
-        let impulse = pos_diff_norm * i;
-
-        a.vel -= impulse * im1;
-        b.vel += impulse * im2;
-    }
-
-}
-
 
 pub fn make_demo(dim: Rect<F32n>) -> Demo {
-    let num_bot = 8000;
+    let num_bot = 400;
 
-    let radius = 2.0;
+    let radius = 10.0;
 
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(num_bot)
         .map(|pos| Bot {
             pos,
-            impulse:vec2same(0.0),
-            impulse_avg:vec2same(0.0),
-            vel: vec2same(0.0),
-            force: vec2same(0.0),
+            vel: vec2same(0.0)
         })
         .collect();
 
     Demo::new(move |cursor, canvas, _check_naive| {
 
-        let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
+        
+        let mut k:Vec<BBoxMut<NotNan<f32>,_>> = bbox_helper::create_bbox_mut(&mut bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
                 .unwrap()
         });
-        let mut tree = DinoTree::new_par(&mut k);
 
+        let mut tree = DinoTree::new_par(&mut k);
+    
         {
             let dim2 = dim.inner_into();
             tree.for_all_not_in_rect_mut(&dim, |mut a| {
@@ -95,74 +61,56 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             
             let offset=b.pos-cursor.inner_into();
             if offset.magnitude()<50.0*0.5{
-                let _ = duckduckgeo::repel_one(b.pos,&mut b.force, cc, 0.001, 20.0);
+                let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 20.0);
             }
         });
 
-        
-        let num_iterations=4;
-        let step= radius;
+        let mut collisions=Vec::new();
+        tree.find_collisions_mut(|mut a,mut b|{
+            collisions.push((a.inner_mut() as *mut Bot,b.inner_mut() as *mut Bot));
+        });
+        let num_iterations=10;
         for _ in 0..num_iterations{
-            let mut k:Vec<BBoxMut<NotNan<f32>,_>> = bbox_helper::create_bbox_mut(&mut bots, |b| {
-                Rect::from_point(b.pos, vec2same(radius))
-                    .inner_try_into()
-                    .unwrap()
-            });
-
-            let mut tree = DinoTree::new_par(&mut k);
-    
-            tree.find_collisions_mut_par(|mut a, mut b| {
-                let a=a.inner_mut();
-                let b=b.inner_mut();
-
+            for (a,b) in collisions.iter_mut(){
+                let a = unsafe{&mut **a};
+                let b = unsafe{&mut **b};
 
                 let offset=b.pos-a.pos;
 
-                let p=offset.normalize_to(1.0);
+                if offset.magnitude()<radius*2.0{
+                    let normal=offset.normalize_to(1.0);
 
-                let d=2.0*radius-offset.magnitude();
-                if d>0.0{
-                    let mag={
-                        if  d < step{
-                            a.handle_collision(b);
-                            d
-                        }else{
-                            step
-                        }
-                        
-                    };
-                    
-                    let k1=a.impulse-p*mag;
-                    let k2=b.impulse+p*mag;
-                    if !k1.x.is_nan() && !k2.x.is_nan() && !k1.y.is_nan() && !k2.y.is_nan(){
-                        a.impulse=k1;
-                        b.impulse=k2;
+                    let vel=b.vel-a.vel;
+
+                    let bias=0.003*num_iterations as f32;
+                    let vn=bias+vel.dot(normal)*(0.0005*num_iterations as f32);
+
+
+                    let drag=-vel.dot(normal)*0.01;
+
+
+                    let vn=vn.max(0.0);
+
+                    let avel=a.vel-normal*(vn+drag);
+                    let bvel=b.vel+normal*(vn+drag);
+                    if avel.x.is_nan() || avel.y.is_nan() || bvel.x.is_nan() || b.vel.y.is_nan(){
+
                     }else{
-                        a.impulse=vec2(1.0,0.0);
-                        b.impulse=vec2(-1.0,0.0);
+                        a.vel=avel;
+                        b.vel=bvel;
                     }
                 }
-            });  
-
-            for b in bots.iter_mut(){
-                b.impulse=b.impulse.truncate_at(step);
-                b.impulse_avg=b.impulse_avg*0.7+b.impulse*0.3;
-                b.pos+=b.impulse_avg;
-                b.impulse=vec2same(0.0);
-            }          
+            };  
         }
-    
 
         for b in bots.iter_mut() {
-            b.vel += b.force;
-            b.force=vec2same(0.0);
+            b.vel+=vec2(0.0,0.01);
             b.pos += b.vel;
         }
 
-
         let mut circles = canvas.circles();
         for bot in bots.iter() {
-            circles.add(bot.pos.into()); //TODO we're not testing that the bots were draw in the right order
+            circles.add(bot.pos.into());
         }
         circles.send_and_uniforms(canvas,radius*2.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
