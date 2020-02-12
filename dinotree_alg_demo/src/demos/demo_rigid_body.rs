@@ -77,17 +77,19 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
                 let offset=b.pos-a.pos;
 
-                if offset.magnitude()<radius*2.0{
+                let dis=offset.magnitude();
+                if dis<radius*2.0{
                     let normal=offset.normalize_to(1.0);
 
                     let vel=b.vel-a.vel;
 
-                    let bias=0.003*num_iterations as f32;
+                    let bias=0.001*(radius*2.0-dis)*num_iterations as f32;
+                    //let bias=0.0;
                     let vn=bias+vel.dot(normal)*(0.0005*num_iterations as f32);
 
 
                     let drag=-vel.dot(normal)*0.01;
-
+                    //let drag=0.0;
 
                     let vn=vn.max(0.0);
 
