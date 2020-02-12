@@ -23,9 +23,9 @@ pub struct Bot {
 }
 
 pub fn make_demo(dim: Rect<F32n>) -> Demo {
-    let num_bot = 400;
+    let num_bot = 4000;
 
-    let radius = 10.0;
+    let radius = 5.0;
 
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(num_bot)
@@ -65,47 +65,80 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             }
         });
 
-        let mut collisions=Vec::new();
-        tree.find_collisions_mut(|mut a,mut b|{
-            collisions.push((a.inner_mut() as *mut Bot,b.inner_mut() as *mut Bot));
-        });
-        let num_iterations=10;
-        for _ in 0..num_iterations{
-            for (a,b) in collisions.iter_mut(){
-                let a = unsafe{&mut **a};
-                let b = unsafe{&mut **b};
+        use std::sync::atomic::AtomicPtr;
 
+        struct Collision{
+            bots:[AtomicPtr<Bot>;2],
+            offset:Vec2<f32>,
+            offset_normal:Vec2<f32>,
+            distance:f32,
+            bias:f32,
+        }
+        impl Collision{
+            fn new(radius:f32,num_iterations:usize,a:&mut Bot,b:&mut Bot)->Option<Self>{
                 let offset=b.pos-a.pos;
-
-                let dis=offset.magnitude();
-                if dis<radius*2.0{
-                    let normal=offset.normalize_to(1.0);
-
-                    let vel=b.vel-a.vel;
-
-                    let bias=0.001*(radius*2.0-dis)*num_iterations as f32;
-                    //let bias=0.0;
-                    let vn=bias+vel.dot(normal)*(0.0005*num_iterations as f32);
-
-
-                    let drag=-vel.dot(normal)*0.01;
-                    //let drag=0.0;
-
-                    let vn=vn.max(0.0);
-
-                    let avel=a.vel-normal*(vn+drag);
-                    let bvel=b.vel+normal*(vn+drag);
-                    if avel.x.is_nan() || avel.y.is_nan() || bvel.x.is_nan() || b.vel.y.is_nan(){
-
-                    }else{
-                        a.vel=avel;
-                        b.vel=bvel;
-                    }
+                //TODO this can be optimized. computing distance twice
+                let offset_normal=offset.normalize_to(1.0);
+                let distance=offset.magnitude();
+                if distance<radius*2.0{
+                    let bias=0.001*(radius*2.0-distance)*num_iterations as f32;
+                    Some(Collision{
+                        bots:[AtomicPtr::new(a as *mut _),AtomicPtr::new(b as *mut _)],
+                        offset,
+                        offset_normal,
+                        distance,
+                        bias
+                    })
+                }else{
+                    None
                 }
+            }
+            fn get_mut(&mut self)->([&mut Bot;2],&Vec2<f32>,&Vec2<f32>,f32,f32){
+                let [a,b]=&mut self.bots;
+                
+                (
+                    [unsafe{&mut **a.get_mut()},unsafe{&mut **b.get_mut()}],
+                    &self.offset,
+                    &self.offset_normal,
+                    self.distance,
+                    self.bias
+                )
+
+            }
+
+        }
+
+
+        let num_iterations=10;
+        let mut collisions=tree.find_collisions_mut_par_ext(
+            |_|Vec::new(),
+            |a,mut b|a.append(&mut b),
+            |arr,mut a,mut b|{
+                if let Some(k)=Collision::new(radius,num_iterations,a.inner_mut(),b.inner_mut()){
+                    arr.push(k)   
+                }
+            },
+            Vec::new()
+        );
+                    
+        for _ in 0..num_iterations{
+            for collision in collisions.iter_mut(){
+                let ([a,b],_,&offset_normal,_,bias)=collision.get_mut();
+                    
+                let vel=b.vel-a.vel;
+                let vn=bias+vel.dot(offset_normal)*(0.0005*num_iterations as f32);
+                let drag=-vel.dot(offset_normal)*0.01;
+                let vn=vn.max(0.0);
+                let k=offset_normal*(vn+drag);
+                a.vel=a.vel-k;
+                b.vel=b.vel+k;
             };  
         }
 
         for b in bots.iter_mut() {
+            if b.vel.x.is_nan() || b.vel.y.is_nan(){
+                b.vel=vec2same(0.0);
+            }
             b.vel+=vec2(0.0,0.01);
             b.pos += b.vel;
         }

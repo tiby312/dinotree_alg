@@ -165,7 +165,7 @@ where
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
     #[inline(always)]
-    pub fn query_splitter_par<C: ColMulti<T = N::T> + Splitter + Send + Sync>(self, clos: C) {
+    pub fn query_splitter_par<C: ColMulti<T = N::T> + Splitter + Send + Sync>(self, clos: C) -> C {
         let axis = self.tree.axis();
         let height = self.tree.get_height();
         let vistr_mut = self.tree.vistr_mut();
@@ -175,6 +175,8 @@ where
         let dt = vistr_mut;
         let mut sweeper = HandleSorted::new(clos);
         ColFindRecurser::new().recurse_par(axis, par, &mut sweeper, dt, &mut SplitterEmpty);
+
+        sweeper.func
     }
 }
 

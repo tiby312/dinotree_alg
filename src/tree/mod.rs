@@ -238,6 +238,68 @@ where
         query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a, b));
     }
 
+    ///TODO document
+    pub fn find_collisions_mut_par_ext<B:Send+Sync>(
+        &mut self,
+        split: impl Fn(&mut B)->B + Send + Sync+Copy,
+        fold: impl Fn(&mut B,B) + Send + Sync+Copy,
+        collision:impl Fn(&mut B,PMut<N::T>,PMut<N::T>) + Send + Sync + Copy,
+        acc: B)->B{
+
+        struct Foo<
+            T,
+            A,
+            B,
+            C,
+            D>{
+            _p:PhantomData<T>,
+            acc:A,
+            split:B,
+            fold:C,
+            collision:D,
+        }
+
+        
+
+        impl<T:Aabb,A,B,C,D:Fn(&mut A,PMut<T>,PMut<T>)> ColMulti for Foo<T,A,B,C,D>{
+            type T=T;
+            fn collide(&mut self, a: PMut<Self::T>, b: PMut<Self::T>){
+                (self.collision)(&mut self.acc,a,b)
+            }
+        }
+        impl<T,A,B:Fn(&mut A)->A+Copy,C:Fn(&mut A,A)+Copy,D:Copy> Splitter for Foo<T,A,B,C,D>{
+            fn div(&mut self) -> Self{
+                let acc=(self.split)(&mut self.acc);
+                Foo{
+                    _p:PhantomData,
+                    acc,
+                    split:self.split,
+                    fold:self.fold,
+                    collision:self.collision
+                }
+            }
+
+            fn add(&mut self, b: Self){
+                (self.fold)(&mut self.acc,b.acc)
+            }
+
+            fn node_start(&mut self){}
+
+            fn node_end(&mut self){}
+        }
+
+        let foo=Foo{
+            _p:PhantomData,
+            acc,
+            split,
+            fold,
+            collision
+        };
+
+        let foo=query::colfind::QueryBuilder::new(self).query_splitter_par(foo);
+        foo.acc
+    }
+
     #[cfg(feature = "nbody")]
     pub fn nbody_mut_par<X: query::nbody::NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send>(
         &mut self,
