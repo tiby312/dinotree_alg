@@ -77,17 +77,23 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         let num_iterations=8;
         let num_iterations_inv=1.0/num_iterations as f32;
         
-        let mut collisions=tree.find_collisions_mut_par_ext(
-            |_|Vec::new(),
+        let mut collision_lists=tree.find_collisions_mut_par_ext(
+            |_|vec!(Vec::new()),
             |a,mut b|a.append(&mut b),
             |arr,mut a,mut b|{
                 if let Some(k)=Collision::new(radius,num_iterations_inv,a.inner_mut(),b.inner_mut()){
-                    arr.push(k)   
+                    arr[0].push(k)   
                 }
             },
-            Vec::new()
+            vec!(Vec::new())
         );
-        
+        /*
+        print!("collision_lists: ");
+        for a in collision_lists.iter(){
+            print!("{} ",a.len());
+        }
+        println!();
+        */
         //println!("collision size={}",collisions.len());
         /*
         let mut collisions=Vec::new();
@@ -103,15 +109,18 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                     
         let mag=0.03*num_iterations_inv - 0.01;
         for _ in 0..num_iterations{
-            for col in collisions.iter_mut(){
-                let [a,b]=col.bots.get_mut();
-                let vel=b.vel-a.vel;
-                let vn=col.bias+vel.dot(col.offset_normal)*mag;
-                //let vn=vn.max(0.0);
-                let k=col.offset_normal*vn;
-                a.vel-=k;
-                b.vel+=k;
-            };  
+            use rayon::prelude::*;
+            collision_lists.par_iter_mut().for_each(|cols|{
+                for col in cols.iter_mut(){
+                    let [a,b]=col.bots.get_mut();
+                    let vel=b.vel-a.vel;
+                    let vn=col.bias+vel.dot(col.offset_normal)*mag;
+                    //let vn=vn.max(0.0);
+                    let k=col.offset_normal*vn;
+                    a.vel-=k;
+                    b.vel+=k;
+                }
+            });  
         }
 
         let a4=now.elapsed().as_millis();
@@ -123,7 +132,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             if b.vel.x.is_nan() || b.vel.y.is_nan(){
                 b.vel=vec2same(0.0);
             }
-            //b.vel+=vec2(0.0,0.01);
+            b.vel+=vec2(0.0,0.01);
             b.pos+=b.vel;
             circles.add(b.pos.into());
         }
