@@ -22,10 +22,13 @@ pub struct Bot {
     vel: Vec2<f32>, 
 }
 
-pub fn make_demo(dim: Rect<F32n>) -> Demo {
-    let num_bot = 4000;
+use std::time::{Duration, Instant};
+use std::thread::sleep;
 
-    let radius = 5.0;
+pub fn make_demo(dim: Rect<F32n>) -> Demo {
+    let num_bot = 40000;
+
+    let radius = 2.0;
 
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(num_bot)
@@ -37,7 +40,8 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     Demo::new(move |cursor, canvas, _check_naive| {
 
-        
+        let now = Instant::now();
+
         let mut k:Vec<BBoxMut<NotNan<f32>,_>> = bbox_helper::create_bbox_mut(&mut bots, |b| {
             Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
@@ -46,6 +50,8 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         let mut tree = DinoTree::new_par(&mut k);
     
+        let a1=now.elapsed().as_millis();
+
         {
             let dim2 = dim.inner_into();
             tree.for_all_not_in_rect_mut(&dim, |mut a| {
@@ -65,54 +71,12 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             }
         });
 
-        use std::sync::atomic::AtomicPtr;
-
-        struct Collision{
-            bots:[AtomicPtr<Bot>;2],
-            offset:Vec2<f32>,
-            offset_normal:Vec2<f32>,
-            distance:f32,
-            bias:f32,
-        }
-        impl Collision{
-            fn new(radius:f32,num_iterations_inv:f32,a:&mut Bot,b:&mut Bot)->Option<Self>{
-                let offset=b.pos-a.pos;
-                //TODO this can be optimized. computing distance twice
-                let offset_normal=offset.normalize_to(1.0);
-                let distance=offset.magnitude();
-                
-                if distance>0.00001 && distance<radius*2.0{
-                    let bias=0.3*(radius*2.0-distance)*num_iterations_inv;
-                    Some(Collision{
-                        bots:[AtomicPtr::new(a as *mut _),AtomicPtr::new(b as *mut _)],
-                        offset,
-                        offset_normal,
-                        distance,
-                        bias
-                    })
-                }else{
-                    None
-                }
-            }
-
-            fn get_mut(&mut self)->([&mut Bot;2],&Vec2<f32>,&Vec2<f32>,f32,f32){
-                let [a,b]=&mut self.bots;
-                
-                (
-                    [unsafe{&mut **a.get_mut()},unsafe{&mut **b.get_mut()}],
-                    &self.offset,
-                    &self.offset_normal,
-                    self.distance,
-                    self.bias
-                )
-
-            }
-
-        }
+        let a2=now.elapsed().as_millis();
 
 
-        let num_iterations=10;
+        let num_iterations=8;
         let num_iterations_inv=1.0/num_iterations as f32;
+        
         let mut collisions=tree.find_collisions_mut_par_ext(
             |_|Vec::new(),
             |a,mut b|a.append(&mut b),
@@ -123,34 +87,90 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             },
             Vec::new()
         );
+        
+        //println!("collision size={}",collisions.len());
+        /*
+        let mut collisions=Vec::new();
+        tree.find_collisions_mut(|mut a,mut b|{
+            if let Some(k)=Collision::new(radius,num_iterations_inv,a.inner_mut(),b.inner_mut()){
+                collisions.push(k)   
+            }
+        });
+        */
+
+        let a3=now.elapsed().as_millis();
+
                     
+        let mag=0.03*num_iterations_inv - 0.01;
         for _ in 0..num_iterations{
-            for collision in collisions.iter_mut(){
-                let ([a,b],_,&offset_normal,_,bias)=collision.get_mut();
-                    
+            for col in collisions.iter_mut(){
+                let [a,b]=col.bots.get_mut();
                 let vel=b.vel-a.vel;
-                let vn=bias+vel.dot(offset_normal)*(0.03*num_iterations_inv);
-                let drag=-vel.dot(offset_normal)*0.01;
-                let vn=vn.max(0.0);
-                let k=offset_normal*(vn+drag);
-                a.vel=a.vel-k;
-                b.vel=b.vel+k;
+                let vn=col.bias+vel.dot(col.offset_normal)*mag;
+                //let vn=vn.max(0.0);
+                let k=col.offset_normal*vn;
+                a.vel-=k;
+                b.vel+=k;
             };  
         }
 
+        let a4=now.elapsed().as_millis();
+
+
+        let mut circles = canvas.circles();
+        
         for b in bots.iter_mut() {
             if b.vel.x.is_nan() || b.vel.y.is_nan(){
                 b.vel=vec2same(0.0);
             }
-            b.vel+=vec2(0.0,0.01);
-            b.pos += b.vel;
+            //b.vel+=vec2(0.0,0.01);
+            b.pos+=b.vel;
+            circles.add(b.pos.into());
         }
 
-        let mut circles = canvas.circles();
-        for bot in bots.iter() {
-            circles.add(bot.pos.into());
-        }
         circles.send_and_uniforms(canvas,radius*2.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
+        let a5=now.elapsed().as_millis();
+
+        println!("yo= {} {} {} {} {}",a1,a2-a1,a3-a2,a4-a3,a5-a4);
     })
 }
+
+
+
+
+use std::sync::atomic::AtomicPtr;
+
+struct Cpair(pub [AtomicPtr<Bot>;2]);
+impl Cpair{
+    fn get_mut(&mut self)->[&mut Bot;2]{
+        let [a,b]=&mut self.0;
+        [unsafe{&mut **a.get_mut()},unsafe{&mut **b.get_mut()}]
+    }
+}
+
+struct Collision{
+    bots:Cpair,
+    offset_normal:Vec2<f32>,
+    bias:f32,
+}
+impl Collision{
+    fn new(radius:f32,num_iterations_inv:f32,a:&mut Bot,b:&mut Bot)->Option<Self>{
+        let offset=b.pos-a.pos;
+        //TODO this can be optimized. computing distance twice
+        let offset_normal=offset.normalize_to(1.0);
+        let distance=offset.magnitude();
+        
+        if distance>0.00001 && distance<radius*2.0{
+            let bias=0.3*(radius*2.0-distance)*num_iterations_inv;
+            Some(Collision{
+                bots:Cpair([AtomicPtr::new(a as *mut _),AtomicPtr::new(b as *mut _)]),
+                offset_normal,
+                bias
+            })
+        }else{
+            None
+        }
+    }
+}
+
