@@ -50,18 +50,18 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let dim2 = dim.inner_into();
             tree.for_all_not_in_rect_mut(&dim, |mut a| {
                 let a=a.inner_mut();
-                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.5);
+                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.2);
             });
         }
 
-        let vv = vec2same(50.0).inner_try_into().unwrap();
+        let vv = vec2same(200.0).inner_try_into().unwrap();
         let cc = cursor.inner_into();
         tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
             let b=b.inner_mut();
             
             let offset=b.pos-cursor.inner_into();
-            if offset.magnitude()<50.0*0.5{
-                let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 20.0);
+            if offset.magnitude()<200.0*0.5{
+                let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 4.0);
             }
         });
 
@@ -75,13 +75,14 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             bias:f32,
         }
         impl Collision{
-            fn new(radius:f32,num_iterations:usize,a:&mut Bot,b:&mut Bot)->Option<Self>{
+            fn new(radius:f32,num_iterations_inv:f32,a:&mut Bot,b:&mut Bot)->Option<Self>{
                 let offset=b.pos-a.pos;
                 //TODO this can be optimized. computing distance twice
                 let offset_normal=offset.normalize_to(1.0);
                 let distance=offset.magnitude();
-                if distance<radius*2.0{
-                    let bias=0.001*(radius*2.0-distance)*num_iterations as f32;
+                
+                if distance>0.00001 && distance<radius*2.0{
+                    let bias=0.3*(radius*2.0-distance)*num_iterations_inv;
                     Some(Collision{
                         bots:[AtomicPtr::new(a as *mut _),AtomicPtr::new(b as *mut _)],
                         offset,
@@ -93,6 +94,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                     None
                 }
             }
+
             fn get_mut(&mut self)->([&mut Bot;2],&Vec2<f32>,&Vec2<f32>,f32,f32){
                 let [a,b]=&mut self.bots;
                 
@@ -110,11 +112,12 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
 
         let num_iterations=10;
+        let num_iterations_inv=1.0/num_iterations as f32;
         let mut collisions=tree.find_collisions_mut_par_ext(
             |_|Vec::new(),
             |a,mut b|a.append(&mut b),
             |arr,mut a,mut b|{
-                if let Some(k)=Collision::new(radius,num_iterations,a.inner_mut(),b.inner_mut()){
+                if let Some(k)=Collision::new(radius,num_iterations_inv,a.inner_mut(),b.inner_mut()){
                     arr.push(k)   
                 }
             },
@@ -126,7 +129,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                 let ([a,b],_,&offset_normal,_,bias)=collision.get_mut();
                     
                 let vel=b.vel-a.vel;
-                let vn=bias+vel.dot(offset_normal)*(0.0005*num_iterations as f32);
+                let vn=bias+vel.dot(offset_normal)*(0.03*num_iterations_inv);
                 let drag=-vel.dot(offset_normal)*0.01;
                 let vn=vn.max(0.0);
                 let k=offset_normal*(vn+drag);
