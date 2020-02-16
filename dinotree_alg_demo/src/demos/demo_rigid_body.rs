@@ -156,7 +156,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
     
 
-        
+
 
         let mut circles = canvas.circles();
         for b in bots.iter(){
@@ -165,6 +165,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         circles.send_and_uniforms(canvas,radius*2.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
+        let dim:Rect<f32>=dim.inner_into();
+        let start=[dim.x.distance()/2.0,dim.y.distance()/2.0];
+        let end=[start[0]+counter.cos()*200.0,start[1]+counter.sin()*200.0];
+        canvas.arrows(20.0).add(start,end).send_and_uniforms(canvas).with_color([0.5,0.3,1.0,0.8]).draw();
         
 
         
