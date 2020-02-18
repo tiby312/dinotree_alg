@@ -149,6 +149,14 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                     b.vel=vec2same(0.0);
                 }
 
+                let drag_force=b.vel.magnitude2()*0.005;
+                let ff=b.vel.normalize_to(1.0)*drag_force;
+                let a=b.vel-ff;
+                if !a.x.is_nan() && !a.y.is_nan(){
+                    b.vel=a;
+                }
+
+
                 b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
                 b.pos+=b.vel;
                 
