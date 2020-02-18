@@ -76,85 +76,85 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let mut counter: f32=0.0;
 
     Demo::new(move |cursor, canvas, _check_naive| {
-
-        let now = Instant::now();
-        let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
-            Rect::from_point(b.pos, vec2same(radius))
-                .inner_try_into()
-                .unwrap()
-        });
-
-        let mut tree = DinoTree::new_par(&mut k);
-    
-        let a1=now.elapsed().as_millis();
-
-        {
-            let dim2 = dim.inner_into();
-            tree.for_all_not_in_rect_mut(&dim, |mut a| {
-                let a=a.inner_mut();
-                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.2);
+        for _ in 0..4{
+            let now = Instant::now();
+            let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
+                Rect::from_point(b.pos, vec2same(radius))
+                    .inner_try_into()
+                    .unwrap()
             });
-        }
 
-        let vv = vec2same(200.0).inner_try_into().unwrap();
-        let cc = cursor.inner_into();
-        tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
-            let b=b.inner_mut();
-            
-            let offset=b.pos-cursor.inner_into();
-            if offset.magnitude()<200.0*0.5{
-                let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 2.0);
-            }
-        });
-
-        let a2=now.elapsed().as_millis();
-
-
-        let num_iterations=8;
-        let num_iterations_inv=1.0/num_iterations as f32;
+            let mut tree = DinoTree::new_par(&mut k);
         
-        let mut collision_list=tree.find_collisions_mut_par_ext(
-            |_|{Vec::new()},
-            |a,mut b| a.append(&mut b),
-            |arr,mut a,mut b|{
-                if let Some(k)=Collision::new(radius,num_iterations_inv,a.inner_mut(),b.inner_mut()){
-                    arr.push(k)   
+            let a1=now.elapsed().as_millis();
+
+            {
+                let dim2 = dim.inner_into();
+                tree.for_all_not_in_rect_mut(&dim, |mut a| {
+                    let a=a.inner_mut();
+                    duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.2);
+                });
+            }
+
+            let vv = vec2same(200.0).inner_try_into().unwrap();
+            let cc = cursor.inner_into();
+            tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
+                let b=b.inner_mut();
+                
+                let offset=b.pos-cursor.inner_into();
+                if offset.magnitude()<200.0*0.5{
+                    let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 2.0);
                 }
-            },
-            Vec::new()
-        );
-        
-        let a3=now.elapsed().as_millis();
+            });
 
-                    
-        let mag=0.03*num_iterations_inv - 0.01;
-        for _ in 0..num_iterations{
-            for col in collision_list.iter_mut(){
-                let [a,b]=col.bots.get_mut();
-                let vel=b.vel-a.vel;
-                let vn=col.bias+vel.dot(col.offset_normal)*mag;
-                //let vn=vn.max(0.0);
-                let k=col.offset_normal*vn;
-                a.vel-=k;
-                b.vel+=k;
-            }  
-        }
-
-        let a4=now.elapsed().as_millis();
+            let a2=now.elapsed().as_millis();
 
 
-        counter+=0.001;
-        for b in bots.iter_mut() {
-            if b.vel.x.is_nan() || b.vel.y.is_nan(){
-                b.vel=vec2same(0.0);
+            let num_iterations=8;
+            let num_iterations_inv=1.0/num_iterations as f32;
+            
+            let mut collision_list=tree.find_collisions_mut_par_ext(
+                |_|{Vec::new()},
+                |a,mut b| a.append(&mut b),
+                |arr,mut a,mut b|{
+                    if let Some(k)=Collision::new(radius,num_iterations_inv,a.inner_mut(),b.inner_mut()){
+                        arr.push(k)   
+                    }
+                },
+                Vec::new()
+            );
+            
+            let a3=now.elapsed().as_millis();
+
+                        
+            let mag=0.03*num_iterations_inv - 0.01;
+            for _ in 0..num_iterations{
+                for col in collision_list.iter_mut(){
+                    let [a,b]=col.bots.get_mut();
+                    let vel=b.vel-a.vel;
+                    let vn=col.bias+vel.dot(col.offset_normal)*mag;
+                    //let vn=vn.max(0.0);
+                    let k=col.offset_normal*vn;
+                    a.vel-=k;
+                    b.vel+=k;
+                }  
             }
 
-            b.vel+=vec2(0.02*counter.cos(),0.02*counter.sin());
-            b.pos+=b.vel;
-            
+            let a4=now.elapsed().as_millis();
+
+
+            counter+=0.001;
+            for b in bots.iter_mut() {
+                if b.vel.x.is_nan() || b.vel.y.is_nan(){
+                    b.vel=vec2same(0.0);
+                }
+
+                b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
+                b.pos+=b.vel;
+                
+            }
+            println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
         }
-        println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
-    
 
 
 
