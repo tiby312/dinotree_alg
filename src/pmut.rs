@@ -35,21 +35,26 @@ pub struct PMut<'a, T: ?Sized> {
     pub(crate) inner: &'a mut T, //TODO make this private
 }
 impl<'a, T: ?Sized> PMut<'a, T> {
+    #[inline(always)]
     pub fn new(inner: &'a mut T) -> PMut<'a, T> {
         PMut { inner }
     }
+    #[inline(always)]
     pub fn as_mut(&mut self) -> PMut<T> {
         PMut { inner: self.inner }
     }
 
+    #[inline(always)]
     pub fn as_ref(&self) -> &T {
         self.inner
     }
 }
 impl<'a, T: Node> PMut<'a, T> {
+    #[inline(always)]
     pub fn get(self) -> NodeRef<'a, T::T> {
         self.inner.get()
     }
+    #[inline(always)]
     pub fn get_mut(self) -> NodeRefMut<'a, T::T> {
         self.inner.get_mut()
     }

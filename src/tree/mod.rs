@@ -246,10 +246,10 @@ where
     ///Sometimes you want want to iterate over all the collisions multiple times.
     ///this function lets you do this safely. it is implemented on top of
     ///find__collisions_mut_par_ext
-    pub fn create_collision_list<'a,F,K:Send+Sync>(
-            &'a mut self,collision:F)->CollisionList<'a,N::T,K>
-    where F:Fn(PMut<N::T>,PMut<N::T>)->Option<K> + Send +Sync
-        {
+    pub fn create_collision_list<'a,K:Send+Sync>(
+            &'a mut self,collision:impl Fn(PMut<N::T>,PMut<N::T>)->Option<K> + Send +Sync
+    )->CollisionList<'a,N::T,K>
+    {
             let collision_list=self.find_collisions_mut_par_ext(
             |_|{Vec::new()},
             |a,mut b| a.append(&mut b),
