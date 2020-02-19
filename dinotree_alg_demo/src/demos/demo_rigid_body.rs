@@ -81,8 +81,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             
 
 
-            let mut collision_list = rigid::create_collision_list(&mut tree,|a,b|{
-
+            let mut collision_list =  tree.create_collision_list(|mut a,mut b|{
+                let a=a.inner_mut();
+                let b=b.inner_mut();
                 let offset=b.pos-a.pos;
                 //TODO this can be optimized. computing distance twice
                 let offset_normal=offset.normalize_to(1.0);
@@ -96,13 +97,13 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                 }
             });
 
-            
             let a3=now.elapsed().as_millis();
-
                         
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
-                collision_list.for_every_collision(|a,b,(offset_normal,bias)|{
+                collision_list.for_every_collision(|mut a,mut b,(offset_normal,bias)|{
+                    let a=a.inner_mut();
+                    let b=b.inner_mut();
                     let vel=b.vel-a.vel;
                     let vn=*bias+vel.dot(*offset_normal)*mag;
                     //let vn=vn.max(0.0);
@@ -156,67 +157,3 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 }
 
 
-
-pub mod rigid{
-    use super::*;
-
-    unsafe impl<T> Send for Cpair<T>{}
-    unsafe impl<T> Sync for Cpair<T>{}
-
-    #[derive(Debug)]
-    struct Cpair<T>([*mut T;2]);
-    impl<T> Cpair<T>{
-        fn get_mut(&mut self)->[&mut T;2]{
-            let [a,b]=&mut self.0;
-            unsafe{[&mut **a,&mut **b]}
-        }
-        fn new(a:&mut T,b:&mut T)->Cpair<T>{
-            Cpair([a as *mut _,b as *mut _])
-        }
-    }
-
-
-    pub struct CollisionList<'a,T,K>{
-        _p:core::marker::PhantomData<&'a mut T>,
-        vec:Vec<(Cpair<T>,K)>
-    }
-
-    impl<'a,T,K> CollisionList<'a,T,K>{
-        pub fn for_every_collision(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut K)){
-            for a in self.vec.iter_mut(){
-                let (a,b)=a;
-                let [c,d]=a.get_mut();
-                (func)(c,d,b);
-            }
-        }
-    }
-
-
-    pub fn create_collision_list<
-        'a,
-        A:Axis,
-        T:Aabb+Send+Sync+HasInner,
-        F,K:Send+Sync>(
-            tree:&'a mut DinoTree<A,NodeMut<T>>,collision:F)->CollisionList<'a,T::Inner,K>
-    where T::Inner:Send+Sync,
-    F:Fn(&mut T::Inner,&mut T::Inner)->Option<K> + Send +Sync
-
-    {
-
-        let collision_list=tree.find_collisions_mut_par_ext(
-            |_|{Vec::new()},
-            |a,mut b| a.append(&mut b),
-            |arr,mut a,mut b|{
-                let a=a.inner_mut();
-                let b=b.inner_mut();
-                if let Some(k)=collision(a,b){
-                    arr.push((Cpair::new(a,b),k))
-                }
-            },
-            Vec::new()
-        );
-
-        CollisionList{_p:core::marker::PhantomData,vec:collision_list}
-    }
-
-}

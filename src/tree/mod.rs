@@ -74,6 +74,9 @@ pub mod dinotree_owned;
 
 pub mod analyze;
 
+pub use rigid::CollisionList;
+mod rigid;
+
 pub(crate) use self::notsorted::NotSorted;
 mod notsorted {
     use super::*;
@@ -237,6 +240,30 @@ where
     pub fn find_collisions_mut_par(&mut self, func: impl Fn(PMut<N::T>, PMut<N::T>) + Send + Sync) {
         query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a, b));
     }
+
+
+    //TODO documennt
+    ///Sometimes you want want to iterate over all the collisions multiple times.
+    ///this function lets you do this safely. it is implemented on top of
+    ///find__collisions_mut_par_ext
+    pub fn create_collision_list<'a,F,K:Send+Sync>(
+            &'a mut self,collision:F)->CollisionList<'a,N::T,K>
+    where F:Fn(PMut<N::T>,PMut<N::T>)->Option<K> + Send +Sync
+        {
+            let collision_list=self.find_collisions_mut_par_ext(
+            |_|{Vec::new()},
+            |a,mut b| a.append(&mut b),
+            |arr,mut a,mut b|{
+                if let Some(k)=collision(a.as_mut(),b.as_mut()){
+                    arr.push((rigid::Cpair::new(a.inner,b.inner),k))
+                }
+            },
+            Vec::new()
+        );
+
+        CollisionList{_p:core::marker::PhantomData,vec:collision_list}
+    }
+
 
     ///TODO document
     pub fn find_collisions_mut_par_ext<B:Send+Sync>(

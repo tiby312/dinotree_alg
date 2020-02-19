@@ -32,7 +32,7 @@ use crate::inner_prelude::*;
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.
 pub struct PMut<'a, T: ?Sized> {
-    inner: &'a mut T,
+    pub(crate) inner: &'a mut T, //TODO make this private
 }
 impl<'a, T: ?Sized> PMut<'a, T> {
     pub fn new(inner: &'a mut T) -> PMut<'a, T> {
