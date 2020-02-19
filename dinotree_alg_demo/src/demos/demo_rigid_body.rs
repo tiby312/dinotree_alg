@@ -101,13 +101,13 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                         
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
-                collision_list.for_every_collision(|mut a,mut b,(offset_normal,bias)|{
+                collision_list.for_every_collision(|mut a,mut b,&mut (offset_normal,bias)|{
                     let a=a.inner_mut();
                     let b=b.inner_mut();
                     let vel=b.vel-a.vel;
-                    let vn=*bias+vel.dot(*offset_normal)*mag;
+                    let vn=bias+vel.dot(offset_normal)*mag;
                     //let vn=vn.max(0.0);
-                    let k=*offset_normal*vn;
+                    let k=offset_normal*vn;
                     a.vel-=k;
                     b.vel+=k;
                 });     
