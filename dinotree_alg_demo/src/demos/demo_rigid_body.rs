@@ -16,40 +16,6 @@ for i = 1 to nIterations
 
 */
 
-/*
-use std::sync::atomic::{AtomicBool, Ordering};
-
-pub struct AtomicBot{
-    lock:AtomicBool,//false is not locked. true if locked
-    bot:Bot
-}    
-struct BotLock<'a>{
-    inner:&'a mut AtomicBot
-}
-impl BotLock<'_>{
-    fn get_mut(&mut self)->&mut Bot{
-        &mut self.inner.bot
-    }
-}
-impl Drop for BotLock<'_>{
-    fn drop(&mut self){
-        self.inner.lock.store(false,Ordering::Release);
-    }
-}
-impl AtomicBot{
-    fn lock(&self)->BotLock{
-        let mut counter=0;
-        while !self.lock.swap(true,Ordering::Acquire){
-            counter+=1;
-        }
-        if counter>1{
-            println!("counter stop at={}",counter);
-        }
-        let inner:&mut AtomicBot=unsafe{&mut *(self as *const _ as *mut _)};
-        BotLock{inner}
-    }
-}
-*/
 
 #[derive(Copy, Clone)]
 pub struct Bot {
@@ -113,31 +79,37 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let num_iterations=8;
             let num_iterations_inv=1.0/num_iterations as f32;
             
-            let mut collision_list=tree.find_collisions_mut_par_ext(
-                |_|{Vec::new()},
-                |a,mut b| a.append(&mut b),
-                |arr,mut a,mut b|{
-                    if let Some(k)=Collision::new(radius,num_iterations_inv,a.inner_mut(),b.inner_mut()){
-                        arr.push(k)   
-                    }
-                },
-                Vec::new()
-            );
+
+
+            let mut collision_list = rigid::create_collision_list(&mut tree,|a,b|{
+
+                let offset=b.pos-a.pos;
+                //TODO this can be optimized. computing distance twice
+                let offset_normal=offset.normalize_to(1.0);
+                let distance=offset.magnitude();
+
+                if distance>0.00001 && distance<radius*2.0{
+                    let bias=0.5*(radius*2.0-distance)*num_iterations_inv;
+                    Some((offset_normal,bias))
+                }else{
+                    None
+                }
+            });
+
             
             let a3=now.elapsed().as_millis();
 
                         
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
-                for col in collision_list.iter_mut(){
-                    let [a,b]=col.bots.get_mut();
+                collision_list.for_every_collision(|a,b,(offset_normal,bias)|{
                     let vel=b.vel-a.vel;
-                    let vn=col.bias+vel.dot(col.offset_normal)*mag;
+                    let vn=*bias+vel.dot(*offset_normal)*mag;
                     //let vn=vn.max(0.0);
-                    let k=col.offset_normal*vn;
+                    let k=*offset_normal*vn;
                     a.vel-=k;
                     b.vel+=k;
-                }  
+                });     
             }
 
             let a4=now.elapsed().as_millis();
@@ -185,45 +157,66 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
 
 
-unsafe impl Send for Cpair{}
-unsafe impl Sync for Cpair{}
+pub mod rigid{
+    use super::*;
 
-#[derive(Debug)]
-struct Cpair(pub [*mut Bot;2]);
-impl Cpair{
-    fn get_mut(&mut self)->[&mut Bot;2]{
-        let [a,b]=&mut self.0;
-        [unsafe{&mut **a},unsafe{&mut **b}]
-    }
-}
+    unsafe impl<T> Send for Cpair<T>{}
+    unsafe impl<T> Sync for Cpair<T>{}
 
-struct Collision{
-    bots:Cpair,
-    offset_normal:Vec2<f32>,
-    bias:f32,
-}
-
-
-impl Collision{
-    
-    fn new(radius:f32,num_iterations_inv:f32,a:&mut Bot,b:&mut Bot)->Option<Self>{
-        
-        
-        let offset=b.pos-a.pos;
-        //TODO this can be optimized. computing distance twice
-        let offset_normal=offset.normalize_to(1.0);
-        let distance=offset.magnitude();
-
-        if distance>0.00001 && distance<radius*2.0{
-            let bias=0.5*(radius*2.0-distance)*num_iterations_inv;
-            Some(Collision{
-                bots:Cpair([a as *mut _,b as *mut _]),
-                offset_normal,
-                bias
-            })
-        }else{
-            None
+    #[derive(Debug)]
+    struct Cpair<T>([*mut T;2]);
+    impl<T> Cpair<T>{
+        fn get_mut(&mut self)->[&mut T;2]{
+            let [a,b]=&mut self.0;
+            unsafe{[&mut **a,&mut **b]}
+        }
+        fn new(a:&mut T,b:&mut T)->Cpair<T>{
+            Cpair([a as *mut _,b as *mut _])
         }
     }
-}
 
+
+    pub struct CollisionList<'a,T,K>{
+        _p:core::marker::PhantomData<&'a mut T>,
+        vec:Vec<(Cpair<T>,K)>
+    }
+
+    impl<'a,T,K> CollisionList<'a,T,K>{
+        pub fn for_every_collision(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut K)){
+            for a in self.vec.iter_mut(){
+                let (a,b)=a;
+                let [c,d]=a.get_mut();
+                (func)(c,d,b);
+            }
+        }
+    }
+
+
+    pub fn create_collision_list<
+        'a,
+        A:Axis,
+        T:Aabb+Send+Sync+HasInner,
+        F,K:Send+Sync>(
+            tree:&'a mut DinoTree<A,NodeMut<T>>,collision:F)->CollisionList<'a,T::Inner,K>
+    where T::Inner:Send+Sync,
+    F:Fn(&mut T::Inner,&mut T::Inner)->Option<K> + Send +Sync
+
+    {
+
+        let collision_list=tree.find_collisions_mut_par_ext(
+            |_|{Vec::new()},
+            |a,mut b| a.append(&mut b),
+            |arr,mut a,mut b|{
+                let a=a.inner_mut();
+                let b=b.inner_mut();
+                if let Some(k)=collision(a,b){
+                    arr.push((Cpair::new(a,b),k))
+                }
+            },
+            Vec::new()
+        );
+
+        CollisionList{_p:core::marker::PhantomData,vec:collision_list}
+    }
+
+}
