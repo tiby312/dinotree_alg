@@ -219,9 +219,10 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<A, NodeMut<'a, T>> {
     }
 }
 
+
 impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
 where
-    N::T: Send + Sync,
+    N::T: HasInner + Send + Sync,
 {
     /// # Examples
     ///
@@ -237,25 +238,24 @@ where
     ///assert_eq!(bots[0].inner,1);
     ///assert_eq!(bots[1].inner,1);
     ///```
-    pub fn find_collisions_mut_par(&mut self, func: impl Fn(PMut<N::T>, PMut<N::T>) + Send + Sync) {
-        query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a, b));
+    pub fn find_collisions_mut_par(&mut self, func: impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync) {
+        query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a.into_inner(), b.into_inner()));
     }
-
 
     //TODO documennt
     ///Sometimes you want want to iterate over all the collisions multiple times.
     ///this function lets you do this safely. it is implemented on top of
     ///find__collisions_mut_par_ext
     pub fn create_collision_list<'a,K:Send+Sync>(
-            &'a mut self,collision:impl Fn(PMut<N::T>,PMut<N::T>)->Option<K> + Send +Sync
-    )->CollisionList<'a,N::T,K>
+            &'a mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
+    )->CollisionList<'a,<N::T as HasInner>::Inner,K>
     {
             let collision_list=self.find_collisions_mut_par_ext(
             |_|{Vec::new()},
             |a,mut b| a.append(&mut b),
             |arr,mut a,mut b|{
-                if let Some(k)=collision(a.as_mut(),b.as_mut()){
-                    arr.push((rigid::Cpair::new(a.inner,b.inner),k))
+                if let Some(k)=collision(a,b){
+                    arr.push((rigid::Cpair::new(a,b),k))
                 }
             },
             Vec::new()
@@ -270,7 +270,7 @@ where
         &mut self,
         split: impl Fn(&mut B)->B + Send + Sync+Copy,
         fold: impl Fn(&mut B,B) + Send + Sync+Copy,
-        collision:impl Fn(&mut B,PMut<N::T>,PMut<N::T>) + Send + Sync + Copy,
+        collision:impl Fn(&mut B,&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync + Copy,
         acc: B)->B{
 
         struct Foo<
@@ -288,10 +288,10 @@ where
 
         
 
-        impl<T:Aabb,A,B,C,D:Fn(&mut A,PMut<T>,PMut<T>)> ColMulti for Foo<T,A,B,C,D>{
+        impl<T:Aabb+HasInner,A,B,C,D:Fn(&mut A,&mut T::Inner,&mut T::Inner)> ColMulti for Foo<T,A,B,C,D>{
             type T=T;
             fn collide(&mut self, a: PMut<Self::T>, b: PMut<Self::T>){
-                (self.collision)(&mut self.acc,a,b)
+                (self.collision)(&mut self.acc,a.into_inner(),b.into_inner())
             }
         }
         impl<T,A,B:Fn(&mut A)->A+Copy,C:Fn(&mut A,A)+Copy,D:Copy> Splitter for Foo<T,A,B,C,D>{
@@ -327,6 +327,16 @@ where
         foo.acc
     }
 
+
+}
+
+
+impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
+where
+    N::T: Send + Sync,
+{
+   
+
     #[cfg(feature = "nbody")]
     pub fn nbody_mut_par<X: query::nbody::NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send>(
         &mut self,
@@ -335,6 +345,7 @@ where
     ) where
         X::No: Send,
         N::T: Send + Copy,
+        N::T:HasInner
     {
         query::nbody::nbody_par(self, ncontext, rect)
     }
@@ -348,12 +359,98 @@ where
     ) where
         X::No: Send,
         N::T: Send + Sync,
+        N::T:HasInner
     {
         query::nbody::nbody(self, ncontext, rect)
     }
 }
 
-impl<A: Axis, N: Node> DinoTree<A, N> {
+
+
+impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///use axgeom::*;
+    ///
+    ///struct Foo;
+    ///impl RayCast for Foo{
+    ///    type T=BBox<i32,Vec2<i32>>;
+    ///    type N=i32;
+    ///    fn compute_distance_to_rect(&self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
+    ///        ray.cast_to_rect(a)
+    ///    }
+    ///
+    ///    fn compute_distance_to_bot(&self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
+    ///         //Do more fine-grained collision checking.
+    ///         //Here we know the two aabbs intersect, but do an additional check
+    ///         //to see if they intersect as circles.
+    ///         ray.inner_as::<f32>().cast_to_circle(a.inner.inner_as(),5.).map(|a|a as i32)
+    ///    }
+    ///}
+    ///
+    ///let border = rect(0,100,0,100);
+    ///
+    ///let mut bots = [bbox(rect(0,10,0,10),vec2(5,5)),
+    ///                bbox(rect(2,5,2,5),vec2(4,4)),
+    ///                bbox(rect(4,10,4,10),vec2(5,5))];
+    ///
+    ///
+    ///let mut bots_copy=bots.clone();
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let ray=ray(vec2(5,-5),vec2(0,1));
+    ///let res = tree.raycast_fine_mut(ray,&mut Foo,border);
+    ///
+    ///let (bots,dis)=res.unwrap();
+    ///assert_eq!(dis,4);
+    ///assert_eq!(bots.len(),1);
+    ///assert_eq!(bots[0].get(),&rect(2,5,2,5));
+    ///```
+    pub fn raycast_fine_mut(
+        &mut self,
+        ray: axgeom::Ray<N::Num>,
+        rtrait: &mut impl raycast::RayCast<N = N::Num, T = N::T>,
+        border: Rect<N::Num>,
+    ) -> raycast::RayCastResult<<N::T as HasInner>::Inner,N::Num> {
+        raycast::raycast_mut(self, border, ray, rtrait)
+    }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///use axgeom::*;
+    ///let border = rect(0,100,0,100);
+    ///
+    ///let mut bots = [rect(0,10,0,10),
+    ///                rect(2,5,2,5),
+    ///                rect(4,10,4,10)];
+    ///
+    ///let mut bots_copy=bots.clone();
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let ray=ray(vec2(5,-5),vec2(0,1));
+    ///let res = tree.raycast_mut(ray,|ray,r|ray.cast_to_rect(r),border);
+    ///
+    ///let (bots,dis)=res.unwrap();
+    ///assert_eq!(dis,5);
+    ///assert_eq!(bots.len(),1);
+    ///assert_eq!(bots[0].get(),&rect(0,10,0,10));
+    ///```
+    pub fn raycast_mut(
+        &mut self,
+        ray: axgeom::Ray<N::Num>,
+        rtrait: impl Fn(&Ray<N::Num>, &Rect<N::Num>) -> axgeom::CastResult<N::Num>,
+        border: Rect<N::Num>,
+    ) -> raycast::RayCastResult<<N::T as HasInner>::Inner,N::Num> {
+        let mut rtrait = raycast::RayCastFineWrapper {
+            inner: rtrait,
+            _p: PhantomData,
+        };
+
+        raycast::raycast_mut(self, border, ray, &mut rtrait)
+    }
     /// # Examples
     ///
     ///```
@@ -380,7 +477,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
         num: usize,
         distance: impl Fn(Vec2<N::Num>, &Rect<N::Num>) -> N::Num,
         border: Rect<N::Num>,
-    ) -> Vec<k_nearest::KnearestResult<N::T>> {
+    ) -> Vec<k_nearest::KnearestResult<<N::T as HasInner>::Inner,N::Num>> {
         let mut knear = k_nearest::KnearestWrapper {
             inner: distance,
             _p: PhantomData,
@@ -429,7 +526,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
         num: usize,
         knear: &mut impl k_nearest::Knearest<N = N::Num, T = N::T>,
         border: Rect<N::Num>,
-    ) -> Vec<k_nearest::KnearestResult<N::T>> {
+    ) -> Vec<k_nearest::KnearestResult<<N::T as HasInner>::Inner,N::Num>> {
         k_nearest::k_nearest_mut(self, point, num, knear, border)
     }
 
@@ -437,84 +534,103 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
     ///
     ///```
     ///use dinotree_alg::prelude::*;
-    ///use axgeom::*;
+    ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut bots2 = [bbox(axgeom::rect(5,15,5,15),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots1);
     ///
-    ///struct Foo;
-    ///impl RayCast for Foo{
-    ///    type T=BBox<i32,Vec2<i32>>;
-    ///    type N=i32;
-    ///    fn compute_distance_to_rect(&self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
-    ///        ray.cast_to_rect(a)
-    ///    }
+    ///tree.intersect_with_mut(&mut bots2,|mut a,mut b|{
+    ///    *a.inner_mut()+=1;
+    ///    *b.inner_mut()+=2;    
+    ///});
     ///
-    ///    fn compute_distance_to_bot(&self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
-    ///         //Do more fine-grained collision checking.
-    ///         //Here we know the two aabbs intersect, but do an additional check
-    ///         //to see if they intersect as circles.
-    ///         ray.inner_as::<f32>().cast_to_circle(a.inner.inner_as(),5.).map(|a|a as i32)
-    ///    }
-    ///}
-    ///
-    ///let border = rect(0,100,0,100);
-    ///
-    ///let mut bots = [bbox(rect(0,10,0,10),vec2(5,5)),
-    ///                bbox(rect(2,5,2,5),vec2(4,4)),
-    ///                bbox(rect(4,10,4,10),vec2(5,5))];
-    ///
-    ///
-    ///let mut bots_copy=bots.clone();
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///let ray=ray(vec2(5,-5),vec2(0,1));
-    ///let res = tree.raycast_fine_mut(ray,&mut Foo,border);
-    ///
-    ///let (bots,dis)=res.unwrap();
-    ///assert_eq!(dis,4);
-    ///assert_eq!(bots.len(),1);
-    ///assert_eq!(bots[0].get(),&rect(2,5,2,5));
+    ///assert_eq!(bots1[0].inner,1);
+    ///assert_eq!(bots2[0].inner,2);
     ///```
-    pub fn raycast_fine_mut(
+    pub fn intersect_with_mut<X: Aabb<Num = N::Num>+HasInner>(
         &mut self,
-        ray: axgeom::Ray<N::Num>,
-        rtrait: &mut impl raycast::RayCast<N = N::Num, T = N::T>,
-        border: Rect<N::Num>,
-    ) -> raycast::RayCastResult<N::T> {
-        raycast::raycast_mut(self, border, ray, rtrait)
+        other: &mut [X],
+        func: impl Fn(&mut <N::T as HasInner>::Inner, &mut X::Inner),
+    ) {
+        intersect_with::intersect_with_mut(self, other, |a,b|(func)(a.into_inner(),b.into_inner()))
+    }
+
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.for_all_not_in_rect_mut(&axgeom::rect(10,20,10,20),|mut a|{
+    ///    *a.inner_mut()+=1;    
+    ///});
+    ///
+    ///assert_eq!(bots[0].inner,1);
+    ///
+    ///```
+    pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<N::Num>, mut func: impl FnMut(&mut <N::T as HasInner>::Inner)) {
+        rect::for_all_not_in_rect_mut(self, rect, |a|(func)(a.into_inner()));
     }
 
     /// # Examples
     ///
     ///```
     ///use dinotree_alg::prelude::*;
-    ///use axgeom::*;
-    ///let border = rect(0,100,0,100);
-    ///
-    ///let mut bots = [rect(0,10,0,10),
-    ///                rect(2,5,2,5),
-    ///                rect(4,10,4,10)];
-    ///
-    ///let mut bots_copy=bots.clone();
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
     ///let mut tree = DinoTree::new(&mut bots);
-    ///let ray=ray(vec2(5,-5),vec2(0,1));
-    ///let res = tree.raycast_mut(ray,|ray,r|ray.cast_to_rect(r),border);
+    ///tree.for_all_intersect_rect_mut(&axgeom::rect(9,20,9,20),|mut a|{
+    ///    *a.inner_mut()+=1;    
+    ///});
     ///
-    ///let (bots,dis)=res.unwrap();
-    ///assert_eq!(dis,5);
-    ///assert_eq!(bots.len(),1);
-    ///assert_eq!(bots[0].get(),&rect(0,10,0,10));
+    ///assert_eq!(bots[0].inner,1);
+    ///
     ///```
-    pub fn raycast_mut(
+    pub fn for_all_intersect_rect_mut(
         &mut self,
-        ray: axgeom::Ray<N::Num>,
-        rtrait: impl Fn(&Ray<N::Num>, &Rect<N::Num>) -> axgeom::CastResult<N::Num>,
-        border: Rect<N::Num>,
-    ) -> raycast::RayCastResult<N::T> {
-        let mut rtrait = raycast::RayCastFineWrapper {
-            inner: rtrait,
-            _p: PhantomData,
-        };
-
-        raycast::raycast_mut(self, border, ray, &mut rtrait)
+        rect: &Rect<N::Num>,
+        mut func: impl FnMut(&mut <N::T as HasInner>::Inner),
+    ) {
+        rect::for_all_intersect_rect_mut(self, rect, |a|(func)(a.into_inner()));
     }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.for_all_in_rect_mut(&axgeom::rect(0,10,0,10),|mut a|{
+    ///    *a.inner_mut()+=1;    
+    ///});
+    ///
+    ///assert_eq!(bots[0].inner,1);
+    ///
+    ///```
+    pub fn for_all_in_rect_mut(&mut self, rect: &Rect<N::Num>, mut func: impl FnMut(&mut <N::T as HasInner>::Inner)) {
+        rect::for_all_in_rect_mut(self, rect, |a|(func)(a.into_inner()));
+    }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.find_collisions_mut(|mut a,mut b|{
+    ///    *a.inner_mut()+=1;
+    ///    *b.inner_mut()+=1;
+    ///});
+    ///
+    ///assert_eq!(bots[0].inner,1);
+    ///assert_eq!(bots[1].inner,1);
+    ///```
+    pub fn find_collisions_mut(&mut self, mut func: impl FnMut(&mut <N::T as HasInner>::Inner, &mut <N::T as HasInner>::Inner)) {
+        colfind::QueryBuilder::new(self).query_seq(|a, b| func(a.into_inner(), b.into_inner()));
+    }
+
+}
+
+impl<A: Axis, N: Node> DinoTree<A, N> {
 
     /// # Examples
     ///
@@ -551,29 +667,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
         graphics::draw(self, drawer, rect)
     }
 
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
-    ///let mut bots2 = [bbox(axgeom::rect(5,15,5,15),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots1);
-    ///
-    ///tree.intersect_with_mut(&mut bots2,|mut a,mut b|{
-    ///    *a.inner_mut()+=1;
-    ///    *b.inner_mut()+=2;    
-    ///});
-    ///
-    ///assert_eq!(bots1[0].inner,1);
-    ///assert_eq!(bots2[0].inner,2);
-    ///```
-    pub fn intersect_with_mut<X: Aabb<Num = N::Num>>(
-        &mut self,
-        other: &mut [X],
-        func: impl Fn(PMut<N::T>, PMut<X>),
-    ) {
-        intersect_with::intersect_with_mut(self, other, func)
-    }
+   
 
     /// # Examples
     ///
@@ -591,45 +685,6 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
     pub fn multi_rect(&mut self) -> rect::MultiRectMut<A, N> {
         rect::MultiRectMut::new(self)
     }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///tree.for_all_not_in_rect_mut(&axgeom::rect(10,20,10,20),|mut a|{
-    ///    *a.inner_mut()+=1;    
-    ///});
-    ///
-    ///assert_eq!(bots[0].inner,1);
-    ///
-    ///```
-    pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<N::Num>, func: impl FnMut(PMut<N::T>)) {
-        rect::for_all_not_in_rect_mut(self, rect, func);
-    }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///tree.for_all_intersect_rect_mut(&axgeom::rect(9,20,9,20),|mut a|{
-    ///    *a.inner_mut()+=1;    
-    ///});
-    ///
-    ///assert_eq!(bots[0].inner,1);
-    ///
-    ///```
-    pub fn for_all_intersect_rect_mut(
-        &mut self,
-        rect: &Rect<N::Num>,
-        func: impl FnMut(PMut<N::T>),
-    ) {
-        rect::for_all_intersect_rect_mut(self, rect, func);
-    }
-
     /// # Examples
     ///
     ///```
@@ -648,22 +703,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
         rect::for_all_intersect_rect(self, rect, func);
     }
 
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///tree.for_all_in_rect_mut(&axgeom::rect(0,10,0,10),|mut a|{
-    ///    *a.inner_mut()+=1;    
-    ///});
-    ///
-    ///assert_eq!(bots[0].inner,1);
-    ///
-    ///```
-    pub fn for_all_in_rect_mut(&mut self, rect: &Rect<N::Num>, func: impl FnMut(PMut<N::T>)) {
-        rect::for_all_in_rect_mut(self, rect, func);
-    }
+
 
     /// # Examples
     ///
@@ -680,24 +720,6 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
     ///
     pub fn for_all_in_rect<'a>(&'a self, rect: &Rect<N::Num>, func: impl FnMut(&'a N::T)) {
         rect::for_all_in_rect(self, rect, func);
-    }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///tree.find_collisions_mut(|mut a,mut b|{
-    ///    *a.inner_mut()+=1;
-    ///    *b.inner_mut()+=1;
-    ///});
-    ///
-    ///assert_eq!(bots[0].inner,1);
-    ///assert_eq!(bots[1].inner,1);
-    ///```
-    pub fn find_collisions_mut(&mut self, mut func: impl FnMut(PMut<N::T>, PMut<N::T>)) {
-        colfind::QueryBuilder::new(self).query_seq(|a, b| func(a, b));
     }
 
     /// # Examples
@@ -727,7 +749,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
     ///}
     ///assert_eq!(bots[0].inner,1);
     ///```
-    pub fn vistr_mut(&mut self) -> VistrMut<N> {
+    pub(crate) fn vistr_mut(&mut self) -> VistrMut<N> {
         VistrMut {
             inner: self.inner.vistr_mut(),
         }

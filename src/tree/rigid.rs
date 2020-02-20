@@ -28,11 +28,11 @@ pub struct CollisionList<'a,T,K>{
 }
 
 impl<'a,T,K> CollisionList<'a,T,K>{
-    pub fn for_every_collision(&mut self,mut func:impl FnMut(PMut<T>,PMut<T>,&mut K)){
+    pub fn for_every_collision(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut K)){
         for a in self.vec.iter_mut(){
             let (a,b)=a;
             let [c,d]=a.get_mut();
-            (func)(PMut::new(c),PMut::new(d),b);
+            (func)(c,d,b);
         }
     }
 }

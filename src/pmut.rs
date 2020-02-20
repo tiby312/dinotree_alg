@@ -34,6 +34,8 @@ use crate::inner_prelude::*;
 pub struct PMut<'a, T: ?Sized> {
     pub(crate) inner: &'a mut T, //TODO make this private
 }
+
+
 impl<'a, T: ?Sized> PMut<'a, T> {
     #[inline(always)]
     pub fn new(inner: &'a mut T) -> PMut<'a, T> {
@@ -80,6 +82,13 @@ impl<'a, T: HasInner> HasInner for PMut<'a, T> {
     }
 }
 
+//TODO use this
+impl<'a,T:HasInner> PMut<'a,T>{
+    #[inline(always)]
+    pub fn into_inner(self)->&'a mut T::Inner{
+        self.inner.get_inner_mut().1
+    }
+}
 impl<'a, T> PMut<'a, [T]> {
     #[inline(always)]
     pub fn len(&self) -> usize {

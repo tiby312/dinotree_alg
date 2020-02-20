@@ -69,14 +69,14 @@ fn range_side<N: Num>(point: Vec2<N>, axis: impl axgeom::Axis, range: &Range<N>)
 }
 
 /// Returned by k_nearest_mut
-pub struct KnearestResult<'a, T: Aabb> {
+struct InnerKnearestResult<'a, T: Aabb> {
     pub bot: PMut<'a, T>,
     pub mag: T::Num,
 }
 
 struct ClosestCand<'a, T: Aabb> {
     //Can have multiple bots with the same mag. So the length could be bigger than num.
-    bots: Vec<KnearestResult<'a, T>>,
+    bots: Vec<InnerKnearestResult<'a, T>>,
     //The current number of different distances in the vec
     curr_num: usize,
     //The max number of different distances.
@@ -84,7 +84,7 @@ struct ClosestCand<'a, T: Aabb> {
 }
 impl<'a, T: Aabb> ClosestCand<'a, T> {
     //First is the closest
-    fn into_sorted(self) -> Vec<KnearestResult<'a, T>> {
+    fn into_sorted(self) -> Vec<InnerKnearestResult<'a, T>> {
         self.bots
     }
     fn new(num: usize) -> ClosestCand<'a, T> {
@@ -106,7 +106,7 @@ impl<'a, T: Aabb> ClosestCand<'a, T> {
 
             for i in 0..arr.len() {
                 if curr_dis < arr[i].mag {
-                    let unit = KnearestResult {
+                    let unit = InnerKnearestResult {
                         bot: curr_bot,
                         mag: curr_dis,
                     }; //$unit_create!(curr_bot,curr_dis);
@@ -116,7 +116,7 @@ impl<'a, T: Aabb> ClosestCand<'a, T> {
                 }
             }
             //only way we get here is if the above didnt return.
-            let unit = KnearestResult {
+            let unit = InnerKnearestResult {
                 bot: curr_bot,
                 mag: curr_dis,
             };
@@ -134,7 +134,7 @@ impl<'a, T: Aabb> ClosestCand<'a, T> {
                             break;
                         }
                     }
-                    let unit = KnearestResult {
+                    let unit = InnerKnearestResult {
                         bot: curr_bot,
                         mag: curr_dis,
                     }; //$unit_create!(curr_bot,curr_dis);
@@ -144,7 +144,7 @@ impl<'a, T: Aabb> ClosestCand<'a, T> {
                     assert!(max < v.mag);
                     return true;
                 } else if curr_dis == arr[i].mag {
-                    let unit = KnearestResult {
+                    let unit = InnerKnearestResult {
                         bot: curr_bot,
                         mag: curr_dis,
                     }; //$unit_create!(curr_bot,curr_dis);
@@ -329,16 +329,26 @@ mod con{
 
 }
 */
+
+
+
+/// Returned by k_nearest_mut
+pub struct KnearestResult<'a, T,N> {
+    pub bot: &'a mut T,
+    pub mag: N,
+}
+
+
 pub use self::mutable::k_nearest_naive_mut;
 mod mutable {
     use super::*;
 
-    pub fn k_nearest_naive_mut<'a, K: Knearest<T = T, N = T::Num>, T: Aabb>(
+    pub fn k_nearest_naive_mut<'a, K: Knearest<T = T, N = T::Num>, T: Aabb+HasInner>(
         bots: PMut<'a, [T]>,
         point: Vec2<K::N>,
         num: usize,
         k: &mut K,
-    ) -> Vec<KnearestResult<'a, K::T>> {
+    ) -> Vec<KnearestResult<'a, T::Inner,T::Num>> {
         //let bots=ProtectedBBoxSlice::new(bots);
 
         let mut closest = ClosestCand::new(num);
@@ -355,7 +365,7 @@ mod mutable {
             closest.consider((b, d));
         }
 
-        closest.into_sorted()
+        closest.into_sorted().drain(..).map(|a|KnearestResult{bot:a.bot.into_inner(),mag:a.mag}).collect()
     }
 
     pub fn k_nearest_mut<'a, A: Axis, N: Node>(
@@ -364,7 +374,7 @@ mod mutable {
         num: usize,
         knear: &mut impl Knearest<N = N::Num, T = N::T>,
         rect: Rect<N::Num>,
-    ) -> Vec<KnearestResult<'a, N::T>> {
+    ) -> Vec<KnearestResult<'a, <N::T as HasInner>::Inner,N::Num>>  where N::T:HasInner{
         let axis = tree.axis();
 
         let dt = tree.vistr_mut().with_depth(Depth(0));
@@ -379,6 +389,7 @@ mod mutable {
 
         recc(axis, dt, rect, &mut blap);
 
-        blap.closest.into_sorted()
+        //blap.closest.into_sorted()
+        blap.closest.into_sorted().drain(..).map(|a|KnearestResult{bot:a.bot.into_inner(),mag:a.mag}).collect()
     }
 }

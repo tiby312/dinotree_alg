@@ -6,6 +6,7 @@ struct Bot {
     id: usize,
     pos: Vec2<f32>,
     radius: Vec2<f32>,
+    rect:Rect<f32>
 }
 
 impl analyze::HasId for Bot {
@@ -19,11 +20,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         .with_radius(2.0, 50.0)
         .take(40)
         .enumerate()
-        .map(|(id, (pos, radius))| Bot { id, pos, radius })
+        .map(|(id, (pos, radius))| Bot { id, pos, radius ,rect:Rect::from_point(pos, radius)})
         .collect();
 
     let mut tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {
-        Rect::from_point(bot.pos, bot.radius)
+        bot.rect
             .inner_try_into()
             .unwrap()
     });
@@ -104,7 +105,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let mut vv: Vec<_> = vv
             .drain(..)
             .map(|a| Res {
-                rect: *a.bot.get(),
+                rect: a.bot.rect.inner_into(),
                 mag: a.mag,
             })
             .collect();

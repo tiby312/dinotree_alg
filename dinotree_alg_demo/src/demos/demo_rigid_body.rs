@@ -56,17 +56,14 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
             {
                 let dim2 = dim.inner_into();
-                tree.for_all_not_in_rect_mut(&dim, |mut a| {
-                    let a=a.inner_mut();
+                tree.for_all_not_in_rect_mut(&dim, |a| {
                     duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.2);
                 });
             }
 
             let vv = vec2same(200.0).inner_try_into().unwrap();
             let cc = cursor.inner_into();
-            tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
-                let b=b.inner_mut();
-                
+            tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
                 let offset=b.pos-cursor.inner_into();
                 if offset.magnitude()<200.0*0.5{
                     let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 2.0);
@@ -81,9 +78,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             
 
 
-            let mut collision_list =  tree.create_collision_list(|mut a,mut b|{
-                let a=a.inner_mut();
-                let b=b.inner_mut();
+            let mut collision_list =  tree.create_collision_list(|a,b|{
                 let offset=b.pos-a.pos;
                 //TODO this can be optimized. computing distance twice
                 let offset_normal=offset.normalize_to(1.0);
@@ -101,9 +96,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                         
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
-                collision_list.for_every_collision(|mut a,mut b,&mut (offset_normal,bias)|{
-                    let a=a.inner_mut();
-                    let b=b.inner_mut();
+                collision_list.for_every_collision(|a,b,&mut (offset_normal,bias)|{
                     let vel=b.vel-a.vel;
                     let vn=bias+vel.dot(offset_normal)*mag;
                     //let vn=vn.max(0.0);

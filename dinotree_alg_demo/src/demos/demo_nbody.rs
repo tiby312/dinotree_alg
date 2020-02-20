@@ -32,15 +32,12 @@ impl<'b> NodeMassTrait for Bla<'b> {
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self, mut a: PMut<Self::Item>, mut b: PMut<Self::Item>) {
-        let a=a.inner_mut();
-        let b=b.inner_mut();
+    fn handle_bot_with_bot(&self, mut a: &mut Bot, mut b: &mut Bot) {
         let _ = duckduckgeo::gravitate([(a.pos,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self, a: &mut Self::No, mut b: PMut<Self::Item>) {
-        let b=b.inner_mut();
+    fn handle_node_with_bot(&self, a: &mut Self::No, mut b:&mut Bot) {
         let _ = duckduckgeo::gravitate([(a.center,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
@@ -73,7 +70,7 @@ impl<'b> NodeMassTrait for Bla<'b> {
         }
     }
 
-    fn apply_to_bots<'a, I: Iterator<Item = PMut<'a, Self::Item>>>(
+    fn apply_to_bots<'a, I: Iterator<Item = &'a mut Bot>>(
         &'a self,
         a: &'a Self::No,
         it: I,
@@ -82,11 +79,11 @@ impl<'b> NodeMassTrait for Bla<'b> {
             let total_forcex = a.force.x;
             let total_forcey = a.force.y;
 
-            for mut i in it {
-                let forcex = total_forcex * (i.inner().mass / a.mass);
-                let forcey = total_forcey * (i.inner().mass / a.mass);
+            for i in it {
+                let forcex = total_forcex * (i.mass / a.mass);
+                let forcey = total_forcey * (i.mass / a.mass);
 
-                i.as_mut().inner_mut().force+=vec2(forcex, forcey);
+                i.force+=vec2(forcex, forcey);
             }
         }
     }
@@ -224,10 +221,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             }
 
             tree.find_collisions_mut_par(|mut a, mut b| {
-                let (a, b) = if a.inner().mass > b.inner().mass {
-                    (a.inner_mut(), b.inner_mut())
+                let (a, b) = if a.mass > b.mass {
+                    (a, b)
                 } else {
-                    (b.inner_mut(), a.inner_mut())
+                    (b, a)
                 };
 
                 if b.mass != 0.0 {

@@ -1,6 +1,7 @@
-use crate::prelude::*;
+use crate::Aabb;
+use crate::pmut::PMut;
 
-pub fn for_every_pair<T: Aabb>(mut arr: PMut<[T]>, mut func: impl FnMut(PMut<T>, PMut<T>)) {
+pub(crate) fn for_every_pair<T: Aabb>(mut arr: PMut<[T]>, mut func: impl FnMut(PMut<T>, PMut<T>)) {
     loop {
         let temp = arr;
         match temp.split_first_mut() {

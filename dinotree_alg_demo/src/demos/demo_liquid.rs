@@ -75,22 +75,20 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         let mut tree = DinoTree::new_par(&mut k);
 
-        tree.find_collisions_mut_par(|mut a, mut b| {
-            let _ = a.inner_mut().solve(b.inner_mut(), radius);
+        tree.find_collisions_mut_par(|a,b| {
+            let _ = a.solve(b, radius);
         });
 
         let vv = vec2same(100.0).inner_try_into().unwrap();
         let cc = cursor.inner_into();
 
-        tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |mut b| {
-            let b=b.inner_mut();
+        tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
             let _ = duckduckgeo::repel_one(b.pos,&mut b.acc, cc, 0.001, 100.0);
         });
 
         {
             let dim2 = dim.inner_into();
-            tree.for_all_not_in_rect_mut(&dim, |mut a| {
-                let a=a.inner_mut();
+            tree.for_all_not_in_rect_mut(&dim, |a| {
                 duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.5);
             });
         }

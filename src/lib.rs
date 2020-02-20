@@ -68,7 +68,7 @@ extern crate pdqselect;
 pub mod prelude {
     pub use crate::bbox::*;
     pub use crate::par;
-    pub use crate::pmut::*;
+    //pub use crate::pmut::*;
     pub use crate::query::*;
     pub use crate::tree::node::*;
     pub use crate::*;
@@ -105,7 +105,7 @@ pub mod par;
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
 
-pub mod pmut;
+pub(crate) mod pmut;
 
 ///A collection of different bounding box containers.
 pub mod bbox;
@@ -156,3 +156,5 @@ pub trait HasInner: Aabb {
     fn get_inner(&self) -> (&Rect<Self::Num>, &Self::Inner);
     fn get_inner_mut(&mut self) -> (&Rect<Self::Num>, &mut Self::Inner);
 }
+
+

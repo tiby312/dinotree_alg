@@ -38,7 +38,9 @@ use crate::query::inner_prelude::*;
 use axgeom::Ray;
 use core::cmp::Ordering;
 
-pub type RayCastResult<'a, T> = axgeom::CastResult<(Vec<PMut<'a, T>>, <T as Aabb>::Num)>;
+//pub type RayCastResult<'a, T> = axgeom::CastResult<(Vec<PMut<'a, T>>, <T as Aabb>::Num)>;
+pub type RayCastResult<'a, T,N> = axgeom::CastResult<(Vec<&'a mut T>,N)>;
+
 
 ///This is the trait that defines raycast specific geometric functions that are needed by this raytracing algorithm.
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying Num to a minimum
@@ -274,7 +276,7 @@ mod mutable {
         bots: PMut<'a, [T]>,
         ray: Ray<T::Num>,
         rtrait: &mut impl RayCast<N = T::Num, T = T>,
-    ) -> RayCastResult<'a, T> {
+    ) -> RayCastResult<'a, T::Inner,T::Num> where T:HasInner {
         let mut closest = Closest { closest: None };
 
         for b in bots.iter_mut() {
@@ -282,7 +284,7 @@ mod mutable {
         }
 
         match closest.closest {
-            Some((a, b)) => RayCastResult::Hit((a, b)),
+            Some((mut a, b)) => RayCastResult::Hit((a.drain(..).map(|a|a.into_inner()).collect(), b)),
             None => RayCastResult::NoHit,
         }
     }
@@ -292,7 +294,7 @@ mod mutable {
         rect: Rect<N::Num>,
         ray: Ray<N::Num>,
         rtrait: &mut impl RayCast<N = N::Num, T = N::T>,
-    ) -> RayCastResult<'a, N::T> {
+    ) -> RayCastResult<'a, <N::T as HasInner>::Inner,N::Num> where N::T:HasInner {
         let axis = tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
 
@@ -305,7 +307,7 @@ mod mutable {
         recc(axis, dt, rect, &mut blap);
 
         match blap.closest.closest {
-            Some((a, b)) => RayCastResult::Hit((a, b)),
+            Some((mut a, b)) => RayCastResult::Hit((a.drain(..).map(|a|a.into_inner()).collect(), b)),
             None => RayCastResult::NoHit,
         }
     }

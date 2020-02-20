@@ -5,6 +5,7 @@ struct Bot {
     id: usize,
     radius: Vec2<i32>,
     pos: Vec2<i32>,
+    rect:Rect<i32>
 }
 
 impl analyze::HasId for Bot {
@@ -22,11 +23,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let pos: Vec2<f32> = pos;
             let pos = pos.inner_as::<i32>();
             let radius = radius.inner_as();
-            Bot { pos, radius, id }
+            let rect = Rect::from_point(pos, radius);
+            Bot { pos, radius, id, rect }
         })
         .collect();
 
-    let mut tree = DinoTreeOwnedBBoxPtr::new_par(bots, |b| Rect::from_point(b.pos, b.radius));
+    let mut tree = DinoTreeOwnedBBoxPtr::new_par(bots, |b| b.rect);
 
     let mut rects = canvas.rects();
     for bot in tree.as_owned().get_bots().iter() {
@@ -113,7 +115,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         tree.as_owned_mut()
             .as_tree_mut()
             .for_all_not_in_rect_mut(&r1, |b| {
-                rects.add(b.get().inner_as().into());
+                rects.add(b.rect.inner_as().into());
             });
         rects.send_and_uniforms(canvas).with_color([1.0, 0.0, 1.0, 0.5]).draw();
     })

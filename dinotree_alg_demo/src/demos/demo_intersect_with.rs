@@ -6,6 +6,7 @@ pub struct Bot {
     pos: Vec2<f32>,
     vel: Vec2<f32>,
     force: Vec2<f32>,
+    rect:Rect<f32>,
     wall_move: [Option<(F32n, f32)>; 2],
 }
 
@@ -33,6 +34,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             vel: vec2same(0.0),
             force: vec2same(0.0),
             wall_move: [None; 2],
+            rect:Rect::from_point(pos, vec2same(radius))
         })
         .collect();
 
@@ -68,11 +70,13 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             b.wall_move[1] = None;
 
             duckduckgeo::wrap_position(&mut b.pos, dim.inner_into());
+
+            b.rect=Rect::from_point(b.pos,vec2same(radius));
         }
         bots[0].pos = cursor.inner_into();
 
         let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
-            Rect::from_point(b.pos, vec2same(radius))
+            b.rect
                 .inner_try_into()
                 .unwrap()
         });
@@ -84,13 +88,13 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             tree.intersect_with_mut(&mut walls, |mut bot, wall| {
                 let fric = 0.8;
 
-                let wallx = &wall.get().x;
-                let wally = &wall.get().y;
-                let vel = bot.inner().vel;
+                let wallx = &wall.0.x;
+                let wally = &wall.0.y;
+                let vel = bot.vel;
 
                 let ret = match duckduckgeo::collide_with_rect::<f32>(
-                    bot.get().as_ref(),
-                    wall.get().as_ref(),
+                    &bot.rect.inner_into(),
+                    wall.0.as_ref(),
                 )
                 .unwrap()
                 {
@@ -107,7 +111,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         [Some((wallx.end + radius, -vel.x * fric)), None]
                     }
                 };
-                bot.inner_mut().wall_move = ret;
+                bot.wall_move = ret;
             });
 
             let cc = cursor.inner_into();
@@ -115,15 +119,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 &axgeom::Rect::from_point(cc, vec2same(100.0))
                     .inner_try_into()
                     .unwrap(),
-                |mut b| {
-                    let b=b.inner_mut();
+                |b| {
                     let _ = duckduckgeo::repel_one(b.pos,&mut b.force, cc, 0.001, 20.0);
                 },
             );
 
-            tree.find_collisions_mut_par(|mut a, mut b| {
-                let a=a.inner_mut();
-                let b=b.inner_mut();
+            tree.find_collisions_mut_par(|a, b| {
                 let _ = duckduckgeo::repel([(a.pos,&mut a.force),(b.pos,&mut b.force)], 0.001, 2.0);
             });
         }

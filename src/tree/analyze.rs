@@ -37,21 +37,18 @@ pub struct NaiveAlgs<'a, T> {
     bots: &'a mut [T],
 }
 
-impl<'a, T: Aabb> NaiveAlgs<'a, T> {
-    #[must_use]
-    pub fn new(bots: &'a mut [T]) -> NaiveAlgs<T> {
-        NaiveAlgs { bots }
-    }
+impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
 
     #[must_use]
     pub fn raycast_mut(
         &mut self,
         ray: axgeom::Ray<T::Num>,
         rtrait: &mut impl raycast::RayCast<N = T::Num, T = T>,
-    ) -> raycast::RayCastResult<T> {
+    ) -> raycast::RayCastResult<T::Inner,T::Num> {
         let bots = PMut::new(self.bots);
         raycast::raycast_naive_mut(bots, ray, rtrait)
     }
+
 
     #[must_use]
     pub fn k_nearest_mut(
@@ -59,38 +56,50 @@ impl<'a, T: Aabb> NaiveAlgs<'a, T> {
         point: Vec2<T::Num>,
         num: usize,
         knear: &mut impl k_nearest::Knearest<N = T::Num, T = T>,
-    ) -> Vec<k_nearest::KnearestResult<T>> {
+    ) -> Vec<k_nearest::KnearestResult<T::Inner,T::Num>> {
         let bots = PMut::new(self.bots);
         k_nearest::k_nearest_naive_mut(bots, point, num, knear)
     }
 
-    pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<T::Num>, func: impl FnMut(PMut<T>)) {
+}
+impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
+
+    pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
         let bots = PMut::new(self.bots);
-        rect::naive_for_all_not_in_rect_mut(bots, rect, func);
+        rect::naive_for_all_not_in_rect_mut(bots, rect, |a|(func)(a.into_inner()));
     }
+
+    pub fn for_all_intersect_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
+        let bots = PMut::new(self.bots);
+        rect::naive_for_all_intersect_rect_mut(bots, rect, |a|(func)(a.into_inner()));
+    }
+
+    pub fn find_collisions_mut(&mut self, mut func: impl FnMut(&mut T::Inner, &mut T::Inner)) {
+        let bots = PMut::new(self.bots);
+        colfind::query_naive_mut(bots, |a, b| func(a.into_inner(), b.into_inner()));
+    }
+
+    pub fn find_collisions_sweep_mut<A: Axis>(
+        &mut self,
+        axis: A,
+        mut func: impl FnMut(&mut T::Inner, &mut T::Inner),
+    ) {
+        colfind::query_sweep_mut(axis, self.bots, |a, b| func(a.into_inner(), b.into_inner()));
+    }
+}
+
+impl<'a, T: Aabb> NaiveAlgs<'a, T> {
+    #[must_use]
+    pub fn new(bots: &'a mut [T]) -> NaiveAlgs<T> {
+        NaiveAlgs { bots }
+    }
+
 
     #[cfg(feature = "nbody")]
     pub fn nbody(&mut self, func: impl FnMut(PMut<T>, PMut<T>)) {
         nbody::naive_mut(self.bots, func);
     }
 
-    pub fn for_all_intersect_rect_mut(&mut self, rect: &Rect<T::Num>, func: impl FnMut(PMut<T>)) {
-        let bots = PMut::new(self.bots);
-        rect::naive_for_all_intersect_rect_mut(bots, rect, func);
-    }
-
-    pub fn find_collisions_mut(&mut self, mut func: impl FnMut(PMut<T>, PMut<T>)) {
-        let bots = PMut::new(self.bots);
-        colfind::query_naive_mut(bots, |a, b| func(a, b));
-    }
-
-    pub fn find_collisions_sweep_mut<A: Axis>(
-        &mut self,
-        axis: A,
-        mut func: impl FnMut(PMut<T>, PMut<T>),
-    ) {
-        colfind::query_sweep_mut(axis, self.bots, |a, b| func(a, b));
-    }
 }
 
 impl<'a, T: HasInner> NaiveAlgs<'a, T> {
@@ -108,7 +117,7 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
             k_nearest::k_nearest_naive_mut(bots, point, num, knear)
                 .drain(..)
                 .map(|a| UnitMut2 {
-                    id: a.bot.inner().get_id(),
+                    id: a.bot.get_id(),
                     mag: a.mag,
                 })
                 .collect()
@@ -118,7 +127,7 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
         let mut res_dinotree: Vec<_> = k_nearest::k_nearest_mut(&mut tree, point, num, knear, rect)
             .drain(..)
             .map(|a| UnitMut2 {
-                id: a.bot.inner().get_id(),
+                id: a.bot.get_id(),
                 mag: a.mag,
             })
             .collect();
@@ -235,7 +244,7 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
 
         let res_naive = match raycast::raycast_naive_mut(PMut::new(self.bots), ray, rtrait) {
             raycast::RayCastResult::Hit((mut a, b)) => Some((
-                a.drain(..).map(|a| a.inner().get_id()).collect::<Vec<_>>(),
+                a.drain(..).map(|a| a.get_id()).collect::<Vec<_>>(),
                 b,
             )),
             raycast::RayCastResult::NoHit => None,
@@ -245,7 +254,7 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
 
         let res_dinotree = match raycast::raycast_mut(&mut tree, rect, ray, rtrait) {
             raycast::RayCastResult::Hit((mut a, b)) => Some((
-                a.drain(..).map(|a| a.inner().get_id()).collect::<Vec<_>>(),
+                a.drain(..).map(|a| a.get_id()).collect::<Vec<_>>(),
                 b,
             )),
             raycast::RayCastResult::NoHit => None,
