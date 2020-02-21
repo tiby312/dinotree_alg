@@ -80,7 +80,95 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let num_iterations_inv=1.0/num_iterations as f32;
             
 
-            let mut collision_list =  tree.create_collision_list(|a,b|{
+            mod foo{
+                use super::*;
+                use compt::Visitor;
+                    
+                fn parallelize<T:Visitor+Send+Sync>(a:T,func:impl Fn(T::Item)+Sync+Send+Copy) where T::Item:Send+Sync{
+                    let (n,l)=a.next();
+                    func(n);
+                    if let Some([left,right])=l{
+                        rayon::join(||parallelize(left,func),||parallelize(right,func));
+                    }
+                }
+                pub struct CollisionList<T,D>{
+                    nodes:Vec<Vec<Collision<T,D>>>
+                }
+                impl<T:Send+Sync,D:Send+Sync> CollisionList<T,D>{
+                    pub fn for_every_pair_par_mut(&mut self,func:impl Fn(&mut T,&mut T,&mut D)+Send+Sync+Copy){
+
+                        for a in self.nodes.iter(){
+                            print!("{},",a.len());
+                        }
+                        println!();
+
+                        let mtree=compt::dfs_order::CompleteTree::from_preorder_mut(&mut self.nodes).unwrap();
+
+                        parallelize(mtree.vistr_mut(),|a|{
+                            for c in a.iter_mut(){
+                                let a=unsafe{&mut *c.a};
+                                let b=unsafe{&mut *c.b};
+                                func(a,b,&mut c.d)
+                            }
+                        })
+                    }
+                }
+
+                pub fn create_collision_list<A:Axis,T:Aabb+Send+Sync,D>
+                (tree:&mut DinoTree<A,NodeMut<T>>,func:impl Fn(&mut T::Inner,&mut T::Inner)->Option<D>+Send+Sync)->CollisionList<T::Inner,D>
+                where T:HasInner+Send+Sync{
+
+                    struct Foo<T:Visitor>{
+                        current:T::Item,
+                        next:Option<[T;2]>,
+                    }
+                    impl<T:Visitor> Foo<T>{
+                        fn new(a:T)->Foo<T>{
+                            let (n,f)=a.next();
+                            Foo{current:n,next:f}
+                        }
+                    }
+
+                    let height=dinotree_alg::par::compute_level_switch_sequential(0,tree.get_height()).get_depth_to_switch_at();
+                    let mut nodes:Vec<Vec<Collision<T::Inner,D>>>=(0..compt::compute_num_nodes(height)).map(|_|Vec::new()).collect();
+                    let mtree=compt::dfs_order::CompleteTree::from_preorder_mut(&mut nodes).unwrap();
+                    
+                    tree.find_collisions_mut_par_ext(|a|{
+                        let next=a.next.take();
+                        if let Some([left,right])=next{
+                            let l=Foo::new(left);
+                            let r=Foo::new(right);
+                            *a=l;
+                            r
+                        }else{
+                            unreachable!()
+                        }
+                    },|_a,_b|{},|c,a,b|{
+                        if let Some(d)=func(a,b){
+                            c.current.push(Collision::new(a,b,d));
+                        }
+                    },Foo::new(mtree.vistr_mut()));
+
+                    CollisionList{nodes}
+                }
+
+                struct Collision<T,D>{
+                    a:*mut T,
+                    b:*mut T,
+                    d:D
+                }
+                impl<T,D> Collision<T,D>{
+                    fn new(a:&mut T,b:&mut T,d:D)->Self{
+                        Collision{a:a as *mut _,b:b as *mut _,d}
+                    }
+                }
+                unsafe impl<T,D> Send for Collision<T,D>{}
+                unsafe impl<T,D> Sync for Collision<T,D>{}
+
+
+            }
+
+            let mut collision_list =  foo::create_collision_list(&mut tree,|a,b|{
                 let offset=b.pos-a.pos;
                 let distance2=offset.magnitude2();
                 if distance2>0.00001 && distance2<diameter2{
@@ -97,7 +185,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                         
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
-                collision_list.for_every_collision(|a,b,&mut (offset_normal,bias)|{
+                collision_list.for_every_pair_par_mut(|a,b,&mut (offset_normal,bias)|{
                     let vel=b.vel-a.vel;
                     let k=offset_normal*(bias+vel.dot(offset_normal)*mag);
                     a.vel-=k;
