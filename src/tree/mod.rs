@@ -253,7 +253,7 @@ where
             let collision_list=self.find_collisions_mut_par_ext(
             |_|{Vec::new()},
             |a,mut b| a.append(&mut b),
-            |arr,mut a,mut b|{
+            |arr, a, b|{
                 if let Some(k)=collision(a,b){
                     arr.push((rigid::Cpair::new(a,b),k))
                 }
