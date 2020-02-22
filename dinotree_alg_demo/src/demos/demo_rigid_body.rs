@@ -76,7 +76,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let a2=now.elapsed().as_millis();
 
 
-            let num_iterations=8;
+            let num_iterations=16;
             let num_iterations_inv=1.0/num_iterations as f32;
             
 
@@ -95,13 +95,22 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                     nodes:Vec<Vec<Collision<T,D>>>
                 }
                 impl<T:Send+Sync,D:Send+Sync> CollisionList<T,D>{
+                    pub fn for_every_pair_seq_mut(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut D)+Send+Sync+Copy){
+                        for a in self.nodes.iter_mut(){
+                            for c in a.iter_mut(){
+                                let a=unsafe{&mut *c.a};
+                                let b=unsafe{&mut *c.b};
+                                func(a,b,&mut c.d)
+                            }
+                        }
+                    }
                     pub fn for_every_pair_par_mut(&mut self,func:impl Fn(&mut T,&mut T,&mut D)+Send+Sync+Copy){
-
+                        /*
                         for a in self.nodes.iter(){
                             print!("{},",a.len());
                         }
                         println!();
-
+                        */
                         let mtree=compt::dfs_order::CompleteTree::from_preorder_mut(&mut self.nodes).unwrap();
 
                         parallelize(mtree.vistr_mut(),|a|{
@@ -129,7 +138,8 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                         }
                     }
 
-                    let height=dinotree_alg::par::compute_level_switch_sequential(0,tree.get_height()).get_depth_to_switch_at();
+                    let height=1+dinotree_alg::par::compute_level_switch_sequential(par::SWITCH_SEQUENTIAL_DEFAULT,tree.get_height()).get_depth_to_switch_at();
+                    //dbg!(tree.get_height(),height);
                     let mut nodes:Vec<Vec<Collision<T::Inner,D>>>=(0..compt::compute_num_nodes(height)).map(|_|Vec::new()).collect();
                     let mtree=compt::dfs_order::CompleteTree::from_preorder_mut(&mut nodes).unwrap();
                     
@@ -185,6 +195,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                         
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
+
                 collision_list.for_every_pair_par_mut(|a,b,&mut (offset_normal,bias)|{
                     let vel=b.vel-a.vel;
                     let k=offset_normal*(bias+vel.dot(offset_normal)*mag);
