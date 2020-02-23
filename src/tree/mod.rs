@@ -250,18 +250,7 @@ where
             &'a mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
     )->CollisionList<'a,<N::T as HasInner>::Inner,K>
     {
-            let collision_list=self.find_collisions_mut_par_ext(
-            |_|{Vec::new()},
-            |a,mut b| a.append(&mut b),
-            |arr, a, b|{
-                if let Some(k)=collision(a,b){
-                    arr.push((rigid::Cpair::new(a,b),k))
-                }
-            },
-            Vec::new()
-        );
-
-        CollisionList{_p:core::marker::PhantomData,vec:collision_list}
+        rigid::create_collision_list(self,collision)
     }
 
 
