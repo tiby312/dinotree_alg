@@ -17,6 +17,62 @@ for i = 1 to nIterations
 */
 
 
+mod grid_collide{
+    use super::*;
+    use duckduckgeo::grid::*;
+    use dinotree_alg::Aabb;
+    pub fn is_colliding<T:Aabb>(grid:Grid2D,dim:GridViewPort,bot:&T)->bool{
+        unimplemented!()
+    }
+
+
+    #[derive(PartialEq,Copy,Clone)]
+    pub struct Foo{
+        pub dir:CardDir,
+        pub mag:f32
+    }
+    impl Eq for Foo{}
+    pub fn collide_with_cell(grid:Grid2D,dim:GridViewPort,bot:&Bot)->Option<Foo>{
+        let grid_coord=dim.to_grid(bot.pos);
+
+        let topleft=dim.to_world_topleft(grid_coord);
+        let bottomright=dim.to_world_topleft(grid_coord+vec2(1,1));
+
+        let pos=&bot.pos;
+
+
+        fn foo(dir:CardDir,mag:f32)->Foo{
+            Foo{dir,mag}
+        }
+
+        use CardDir::*;
+        let arr=[foo(U,topleft.y-pos.y),foo(L,topleft.x-pos.x),foo(D,bottomright.y-pos.y),foo(R,bottomright.x-pos.x)];
+
+        let min=arr.iter().min_by(|Foo{mag:a,..},Foo{mag:b,..}|a.partial_cmp(b).unwrap());
+
+
+        match min{
+            Some(foo)=>{
+                if  grid.get(grid_coord+foo.dir.into_vec()){
+                    let min=arr.iter().filter(|aa|**aa!=*foo).min_by(|Foo{mag:a,..},Foo{mag:b,..}|a.partial_cmp(b).unwrap());
+                    
+                    min.map(|a|*a)
+
+                }else{
+                    Some(*foo)
+                }
+
+
+            },
+            None=>{
+                None
+            }
+        }
+    }
+
+}
+
+
 #[derive(Copy, Clone)]
 pub struct Bot {
     pos: Vec2<f32>,
@@ -59,6 +115,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             {
                 let dim2 = dim.inner_into();
                 tree.for_all_not_in_rect_mut(&dim, |a| {
+    
                     duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.2);
                 });
             }
@@ -76,12 +133,12 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let a2=now.elapsed().as_millis();
 
 
-            let num_iterations=16;
+            let num_iterations=10;
             let num_iterations_inv=1.0/num_iterations as f32;
             
 
 
-            let mut collision_list =  tree.create_collision_list(|a,b|{
+            let mut collision_list =  tree.create_collision_list_par(|a,b|{
                 let offset=b.pos-a.pos;
                 let distance2=offset.magnitude2();
                 if distance2>0.00001 && distance2<diameter2{

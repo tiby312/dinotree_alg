@@ -1,7 +1,3 @@
-
-//TODO cleanup
-
-
 use crate::inner_prelude::*;
 use compt::Visitor;
 
@@ -20,6 +16,7 @@ pub fn create_collision_list<'a,A:Axis,N:Node + Send+Sync,D>
         }
     }
 
+    //TODO might break if user uses custom height
     let height=1+par::compute_level_switch_sequential(par::SWITCH_SEQUENTIAL_DEFAULT,tree.get_height()).get_depth_to_switch_at();
     //dbg!(tree.get_height(),height);
     let mut nodes:Vec<Vec<Collision<<N::T as HasInner>::Inner,D>>>=(0..compt::compute_num_nodes(height)).map(|_|Vec::new()).collect();
@@ -50,6 +47,7 @@ struct Collision<T,D>{
     d:D
 }
 impl<T,D> Collision<T,D>{
+    #[inline(always)]
     fn new(a:&mut T,b:&mut T,d:D)->Self{
         Collision{a:a as *mut _,b:b as *mut _,d}
     }
@@ -71,7 +69,7 @@ pub struct CollisionList<'a,T,D>{
     nodes:Vec<Vec<Collision<T,D>>>
 }
 impl<'a,T:Send+Sync,D:Send+Sync> CollisionList<'a,T,D>{
-    pub fn for_every_pair_seq_mut(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut D)+Send+Sync+Copy){
+    pub fn for_every_pair_mut(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut D)+Send+Sync+Copy){
         for a in self.nodes.iter_mut(){
             for c in a.iter_mut(){
                 let a=unsafe{&mut *c.a};
@@ -100,38 +98,4 @@ impl<'a,T:Send+Sync,D:Send+Sync> CollisionList<'a,T,D>{
 }
 
 
-                /*
-
-unsafe impl<T> Send for Cpair<T>{}
-unsafe impl<T> Sync for Cpair<T>{}
-
-#[derive(Debug)]
-pub(crate) struct Cpair<T>([*mut T;2]);
-impl<T> Cpair<T>{
-    #[inline(always)]
-    pub(crate) fn get_mut(&mut self)->[&mut T;2]{
-        let [a,b]=&mut self.0;
-        unsafe{[&mut **a,&mut **b]}
-    }
-    #[inline(always)]
-    pub(crate) fn new(a:&mut T,b:&mut T)->Cpair<T>{
-        Cpair([a as *mut _,b as *mut _])
-    }
-}
-
-
-pub struct CollisionList<'a,T,K>{
-    pub(crate) _p:core::marker::PhantomData<&'a mut T>,
-    pub(crate) vec:Vec<(Cpair<T>,K)>
-}
-
-impl<'a,T,K> CollisionList<'a,T,K>{
-    pub fn for_every_collision(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut K)){
-        for a in self.vec.iter_mut(){
-            let (a,b)=a;
-            let [c,d]=a.get_mut();
-            (func)(c,d,b);
-        }
-    }
-}
-*/
+           

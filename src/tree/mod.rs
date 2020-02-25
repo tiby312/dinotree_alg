@@ -246,7 +246,7 @@ where
     ///Sometimes you want want to iterate over all the collisions multiple times.
     ///this function lets you do this safely. it is implemented on top of
     ///find__collisions_mut_par_ext
-    pub fn create_collision_list<'a,K:Send+Sync>(
+    pub fn create_collision_list_par<'a,K:Send+Sync>(
             &'a mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
     )->CollisionList<'a,<N::T as HasInner>::Inner,K>
     {
