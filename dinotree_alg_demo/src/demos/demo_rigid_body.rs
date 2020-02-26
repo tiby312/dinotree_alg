@@ -29,10 +29,10 @@ mod maps{
 █        █  █  █
 █    █████  █  █
 █      █       █
-█      █       █
+█      █    █  █
 █              █
-█              █
-█              █
+█   █          █
+█        █     █
 █              █
 ████████████████
 "};
@@ -130,10 +130,10 @@ mod grid_collide{
                 }
             };
 
-            let bias=0.1*0.5*dis*num_iterations_inv;
-            let mag=0.1*0.03*num_iterations_inv - 0.01;
+            let bias=0.5*dis*num_iterations_inv;
+            let mag=0.03*num_iterations_inv - 0.01;
             //let mag=0.0;
-            bot.vel+=offset_normal*(bias+bot.vel.dot(offset_normal)*mag);
+            bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)*0.25); //Unlike bot collision we only affect one bot so half everything.
 
         }
     }
@@ -154,7 +154,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let num_bot = 3000;
     //let num_bot=100;
 
-    let radius = 5.0;
+    let radius = 3.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
