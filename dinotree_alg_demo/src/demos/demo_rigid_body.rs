@@ -17,56 +17,124 @@ for i = 1 to nIterations
 */
 
 
+mod maps{
+    use axgeom::vec2;
+    use duckduckgeo::grid::*;
+    
+
+    pub const GRID_STR1:Map<'static>= Map{dim:vec2(16,12),str:"\
+████████████████
+█    █   █     █
+█    █   █  █  █
+█        █  █  █
+█    █████  █  █
+█      █       █
+█      █       █
+█              █
+█              █
+█              █
+█              █
+████████████████
+"};
+
+}
+
+
 mod grid_collide{
     use super::*;
     use duckduckgeo::grid::*;
     use dinotree_alg::Aabb;
-    pub fn is_colliding<T:Aabb>(grid:Grid2D,dim:GridViewPort,bot:&T)->bool{
-        unimplemented!()
+    pub fn is_colliding<T:Aabb<Num=NotNan<f32>>>(grid:&Grid2D,dim:&GridViewPort,bot:&T)->Option<Vec2<f32>>{
+        
+        let corners=bot.get().get_corners();
+
+        for a in corners.iter(){
+            let grid_coord=*a.as_ref();
+            if let Some(d)=grid.get_option(dim.to_grid(grid_coord)){
+                if d{
+                    return Some(grid_coord);
+                }
+            }
+        }
+        None
     }
 
 
     #[derive(PartialEq,Copy,Clone)]
     pub struct Foo{
         pub dir:CardDir,
-        pub mag:f32
+        pub dis:f32
     }
     impl Eq for Foo{}
-    pub fn collide_with_cell(grid:Grid2D,dim:GridViewPort,bot:&Bot)->Option<Foo>{
-        let grid_coord=dim.to_grid(bot.pos);
+    pub fn collide_with_cell(grid:&Grid2D,dim:&GridViewPort,bot:&mut super::Bot,num_iterations_inv:f32,corner:Vec2<f32>,radius:f32){
+        let grid_coord=dim.to_grid(corner);
 
         let topleft=dim.to_world_topleft(grid_coord);
         let bottomright=dim.to_world_topleft(grid_coord+vec2(1,1));
 
-        let pos=&bot.pos;
+        
 
 
-        fn foo(dir:CardDir,mag:f32)->Foo{
-            Foo{dir,mag}
+        fn foo(dir:CardDir,dis:f32)->Foo{
+            Foo{dir,dis}
         }
 
+
+        let cu=corner.y-radius;
+        let cl=corner.x-radius;
+
+        let cd=corner.y+radius;
+        let cr=corner.x+radius;
+
         use CardDir::*;
-        let arr=[foo(U,topleft.y-pos.y),foo(L,topleft.x-pos.x),foo(D,bottomright.y-pos.y),foo(R,bottomright.x-pos.x)];
+        let arr=[foo(U,cd-topleft.y),foo(L,cr-topleft.x),foo(D,bottomright.y-cu),foo(R,bottomright.x-cl)];
 
-        let min=arr.iter().min_by(|Foo{mag:a,..},Foo{mag:b,..}|a.partial_cmp(b).unwrap());
+        let min=arr.iter().filter(|a|a.dis>0.0).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
 
-
-        match min{
+        let min = match min{
             Some(foo)=>{
-                if  grid.get(grid_coord+foo.dir.into_vec()){
-                    let min=arr.iter().filter(|aa|**aa!=*foo).min_by(|Foo{mag:a,..},Foo{mag:b,..}|a.partial_cmp(b).unwrap());
-                    
-                    min.map(|a|*a)
-
+                if let Some(wall)=grid.get_option(grid_coord+foo.dir.into_vec()){                    
+                    if wall{
+                        let min=arr.iter().filter(|a|a.dis>0.0).filter(|aa|**aa!=*foo).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
+                        min.map(|a|*a)
+                    }else{
+                        Some(*foo)
+                    }
                 }else{
                     Some(*foo)
                 }
-
-
             },
             None=>{
                 None
             }
+        };
+
+        if let Some(Foo{dir,dis})=min{
+       
+            let offset_normal=match dir{
+                U=>{
+                    //bot.vel.y-=mm;
+                    vec2(0.0,-1.0)
+                },
+                D=>{
+                    vec2(0.0,1.0)
+                    //bot.vel.y+=mm;
+                },
+                L=>{
+                    vec2(-1.0,0.0)
+                    //bot.vel.x-=mm;
+                },
+                R=>{
+                    vec2(1.0,0.0)
+                    //bot.vel.x+=mm;
+                }
+            };
+
+            let bias=0.1*0.5*dis*num_iterations_inv;
+            let mag=0.1*0.03*num_iterations_inv - 0.01;
+            //let mag=0.0;
+            bot.vel+=offset_normal*(bias+bot.vel.dot(offset_normal)*mag);
+
         }
     }
 
@@ -82,8 +150,9 @@ pub struct Bot {
 use std::time::{Instant};
 
 
-pub fn make_demo(dim: Rect<F32n>) -> Demo {
+pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let num_bot = 3000;
+    //let num_bot=100;
 
     let radius = 5.0;
     let diameter=radius*2.0;
@@ -99,6 +168,27 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     let mut counter: f32=0.0;
 
+
+    let walls = duckduckgeo::grid::Grid2D::from_str(maps::GRID_STR1);
+    let grid_viewport=duckduckgeo::grid::GridViewPort{origin:vec2(0.0,0.0),spacing:dim.x.distance().into_inner()/maps::GRID_STR1.dim.x as f32};
+
+
+    let wall_save={
+        let mut squares=canvas.squares();
+         for x in 0..walls.dim().x {
+            for y in 0..walls.dim().y {
+                let curr=vec2(x,y);
+                if walls.get(curr) {
+                    let pos=grid_viewport.to_world_center(vec2(x, y));
+                    squares.add(pos.into());
+                }
+            }
+        }
+        squares.save(canvas)
+    };
+
+
+
     Demo::new(move |cursor, canvas, _check_naive| {
         for _ in 0..4{
             let now = Instant::now();
@@ -108,8 +198,18 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                     .unwrap()
             });
 
-            let mut tree = DinoTree::new_par(&mut k);
+            
         
+
+            let mut wall_collisions=Vec::new();
+            for a in k.iter_mut(){
+                if let Some(corner)=grid_collide::is_colliding(&walls,&grid_viewport,a){
+                    wall_collisions.push( (((a.inner) as *mut _),corner));
+                }
+            }
+
+            let mut tree = DinoTree::new_par(&mut k);
+
             let a1=now.elapsed().as_millis();
 
             {
@@ -133,9 +233,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             let a2=now.elapsed().as_millis();
 
 
+
+
             let num_iterations=10;
             let num_iterations_inv=1.0/num_iterations as f32;
-            
 
 
             let mut collision_list =  tree.create_collision_list_par(|a,b|{
@@ -151,10 +252,18 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                 }
             });
 
+
+
+            
             let a3=now.elapsed().as_millis();
                         
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
+
+                for (b,corner) in wall_collisions.iter_mut(){
+                    let b=unsafe{&mut **b};
+                    grid_collide::collide_with_cell(&walls,&grid_viewport,b,num_iterations_inv,*corner,radius);
+                }
 
                 collision_list.for_every_pair_par_mut(|a,b,&mut (offset_normal,bias)|{
                     let vel=b.vel-a.vel;
@@ -173,6 +282,8 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                     b.vel=vec2same(0.0);
                 }
 
+               
+
                 let mag2=b.vel.magnitude2();
                 let drag_force=mag2*0.005;
                 let ff=b.vel/mag2.sqrt()*drag_force;
@@ -189,7 +300,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
         }
 
+       
 
+        wall_save.uniforms(canvas,grid_viewport.spacing).draw();
 
 
         //Draw circles

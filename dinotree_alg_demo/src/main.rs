@@ -41,21 +41,20 @@ mod demo_iter {
             let area: Rect<F32n> = area.inner_try_into().unwrap();
 
             let k: Demo = match curr {
-                0 => demo_rigid_body::make_demo(area),
+                0 => demo_rigid_body::make_demo(area,canvas),
                 1 => demo_raycast_f32_debug::make_demo(area,canvas),
                 2 => demo_liquid::make_demo(area),
                 3 => demo_multirect::make_demo(area,canvas),
                 4 => demo_original_order::make_demo(area),
                 5 => demo_intersect_with::make_demo(area,canvas),
                 6 => demo_knearest::make_demo(area,canvas),
-                7 => demo_rigid_body::make_demo(area),
-                8 => demo_nbody::make_demo(area),
-                9 => demo_raycast_grid::make_demo(area,canvas),
+                7 => demo_nbody::make_demo(area),
+                8 => demo_raycast_grid::make_demo(area,canvas),
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
 
-            if self.0 == 10 {
+            if self.0 == 9 {
                 self.0 = 0
             }
             k
