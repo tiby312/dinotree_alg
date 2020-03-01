@@ -198,17 +198,19 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     .unwrap()
             });
 
-            
-        
 
+            /*
             let mut wall_collisions=Vec::new();
             for a in k.iter_mut(){
                 if let Some(corner)=grid_collide::is_colliding(&walls,&grid_viewport,a){
                     wall_collisions.push( (((a.inner) as *mut _),corner));
                 }
             }
+            */
 
             let mut tree = DinoTree::new_par(&mut k);
+
+
 
             let a1=now.elapsed().as_millis();
 
@@ -239,7 +241,15 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let num_iterations_inv=1.0/num_iterations as f32;
 
 
-            let mut collision_list =  tree.create_collision_list_par(|a,b|{
+            
+            let mut wall_collisions=tree.collect_all(|rect,_|{
+                if let Some(corner)=grid_collide::is_colliding(&walls,&grid_viewport,rect){
+                   Some(corner)
+                }else{
+                    None
+                }
+            });
+            let mut collision_list =  tree.collect_collisions_list_par(|a,b|{
                 let offset=b.pos-a.pos;
                 let distance2=offset.magnitude2();
                 if distance2>0.00001 && distance2<diameter2{
@@ -260,12 +270,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
 
-                for (b,corner) in wall_collisions.iter_mut(){
-                    let b=unsafe{&mut **b};
-                    grid_collide::collide_with_cell(&walls,&grid_viewport,b,num_iterations_inv,*corner,radius);
-                }
+                wall_collisions.for_every(&mut k,|b,&mut corner|{
+                    grid_collide::collide_with_cell(&walls,&grid_viewport,b,num_iterations_inv,corner,radius);
+                });
 
-                collision_list.for_every_pair_par_mut(|a,b,&mut (offset_normal,bias)|{
+                collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias)|{
                     let vel=b.vel-a.vel;
                     let k=offset_normal*(bias+vel.dot(offset_normal)*mag);
                     a.vel-=k;

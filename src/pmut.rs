@@ -29,6 +29,23 @@
 
 use crate::inner_prelude::*;
 
+
+
+
+///A protected mutable reference.
+///See the pmut module documentation for more explanation.
+pub(crate) struct PMutPtr<T: ?Sized> {
+    pub(crate) inner: *mut T, //TODO make this private
+}
+
+impl<T: ?Sized> PMutPtr<T> {
+    #[inline(always)]
+    pub(crate) unsafe fn as_ref<'a>(&self)->PMut<'a,T>{
+        PMut{inner:&mut *self.inner}
+    }
+
+}
+
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.
 pub struct PMut<'a, T: ?Sized> {
@@ -37,6 +54,11 @@ pub struct PMut<'a, T: ?Sized> {
 
 
 impl<'a, T: ?Sized> PMut<'a, T> {
+
+    #[inline(always)]
+    fn as_ptr(&mut self)->PMutPtr<T>{
+        PMutPtr{inner:self.inner as *mut _}
+    }
     #[inline(always)]
     pub fn new(inner: &'a mut T) -> PMut<'a, T> {
         PMut { inner }
@@ -45,6 +67,7 @@ impl<'a, T: ?Sized> PMut<'a, T> {
     pub fn as_mut(&mut self) -> PMut<T> {
         PMut { inner: self.inner }
     }
+
 
     #[inline(always)]
     pub fn as_ref(&self) -> &T {
@@ -59,6 +82,14 @@ impl<'a, T: Node> PMut<'a, T> {
     #[inline(always)]
     pub fn get_mut(self) -> NodeRefMut<'a, T::T> {
         self.inner.get_mut()
+    }
+}
+
+impl<'a,T:HasInner> PMut<'a,T>{
+
+    #[inline(always)]
+    pub fn unpack(mut self)->(&'a Rect<T::Num>,&'a mut T::Inner){
+        self.inner.get_inner_mut()
     }
 }
 

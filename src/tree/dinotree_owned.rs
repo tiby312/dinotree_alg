@@ -122,7 +122,7 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTree { axis, inner }
+    DinoTree { axis, inner,bot_ptr:bots as *const _ }
 }
 
 fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
@@ -141,7 +141,7 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTree { axis, inner }
+    DinoTree { axis, inner,bot_ptr:bots as *const _ }
 }
 
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`

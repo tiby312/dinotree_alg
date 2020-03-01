@@ -64,6 +64,7 @@ pub mod bbox_helper {
         DinoTree {
             inner: compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
             axis: tree.axis,
+            bot_ptr:bots as *const _
         }
     }
 }
@@ -156,6 +157,7 @@ use crate::query::*;
 pub struct DinoTree<A: Axis, N: Node> {
     axis: A,
     inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
+    bot_ptr:*const [N::T] //just used for reference. TODO check that tree still implements Send+Sync
 }
 
 ///The type of the axis of the first node in the dinotree.
@@ -220,6 +222,8 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<A, NodeMut<'a, T>> {
 }
 
 
+
+
 impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
 where
     N::T: HasInner + Send + Sync,
@@ -242,16 +246,19 @@ where
         query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a.into_inner(), b.into_inner()));
     }
 
+
+
     //TODO documennt
     ///Sometimes you want want to iterate over all the collisions multiple times.
     ///this function lets you do this safely. it is implemented on top of
     ///find__collisions_mut_par_ext
-    pub fn create_collision_list_par<'a,K:Send+Sync>(
-            &'a mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
-    )->CollisionList<'a,<N::T as HasInner>::Inner,K>
+    pub fn collect_collisions_list_par<K:Send+Sync>(
+            &mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
+    )->CollisionList<N::T,K>
     {
         rigid::create_collision_list(self,collision)
     }
+
 
 
     ///TODO document
@@ -617,7 +624,37 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
         colfind::QueryBuilder::new(self).query_seq(|a, b| func(a.into_inner(), b.into_inner()));
     }
 
+
+    pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N::Num>,&mut <N::T as HasInner>::Inner)->Option<D>)->SingleCollisionList<N::T,D>{
+        let mut res=Vec::new();
+        for node in self.inner.get_nodes_mut().iter_mut(){
+            for b in node.get_mut().bots.iter_mut(){
+                let (x,y)=b.unpack();
+                if let Some(d)=func(x,y){
+                    res.push((y as *mut _,d));
+                }
+            }
+        }
+        SingleCollisionList{a:res,bot_ptr:self.bot_ptr}
+    }
+
+
 }
+
+pub struct SingleCollisionList<T:HasInner,D>{
+    bot_ptr:*const [T],
+    a:Vec<(*mut T::Inner,D)>
+}
+
+impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
+    pub fn for_every(&mut self,arr:&mut [T],mut func:impl FnMut(&mut T::Inner,&mut D)){
+        assert_eq!(self.bot_ptr,arr as *const _ );
+        for (a,d) in self.a.iter_mut(){
+            func(unsafe{&mut **a},d)
+        }
+    }
+}
+
 
 impl<A: Axis, N: Node> DinoTree<A, N> {
 
@@ -809,7 +846,7 @@ mod builder {
         pub fn build_not_sorted_par(&mut self) -> NotSorted<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-
+            let bot_ptr=bots as *const _;
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
             let inner = create_tree_par(
                 self.axis,
@@ -823,6 +860,7 @@ mod builder {
             NotSorted(DinoTree {
                 axis: self.axis,
                 inner,
+                bot_ptr
             })
         }
 
@@ -830,7 +868,7 @@ mod builder {
         pub fn build_par(&mut self) -> DinoTree<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-
+            let bot_ptr=bots as *const _;
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
             let inner = create_tree_par(
                 self.axis,
@@ -844,6 +882,7 @@ mod builder {
             DinoTree {
                 axis: self.axis,
                 inner,
+                bot_ptr
             }
         }
     }
@@ -887,7 +926,7 @@ mod builder {
         pub fn build_not_sorted_seq(&mut self) -> NotSorted<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-
+            let bot_ptr=bots as *const _;
             let inner = create_tree_seq(
                 self.axis,
                 bots,
@@ -899,6 +938,7 @@ mod builder {
             NotSorted(DinoTree {
                 axis: self.axis,
                 inner,
+                bot_ptr
             })
         }
 
@@ -906,6 +946,7 @@ mod builder {
         pub fn build_seq(&mut self) -> DinoTree<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
+            let bot_ptr=bots as *const _;
             let inner = create_tree_seq(
                 self.axis,
                 bots,
@@ -917,6 +958,7 @@ mod builder {
             DinoTree {
                 axis: self.axis,
                 inner,
+                bot_ptr
             }
         }
 
@@ -948,7 +990,7 @@ mod builder {
         ) -> DinoTree<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-
+            let bot_ptr=bots as *const _;
             let inner = create_tree_seq(
                 self.axis,
                 bots,
@@ -960,6 +1002,7 @@ mod builder {
             DinoTree {
                 axis: self.axis,
                 inner,
+                bot_ptr
             }
         }
     }
