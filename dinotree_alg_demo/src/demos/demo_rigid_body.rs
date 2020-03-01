@@ -158,10 +158,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 3000;
+    let num_bot = 8000;
     //let num_bot=100;
 
-    let radius = 3.0;
+    let radius = 2.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
