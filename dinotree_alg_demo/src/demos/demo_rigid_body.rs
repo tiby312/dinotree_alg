@@ -235,7 +235,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
 
-            let num_iterations=10;
+            let num_iterations=20;
             let num_iterations_inv=1.0/num_iterations as f32;
 
 
@@ -266,12 +266,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a3=now.elapsed().as_millis();
                         
             let mag=0.03*num_iterations_inv - 0.01;
-            let wall_mag=0.03*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
                 wall_collisions.for_every_par(&mut k,|bot,&mut (bias,offset_normal)|{
-                    bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*wall_mag)*0.25); //Unlike bot collision we only affect one bot so half everything.
+                    bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)*0.5); //Unlike bot collision we only affect one bot so half everything.
                 });
 
                 collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias)|{
