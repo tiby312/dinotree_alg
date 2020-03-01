@@ -631,7 +631,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
             for b in node.get_mut().bots.iter_mut(){
                 let (x,y)=b.unpack();
                 if let Some(d)=func(x,y){
-                    res.push((y as *mut _,d));
+                    res.push(SingleCol{inner:y as *mut _,mag:d});
                 }
             }
         }
@@ -643,16 +643,32 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
 
 pub struct SingleCollisionList<T:HasInner,D>{
     bot_ptr:*const [T],
-    a:Vec<(*mut T::Inner,D)>
+    a:Vec<SingleCol<T,D>>
 }
 
+unsafe impl<T:HasInner,D> Send for SingleCol<T,D>{}
+unsafe impl<T:HasInner,D> Sync for SingleCol<T,D>{}
+struct SingleCol<T:HasInner,D>{
+    inner:*mut T::Inner,
+    mag:D
+}
+
+impl<T:Aabb+HasInner+Send+Sync,D:Send+Sync> SingleCollisionList<T,D>{
+
+     pub fn for_every_par(&mut self,arr:&mut [T],func:impl Fn(&mut T::Inner,&mut D)+Send+Sync+Copy){
+        use rayon::prelude::*;
+        assert_eq!(self.bot_ptr,arr as *const _ );
+        self.a.par_iter_mut().for_each(|a|func(unsafe{&mut *a.inner},&mut a.mag));
+    }
+}
 impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
     pub fn for_every(&mut self,arr:&mut [T],mut func:impl FnMut(&mut T::Inner,&mut D)){
         assert_eq!(self.bot_ptr,arr as *const _ );
-        for (a,d) in self.a.iter_mut(){
-            func(unsafe{&mut **a},d)
+        for a in self.a.iter_mut(){
+            func(unsafe{&mut *a.inner},&mut a.mag)
         }
     }
+
 }
 
 

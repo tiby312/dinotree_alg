@@ -113,26 +113,21 @@ mod grid_collide{
        
             let offset_normal=match dir{
                 U=>{
-                    //bot.vel.y-=mm;
                     vec2(0.0,-1.0)
                 },
                 D=>{
                     vec2(0.0,1.0)
-                    //bot.vel.y+=mm;
                 },
                 L=>{
                     vec2(-1.0,0.0)
-                    //bot.vel.x-=mm;
                 },
                 R=>{
                     vec2(1.0,0.0)
-                    //bot.vel.x+=mm;
                 }
             };
 
             let bias=0.5*dis*num_iterations_inv;
             let mag=0.03*num_iterations_inv - 0.01;
-            //let mag=0.0;
             bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)*0.25); //Unlike bot collision we only affect one bot so half everything.
 
         }
@@ -199,15 +194,6 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             });
 
 
-            /*
-            let mut wall_collisions=Vec::new();
-            for a in k.iter_mut(){
-                if let Some(corner)=grid_collide::is_colliding(&walls,&grid_viewport,a){
-                    wall_collisions.push( (((a.inner) as *mut _),corner));
-                }
-            }
-            */
-
             let mut tree = DinoTree::new_par(&mut k);
 
 
@@ -241,7 +227,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let num_iterations_inv=1.0/num_iterations as f32;
 
 
-            
+
             let mut wall_collisions=tree.collect_all(|rect,_|{
                 if let Some(corner)=grid_collide::is_colliding(&walls,&grid_viewport,rect){
                    Some(corner)
@@ -270,7 +256,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let mag=0.03*num_iterations_inv - 0.01;
             for _ in 0..num_iterations{
 
-                wall_collisions.for_every(&mut k,|b,&mut corner|{
+                wall_collisions.for_every_par(&mut k,|b,&mut corner|{
                     grid_collide::collide_with_cell(&walls,&grid_viewport,b,num_iterations_inv,corner,radius);
                 });
 

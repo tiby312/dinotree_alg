@@ -68,7 +68,7 @@ pub struct CollisionList<T:HasInner,D>{
     nodes:Vec<Vec<Collision<T,D>>>
 }
 impl<T:HasInner+Send+Sync,D:Send+Sync> CollisionList<T,D>{
-    /*
+    /* //TODO implmement
     pub fn for_every_pair_mut(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut D)+Send+Sync+Copy){
         for a in self.nodes.iter_mut(){
             for c in a.iter_mut(){
