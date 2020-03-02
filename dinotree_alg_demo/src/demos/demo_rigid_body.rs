@@ -52,10 +52,13 @@ mod grid_collide{
             let grid_coord=*a.as_ref();
             if let Some(d)=grid.get_option(dim.to_grid(grid_coord)){
                 if d{
-                    //grid_coord
-
-                    //return Some(grid_coord);
-
+                    #[derive(PartialEq,Copy,Clone)]
+                    pub struct Foo{
+                        pub dir:CardDir,
+                        pub dis:f32
+                    }
+                    impl Eq for Foo{}
+                    
                     let corner=grid_coord;
 
                     fn foo(dir:CardDir,dis:f32)->Foo{
@@ -114,37 +117,11 @@ mod grid_collide{
         
                         return Some((bias,offset_normal))
                     }
-
-
-
-
-
                 }
             }
         }
         None
     }
-
-
-    #[derive(PartialEq,Copy,Clone)]
-    pub struct Foo{
-        pub dir:CardDir,
-        pub dis:f32
-    }
-    impl Eq for Foo{}
-    pub fn collide_with_cell(grid:&Grid2D,dim:&GridViewPort,bot:&mut super::Bot,num_iterations_inv:f32,corner:Vec2<f32>,radius:f32){
-        /*
-        
-
-       
-        */
-        
-
-        
-
-    
-    }
-
 }
 
 
@@ -158,10 +135,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 8000;
+    let num_bot = 10000;
     //let num_bot=100;
 
-    let radius = 2.0;
+    let radius = 3.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -225,6 +202,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
                 let offset=b.pos-cursor.inner_into();
                 if offset.magnitude()<200.0*0.5{
+
                     let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 2.0);
                 }
             });
@@ -235,7 +213,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
 
-            let num_iterations=20;
+            let num_iterations=10;
             let num_iterations_inv=1.0/num_iterations as f32;
 
 
@@ -265,13 +243,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
             let a3=now.elapsed().as_millis();
                         
-            let mag=0.03*num_iterations_inv - 0.01;
+            //let mag=0.05*num_iterations_inv - 0.01;
+            let mag=(radius/80.0)*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
-                wall_collisions.for_every_par(&mut k,|bot,&mut (bias,offset_normal)|{
-                    bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)*0.5); //Unlike bot collision we only affect one bot so half everything.
-                });
 
                 collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias)|{
                     let vel=b.vel-a.vel;
@@ -279,6 +255,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     a.vel-=k;
                     b.vel+=k;
                 });     
+                
+                wall_collisions.for_every_par(&mut k,|bot,&mut (bias,offset_normal)|{
+                    bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)*0.5); //Unlike bot collision we only affect one bot so half everything.
+                });
             }
 
             let a4=now.elapsed().as_millis();
