@@ -44,7 +44,7 @@ mod grid_collide{
     use super::*;
     use duckduckgeo::grid::*;
     use dinotree_alg::Aabb;
-    pub fn is_colliding<T:Aabb<Num=NotNan<f32>>>(grid:&Grid2D,dim:&GridViewPort,bot:&T,radius:f32,num_iterations_inv:f32)->Option<(f32,Vec2<f32>)>{
+    pub fn is_colliding<T:Aabb<Num=NotNan<f32>>>(grid:&Grid2D,dim:&GridViewPort,bot:&T,radius:f32)->Option<(f32,Vec2<f32>)>{
         
         let corners=bot.get().get_corners();
 
@@ -113,9 +113,8 @@ mod grid_collide{
                                 vec2(1.0,0.0)
                             }
                         };
-                        let bias=0.5*dis*num_iterations_inv;
         
-                        return Some((bias,offset_normal))
+                        return Some((dis,offset_normal))
                     }
                 }
             }
@@ -135,10 +134,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 10000;
+    let num_bot = 1000;
     //let num_bot=100;
 
-    let radius = 3.0;
+    let radius = 6.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -176,6 +175,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     Demo::new(move |cursor, canvas, _check_naive| {
         for _ in 0..4{
             let now = Instant::now();
+            let otherbots=&mut bots as &mut [Bot] as *mut _ ;
+
             let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
                 Rect::from_point(b.pos, vec2same(radius))
                     .inner_try_into()
@@ -198,14 +199,38 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             }
 
             let vv = vec2same(200.0).inner_try_into().unwrap();
-            let cc = cursor.inner_into();
+            //let cc = cursor.inner_into();
             tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
                 let offset=b.pos-cursor.inner_into();
                 if offset.magnitude()<200.0*0.5{
-
-                    let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 2.0);
+                    let k=offset.normalize_to(0.02);
+                    b.vel-=k;
+                    //let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 2.0);
                 }
             });
+
+            {
+                //integrate forvces
+                let bots:&mut [Bot]=unsafe{&mut *otherbots};
+                for b in bots.iter_mut() {
+                    if b.vel.is_nan(){
+                        b.vel=vec2same(0.0);
+                    }
+
+                   
+
+                    let mag2=b.vel.magnitude2();
+                    let drag_force=mag2*0.005;
+                    let ff=b.vel/mag2.sqrt()*drag_force;
+                    let a=b.vel-ff;
+                    if !a.is_nan(){
+                        b.vel=a;
+                    }
+
+
+                    b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
+                 }
+            }
 
 
             let a2=now.elapsed().as_millis();
@@ -213,14 +238,18 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
 
+            let bias_factor=0.3;
+            let allowed_penetration=-1.6;
+
             let num_iterations=10;
             let num_iterations_inv=1.0/num_iterations as f32;
-
-
+            
 
             let mut wall_collisions=tree.collect_all(|rect,_|{
-                if let Some(corner)=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius,num_iterations_inv){
-                   Some(corner)
+                if let Some((seperation,corner))=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
+                    let seperation=seperation/2.0; //TODO why necessary
+                   let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
+                   Some((bias,corner))
                 }else{
                     None
                 }
@@ -231,7 +260,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 if distance2>0.00001 && distance2<diameter2{
                     let distance=distance2.sqrt();
                     let offset_normal=offset/distance;
-                    let bias=0.5*(diameter-distance)*num_iterations_inv;
+                    
+                    let separation=diameter-distance;
+
+                    let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).max(0.0));
                     Some((offset_normal,bias))
                 }else{
                     None
@@ -243,21 +275,21 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
             let a3=now.elapsed().as_millis();
                         
-            //let mag=0.05*num_iterations_inv - 0.01;
-            let mag=(radius/80.0)*num_iterations_inv - 0.01;
+            let mag=0.05*num_iterations_inv - 0.01;
+            //let mag=(radius/80.0)*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
 
                 collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias)|{
                     let vel=b.vel-a.vel;
-                    let k=offset_normal*(bias+vel.dot(offset_normal)*mag);
+                    let k=offset_normal*(bias+vel.dot(offset_normal)*mag).max(0.0);
                     a.vel-=k;
                     b.vel+=k;
                 });     
-                
+
                 wall_collisions.for_every_par(&mut k,|bot,&mut (bias,offset_normal)|{
-                    bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)*0.5); //Unlike bot collision we only affect one bot so half everything.
+                    bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)).max(0.0); 
                 });
             }
 
@@ -265,23 +297,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
             counter+=0.001;
+            //integrate position
             for b in bots.iter_mut() {
-                if b.vel.is_nan(){
-                    b.vel=vec2same(0.0);
-                }
-
-               
-
-                let mag2=b.vel.magnitude2();
-                let drag_force=mag2*0.005;
-                let ff=b.vel/mag2.sqrt()*drag_force;
-                let a=b.vel-ff;
-                if !a.is_nan(){
-                    b.vel=a;
-                }
-
-
-                b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
                 b.pos+=b.vel;
                 
             }
@@ -298,7 +315,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         for b in bots.iter(){
             circles.add(b.pos.into());
         }
-        circles.send_and_uniforms(canvas,diameter).with_color([1.0, 1.0, 0.0, 0.6]).draw();
+        circles.send_and_uniforms(canvas,diameter-1.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
         //Draw arrow
         let dim:Rect<f32>=dim.inner_into();
