@@ -175,8 +175,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     Demo::new(move |cursor, canvas, _check_naive| {
         for _ in 0..4{
             let now = Instant::now();
-            let otherbots=&mut bots as &mut [Bot] as *mut _ ;
-
+            
             let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
                 Rect::from_point(b.pos, vec2same(radius))
                     .inner_try_into()
@@ -190,53 +189,24 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let a1=now.elapsed().as_millis();
 
-            {
-                let dim2 = dim.inner_into();
-                tree.for_all_not_in_rect_mut(&dim, |a| {
-    
-                    duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.2);
-                });
-            }
+            
+            tree.for_all_not_in_rect_mut(&dim, |a| {
+                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, dim.as_ref(), 0.2);
+            });
+        
 
             let vv = vec2same(200.0).inner_try_into().unwrap();
-            //let cc = cursor.inner_into();
+            
             tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
                 let offset=b.pos-cursor.inner_into();
                 if offset.magnitude()<200.0*0.5{
                     let k=offset.normalize_to(0.02);
                     b.vel-=k;
-                    //let _ = duckduckgeo::repel_one(b.pos,&mut b.vel, cc, 0.001, 2.0);
                 }
             });
 
-            {
-                //integrate forvces
-                let bots:&mut [Bot]=unsafe{&mut *otherbots};
-                for b in bots.iter_mut() {
-                    if b.vel.is_nan(){
-                        b.vel=vec2same(0.0);
-                    }
-
-                   
-
-                    let mag2=b.vel.magnitude2();
-                    let drag_force=mag2*0.005;
-                    let ff=b.vel/mag2.sqrt()*drag_force;
-                    let a=b.vel-ff;
-                    if !a.is_nan(){
-                        b.vel=a;
-                    }
-
-
-                    b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
-                 }
-            }
-
-
+           
             let a2=now.elapsed().as_millis();
-
-
-
 
             let bias_factor=0.3;
             let allowed_penetration=-1.6;
@@ -248,8 +218,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let mut wall_collisions=tree.collect_all(|rect,_|{
                 if let Some((seperation,corner))=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
                     let seperation=seperation/2.0; //TODO why necessary
-                   let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
-                   Some((bias,corner))
+                    let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
+                    Some((bias,corner))
                 }else{
                     None
                 }
@@ -270,13 +240,28 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 }
             });
 
+            //integrate forvces
+            for b in k.iter_mut() {
+                let b=&mut b.inner;
+                if b.vel.is_nan(){
+                    b.vel=vec2same(0.0);
+                }
+
+                let mag2=b.vel.magnitude2();
+                let drag_force=mag2*0.005;
+                let ff=b.vel/mag2.sqrt()*drag_force;
+                let a=b.vel-ff;
+                if !a.is_nan(){
+                    b.vel=a;
+                }
+                b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
+             }
 
 
             
             let a3=now.elapsed().as_millis();
                         
             let mag=0.05*num_iterations_inv - 0.01;
-            //let mag=(radius/80.0)*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
@@ -315,7 +300,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         for b in bots.iter(){
             circles.add(b.pos.into());
         }
-        circles.send_and_uniforms(canvas,diameter-1.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
+        circles.send_and_uniforms(canvas,diameter-4.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
         //Draw arrow
         let dim:Rect<f32>=dim.inner_into();
