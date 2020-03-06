@@ -40,6 +40,65 @@ mod maps{
 }
 
 
+mod chash{
+    use std::collections::BTreeMap;
+
+    pub struct CollisionHashMap<T,D>{
+        start_ptr:*const T,
+        length:usize,
+        inner:BTreeMap<BotCollisionHash,D>
+    }
+    unsafe impl<T,D> Send for CollisionHashMap<T,D>{}
+    unsafe impl<T,D> Sync for CollisionHashMap<T,D>{}
+
+    impl<T,D> CollisionHashMap<T,D>{
+        pub fn new(bot_range:*const [T])->CollisionHashMap<T,D>{
+            let bot_range=unsafe{&*bot_range};
+            assert!(bot_range.len()<(1<<16),"{}",bot_range.len());
+            CollisionHashMap{start_ptr:bot_range.as_ptr(),length:bot_range.len(),inner:BTreeMap::new()}
+        }
+
+        #[inline(always)]
+        pub fn insert(&mut self,a:&T,b:&T,d:D){
+            let hash=self.into_hash(a,b);
+
+            self.inner.insert(hash,d);
+
+        }
+
+        #[inline(always)]
+        pub fn lookup(&self,a:&T,b:&T)->Option<&D>{
+            let hash=self.into_hash(a,b);
+            self.inner.get(&hash)
+        }
+
+        fn into_hash(&self,a:&T,b:&T)->BotCollisionHash{
+            let start=self.start_ptr as usize;
+            let a=a as *const _ as usize;
+            let b=b as *const _ as usize;
+
+            let a=(a-start)/core::mem::size_of::<T>();
+            let b=(b-start)/core::mem::size_of::<T>();
+
+            assert!(a<=self.length,"{}",a);
+            assert!(b<=self.length);
+
+            let [a,b]=if a<b{
+                [a,b]
+            }else{
+                [b,a]
+            };
+            BotCollisionHash(a as u16,b as u16)
+        }
+    }
+
+
+    #[derive(PartialOrd,PartialEq,Eq,Ord,Copy,Clone)]
+    struct BotCollisionHash(u16,u16);
+}
+
+
+
 mod grid_collide{
     use super::*;
     use duckduckgeo::grid::*;
@@ -171,11 +230,15 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     };
 
 
+    let mut ka:Option<chash::CollisionHashMap<_,_>>=None;
+
+    let bots_ptr=&bots as &[_] as *const _;
 
     Demo::new(move |cursor, canvas, _check_naive| {
         for _ in 0..4{
             let now = Instant::now();
             
+
             let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
                 Rect::from_point(b.pos, vec2same(radius))
                     .inner_try_into()
@@ -208,7 +271,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.3;
+            let bias_factor=0.2;
             let allowed_penetration=-1.6;
 
             let num_iterations=10;
@@ -224,21 +287,37 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     None
                 }
             });
-            let mut collision_list =  tree.collect_collisions_list_par(|a,b|{
-                let offset=b.pos-a.pos;
-                let distance2=offset.magnitude2();
-                if distance2>0.00001 && distance2<diameter2{
-                    let distance=distance2.sqrt();
-                    let offset_normal=offset/distance;
-                    
-                    let separation=diameter-distance;
 
-                    let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).max(0.0));
-                    Some((offset_normal,bias))
-                }else{
-                    None
-                }
-            });
+
+            let mut collision_list={
+                let ka3 = ka.as_ref();
+                tree.collect_collisions_list_par(|a,b|{
+                    
+                    let offset=b.pos-a.pos;
+                    let distance2=offset.magnitude2();
+                    if distance2>0.00001 && distance2<diameter2{
+                        let distance=distance2.sqrt();
+                        let offset_normal=offset/distance;
+                        
+                        let separation=diameter-distance;
+
+                        let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).max(0.0));
+    
+                        let impulse=if let Some(&impulse)=ka3.and_then(|j|j.lookup(a,b)){ //TODO inefficient to check if its none every time
+                            let k=offset_normal*impulse*0.01;
+                            a.vel-=k;
+                            b.vel+=k;
+                            impulse
+                        }else{
+                            0.0
+                        };
+
+                        Some((offset_normal,bias,impulse))
+                    }else{
+                        None
+                    }
+                })
+            };
 
             //integrate forvces
             for b in k.iter_mut() {
@@ -266,9 +345,21 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             for _ in 0..num_iterations{
 
 
-                collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias)|{
+                collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias,ref mut acc)|{
                     let vel=b.vel-a.vel;
-                    let k=offset_normal*(bias+vel.dot(offset_normal)*mag).max(0.0);
+                    let impulse=bias+vel.dot(offset_normal)*mag;
+                    
+                    // Clamp the accumulated impulse
+                    //float Pn0 = c->Pn;
+                    //c->Pn = Max(Pn0 + dPn, 0.0f);
+                    //dPn = c->Pn - Pn0;
+
+                    let p0=*acc;
+                    *acc=(p0+impulse).max(0.0);
+                    let impulse=*acc-p0;
+                    //*acc+=impulse;
+                    
+                    let k=offset_normal*impulse;
                     a.vel-=k;
                     b.vel+=k;
                 });     
@@ -279,6 +370,13 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             }
 
             let a4=now.elapsed().as_millis();
+
+
+            let mut ka2=chash::CollisionHashMap::new(bots_ptr);
+            collision_list.for_every_pair_mut(&mut k,|a,b,&mut (_,_,impulse)|{
+                ka2.insert(a,b,impulse);
+            });
+            ka=Some(ka2);
 
 
             counter+=0.001;

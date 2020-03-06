@@ -67,18 +67,23 @@ pub struct CollisionList<T:HasInner,D>{
     bot_ptr:*const [T],
     nodes:Vec<Vec<Collision<T,D>>>
 }
-impl<T:HasInner+Send+Sync,D:Send+Sync> CollisionList<T,D>{
-    /* //TODO implmement
-    pub fn for_every_pair_mut(&mut self,mut func:impl FnMut(&mut T,&mut T,&mut D)+Send+Sync+Copy){
-        for a in self.nodes.iter_mut(){
-            for c in a.iter_mut(){
+
+impl<T:HasInner,D> CollisionList<T,D>{
+
+    pub fn for_every_pair_mut(&mut self,bots:&mut [T],mut func:impl FnMut(&mut T::Inner,&mut T::Inner,&mut D)){
+        assert_eq!(bots as *const _,self.bot_ptr);
+        
+        for n in self.nodes.iter_mut(){
+            for c in n.iter_mut(){
                 let a=unsafe{&mut *c.a};
                 let b=unsafe{&mut *c.b};
                 func(a,b,&mut c.d)
             }
         }
     }
-    */
+}
+impl<T:HasInner+Send+Sync,D:Send+Sync> CollisionList<T,D>{
+    
     pub fn for_every_pair_par_mut(&mut self,bots:&mut [T],func:impl Fn(&mut T::Inner,&mut T::Inner,&mut D)+Send+Sync+Copy){
         assert_eq!(bots as *const _,self.bot_ptr);
         /*
