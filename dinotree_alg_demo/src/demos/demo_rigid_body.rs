@@ -193,10 +193,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 1000;
+    let num_bot = 6000;
     //let num_bot=100;
 
-    let radius = 6.0;
+    let radius = 3.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -274,7 +274,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let bias_factor=0.2;
             let allowed_penetration=-1.6;
 
-            let num_iterations=10;
+            let num_iterations=8;
             let num_iterations_inv=1.0/num_iterations as f32;
             
 
@@ -304,10 +304,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).max(0.0));
     
                         let impulse=if let Some(&impulse)=ka3.and_then(|j|j.lookup(a,b)){ //TODO inefficient to check if its none every time
-                            let k=offset_normal*impulse*0.01;
+                            let k=offset_normal*impulse*0.1;
                             a.vel-=k;
                             b.vel+=k;
-                            impulse
+                            0.0
                         }else{
                             0.0
                         };
