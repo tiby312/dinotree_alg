@@ -242,6 +242,7 @@ where
     {
         rigid::create_collision_list(self,collision)
     }
+
 }   
 
 impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>

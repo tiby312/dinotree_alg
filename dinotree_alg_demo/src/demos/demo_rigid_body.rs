@@ -279,8 +279,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.3;
-            let allowed_penetration=radius/4.0;
+            let bias_factor=0.0003;
+            let bias_factor=0.0;
+            let allowed_penetration=radius;
             let num_iterations=14;
             let num_iterations_inv=1.0/num_iterations as f32;
             
@@ -300,9 +301,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         let offset_normal=offset/distance;
                         
                         let separation=diameter-distance;
-
-                        let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).min(0.0));
-                        
+                        let bias=bias_factor*num_iterations_inv*( (separation-allowed_penetration).max(0.0));
                         let hash=BotCollisionHash::new(aa.inner,bb.inner);
                         let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.get(&hash)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -333,7 +332,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
                     for (seperation,offset_normal) in arr.iter().filter(|a|a.is_some()).map(|a|a.unwrap()){
                         //let seperation=seperation/2.0; //TODO why necessary
-                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).min(0.0));
+                        //dbg!(seperation);
+                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&e.inner)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -351,8 +351,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             };
 
             //integrate forvces
-            for b in k.iter_mut() {
-                let b=&mut bots[b.inner];
+            for b in bots.iter_mut() {
+                //let b=&mut bots[b.inner];
                 if b.vel.is_nan(){
                     b.vel=vec2same(0.0);
                 }
@@ -371,7 +371,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
             let a3=now.elapsed().as_millis();
                         
-            let mag=0.05*num_iterations_inv - 0.01;
+            let mag=0.1*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
