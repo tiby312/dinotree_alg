@@ -310,9 +310,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.2;
+            let bias_factor=0.3;
             //let allowed_penetration=-1.6;
-            let allowed_penetration=-radius/1.4;
+            let allowed_penetration=radius/4.0;
             let num_iterations=20;
             let num_iterations_inv=1.0/num_iterations as f32;
             
@@ -321,13 +321,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 let ka3 = ka.as_ref();
                 tree.collect_all(|rect,a|{
                     if let Some((seperation,offset_normal))=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
-                        let seperation=seperation/2.0; //TODO why necessary
-                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
+                        //let seperation=seperation/2.0; //TODO why necessary
+                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).min(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.lookup(a)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
                             a.vel+=k;
-                            //0.0
                             impulse
                         }else{
                             0.0
@@ -353,7 +352,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         
                         let separation=diameter-distance;
 
-                        let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).max(0.0));
+                        let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).min(0.0));
     
                         let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.lookup(a,b)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -393,7 +392,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
             let a3=now.elapsed().as_millis();
                         
-            let mag=0.01*num_iterations_inv - 0.01;
+            let mag=0.03*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
