@@ -43,6 +43,45 @@ mod maps{
 mod chash{
     use std::collections::BTreeMap;
 
+
+    pub struct SingleCollisionHashMap<T,D>{
+        start_ptr:*const T,
+        length:usize,
+        inner:BTreeMap<u16,D>
+    }
+    unsafe impl<T,D> Send for SingleCollisionHashMap<T,D>{}
+    unsafe impl<T,D> Sync for SingleCollisionHashMap<T,D>{}
+
+    impl<T,D> SingleCollisionHashMap<T,D>{
+        pub fn new(bot_range:*const [T])->SingleCollisionHashMap<T,D>{
+            let bot_range=unsafe{&*bot_range};
+            assert!(bot_range.len()<(1<<16),"{}",bot_range.len());
+            SingleCollisionHashMap{start_ptr:bot_range.as_ptr(),length:bot_range.len(),inner:BTreeMap::new()}
+        }
+
+        #[inline(always)]
+        pub fn insert(&mut self,a:&T,d:D){
+            let hash=self.into_hash(a);
+
+            self.inner.insert(hash,d);
+
+        }
+
+        #[inline(always)]
+        pub fn lookup(&self,a:&T)->Option<&D>{
+            let hash=self.into_hash(a);
+            self.inner.get(&hash)
+        }
+
+        fn into_hash(&self,a:&T)->u16{
+            let start=self.start_ptr as usize;
+            let a=a as *const _ as usize;
+            let a=(a-start)/core::mem::size_of::<T>();
+            assert!(a<=self.length,"{}",a);
+            a as u16
+        }        
+    }
+
     pub struct CollisionHashMap<T,D>{
         start_ptr:*const T,
         length:usize,
@@ -193,10 +232,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 6000;
+    let num_bot = 1000;
     //let num_bot=100;
 
-    let radius = 3.0;
+    let radius = 6.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -230,7 +269,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     };
 
 
-    let mut ka:Option<chash::CollisionHashMap<_,_>>=None;
+    let mut ka:Option<(chash::CollisionHashMap<_,_>,chash::SingleCollisionHashMap<_,_>)>=None;
 
     let bots_ptr=&bots as &[_] as *const _;
 
@@ -272,21 +311,34 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a2=now.elapsed().as_millis();
 
             let bias_factor=0.2;
-            let allowed_penetration=-1.6;
-
-            let num_iterations=8;
+            //let allowed_penetration=-1.6;
+            let allowed_penetration=-radius/1.4;
+            let num_iterations=20;
             let num_iterations_inv=1.0/num_iterations as f32;
             
 
-            let mut wall_collisions=tree.collect_all(|rect,_|{
-                if let Some((seperation,corner))=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
-                    let seperation=seperation/2.0; //TODO why necessary
-                    let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
-                    Some((bias,corner))
-                }else{
-                    None
-                }
-            });
+            let mut wall_collisions={
+                let ka3 = ka.as_ref();
+                tree.collect_all(|rect,a|{
+                    if let Some((seperation,offset_normal))=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
+                        let seperation=seperation/2.0; //TODO why necessary
+                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
+
+                        let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.lookup(a)){ //TODO inefficient to check if its none every time
+                            let k=offset_normal*impulse;
+                            a.vel+=k;
+                            //0.0
+                            impulse
+                        }else{
+                            0.0
+                        };
+
+                        Some((bias,offset_normal,impulse))
+                    }else{
+                        None
+                    }
+                })
+            };
 
 
             let mut collision_list={
@@ -303,11 +355,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
                         let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).max(0.0));
     
-                        let impulse=if let Some(&impulse)=ka3.and_then(|j|j.lookup(a,b)){ //TODO inefficient to check if its none every time
-                            let k=offset_normal*impulse*0.1;
+                        let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.lookup(a,b)){ //TODO inefficient to check if its none every time
+                            let k=offset_normal*impulse;
                             a.vel-=k;
                             b.vel+=k;
-                            0.0
+                            //0.0
+                            impulse
                         }else{
                             0.0
                         };
@@ -340,7 +393,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
             let a3=now.elapsed().as_millis();
                         
-            let mag=0.05*num_iterations_inv - 0.01;
+            let mag=0.01*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
@@ -349,34 +402,41 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     let vel=b.vel-a.vel;
                     let impulse=bias+vel.dot(offset_normal)*mag;
                     
-                    // Clamp the accumulated impulse
-                    //float Pn0 = c->Pn;
-                    //c->Pn = Max(Pn0 + dPn, 0.0f);
-                    //dPn = c->Pn - Pn0;
-
                     let p0=*acc;
                     *acc=(p0+impulse).max(0.0);
                     let impulse=*acc-p0;
-                    //*acc+=impulse;
                     
                     let k=offset_normal*impulse;
                     a.vel-=k;
                     b.vel+=k;
                 });     
 
-                wall_collisions.for_every_par(&mut k,|bot,&mut (bias,offset_normal)|{
-                    bot.vel+=offset_normal*((bias+bot.vel.dot(offset_normal)*mag)).max(0.0); 
+                wall_collisions.for_every_par(&mut k,|bot,&mut (bias,offset_normal,ref mut acc)|{
+                    let impulse=bias+bot.vel.dot(offset_normal)*mag;
+
+                    let p0=*acc;
+                    *acc=(p0+impulse).max(0.0);
+                    let impulse=*acc-p0;
+
+                    bot.vel+=offset_normal*impulse;
                 });
             }
 
             let a4=now.elapsed().as_millis();
 
 
+
             let mut ka2=chash::CollisionHashMap::new(bots_ptr);
+
             collision_list.for_every_pair_mut(&mut k,|a,b,&mut (_,_,impulse)|{
                 ka2.insert(a,b,impulse);
             });
-            ka=Some(ka2);
+            let mut ka3=chash::SingleCollisionHashMap::new(bots_ptr);
+
+            wall_collisions.for_every(&mut k,|a,&mut (_,_,impulse)|{
+                ka3.insert(a,impulse)
+            });
+            ka=Some((ka2,ka3));
 
 
             counter+=0.001;
