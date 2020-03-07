@@ -206,6 +206,8 @@ impl<'a, A: Axis, T: Aabb> DinoTree<A, NodeMut<'a, T>> {
     pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTree<A, NodeMut<'a, T>> {
         DinoTreeBuilder::with_axis(axis, bots).build_seq()
     }
+
+
 }
 
 impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<A, NodeMut<'a, T>> {
@@ -673,7 +675,9 @@ impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
 
 
 impl<A: Axis, N: Node> DinoTree<A, N> {
-
+    pub fn get_bots(&self)->&[N::T]{
+        unsafe{&*self.bot_ptr}
+    }
     /// # Examples
     ///
     /// ```

@@ -142,82 +142,110 @@ mod grid_collide{
     use super::*;
     use duckduckgeo::grid::*;
     use dinotree_alg::Aabb;
-    pub fn is_colliding<T:Aabb<Num=NotNan<f32>>>(grid:&Grid2D,dim:&GridViewPort,bot:&T,radius:f32)->Option<(f32,Vec2<f32>)>{
-        
-        let corners=bot.get().get_corners();
 
-        for a in corners.iter(){
-            let grid_coord=*a.as_ref();
-            if let Some(d)=grid.get_option(dim.to_grid(grid_coord)){
-                if d{
-                    #[derive(PartialEq,Copy,Clone)]
-                    pub struct Foo{
-                        pub dir:CardDir,
-                        pub dis:f32
-                    }
-                    impl Eq for Foo{}
-                    
-                    let corner=grid_coord;
+    fn find_corner_offset(grid:&Grid2D,dim:&GridViewPort,radius:f32,corner:&Vec2<f32>)->Option<(f32,Vec2<f32>)>{
+        let grid_coord:Vec2<f32>=corner.inner_into();
+        if let Some(d)=grid.get_option(dim.to_grid(grid_coord)){
+            if d{
+                #[derive(PartialEq,Copy,Clone)]
+                pub struct Foo{
+                    pub dir:CardDir,
+                    pub dis:f32
+                }
+                impl Eq for Foo{}
+                
+                let corner=grid_coord;
 
-                    fn foo(dir:CardDir,dis:f32)->Foo{
-                        Foo{dir,dis}
-                    }
+                fn foo(dir:CardDir,dis:f32)->Foo{
+                    Foo{dir,dis}
+                }
 
 
-                    let cu=corner.y-radius;
-                    let cl=corner.x-radius;
+                let cu=corner.y-radius;
+                let cl=corner.x-radius;
 
-                    let cd=corner.y+radius;
-                    let cr=corner.x+radius;
-                    let grid_coord=dim.to_grid(corner);
-                    let topleft=dim.to_world_topleft(grid_coord);
-                    let bottomright=dim.to_world_topleft(grid_coord+vec2(1,1));
-                    use CardDir::*;
-                    let arr=[foo(U,cd-topleft.y),foo(L,cr-topleft.x),foo(D,bottomright.y-cu),foo(R,bottomright.x-cl)];
+                let cd=corner.y+radius;
+                let cr=corner.x+radius;
+                let grid_coord=dim.to_grid(corner);
+                let topleft=dim.to_world_topleft(grid_coord);
+                let bottomright=dim.to_world_topleft(grid_coord+vec2(1,1));
+                use CardDir::*;
+                let arr=[foo(U,cd-topleft.y),foo(L,cr-topleft.x),foo(D,bottomright.y-cu),foo(R,bottomright.x-cl)];
 
-                    let min=arr.iter().filter(|a|a.dis>0.0).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
+                let min=arr.iter().filter(|a|a.dis>0.0).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
 
-                    let min = match min{
-                        Some(foo)=>{
-                            if let Some(wall)=grid.get_option(grid_coord+foo.dir.into_vec()){                    
-                                if wall{
-                                    let min=arr.iter().filter(|a|a.dis>0.0).filter(|aa|**aa!=*foo).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
-                                    min.map(|a|*a)
-                                }else{
-                                    Some(*foo)
-                                }
+                let min = match min{
+                    Some(foo)=>{
+                        if let Some(wall)=grid.get_option(grid_coord+foo.dir.into_vec()){                    
+                            if wall{
+                                let min=arr.iter().filter(|a|a.dis>0.0).filter(|aa|**aa!=*foo).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
+                                min.map(|a|*a)
                             }else{
                                 Some(*foo)
                             }
+                        }else{
+                            Some(*foo)
+                        }
+                    },
+                    None=>{
+                        None
+                    }
+                };
+
+                if let Some(Foo{dir,dis})=min{
+               
+                    let offset_normal=match dir{
+                        U=>{
+                            vec2(0.0,-1.0)
                         },
-                        None=>{
-                            None
+                        D=>{
+                            vec2(0.0,1.0)
+                        },
+                        L=>{
+                            vec2(-1.0,0.0)
+                        },
+                        R=>{
+                            vec2(1.0,0.0)
                         }
                     };
-
-                    if let Some(Foo{dir,dis})=min{
-                   
-                        let offset_normal=match dir{
-                            U=>{
-                                vec2(0.0,-1.0)
-                            },
-                            D=>{
-                                vec2(0.0,1.0)
-                            },
-                            L=>{
-                                vec2(-1.0,0.0)
-                            },
-                            R=>{
-                                vec2(1.0,0.0)
-                            }
-                        };
-        
-                        return Some((dis,offset_normal))
-                    }
+    
+                    return Some((dis,offset_normal))
                 }
             }
         }
-        None
+        return None;
+    }
+    pub fn is_colliding<T:Aabb<Num=NotNan<f32>>>(grid:&Grid2D,dim:&GridViewPort,bot:&T,radius:f32)->[Option<(f32,Vec2<f32>)>;2]{
+        
+        let corners=bot.get().get_corners();
+
+        let mut offsets:Vec<_>=corners.iter().map(|a|{
+            find_corner_offset(grid,dim,radius,a.as_ref())
+        }).collect();
+
+        let mut offsets:Vec<_>=offsets.drain(..).filter(|a|a.is_some()).map(|a|a.unwrap()).collect();
+        offsets.sort_by(|(a,_),(b,_)|a.partial_cmp(b).unwrap());
+
+
+        let min=offsets.iter().min_by(|&(a,_),&(b,_)|a.partial_cmp(b).unwrap());
+
+
+        match min{
+            Some(&min)=>{
+                let second_min=offsets.iter().filter(|(_,a)|a!=&min.1).min_by(|&(a,_),&(b,_)|a.partial_cmp(b).unwrap());
+                match second_min{
+                    Some(&second_min)=>{
+                        [Some(min),Some(second_min)]
+                    },
+                    None=>{
+                        [Some(min),None]
+                    }
+                }
+            },
+            None=>{
+                [None,None]
+            }
+        }
     }
 }
 
@@ -232,7 +260,7 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 1000;
+    let num_bot = 2000;
     //let num_bot=100;
 
     let radius = 6.0;
@@ -310,34 +338,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.3;
-            //let allowed_penetration=-1.6;
+            let bias_factor=0.2;
             let allowed_penetration=radius/4.0;
-            let num_iterations=20;
+            let num_iterations=14;
             let num_iterations_inv=1.0/num_iterations as f32;
             
-
-            let mut wall_collisions={
-                let ka3 = ka.as_ref();
-                tree.collect_all(|rect,a|{
-                    if let Some((seperation,offset_normal))=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
-                        //let seperation=seperation/2.0; //TODO why necessary
-                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).min(0.0));
-
-                        let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.lookup(a)){ //TODO inefficient to check if its none every time
-                            let k=offset_normal*impulse;
-                            a.vel+=k;
-                            impulse
-                        }else{
-                            0.0
-                        };
-
-                        Some((bias,offset_normal,impulse))
-                    }else{
-                        None
-                    }
-                })
-            };
 
 
             let mut collision_list={
@@ -365,6 +370,30 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         };
 
                         Some((offset_normal,bias,impulse))
+                    }else{
+                        None
+                    }
+                })
+            };
+
+
+
+            let mut wall_collisions={
+                let ka3 = ka.as_ref();
+                tree.collect_all(|rect,a|{
+                    if let [Some((seperation,offset_normal)),_]=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
+                        //let seperation=seperation/2.0; //TODO why necessary
+                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).min(0.0));
+
+                        let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.lookup(a)){ //TODO inefficient to check if its none every time
+                            let k=offset_normal*impulse;
+                            a.vel+=k;
+                            impulse
+                        }else{
+                            0.0
+                        };
+
+                        Some((bias,offset_normal,impulse))
                     }else{
                         None
                     }
