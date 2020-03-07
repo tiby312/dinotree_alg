@@ -634,19 +634,6 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
     }
 
 
-    pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N::Num>,&mut <N::T as HasInner>::Inner)->Option<D>)->SingleCollisionList<N::T,D>{
-        let mut res=Vec::new();
-        for node in self.inner.get_nodes_mut().iter_mut(){
-            for b in node.get_mut().bots.iter_mut(){
-                let (x,y)=b.unpack();
-                if let Some(d)=func(x,y){
-                    res.push(SingleCol{inner:y as *mut _,mag:d});
-                }
-            }
-        }
-        SingleCollisionList{a:res,bot_ptr:self.bot_ptr}
-    }
-
 
 }
 

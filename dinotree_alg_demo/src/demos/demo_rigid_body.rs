@@ -220,22 +220,24 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let mut ka:Option<(BTreeMap<_,_>,BTreeMap<_,_>)>=None;
 
 
-    struct Converter<T>(*mut [T]);
+    struct Converter<T>(*mut T);
     unsafe impl<T> Send for Converter<T>{}
     unsafe impl<T> Sync for Converter<T>{}
 
     impl<T> Copy for Converter<T>{}
     impl<T> Clone for Converter<T>{
+        #[inline(always)]
         fn clone(&self)->Self{
             Converter(self.0)
         }
     }
     impl<T> Converter<T>{
         fn new(a:&mut [T])->Converter<T>{
-            Converter(a as *mut _)
+            Converter(a.as_mut_ptr())
         }
+        #[inline(always)]
         unsafe fn index_mut(&self,index:usize)->&mut T{
-            &mut (*self.0)[index]
+            &mut *self.0.offset(index as isize)
         }
     }
 
@@ -306,7 +308,6 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                             let k=offset_normal*impulse;
                             a.vel-=k;
                             b.vel+=k;
-                            //0.0
                             impulse
                         }else{
                             0.0
