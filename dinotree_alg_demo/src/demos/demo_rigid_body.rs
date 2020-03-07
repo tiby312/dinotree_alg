@@ -39,102 +39,22 @@ mod maps{
 
 }
 
-
-mod chash{
-    use std::collections::BTreeMap;
+use std::collections::BTreeMap;
 
 
-    pub struct SingleCollisionHashMap<T,D>{
-        start_ptr:*const T,
-        length:usize,
-        inner:BTreeMap<u16,D>
+#[derive(PartialOrd,PartialEq,Eq,Ord,Copy,Clone)]
+pub struct BotCollisionHash(usize,usize);
+impl BotCollisionHash{
+    fn new(a:usize,b:usize)->BotCollisionHash{                
+        let [a,b]=if a<b{
+            [a,b]
+        }else{
+            [b,a]
+        };
+        BotCollisionHash(a,b)
     }
-    unsafe impl<T,D> Send for SingleCollisionHashMap<T,D>{}
-    unsafe impl<T,D> Sync for SingleCollisionHashMap<T,D>{}
-
-    impl<T,D> SingleCollisionHashMap<T,D>{
-        pub fn new(bot_range:*const [T])->SingleCollisionHashMap<T,D>{
-            let bot_range=unsafe{&*bot_range};
-            assert!(bot_range.len()<(1<<16),"{}",bot_range.len());
-            SingleCollisionHashMap{start_ptr:bot_range.as_ptr(),length:bot_range.len(),inner:BTreeMap::new()}
-        }
-
-        #[inline(always)]
-        pub fn insert(&mut self,a:&T,d:D){
-            let hash=self.into_hash(a);
-
-            self.inner.insert(hash,d);
-
-        }
-
-        #[inline(always)]
-        pub fn lookup(&self,a:&T)->Option<&D>{
-            let hash=self.into_hash(a);
-            self.inner.get(&hash)
-        }
-
-        fn into_hash(&self,a:&T)->u16{
-            let start=self.start_ptr as usize;
-            let a=a as *const _ as usize;
-            let a=(a-start)/core::mem::size_of::<T>();
-            assert!(a<=self.length,"{}",a);
-            a as u16
-        }        
-    }
-
-    pub struct CollisionHashMap<T,D>{
-        start_ptr:*const T,
-        length:usize,
-        inner:BTreeMap<BotCollisionHash,D>
-    }
-    unsafe impl<T,D> Send for CollisionHashMap<T,D>{}
-    unsafe impl<T,D> Sync for CollisionHashMap<T,D>{}
-
-    impl<T,D> CollisionHashMap<T,D>{
-        pub fn new(bot_range:*const [T])->CollisionHashMap<T,D>{
-            let bot_range=unsafe{&*bot_range};
-            assert!(bot_range.len()<(1<<16),"{}",bot_range.len());
-            CollisionHashMap{start_ptr:bot_range.as_ptr(),length:bot_range.len(),inner:BTreeMap::new()}
-        }
-
-        #[inline(always)]
-        pub fn insert(&mut self,a:&T,b:&T,d:D){
-            let hash=self.into_hash(a,b);
-
-            self.inner.insert(hash,d);
-
-        }
-
-        #[inline(always)]
-        pub fn lookup(&self,a:&T,b:&T)->Option<&D>{
-            let hash=self.into_hash(a,b);
-            self.inner.get(&hash)
-        }
-
-        fn into_hash(&self,a:&T,b:&T)->BotCollisionHash{
-            let start=self.start_ptr as usize;
-            let a=a as *const _ as usize;
-            let b=b as *const _ as usize;
-
-            let a=(a-start)/core::mem::size_of::<T>();
-            let b=(b-start)/core::mem::size_of::<T>();
-
-            assert!(a<=self.length,"{}",a);
-            assert!(b<=self.length);
-
-            let [a,b]=if a<b{
-                [a,b]
-            }else{
-                [b,a]
-            };
-            BotCollisionHash(a as u16,b as u16)
-        }
-    }
-
-
-    #[derive(PartialOrd,PartialEq,Eq,Ord,Copy,Clone)]
-    struct BotCollisionHash(u16,u16);
 }
+
 
 
 
@@ -297,20 +217,37 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     };
 
 
-    let mut ka:Option<(chash::CollisionHashMap<_,_>,chash::SingleCollisionHashMap<_,_>)>=None;
+    let mut ka:Option<(BTreeMap<_,_>,BTreeMap<_,_>)>=None;
 
-    let bots_ptr=&bots as &[_] as *const _;
+
+    struct Converter<T>(*mut [T]);
+    unsafe impl<T> Send for Converter<T>{}
+    unsafe impl<T> Sync for Converter<T>{}
+
+    impl<T> Copy for Converter<T>{}
+    impl<T> Clone for Converter<T>{
+        fn clone(&self)->Self{
+            Converter(self.0)
+        }
+    }
+    impl<T> Converter<T>{
+        fn new(a:&mut [T])->Converter<T>{
+            Converter(a as *mut _)
+        }
+        unsafe fn index_mut(&self,index:usize)->&mut T{
+            &mut (*self.0)[index]
+        }
+    }
 
     Demo::new(move |cursor, canvas, _check_naive| {
         for _ in 0..4{
             let now = Instant::now();
             
 
-            let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
-                Rect::from_point(b.pos, vec2same(radius))
-                    .inner_try_into()
-                    .unwrap()
-            });
+
+            let mut k:Vec<_>=bots.iter().enumerate().map(|(i,a)|{
+                bbox::BBox::new(Rect::from_point(a.pos,vec2same(radius)).inner_try_into().unwrap(),i)
+            }).collect();
 
 
             let mut tree = DinoTree::new_par(&mut k);
@@ -320,14 +257,16 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a1=now.elapsed().as_millis();
 
             
-            tree.for_all_not_in_rect_mut(&dim, |a| {
+            tree.for_all_not_in_rect_mut(&dim, |&mut a| {
+                let a=&mut bots[a];
                 duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, dim.as_ref(), 0.2);
             });
         
 
             let vv = vec2same(200.0).inner_try_into().unwrap();
             
-            tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
+            tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |&mut b| {
+                let b=&mut bots[b];
                 let offset=b.pos-cursor.inner_into();
                 if offset.magnitude()<200.0*0.5{
                     let k=offset.normalize_to(0.02);
@@ -338,17 +277,20 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.2;
+            let bias_factor=0.3;
             let allowed_penetration=radius/4.0;
             let num_iterations=14;
             let num_iterations_inv=1.0/num_iterations as f32;
             
 
+            
 
             let mut collision_list={
                 let ka3 = ka.as_ref();
-                tree.collect_collisions_list_par(|a,b|{
-                    
+                let c=Converter::new(&mut bots);
+                tree.collect_collisions_list_par(|aa,bb|{
+                    let a=unsafe{c.index_mut(aa.inner)};
+                    let b=unsafe{c.index_mut(bb.inner)};
                     let offset=b.pos-a.pos;
                     let distance2=offset.magnitude2();
                     if distance2>0.00001 && distance2<diameter2{
@@ -358,8 +300,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         let separation=diameter-distance;
 
                         let bias=bias_factor*num_iterations_inv*( (separation+allowed_penetration).min(0.0));
-    
-                        let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.lookup(a,b)){ //TODO inefficient to check if its none every time
+                        
+                        let hash=BotCollisionHash::new(aa.inner,bb.inner);
+                        let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.get(&hash)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
                             a.vel-=k;
                             b.vel+=k;
@@ -380,12 +323,18 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let mut wall_collisions={
                 let ka3 = ka.as_ref();
-                tree.collect_all(|rect,a|{
-                    if let [Some((seperation,offset_normal)),_]=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius){
+
+                let mut wall_collisions=Vec::new();
+                for e in tree.get_bots().iter(){
+                    let a=&mut bots[e.inner];
+
+                    let arr=grid_collide::is_colliding(&walls,&grid_viewport,e.get(),radius);
+
+                    for (seperation,offset_normal) in arr.iter().filter(|a|a.is_some()).map(|a|a.unwrap()){
                         //let seperation=seperation/2.0; //TODO why necessary
                         let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).min(0.0));
 
-                        let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.lookup(a)){ //TODO inefficient to check if its none every time
+                        let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&e.inner)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
                             a.vel+=k;
                             impulse
@@ -393,16 +342,16 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                             0.0
                         };
 
-                        Some((bias,offset_normal,impulse))
-                    }else{
-                        None
+                        wall_collisions.push((e.inner,bias,offset_normal,impulse));
+                        
                     }
-                })
+                };
+                wall_collisions
             };
 
             //integrate forvces
             for b in k.iter_mut() {
-                let b=&mut b.inner;
+                let b=&mut bots[b.inner];
                 if b.vel.is_nan(){
                     b.vel=vec2same(0.0);
                 }
@@ -421,12 +370,15 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
             let a3=now.elapsed().as_millis();
                         
-            let mag=0.03*num_iterations_inv - 0.01;
+            let mag=0.05*num_iterations_inv - 0.01;
                     
             for _ in 0..num_iterations{
 
-
-                collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias,ref mut acc)|{
+                let c=Converter::new(&mut bots);
+                
+                collision_list.for_every_pair_par_mut(&mut k,move |a,b,&mut (offset_normal,bias,ref mut acc)|{
+                    let a=unsafe{c.index_mut(a.inner)};
+                    let b=unsafe{c.index_mut(b.inner)};
                     let vel=b.vel-a.vel;
                     let impulse=bias+vel.dot(offset_normal)*mag;
                     
@@ -439,7 +391,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel+=k;
                 });     
 
-                wall_collisions.for_every_par(&mut k,|bot,&mut (bias,offset_normal,ref mut acc)|{
+                for &mut (e,bias,offset_normal,ref mut acc) in wall_collisions.iter_mut(){
+                    let bot=&mut bots[e];
+
                     let impulse=bias+bot.vel.dot(offset_normal)*mag;
 
                     let p0=*acc;
@@ -447,23 +401,23 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     let impulse=*acc-p0;
 
                     bot.vel+=offset_normal*impulse;
-                });
+                }
             }
 
             let a4=now.elapsed().as_millis();
 
 
 
-            let mut ka2=chash::CollisionHashMap::new(bots_ptr);
-
-            collision_list.for_every_pair_mut(&mut k,|a,b,&mut (_,_,impulse)|{
-                ka2.insert(a,b,impulse);
+            let mut ka2=BTreeMap::new();
+            collision_list.for_every_pair_mut(|a,b,&mut (_,_,impulse)|{
+                let hash=BotCollisionHash::new(a.inner,b.inner);
+                ka2.insert(hash,impulse);
             });
-            let mut ka3=chash::SingleCollisionHashMap::new(bots_ptr);
+            let mut ka3=BTreeMap::new();
 
-            wall_collisions.for_every(&mut k,|a,&mut (_,_,impulse)|{
-                ka3.insert(a,impulse)
-            });
+            for &(e,_,_,impulse) in wall_collisions.iter(){
+                ka3.insert(e,impulse);
+            }
             ka=Some((ka2,ka3));
 
 

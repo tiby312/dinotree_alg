@@ -226,9 +226,27 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<A, NodeMut<'a, T>> {
 
 
 
+
 impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
 where
-    N::T: HasInner + Send + Sync,
+    N::T : Send + Sync + Copy
+{
+
+    //TODO documennt
+    ///Sometimes you want want to iterate over all the collisions multiple times.
+    ///this function lets you do this safely. it is implemented on top of
+    ///find__collisions_mut_par_ext
+    pub fn collect_collisions_list_par<K:Send+Sync>(
+            &mut self,collision:impl Fn(&N::T,&N::T)->Option<K> + Send +Sync
+    )->CollisionList<N::T,K>
+    {
+        rigid::create_collision_list(self,collision)
+    }
+}   
+
+impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
+where
+    N::T : Send + Sync
 {
     /// # Examples
     ///
@@ -244,31 +262,20 @@ where
     ///assert_eq!(bots[0].inner,1);
     ///assert_eq!(bots[1].inner,1);
     ///```
-    pub fn find_collisions_mut_par(&mut self, func: impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync) {
-        query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a.into_inner(), b.into_inner()));
+    pub fn find_collisions_par(&mut self, func: impl Fn( &N::T,&N::T) + Send + Sync) {
+        query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a.as_ref(), b.as_ref()));
     }
 
 
-
-    //TODO documennt
-    ///Sometimes you want want to iterate over all the collisions multiple times.
-    ///this function lets you do this safely. it is implemented on top of
-    ///find__collisions_mut_par_ext
-    pub fn collect_collisions_list_par<K:Send+Sync>(
-            &mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
-    )->CollisionList<N::T,K>
-    {
-        rigid::create_collision_list(self,collision)
-    }
 
 
 
     ///TODO document
-    pub fn find_collisions_mut_par_ext<B:Send+Sync>(
+    pub fn find_collisions_par_ext<B:Send+Sync>(
         &mut self,
         split: impl Fn(&mut B)->B + Send + Sync+Copy,
         fold: impl Fn(&mut B,B) + Send + Sync+Copy,
-        collision:impl Fn(&mut B,&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync + Copy,
+        collision:impl Fn(&mut B,&N::T,&N::T) + Send + Sync + Copy,
         acc: B)->B{
 
         struct Foo<
@@ -286,10 +293,10 @@ where
 
         
 
-        impl<T:Aabb+HasInner,A,B,C,D:Fn(&mut A,&mut T::Inner,&mut T::Inner)> ColMulti for Foo<T,A,B,C,D>{
+        impl<T:Aabb,A,B,C,D:Fn(&mut A,&T,&T)> ColMulti for Foo<T,A,B,C,D>{
             type T=T;
             fn collide(&mut self, a: PMut<Self::T>, b: PMut<Self::T>){
-                (self.collision)(&mut self.acc,a.into_inner(),b.into_inner())
+                (self.collision)(&mut self.acc,a.as_ref(),b.as_ref())
             }
         }
         impl<T,A,B:Fn(&mut A)->A+Copy,C:Fn(&mut A,A)+Copy,D:Copy> Splitter for Foo<T,A,B,C,D>{

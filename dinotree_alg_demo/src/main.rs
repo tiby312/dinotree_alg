@@ -42,6 +42,7 @@ mod demo_iter {
 
             let k: Demo = match curr {
                 0 => demo_rigid_body::make_demo(area,canvas),
+                /*
                 1 => demo_raycast_f32_debug::make_demo(area,canvas),
                 2 => demo_liquid::make_demo(area),
                 3 => demo_multirect::make_demo(area,canvas),
@@ -50,6 +51,7 @@ mod demo_iter {
                 6 => demo_knearest::make_demo(area,canvas),
                 7 => demo_nbody::make_demo(area),
                 8 => demo_raycast_grid::make_demo(area,canvas),
+                */
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
