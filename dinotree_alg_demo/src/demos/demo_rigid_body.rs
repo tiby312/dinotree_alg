@@ -174,13 +174,14 @@ mod grid_collide{
 pub struct Bot {
     pos: Vec2<f32>,
     vel: Vec2<f32>, 
+    pseudo_vel:Vec2<f32>
 }
 
 use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 2000;
+    let num_bot = 1000;
     //let num_bot=100;
 
     let radius = 6.0;
@@ -190,6 +191,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(num_bot)
         .map(|pos| Bot {
+            pseudo_vel:vec2same(0.0),
             pos,
             vel: vec2same(0.0)
         })
@@ -279,11 +281,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.0003;
+            //let bias_factor=0.00003;
             let bias_factor=0.0;
             let allowed_penetration=radius;
-            let num_iterations=14;
-            let num_iterations_inv=1.0/num_iterations as f32;
+            let num_iterations=20;//14;
+            //let num_iterations_inv=1.0/num_iterations as f32;
             
 
             
@@ -301,7 +303,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         let offset_normal=offset/distance;
                         
                         let separation=diameter-distance;
-                        let bias=bias_factor*num_iterations_inv*( (separation-allowed_penetration).max(0.0));
+                        let bias=bias_factor*(1.0/num_iterations as f32)*( (separation-allowed_penetration).max(0.0));
                         let hash=BotCollisionHash::new(aa.inner,bb.inner);
                         let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.get(&hash)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -312,7 +314,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                             0.0
                         };
 
-                        Some((offset_normal,bias,impulse))
+                        Some((offset_normal,separation,impulse))
                     }else{
                         None
                     }
@@ -333,7 +335,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     for (seperation,offset_normal) in arr.iter().filter(|a|a.is_some()).map(|a|a.unwrap()){
                         //let seperation=seperation/2.0; //TODO why necessary
                         //dbg!(seperation);
-                        let bias=bias_factor*num_iterations_inv*( (seperation+allowed_penetration).max(0.0));
+                        let bias=bias_factor*(1.0/num_iterations as f32)*( (seperation+allowed_penetration).max(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&e.inner)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -343,7 +345,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                             0.0
                         };
 
-                        wall_collisions.push((e.inner,bias,offset_normal,impulse));
+                        wall_collisions.push((e.inner,seperation,offset_normal,impulse));
                         
                     }
                 };
@@ -364,24 +366,24 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 if !a.is_nan(){
                     b.vel=a;
                 }
-                b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
+                //b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
              }
 
 
             
             let a3=now.elapsed().as_millis();
                         
-            let mag=0.1*num_iterations_inv - 0.01;
+            let mag=0.1*(1.0/num_iterations as f32) - 0.01;
                     
             for _ in 0..num_iterations{
 
                 let c=Converter::new(&mut bots);
                 
-                collision_list.for_every_pair_par_mut(&mut k,move |a,b,&mut (offset_normal,bias,ref mut acc)|{
+                collision_list.for_every_pair_par_mut(move |a,b,&mut (offset_normal,_,ref mut acc)|{
                     let a=unsafe{c.index_mut(a.inner)};
                     let b=unsafe{c.index_mut(b.inner)};
                     let vel=b.vel-a.vel;
-                    let impulse=bias+vel.dot(offset_normal)*mag;
+                    let impulse=/*bias+*/vel.dot(offset_normal)*mag;
                     
                     let p0=*acc;
                     *acc=(p0+impulse).max(0.0);
@@ -392,10 +394,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel+=k;
                 });     
 
-                for &mut (e,bias,offset_normal,ref mut acc) in wall_collisions.iter_mut(){
+                for &mut (e,_,offset_normal,ref mut acc) in wall_collisions.iter_mut(){
                     let bot=&mut bots[e];
 
-                    let impulse=bias+bot.vel.dot(offset_normal)*mag;
+                    let impulse=/*bias+*/bot.vel.dot(offset_normal)*mag;
 
                     let p0=*acc;
                     *acc=(p0+impulse).max(0.0);
@@ -404,9 +406,6 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     bot.vel+=offset_normal*impulse;
                 }
             }
-
-            let a4=now.elapsed().as_millis();
-
 
 
             let mut ka2=BTreeMap::new();
@@ -421,13 +420,64 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             }
             ka=Some((ka2,ka3));
 
+            let a4=now.elapsed().as_millis();
+            
 
-            counter+=0.001;
+
+
+            let num_iterations=5;//2;
+
+            let c=Converter::new(&mut bots);
+            
+            let pseudo_vel_constant=0.03*(1.0/num_iterations as f32);
+            let mag=0.7*(1.0/num_iterations as f32);
+            for _ in 0..num_iterations{
+
+                
+                collision_list.for_every_pair_par_mut(move |a,b,&mut (offset_normal,seperation,_)|{
+                    let a=unsafe{c.index_mut(a.inner)};
+                    let b=unsafe{c.index_mut(b.inner)};
+                    let pseudo_vel=b.pseudo_vel-a.pseudo_vel;
+                    let pseudo_impulse=pseudo_vel.dot(offset_normal)*mag+pseudo_vel_constant*seperation;
+                    let pseudo_impulse=pseudo_impulse.max(0.0);
+                    let k=offset_normal*pseudo_impulse;
+                    assert!(!k.is_nan(),"yooo={:?}",(pseudo_impulse,pseudo_vel,offset_normal,seperation));
+                    if !k.is_nan(){
+                        a.pseudo_vel-=k;
+                        b.pseudo_vel+=k;
+                    }
+                });
+
+                for &mut (e,seperation,offset_normal,_) in wall_collisions.iter_mut(){
+                    let bot=&mut bots[e];
+
+                    let pseudo_impulse=bot.pseudo_vel.dot(offset_normal)*mag+pseudo_vel_constant*seperation;
+                    let pseudo_impulse=pseudo_impulse.max(0.0);
+                    let k=offset_normal*pseudo_impulse;
+                    assert!(!k.is_nan(),"yooo={:?}",(bot.pseudo_vel,pseudo_impulse,offset_normal,seperation));
+                    if !k.is_nan(){
+                        bot.pseudo_vel+=k;
+                    }
+                }
+            }
+
+
+            
+
+
+
+
+
+            
             //integrate position
             for b in bots.iter_mut() {
                 b.pos+=b.vel;
+                b.pos+=b.pseudo_vel;
+                b.pseudo_vel=vec2same(0.0);
                 
             }
+            
+            counter+=0.001;
             println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
         }
 

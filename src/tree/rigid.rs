@@ -79,7 +79,7 @@ impl<T,D> CollisionList<T,D>{
 }
 impl<T:Send+Sync,D:Send+Sync> CollisionList<T,D>{
     
-    pub fn for_every_pair_par_mut(&mut self,bots:&mut [T],func:impl Fn(&T,&T,&mut D)+Send+Sync+Copy){
+    pub fn for_every_pair_par_mut(&mut self,func:impl Fn(&T,&T,&mut D)+Send+Sync+Copy){
         
         /*
         for a in self.nodes.iter(){
