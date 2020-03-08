@@ -180,10 +180,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 4000;
+    let num_bot = 1000;
     //let num_bot=100;
 
-    let radius = 4.0;
+    let radius = 6.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -279,7 +279,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.0001;
+            let bias_factor=0.0002;
             let allowed_penetration=radius;
             let num_iterations=12;
             
