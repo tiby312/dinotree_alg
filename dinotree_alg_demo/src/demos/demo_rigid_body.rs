@@ -366,7 +366,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 if !a.is_nan(){
                     b.vel=a;
                 }
-                //b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
+                b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
              }
 
 
