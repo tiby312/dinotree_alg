@@ -180,10 +180,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 2000;
+    let num_bot = 4000;
     //let num_bot=100;
 
-    let radius = 6.0;
+    let radius = 4.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -242,7 +242,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     }
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        for _ in 0..10{
+        for _ in 0..1{
             let now = Instant::now();
             
 
@@ -281,7 +281,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let bias_factor=0.0001;
             let allowed_penetration=radius;
-            let num_iterations=10;
+            let num_iterations=12;
             
 
             
@@ -318,6 +318,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             };
 
 
+            //Package in one struct
+            //so that there is no chance of mutating it twice
+            struct WallCollision{
+                collisions:[Option<(usize,f32,Vec2<f32>,f32)>;2],
+            }
 
             let mut wall_collisions={
                 let ka3 = ka.as_ref();
@@ -327,8 +332,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     let a=&mut bots[e.inner];
 
                     let arr=grid_collide::is_colliding(&walls,&grid_viewport,e.get(),radius);
-
-                    for (seperation,offset_normal) in arr.iter().filter(|a|a.is_some()).map(|a|a.unwrap()){
+                    //fn create_stuff(index:usize,seperation:f32,offset_normal:Vec2<f32>)->(usize,f32,Vec2<f32>,f32){
+                    let mut create_collision=|index:usize,seperation:f32,offset_normal:Vec2<f32>|{
                         let bias=bias_factor*(1.0/num_iterations as f32)*( (seperation+allowed_penetration).max(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&e.inner)){ //TODO inefficient to check if its none every time
@@ -338,17 +343,37 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         }else{
                             0.0
                         };
+                        (index,bias,offset_normal,impulse)
+                    };
+                    match arr[0]{
+                        Some((seperation,offset_normal))=>{
+                            let first=Some(create_collision(e.inner,seperation,offset_normal));
 
-                        wall_collisions.push((e.inner,bias,offset_normal,impulse));
-                        
+                            let wall=match arr[1]{
+                                Some((seperation,offset_normal))=>{
+                                    let second=Some(create_collision(e.inner,seperation,offset_normal));
+                                    WallCollision{collisions:[first,second]}
+                                },
+                                None=>{
+                                    WallCollision{collisions:[first,None]}
+                                }
+                            };
+                            wall_collisions.push(wall);
+                        },
+                        None=>{
+
+                        }
                     }
+
+
+
+                    
                 };
                 wall_collisions
             };
 
             //integrate forvces
             for b in bots.iter_mut() {
-                //let b=&mut bots[b.inner];
                 if b.vel.is_nan(){
                     b.vel=vec2same(0.0);
                 }
@@ -389,17 +414,23 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel+=k;
                 });     
 
-                for &mut (e,bias,offset_normal,ref mut acc) in wall_collisions.iter_mut(){
-                    let bot=&mut bots[e];
+                use rayon::prelude::*;
+                wall_collisions.par_iter_mut().for_each(|wall|{
+                    for k in wall.collisions.iter_mut(){
+                        if let &mut Some((e,bias,offset_normal,ref mut acc))=k{
+                            let bot=unsafe{c.index_mut(e)};// &mut bots[e];
 
-                    let impulse=bias+bot.vel.dot(offset_normal)*mag;
+                            let impulse=bias+bot.vel.dot(offset_normal)*mag;
 
-                    let p0=*acc;
-                    *acc=(p0+impulse).max(0.0);
-                    let impulse=*acc-p0;
+                            let p0=*acc;
+                            *acc=(p0+impulse).max(0.0);
+                            let impulse=*acc-p0;
 
-                    bot.vel+=offset_normal*impulse;
-                }
+                            bot.vel+=offset_normal*impulse;
+                        }
+                    };
+
+                });
             }
 
 
@@ -410,7 +441,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             });
             let mut ka3=BTreeMap::new();
 
-            for &(e,_,_,impulse) in wall_collisions.iter(){
+            for (e,_,_,impulse) in wall_collisions.iter().flat_map(|a|a.collisions.iter().filter(|a|a.is_some()).map(|a|a.unwrap())){
                 ka3.insert(e,impulse);
             }
             ka=Some((ka2,ka3));
