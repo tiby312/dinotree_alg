@@ -181,10 +181,10 @@ use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 1000;
+    let num_bot = 5000;
     //let num_bot=100;
 
-    let radius = 6.0;
+    let radius = 4.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -244,7 +244,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     }
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        for _ in 0..4{
+        for _ in 0..10{
             let now = Instant::now();
             
 
@@ -281,10 +281,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            //let bias_factor=0.00003;
-            let bias_factor=0.0;
+            let bias_factor=0.00005;
+            //let bias_factor=0.0;
             let allowed_penetration=radius;
-            let num_iterations=20;//14;
+            let num_iterations=14;//14;
             //let num_iterations_inv=1.0/num_iterations as f32;
             
 
@@ -314,7 +314,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                             0.0
                         };
 
-                        Some((offset_normal,separation,impulse))
+                        Some((offset_normal,bias,impulse))
                     }else{
                         None
                     }
@@ -345,7 +345,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                             0.0
                         };
 
-                        wall_collisions.push((e.inner,seperation,offset_normal,impulse));
+                        wall_collisions.push((e.inner,bias,offset_normal,impulse));
                         
                     }
                 };
@@ -366,7 +366,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 if !a.is_nan(){
                     b.vel=a;
                 }
-                b.vel+=vec2(0.01*counter.cos(),0.01*counter.sin());
+                let g=0.002;
+                b.vel+=vec2(g*counter.cos(),g*counter.sin());
              }
 
 
@@ -378,12 +379,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             for _ in 0..num_iterations{
 
                 let c=Converter::new(&mut bots);
-                
-                collision_list.for_every_pair_par_mut(move |a,b,&mut (offset_normal,_,ref mut acc)|{
+
+                collision_list.for_every_pair_par_mut(move |a,b,&mut (offset_normal,bias,ref mut acc)|{
                     let a=unsafe{c.index_mut(a.inner)};
                     let b=unsafe{c.index_mut(b.inner)};
                     let vel=b.vel-a.vel;
-                    let impulse=/*bias+*/vel.dot(offset_normal)*mag;
+                    let impulse=bias+vel.dot(offset_normal)*mag;
                     
                     let p0=*acc;
                     *acc=(p0+impulse).max(0.0);
@@ -394,10 +395,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel+=k;
                 });     
 
-                for &mut (e,_,offset_normal,ref mut acc) in wall_collisions.iter_mut(){
+                for &mut (e,bias,offset_normal,ref mut acc) in wall_collisions.iter_mut(){
                     let bot=&mut bots[e];
 
-                    let impulse=/*bias+*/bot.vel.dot(offset_normal)*mag;
+                    let impulse=bias+bot.vel.dot(offset_normal)*mag;
 
                     let p0=*acc;
                     *acc=(p0+impulse).max(0.0);
@@ -424,13 +425,14 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
 
 
-
-            let num_iterations=5;//2;
+            /*
+            let num_iterations=40;//2;
 
             let c=Converter::new(&mut bots);
             
-            let pseudo_vel_constant=0.03*(1.0/num_iterations as f32);
-            let mag=0.7*(1.0/num_iterations as f32);
+            let pseudo_vel_constant=0.04*(1.0/num_iterations as f32);
+            let mag=0.3*(1.0/num_iterations as f32);
+            
             for _ in 0..num_iterations{
 
                 
@@ -460,6 +462,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     }
                 }
             }
+            */
+
 
 
             
@@ -472,8 +476,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             //integrate position
             for b in bots.iter_mut() {
                 b.pos+=b.vel;
-                b.pos+=b.pseudo_vel;
-                b.pseudo_vel=vec2same(0.0);
+                //b.pos+=b.pseudo_vel;
+                //b.pseudo_vel=vec2same(0.0);
                 
             }
             
