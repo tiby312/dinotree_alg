@@ -173,25 +173,23 @@ mod grid_collide{
 #[derive(Copy, Clone)]
 pub struct Bot {
     pos: Vec2<f32>,
-    vel: Vec2<f32>, 
-    pseudo_vel:Vec2<f32>
+    vel: Vec2<f32>
 }
 
 use std::time::{Instant};
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 5000;
+    let num_bot = 2000;
     //let num_bot=100;
 
-    let radius = 4.0;
+    let radius = 6.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(num_bot)
         .map(|pos| Bot {
-            pseudo_vel:vec2same(0.0),
             pos,
             vel: vec2same(0.0)
         })
@@ -281,11 +279,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.00005;
-            //let bias_factor=0.0;
+            let bias_factor=0.0001;
             let allowed_penetration=radius;
-            let num_iterations=14;//14;
-            //let num_iterations_inv=1.0/num_iterations as f32;
+            let num_iterations=10;
             
 
             
@@ -333,8 +329,6 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     let arr=grid_collide::is_colliding(&walls,&grid_viewport,e.get(),radius);
 
                     for (seperation,offset_normal) in arr.iter().filter(|a|a.is_some()).map(|a|a.unwrap()){
-                        //let seperation=seperation/2.0; //TODO why necessary
-                        //dbg!(seperation);
                         let bias=bias_factor*(1.0/num_iterations as f32)*( (seperation+allowed_penetration).max(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&e.inner)){ //TODO inefficient to check if its none every time
@@ -366,7 +360,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 if !a.is_nan(){
                     b.vel=a;
                 }
-                let g=0.002;
+                let g=0.01;
                 b.vel+=vec2(g*counter.cos(),g*counter.sin());
              }
 
@@ -374,7 +368,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             
             let a3=now.elapsed().as_millis();
                         
-            let mag=0.1*(1.0/num_iterations as f32) - 0.01;
+            let mag=0.01*(1.0/num_iterations as f32) - 0.01;
                     
             for _ in 0..num_iterations{
 
@@ -424,61 +418,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a4=now.elapsed().as_millis();
             
 
-
-            /*
-            let num_iterations=40;//2;
-
-            let c=Converter::new(&mut bots);
-            
-            let pseudo_vel_constant=0.04*(1.0/num_iterations as f32);
-            let mag=0.3*(1.0/num_iterations as f32);
-            
-            for _ in 0..num_iterations{
-
-                
-                collision_list.for_every_pair_par_mut(move |a,b,&mut (offset_normal,seperation,_)|{
-                    let a=unsafe{c.index_mut(a.inner)};
-                    let b=unsafe{c.index_mut(b.inner)};
-                    let pseudo_vel=b.pseudo_vel-a.pseudo_vel;
-                    let pseudo_impulse=pseudo_vel.dot(offset_normal)*mag+pseudo_vel_constant*seperation;
-                    let pseudo_impulse=pseudo_impulse.max(0.0);
-                    let k=offset_normal*pseudo_impulse;
-                    assert!(!k.is_nan(),"yooo={:?}",(pseudo_impulse,pseudo_vel,offset_normal,seperation));
-                    if !k.is_nan(){
-                        a.pseudo_vel-=k;
-                        b.pseudo_vel+=k;
-                    }
-                });
-
-                for &mut (e,seperation,offset_normal,_) in wall_collisions.iter_mut(){
-                    let bot=&mut bots[e];
-
-                    let pseudo_impulse=bot.pseudo_vel.dot(offset_normal)*mag+pseudo_vel_constant*seperation;
-                    let pseudo_impulse=pseudo_impulse.max(0.0);
-                    let k=offset_normal*pseudo_impulse;
-                    assert!(!k.is_nan(),"yooo={:?}",(bot.pseudo_vel,pseudo_impulse,offset_normal,seperation));
-                    if !k.is_nan(){
-                        bot.pseudo_vel+=k;
-                    }
-                }
-            }
-            */
-
-
-
-            
-
-
-
-
-
-            
             //integrate position
             for b in bots.iter_mut() {
                 b.pos+=b.vel;
-                //b.pos+=b.pseudo_vel;
-                //b.pseudo_vel=vec2same(0.0);
-                
             }
             
             counter+=0.001;
