@@ -226,28 +226,20 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<A, NodeMut<'a, T>> {
 
 
 
-
 impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
 where
-    N::T : Send + Sync + Copy
+    N::T:HasInner + Send + Sync
 {
-
     //TODO documennt
     ///Sometimes you want want to iterate over all the collisions multiple times.
     ///this function lets you do this safely. it is implemented on top of
     ///find__collisions_mut_par_ext
     pub fn collect_collisions_list_par<K:Send+Sync>(
-            &mut self,collision:impl Fn(&N::T,&N::T)->Option<K> + Send +Sync
+            &mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
     )->CollisionList<N::T,K>
     {
         rigid::create_collision_list(self,collision)
     }
-}   
-
-impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
-where
-    N::T : Send + Sync
-{
     /// # Examples
     ///
     ///```
@@ -262,8 +254,8 @@ where
     ///assert_eq!(bots[0].inner,1);
     ///assert_eq!(bots[1].inner,1);
     ///```
-    pub fn find_collisions_par(&mut self, func: impl Fn( &N::T,&N::T) + Send + Sync) {
-        query::colfind::QueryBuilder::new(self).query_par(|a, b| func(a.as_ref(), b.as_ref()));
+    pub fn find_collisions_mut_par(&mut self, func: impl Fn( &mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync) {
+        query::colfind::QueryBuilder::new(self).query_par(|mut a,mut b| func(a.inner_mut(), b.inner_mut()));
     }
 
 
@@ -275,7 +267,7 @@ where
         &mut self,
         split: impl Fn(&mut B)->B + Send + Sync+Copy,
         fold: impl Fn(&mut B,B) + Send + Sync+Copy,
-        collision:impl Fn(&mut B,&N::T,&N::T) + Send + Sync + Copy,
+        collision:impl Fn(&mut B,&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync + Copy,
         acc: B)->B{
 
         struct Foo<
@@ -293,10 +285,10 @@ where
 
         
 
-        impl<T:Aabb,A,B,C,D:Fn(&mut A,&T,&T)> ColMulti for Foo<T,A,B,C,D>{
+        impl<T:Aabb+HasInner,A,B,C,D:Fn(&mut A,&mut T::Inner,&mut T::Inner)> ColMulti for Foo<T,A,B,C,D>{
             type T=T;
-            fn collide(&mut self, a: PMut<Self::T>, b: PMut<Self::T>){
-                (self.collision)(&mut self.acc,a.as_ref(),b.as_ref())
+            fn collide(&mut self, mut a: PMut<Self::T>, mut b: PMut<Self::T>){
+                (self.collision)(&mut self.acc,a.inner_mut(),b.inner_mut())
             }
         }
         impl<T,A,B:Fn(&mut A)->A+Copy,C:Fn(&mut A,A)+Copy,D:Copy> Splitter for Foo<T,A,B,C,D>{
@@ -635,6 +627,21 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
 
 
 
+
+    pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N::Num>,&mut <N::T as HasInner>::Inner)->Option<D>)->SingleCollisionList<N::T,D>{
+        let mut res=Vec::new();
+        for node in self.inner.get_nodes_mut().iter_mut(){
+            for b in node.get_mut().bots.iter_mut(){
+                let (x,y)=b.unpack();
+                if let Some(d)=func(x,y){
+                    res.push(SingleCol{inner:y as *mut _,mag:d});
+                }
+            }
+        }
+        SingleCollisionList{a:res,bot_ptr:self.bot_ptr}
+    }
+
+
 }
 
 pub struct SingleCollisionList<T:HasInner,D>{
@@ -671,6 +678,10 @@ impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
 impl<A: Axis, N: Node> DinoTree<A, N> {
     pub fn get_bots(&self)->&[N::T]{
         unsafe{&*self.bot_ptr}
+    }
+
+    pub fn get_bots_mut(&mut self)->&mut [N::T]{
+        unsafe{&mut *(self.bot_ptr as *mut _)}
     }
     /// # Examples
     ///
