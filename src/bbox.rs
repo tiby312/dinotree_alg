@@ -33,6 +33,7 @@ impl<'a, T: HasInner> HasInner for BBoxIndirect<'a, T> {
     }
 }
 
+/*
 ///Equivalent to: `(Rect<N>,&mut T)`
 #[repr(C)]
 #[derive(Debug)]
@@ -68,7 +69,7 @@ impl<'a, N: Num, T> HasInner for BBoxMut<'a, N, T> {
         (&self.rect, self.inner)
     }
 }
-
+*/
 pub fn bbox<N, T>(rect: axgeom::Rect<N>, inner: T) -> BBox<N, T> {
     BBox::new(rect, inner)
 }

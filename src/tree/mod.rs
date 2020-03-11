@@ -15,9 +15,9 @@ pub mod bbox_helper {
     pub fn create_bbox_mut<'a, N: Num, T>(
         bots: &'a mut [T],
         mut aabb_create: impl FnMut(&T) -> Rect<N>,
-    ) -> Vec<BBoxMut<'a, N, T>> {
+    ) -> Vec<BBox< N, &'a mut T>> {
         bots.iter_mut()
-            .map(move |k| BBoxMut::new(aabb_create(k), k))
+            .map(move |k| BBox::new(aabb_create(k), k))
             .collect()
     }
 
@@ -26,7 +26,7 @@ pub mod bbox_helper {
 
     ///Convenience function to create a list of `(Rect<N>,T)` from a `(Rect<N>,&mut T)`. `T` must implement Copy.
     pub fn generate_direct<A: Axis, N: Num, T: Copy>(
-        tree: &DinoTree<A, NodeMut<BBoxMut<N, T>>>,
+        tree: &DinoTree<A, NodeMut<BBox<N,&mut T>>>,
     ) -> IntoDirectHelper<N, T> {
         IntoDirectHelper(
             tree.inner
@@ -40,7 +40,7 @@ pub mod bbox_helper {
 
     ///Take a DinoTree of `(Rect<N>,&mut T)` and creates a new one of type `(Rect<N>,T)`
     pub fn into_direct<'a, A: Axis, N: Num, T>(
-        tree: &DinoTree<A, NodeMut<BBoxMut<N, T>>>,
+        tree: &DinoTree<A, NodeMut<BBox<N,&mut T>>>,
         bots: &'a mut IntoDirectHelper<N, T>,
     ) -> DinoTree<A, NodeMut<'a, BBox<N, T>>> {
         let mut bots = &mut bots.0 as &'a mut [_];

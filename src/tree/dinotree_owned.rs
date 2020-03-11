@@ -37,6 +37,29 @@
 use super::*;
 use core::ptr::NonNull;
 
+
+#[repr(transparent)]
+pub struct MyPtr<T:?Sized>(NonNull<T>);
+impl<T:?Sized> Clone for MyPtr<T>{
+    fn clone(&self)->Self{
+        MyPtr(self.0)
+    }
+}
+impl<T:?Sized> Copy for MyPtr<T>{}
+
+impl<T:?Sized> MyPtr<T>{
+    pub unsafe fn as_mut(&mut self)->&mut T{
+        self.0.as_mut()
+    }
+}
+unsafe impl<T:?Sized> Send for MyPtr<T>{}
+unsafe impl<T:?Sized> Sync for MyPtr<T>{}
+
+pub fn myptr<T>(a:&mut T)->MyPtr<T>{
+    MyPtr(unsafe{NonNull::new_unchecked(a as *mut _)})
+}
+
+/*
 ///Equivalent to: `(Rect<N>,*mut T)`
 #[repr(C)]
 pub struct BBoxPtr<N, T> {
@@ -75,6 +98,7 @@ impl<N: Num, T> HasInner for BBoxPtr<N, T> {
         (&self.rect, unsafe { self.inner.as_mut() })
     }
 }
+*/
 
 unsafe impl<T:Aabb> Send for NodePtr<T> {}
 unsafe impl<T:Aabb> Sync for NodePtr<T> {}
@@ -111,6 +135,7 @@ impl<T: Aabb> Node for NodePtr<T> {
         }
     }
 }
+
 
 fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
     let inner = DinoTree::with_axis(axis, bots);
@@ -149,7 +174,7 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
 
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`
 pub struct DinoTreeOwnedBBoxPtr<A: Axis, N: Num, T> {
-    tree: DinoTreeOwned<A, BBoxPtr<N, T>>,
+    tree: DinoTreeOwned<A, BBox<N, MyPtr<T>>>,
     bots: Vec<T>,
 }
 
@@ -168,7 +193,7 @@ impl<A: Axis, N: Num, T: Send + Sync> DinoTreeOwnedBBoxPtr<A, N, T> {
     pub fn with_axis_par(axis: A, mut bots: Vec<T>, mut func: impl FnMut(&T) -> Rect<N>) -> Self {
         let bbox = bots
             .iter_mut()
-            .map(|b| BBoxPtr::new(func(b), unsafe { NonNull::new_unchecked(b as *mut _) }))
+            .map(|b| BBox::new(func(b), myptr(b)))
             .collect();
 
         let tree = DinoTreeOwned::with_axis_par(axis, bbox);
@@ -180,7 +205,7 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
     pub fn with_axis(axis: A, mut bots: Vec<T>, mut func: impl FnMut(&T) -> Rect<N>) -> Self {
         let bbox = bots
             .iter_mut()
-            .map(|b| BBoxPtr::new(func(b), unsafe { NonNull::new_unchecked(b as *mut _) }))
+            .map(|b| BBox::new(func(b), myptr(b)))
             .collect();
 
         let tree = DinoTreeOwned::with_axis(axis, bbox);
@@ -189,11 +214,15 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
 }
 
 impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
-    pub fn as_owned(&self) -> &DinoTreeOwned<A, BBoxPtr<N, T>> {
-        &self.tree
+    pub fn as_owned(&self) -> &DinoTreeOwned<A, BBox<N, &T>> {
+        let a=&self.tree as *const _;
+        let b=a as *const DinoTreeOwned<A,BBox<N,&T>>;
+        unsafe{&*b}
     }
-    pub fn as_owned_mut(&mut self) -> &mut DinoTreeOwned<A, BBoxPtr<N, T>> {
-        &mut self.tree
+    pub fn as_owned_mut(&mut self) -> &mut DinoTreeOwned<A, BBox<N, &mut T>> {
+        let a=&mut self.tree as *mut _;
+        let b=a as *mut DinoTreeOwned<A,BBox<N,&mut T>>;
+        unsafe{&mut *b}
     }
     pub fn get_bots(&self) -> &[T] {
         &self.bots
