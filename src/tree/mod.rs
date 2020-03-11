@@ -73,6 +73,9 @@ pub mod bbox_helper {
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`.
 pub mod dinotree_owned;
 
+//TODO document
+pub mod collectable;
+
 pub mod analyze;
 
 pub use rigid::CollisionList;
