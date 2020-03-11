@@ -236,7 +236,7 @@ where
     ///find__collisions_mut_par_ext
     pub fn collect_collisions_list_par<K:Send+Sync>(
             &mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
-    )->CollisionList<N::T,K>
+    )->CollisionList<K>
     {
         rigid::create_collision_list(self,collision)
     }
@@ -628,25 +628,22 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
 
 
 
-    pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N::Num>,&mut <N::T as HasInner>::Inner)->Option<D>)->SingleCollisionList<N::T,D>{
+    pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N::Num>,&mut <N::T as HasInner>::Inner)->Option<D>)->Vec<D>{
         let mut res=Vec::new();
         for node in self.inner.get_nodes_mut().iter_mut(){
             for b in node.get_mut().bots.iter_mut(){
                 let (x,y)=b.unpack();
                 if let Some(d)=func(x,y){
-                    res.push(SingleCol{inner:y as *mut _,mag:d});
+                    res.push(d);
                 }
             }
         }
-        SingleCollisionList{a:res,bot_ptr:self.bot_ptr}
+        res
     }
-
-
 }
-
-pub struct SingleCollisionList<T:HasInner,D>{
-    bot_ptr:*const [T],
-    a:Vec<SingleCol<T,D>>
+/*
+pub struct SingleCollisionList<D>{
+    a:Vec<D>
 }
 
 unsafe impl<T:HasInner,D> Send for SingleCol<T,D>{}
@@ -671,8 +668,8 @@ impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
             func(unsafe{&mut *a.inner},&mut a.mag)
         }
     }
-
 }
+*/
 
 
 impl<A: Axis, N: Node> DinoTree<A, N> {

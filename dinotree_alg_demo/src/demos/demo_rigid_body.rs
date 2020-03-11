@@ -1,7 +1,7 @@
 use crate::support::prelude::*;
 
 use duckduckgeo;
-
+use std::sync::atomic::AtomicPtr;
 /*
     sequential impulse solver
     http://myselph.de/gamePhysics/equalityConstraints.html
@@ -38,6 +38,121 @@ mod maps{
 "};
 
 }
+
+
+
+
+use test::CollectableDinoTree;
+mod test{
+    use super::*;
+    pub struct CollectableDinoTree<'a,A:Axis,N:Num,T>{
+        bots:&'a mut [T],
+        tree:DinoTreeOwned<A,BBoxPtr<N,T>>
+    }
+    impl<'a,N:Num,T> CollectableDinoTree<'a,DefaultA,N,T>{
+        pub fn new(bots:&'a mut [T],mut func:impl FnMut(&mut T)->Rect<N>)->CollectableDinoTree<'a,DefaultA,N,T>{
+            let  bboxes:Vec<_>=bots.iter_mut().map(|a|BBoxPtr::new(func(a),unsafe{std::ptr::NonNull::new_unchecked(a as *mut _)})).collect();
+
+            let tree=DinoTreeOwned::new(bboxes);
+
+            CollectableDinoTree{bots,tree}
+        }
+    }
+    impl<'a,A:Axis,N:Num,T> CollectableDinoTree<'a,A,N,T>{
+
+        pub fn get_bots_mut(&mut self)->&mut [T]{
+            self.bots
+        }
+
+        pub fn get_tree_mut(&mut self)->&mut DinoTree<A,NodePtr<BBoxPtr<N,T>>>{
+            self.tree.as_tree_mut()
+        }
+
+        pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N>,&mut T)->Option<D>)->SingleCollisionList<'a,T,D>{
+             
+            let a=self.tree.as_tree_mut().collect_all(|a,b|{
+                match func(a,b){
+                    Some(d)=>{
+                        Some((b as *mut _,d))
+                    },
+                    None=>{
+                        None
+                    }
+                }
+            });
+            SingleCollisionList{_p:PhantomData,a}
+        }
+    }
+
+
+    #[derive(Copy,Clone)]
+    pub struct Collision<T>{
+        pub a:*mut T,
+        pub b:*mut T,
+    }
+    unsafe impl<T> Send for Collision<T>{}
+    unsafe impl<T> Sync for Collision<T>{}
+
+    impl<'a,A:Axis+Send+Sync,N:Num+Send+Sync,T:Send+Sync> CollectableDinoTree<'a,A,N,T>{
+
+        pub fn collect_collisions_list_par <D:Send+Sync>(&mut self,func:impl Fn(&mut T,&mut T)->Option<D>+Send+Sync+Copy)->BotCollision<'a,T,D>{
+        
+            let cols=self.tree.as_tree_mut().collect_collisions_list_par(|a,b|{
+                match func(a,b){
+                    Some(d)=>{
+                        Some((Collision{a,b:b},d))
+                    },
+                    None=>{
+                        None
+                    }
+                }
+            });
+            BotCollision{cols,_p:PhantomData}
+        }
+    }
+
+    use core::marker::PhantomData;
+    pub struct SingleCollisionList<'a,T,D>{
+        _p:PhantomData<&'a mut T>,
+        a:Vec<(*mut T,D)>
+    }
+    impl<'a,T,D> SingleCollisionList<'a,T,D>{
+        pub fn for_every<'b,A:Axis,N:Num>(&'b mut self,_:&'b mut CollectableDinoTree<'a,A,N,T>,mut func:impl FnMut(&mut T,&mut D)){
+            for (a,d) in self.a.iter_mut(){
+                func(unsafe{&mut **a},d)
+            }
+        }
+    }
+
+    pub struct BotCollision<'a,T,D>{
+        _p:PhantomData<&'a mut T>,
+        cols:CollisionList<(Collision<T>,D)>
+    }
+
+    impl<'a,T,D> BotCollision<'a,T,D>{
+        pub fn for_every_pair<'b,A:Axis,N:Num>(&'b mut self,_:&'b mut CollectableDinoTree<'a,A,N,T>,mut func:impl FnMut(&mut T,&mut T,&mut D)){
+            
+            self.cols.for_every_pair_mut(|(Collision{a,b},d)|{
+                let a=unsafe{&mut **a};
+                let b=unsafe{&mut **b};
+                func(a,b,d)
+            })
+        }
+    }
+    impl<'a,T:Send+Sync,D:Send+Sync> BotCollision<'a,T,D>{
+        pub fn for_every_pair_par<'b,A:Axis,N:Num>(&'b mut self,_:&'b mut CollectableDinoTree<'a,A,N,T>,func:impl Fn(&mut T,&mut T,&mut D)+Send+Sync+Copy){
+            
+            self.cols.for_every_pair_par_mut(|(Collision{a,b},d)|{
+                let a=unsafe{&mut **a};
+                let b=unsafe{&mut **b};
+                func(a,b,d)
+            })
+        }
+    }
+}
+
+
+
 
 use std::collections::BTreeMap;
 
@@ -185,6 +300,7 @@ pub struct Bot {
 use std::time::{Instant};
 
 
+
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let num_bot = 1000;
     //let num_bot=100;
@@ -226,57 +342,28 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let mut ka:Option<(BTreeMap<_,_>,BTreeMap<_,_>)>=None;
 
 
-    struct Converter<T>(*mut T);
-    unsafe impl<T> Send for Converter<T>{}
-    unsafe impl<T> Sync for Converter<T>{}
-
-    impl<T> Copy for Converter<T>{}
-    impl<T> Clone for Converter<T>{
-        #[inline(always)]
-        fn clone(&self)->Self{
-            Converter(self.0)
-        }
-    }
-    impl<T> Converter<T>{
-        fn new(a:&mut [T])->Converter<T>{
-            Converter(a.as_mut_ptr())
-        }
-        #[inline(always)]
-        unsafe fn index_mut(&self,index:usize)->&mut T{
-            &mut *self.0.offset(index as isize)
-        }
-    }
-
     Demo::new(move |cursor, canvas, _check_naive| {
         for _ in 0..1{
             let now = Instant::now();
             
-            let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
+
+            let mut tree=CollectableDinoTree::new(&mut bots,|b| {
                 Rect::from_point(b.pos, vec2same(radius))
                     .inner_try_into()
                     .unwrap()
             });
-            /*
-            let mut k:Vec<_>=bots.iter().enumerate().map(|(i,a)|{
-                bbox::BBox::new(Rect::from_point(a.pos,vec2same(radius)).inner_try_into().unwrap(),i)
-            }).collect();
-            */
-
-            let mut tree = DinoTree::new_par(&mut k);
-
-
 
             let a1=now.elapsed().as_millis();
 
             
-            tree.for_all_not_in_rect_mut(&dim, |a| {
+            tree.get_tree_mut().for_all_not_in_rect_mut(&dim, |a| {
                 duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, dim.as_ref(), 0.2);
             });
         
 
             let vv = vec2same(200.0).inner_try_into().unwrap();
             
-            tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), | b| {
+            tree.get_tree_mut().for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), | b| {
                 let offset=b.pos-cursor.inner_into();
                 if offset.magnitude()<200.0*0.5{
                     let k=offset.normalize_to(0.02);
@@ -369,8 +456,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             };
 
             //integrate forvces
-            for b in tree.get_bots_mut().iter_mut() { //TODO THIS IS SLOW
-                let b=&mut b.inner;
+            for b in tree.get_bots_mut().iter_mut() {
                 if b.vel.is_nan(){
                     b.vel=vec2same(0.0);
                 }
@@ -395,7 +481,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             for _ in 0..num_iterations{
 
 
-                collision_list.for_every_pair_par_mut(&mut k,|a,b,&mut (offset_normal,bias,ref mut acc)|{
+                collision_list.for_every_pair_par(&mut tree,|a,b,&mut (offset_normal,bias,ref mut acc)|{
+                    
                     let vel=b.vel-a.vel;
                     let impulse=bias+vel.dot(offset_normal)*mag;
                     
@@ -408,8 +495,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel+=k;
                 });     
 
-                wall_collisions.for_every_par(&mut k,|bot,wall|{
-                     for k in wall.collisions.iter_mut(){
+                wall_collisions.for_every(&mut tree,|bot,wall|{
+                    for k in wall.collisions.iter_mut(){
                         if let &mut Some((bias,offset_normal,ref mut acc))=k{
                             
                             let impulse=bias+bot.vel.dot(offset_normal)*mag;
@@ -420,26 +507,28 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
                             bot.vel+=offset_normal*impulse;
                         }
-                    };
+                    }; 
                 })
             }
 
 
             let mut ka2=BTreeMap::new();
-            collision_list.for_every_pair_mut(&mut k,|a,b,&mut (_,_,impulse)|{
+            collision_list.for_every_pair(&mut tree,|a,b,&mut (_,_,impulse)|{
+                
                 let hash=BotCollisionHash::new(a,b);
                 ka2.insert(hash,impulse);
             });
             let mut ka3=BTreeMap::new();
 
-            wall_collisions.for_every(&mut k,|a,wall|{
+            wall_collisions.for_every(&mut tree,|bot,wall|{
                 for k in wall.collisions.iter_mut(){
                     if let &mut Some((_,_,impulse))=k{
-                        ka3.insert(single_hash(a),impulse);
+                        ka3.insert(single_hash(bot),impulse);
                     }
-                }
-
+                } 
             });
+            
+            
             ka=Some((ka2,ka3));
 
             let a4=now.elapsed().as_millis();

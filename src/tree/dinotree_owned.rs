@@ -76,6 +76,9 @@ impl<N: Num, T> HasInner for BBoxPtr<N, T> {
     }
 }
 
+unsafe impl<T:Aabb> Send for NodePtr<T> {}
+unsafe impl<T:Aabb> Sync for NodePtr<T> {}
+
 ///A Node in a dinotree.
 pub struct NodePtr<T: Aabb> {
     range: core::ptr::NonNull<[T]>,
