@@ -54,10 +54,10 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 3000;
+    let num_bot = 8000;
     //let num_bot=100;
 
-    let radius = 4.0;
+    let radius = 3.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -95,7 +95,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        for _ in 0..4{
+        for _ in 0..1{
             let now = Instant::now();
             
 
@@ -129,8 +129,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a2=now.elapsed().as_millis();
 
             let bias_factor=0.3;
-            let allowed_penetration=0.01;
-            let num_iterations=12;
+            let allowed_penetration=radius*0.1;
+            let num_iterations=20;
             
         
             let mut collision_list={
