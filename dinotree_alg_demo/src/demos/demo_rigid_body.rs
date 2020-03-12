@@ -54,10 +54,10 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 1000;
+    let num_bot = 3000;
     //let num_bot=100;
 
-    let radius = 6.0;
+    let radius = 4.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -128,13 +128,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.0002;
-            let allowed_penetration=radius;
+            let bias_factor=-0.2;
+            let allowed_penetration=radius/2.0;
             let num_iterations=12;
             
-
-            
-
+        
             let mut collision_list={
                 let ka3 = ka.as_ref();
                 tree.collect_collisions_list_par(|a,b|{
@@ -145,7 +143,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         let offset_normal=offset/distance;
                         
                         let separation=diameter-distance;
-                        let bias=bias_factor*(1.0/num_iterations as f32)*( (separation-allowed_penetration).max(0.0));
+                        assert!(separation>=0.0);
+                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (separation+allowed_penetration).max(0.0));
                         let hash=BotCollisionHash::new(a,b);
                         let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.get(&hash)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -176,7 +175,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 tree.collect_all(|rect,a|{
                     let arr=duckduckgeo::grid::collide::is_colliding(&walls,&grid_viewport,rect.as_ref(),radius);
                     let create_collision=|bot:&mut Bot,seperation:f32,offset_normal:Vec2<f32>|{
-                        let bias=bias_factor*(1.0/num_iterations as f32)*( (seperation+allowed_penetration).max(0.0));
+                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (seperation+allowed_penetration).max(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&single_hash(bot))){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -227,14 +226,15 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             }
 
             let a3=now.elapsed().as_millis();   
-            let mag=0.01*(1.0/num_iterations as f32) - 0.01;
-                    
+            //let mag=0.01*(1.0/num_iterations as f32) - 0.02;
+            //let mag=-1.0;
+
             for _ in 0..num_iterations{
 
                 collision_list.for_every_pair_par(&mut tree,|a,b,&mut (offset_normal,bias,ref mut acc)|{
                     
                     let vel=b.vel-a.vel;
-                    let impulse=bias+vel.dot(offset_normal)*mag;
+                    let impulse=bias-vel.dot(offset_normal);
                     
                     let p0=*acc;
                     *acc=(p0+impulse).max(0.0);
@@ -249,7 +249,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     for k in wall.collisions.iter_mut(){
                         if let &mut Some((bias,offset_normal,ref mut acc))=k{
                             
-                            let impulse=bias+bot.vel.dot(offset_normal)*mag;
+                            let impulse=bias-bot.vel.dot(offset_normal);
 
                             let p0=*acc;
                             *acc=(p0+impulse).max(0.0);
