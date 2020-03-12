@@ -128,8 +128,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=-0.2;
-            let allowed_penetration=radius/2.0;
+            let bias_factor=0.3;
+            let allowed_penetration=0.01;
             let num_iterations=12;
             
         
@@ -142,9 +142,14 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         let distance=distance2.sqrt();
                         let offset_normal=offset/distance;
                         
-                        let separation=diameter-distance;
+                        let separation=(diameter-distance)/2.0;
                         assert!(separation>=0.0);
-                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (separation+allowed_penetration).max(0.0));
+                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (-separation+allowed_penetration).max(0.0));
+                        
+                        if bias<0.0{
+                            //dbg!(allowed_penetration,-separation,bias);
+                        }
+
                         let hash=BotCollisionHash::new(a,b);
                         let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.get(&hash)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -175,7 +180,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 tree.collect_all(|rect,a|{
                     let arr=duckduckgeo::grid::collide::is_colliding(&walls,&grid_viewport,rect.as_ref(),radius);
                     let create_collision=|bot:&mut Bot,seperation:f32,offset_normal:Vec2<f32>|{
-                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (seperation+allowed_penetration).max(0.0));
+                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (-seperation+allowed_penetration).max(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&single_hash(bot))){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -226,9 +231,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             }
 
             let a3=now.elapsed().as_millis();   
-            //let mag=0.01*(1.0/num_iterations as f32) - 0.02;
-            //let mag=-1.0;
-
+            
             for _ in 0..num_iterations{
 
                 collision_list.for_every_pair_par(&mut tree,|a,b,&mut (offset_normal,bias,ref mut acc)|{
