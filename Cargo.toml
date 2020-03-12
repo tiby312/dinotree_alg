@@ -28,5 +28,8 @@ pdqselect = "0.1"
 [features]
 nbody = []
 
+[patch.crates-io]
+duckduckgeo = {path="../duckduckgeo"}
+
 
 

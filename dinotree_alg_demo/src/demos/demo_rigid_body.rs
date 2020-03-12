@@ -1,27 +1,9 @@
 use crate::support::prelude::*;
-
 use duckduckgeo;
-use std::sync::atomic::AtomicPtr;
-/*
-    sequential impulse solver
-    http://myselph.de/gamePhysics/equalityConstraints.html
- Constraint Solver
-
-    As mentioned during the overvie, modern physic engines seem to use mostly iterative solvers that work as follows (pseudocode): 
-
-for i = 1 to nIterations
-    for c in constraints
-        P = computeImpulses(c);
-        c.bodies.applyImpulses(P);
-
-*/
-
 
 mod maps{
     use axgeom::vec2;
     use duckduckgeo::grid::*;
-    
-
     pub const GRID_STR1:Map<'static>= Map{dim:vec2(16,12),str:"\
 ████████████████
 █    █   █     █
@@ -36,7 +18,6 @@ mod maps{
 █              █
 ████████████████
 "};
-
 }
 
 
@@ -63,127 +44,13 @@ fn single_hash<T>(a:&T)->usize{
 
 
 
-
-mod grid_collide{
-    use super::*;
-    use duckduckgeo::grid::*;
-    use dinotree_alg::Aabb;
-
-    fn find_corner_offset(grid:&Grid2D,dim:&GridViewPort,radius:f32,corner:&Vec2<f32>)->Option<(f32,Vec2<f32>)>{
-        let grid_coord:Vec2<f32>=corner.inner_into();
-        if let Some(d)=grid.get_option(dim.to_grid(grid_coord)){
-            if d{
-                #[derive(PartialEq,Copy,Clone)]
-                pub struct Foo{
-                    pub dir:CardDir,
-                    pub dis:f32
-                }
-                impl Eq for Foo{}
-                
-                let corner=grid_coord;
-
-                fn foo(dir:CardDir,dis:f32)->Foo{
-                    Foo{dir,dis}
-                }
-
-
-                let cu=corner.y-radius;
-                let cl=corner.x-radius;
-
-                let cd=corner.y+radius;
-                let cr=corner.x+radius;
-                let grid_coord=dim.to_grid(corner);
-                let topleft=dim.to_world_topleft(grid_coord);
-                let bottomright=dim.to_world_topleft(grid_coord+vec2(1,1));
-                use CardDir::*;
-                let arr=[foo(U,cd-topleft.y),foo(L,cr-topleft.x),foo(D,bottomright.y-cu),foo(R,bottomright.x-cl)];
-
-                let min=arr.iter().filter(|a|a.dis>0.0).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
-
-                let min = match min{
-                    Some(foo)=>{
-                        if let Some(wall)=grid.get_option(grid_coord+foo.dir.into_vec()){                    
-                            if wall{
-                                let min=arr.iter().filter(|a|a.dis>0.0).filter(|aa|**aa!=*foo).min_by(|a,b|a.dis.partial_cmp(&b.dis).unwrap());
-                                min.map(|a|*a)
-                            }else{
-                                Some(*foo)
-                            }
-                        }else{
-                            Some(*foo)
-                        }
-                    },
-                    None=>{
-                        None
-                    }
-                };
-
-                if let Some(Foo{dir,dis})=min{
-               
-                    let offset_normal=match dir{
-                        U=>{
-                            vec2(0.0,-1.0)
-                        },
-                        D=>{
-                            vec2(0.0,1.0)
-                        },
-                        L=>{
-                            vec2(-1.0,0.0)
-                        },
-                        R=>{
-                            vec2(1.0,0.0)
-                        }
-                    };
-    
-                    return Some((dis,offset_normal))
-                }
-            }
-        }
-        return None;
-    }
-    pub fn is_colliding<T:Aabb<Num=NotNan<f32>>>(grid:&Grid2D,dim:&GridViewPort,bot:&T,radius:f32)->[Option<(f32,Vec2<f32>)>;2]{
-        
-        let corners=bot.get().get_corners();
-
-        let mut offsets:Vec<_>=corners.iter().map(|a|{
-            find_corner_offset(grid,dim,radius,a.as_ref())
-        }).collect();
-
-        let mut offsets:Vec<_>=offsets.drain(..).filter(|a|a.is_some()).map(|a|a.unwrap()).collect();
-        offsets.sort_by(|(a,_),(b,_)|a.partial_cmp(b).unwrap());
-
-
-        let min=offsets.iter().min_by(|&(a,_),&(b,_)|a.partial_cmp(b).unwrap());
-
-
-        match min{
-            Some(&min)=>{
-                let second_min=offsets.iter().filter(|(_,a)|a!=&min.1).min_by(|&(a,_),&(b,_)|a.partial_cmp(b).unwrap());
-                match second_min{
-                    Some(&second_min)=>{
-                        [Some(min),Some(second_min)]
-                    },
-                    None=>{
-                        [Some(min),None]
-                    }
-                }
-            },
-            None=>{
-                [None,None]
-            }
-        }
-    }
-}
-
-
 #[derive(Copy, Clone)]
 pub struct Bot {
     pos: Vec2<f32>,
     vel: Vec2<f32>
 }
 
-use std::time::{Instant};
-
+use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
@@ -228,7 +95,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        for _ in 0..1{
+        for _ in 0..4{
             let now = Instant::now();
             
 
@@ -241,8 +108,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a1=now.elapsed().as_millis();
 
             
+            //TODO move this outside of loop?
             tree.get_mut().for_all_not_in_rect_mut(&dim, |a| {
-                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, dim.as_ref(), 0.2);
+                let pos=walls.find_closest_empty(grid_viewport.to_grid(a.pos)).unwrap();
+                a.pos=grid_viewport.to_world_center(pos);
             });
         
 
@@ -305,7 +174,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 let ka3 = ka.as_ref();
 
                 tree.collect_all(|rect,a|{
-                    let arr=grid_collide::is_colliding(&walls,&grid_viewport,rect,radius);
+                    let arr=duckduckgeo::grid::collide::is_colliding(&walls,&grid_viewport,rect.as_ref(),radius);
                     let create_collision=|bot:&mut Bot,seperation:f32,offset_normal:Vec2<f32>|{
                         let bias=bias_factor*(1.0/num_iterations as f32)*( (seperation+allowed_penetration).max(0.0));
 
@@ -355,16 +224,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 }
                 let g=0.01;
                 b.vel+=vec2(g*counter.cos(),g*counter.sin());
-             }
+            }
 
-
-            
-            let a3=now.elapsed().as_millis();
-                        
+            let a3=now.elapsed().as_millis();   
             let mag=0.01*(1.0/num_iterations as f32) - 0.01;
                     
             for _ in 0..num_iterations{
-
 
                 collision_list.for_every_pair_par(&mut tree,|a,b,&mut (offset_normal,bias,ref mut acc)|{
                     
@@ -399,12 +264,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let mut ka2=BTreeMap::new();
             collision_list.for_every_pair(&mut tree,|a,b,&mut (_,_,impulse)|{
-                
                 let hash=BotCollisionHash::new(a,b);
                 ka2.insert(hash,impulse);
             });
-            let mut ka3=BTreeMap::new();
 
+            let mut ka3=BTreeMap::new();
             wall_collisions.for_every(&mut tree,|bot,wall|{
                 for k in wall.collisions.iter_mut(){
                     if let &mut Some((_,_,impulse))=k{
@@ -413,11 +277,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 } 
             });
             
-            
             ka=Some((ka2,ka3));
 
             let a4=now.elapsed().as_millis();
-            
 
             //integrate position
             for b in bots.iter_mut() {
@@ -428,10 +290,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
         }
 
-       
-
         wall_save.uniforms(canvas,grid_viewport.spacing).draw();
-
 
         //Draw circles
         let mut circles = canvas.circles();
@@ -444,10 +303,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let dim:Rect<f32>=dim.inner_into();
         let start=[dim.x.distance()/2.0,dim.y.distance()/2.0];
         let end=[start[0]+counter.cos()*200.0,start[1]+counter.sin()*200.0];
-        canvas.arrows(20.0).add(start,end).send_and_uniforms(canvas).with_color([0.5,0.3,1.0,0.8]).draw();
-        
-
-        
+        canvas.arrows(20.0).add(start,end).send_and_uniforms(canvas).with_color([0.5,0.3,1.0,0.8]).draw();        
     })
 }
 
