@@ -54,10 +54,10 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 8000;
+    let num_bot = 3000;
     //let num_bot=100;
 
-    let radius = 3.0;
+    let radius = 4.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -144,10 +144,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         
                         let separation=(diameter-distance)/2.0;
                         assert!(separation>=0.0);
-                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (-separation+allowed_penetration).max(0.0));
+                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (-separation+allowed_penetration).min(0.0));
                         
                         if bias<0.0{
-                            //dbg!(allowed_penetration,-separation,bias);
+                            //dbg!(bias);
                         }
 
                         let hash=BotCollisionHash::new(a,b);
@@ -289,7 +289,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 b.pos+=b.vel;
             }
             
-            counter+=0.001;
+            counter+=0.01;
             println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
         }
 
