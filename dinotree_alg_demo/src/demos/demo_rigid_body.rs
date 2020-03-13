@@ -11,8 +11,8 @@ mod maps{
 █        █  █  █
 █    █████  █  █
 █      █       █
-█      █    █  █
-█              █
+█     █     █  █
+█    █         █
 █   █          █
 █        █     █
 █              █
@@ -107,6 +107,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let a1=now.elapsed().as_millis();
 
+
             
             //TODO move this outside of loop?
             tree.get_mut().for_all_not_in_rect_mut(&dim, |a| {
@@ -141,15 +142,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     if distance2>0.00001 && distance2<diameter2{
                         let distance=distance2.sqrt();
                         let offset_normal=offset/distance;
-                        
                         let separation=(diameter-distance)/2.0;
-                        assert!(separation>=0.0);
                         let bias=-bias_factor*(1.0/num_iterations as f32)*( (-separation+allowed_penetration).min(0.0));
                         
-                        if bias<0.0{
-                            //dbg!(bias);
-                        }
-
                         let hash=BotCollisionHash::new(a,b);
                         let impulse=if let Some(&impulse)=ka3.and_then(|(j,_)|j.get(&hash)){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -302,6 +297,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         }
         circles.send_and_uniforms(canvas,diameter-4.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
+        let mut lines = canvas.lines(1.0);
+        for b in bots.iter(){
+            lines.add(b.pos.into(),(b.pos+b.vel*20.0).into());
+        }
+        lines.send_and_uniforms(canvas).with_color([0.0,1.0,0.2,0.2]).draw();
+
         //Draw arrow
         let dim:Rect<f32>=dim.inner_into();
         let start=[dim.x.distance()/2.0,dim.y.distance()/2.0];
