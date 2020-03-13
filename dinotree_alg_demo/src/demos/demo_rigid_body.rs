@@ -69,6 +69,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         })
         .collect();
 
+    //bots[0].pos=vec2(30.0,30.0);
+
     let mut counter: f32=0.0;
 
 
@@ -165,6 +167,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             //Package in one struct
             //so that there is no chance of mutating it twice
+            #[derive(Debug)]
             struct WallCollision{
                 collisions:[Option<(f32,Vec2<f32>,f32)>;2],
             }
@@ -175,7 +178,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 tree.collect_all(|rect,a|{
                     let arr=duckduckgeo::grid::collide::is_colliding(&walls,&grid_viewport,rect.as_ref(),radius);
                     let create_collision=|bot:&mut Bot,seperation:f32,offset_normal:Vec2<f32>|{
-                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (-seperation+allowed_penetration).max(0.0));
+                        let bias=-bias_factor*(1.0/num_iterations as f32)*( (-seperation+allowed_penetration).min(0.0));
 
                         let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&single_hash(bot))){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
@@ -196,6 +199,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                                     WallCollision{collisions:[first,second]}
                                 },
                                 None=>{
+                                    //dbg!(seperation,offset_normal);
+                                    //dbg!(first);
                                     WallCollision{collisions:[first,None]}
                                 }
                             };
@@ -222,7 +227,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel=a;
                 }
                 let g=0.01;
-                b.vel+=vec2(g*counter.cos(),g*counter.sin());
+                //b.vel+=vec2(g*counter.cos(),g*counter.sin());
             }
 
             let a3=now.elapsed().as_millis();   
@@ -244,6 +249,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 });     
 
                 wall_collisions.for_every(&mut tree,|bot,wall|{
+                    //dbg!(&wall);
                     for k in wall.collisions.iter_mut(){
                         if let &mut Some((bias,offset_normal,ref mut acc))=k{
                             
