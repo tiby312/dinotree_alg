@@ -97,7 +97,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        for _ in 0..1{
+        for _ in 0..4{
             let now = Instant::now();
             
 
@@ -227,7 +227,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel=a;
                 }
                 let g=0.01;
-                //b.vel+=vec2(g*counter.cos(),g*counter.sin());
+                b.vel+=vec2(g*counter.cos(),g*counter.sin());
             }
 
             let a3=now.elapsed().as_millis();   
@@ -290,7 +290,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 b.pos+=b.vel;
             }
             
-            counter+=0.01;
+            counter+=0.001;
             println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
         }
 
