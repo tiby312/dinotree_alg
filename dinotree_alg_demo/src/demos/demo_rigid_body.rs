@@ -60,7 +60,7 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 2000;
+    let num_bot = 1;
     //let num_bot=100;
 
     let radius = 4.0;
@@ -197,16 +197,16 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     };
                     match arr[0]{
                         Some((seperation,dir,offset_normal))=>{
-                            let first=Some(create_collision(a,dir,seperation,offset_normal));
-
+                            
                             let wall=match arr[1]{
                                 Some((seperation,dir,offset_normal))=>{
+                                    let seperation=seperation/2.0; //Since we are pushing diagonally dont want to over push.
+                                    let first=Some(create_collision(a,dir,seperation,offset_normal));
                                     let second=Some(create_collision(a,dir,seperation,offset_normal));
                                     WallCollision{collisions:[first,second]}
                                 },
                                 None=>{
-                                    //dbg!(seperation,offset_normal);
-                                    //dbg!(first);
+                                    let first=Some(create_collision(a,dir,seperation,offset_normal));
                                     WallCollision{collisions:[first,None]}
                                 }
                             };
@@ -280,13 +280,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let mut ka3=BTreeMap::new();
             wall_collisions.for_every(&mut tree,|bot,wall|{
-                
                 for k in wall.collisions.iter_mut(){
                     if let &mut Some((_,_,dir,impulse))=k{
                         ka3.insert(single_hash(bot,dir),impulse);
                     }
                 } 
-                
             });
             
             ka=Some((ka2,ka3));
@@ -313,9 +311,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         
         let mut lines = canvas.lines(1.0);
         for b in bots.iter(){
-            lines.add(b.pos.into(),(b.pos+b.vel*20.0).into());
+            lines.add(b.pos.into(),(b.pos+b.vel*100.0).into());
         }
-        lines.send_and_uniforms(canvas).with_color([0.0,1.0,0.2,0.2]).draw();
+        lines.send_and_uniforms(canvas).with_color([0.0,1.0,0.2,1.0]).draw();
 
         //Draw arrow
         let dim:Rect<f32>=dim.inner_into();
