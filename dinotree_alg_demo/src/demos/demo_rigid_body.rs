@@ -60,7 +60,7 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 1;
+    let num_bot = 3000;
     //let num_bot=100;
 
     let radius = 4.0;
@@ -200,7 +200,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                             
                             let wall=match arr[1]{
                                 Some((seperation,dir,offset_normal))=>{
-                                    let seperation=seperation/2.0; //Since we are pushing diagonally dont want to over push.
+                                    let seperation=seperation*2.0f32.sqrt(); //Since we are pushing diagonally dont want to over push.
                                     let first=Some(create_collision(a,dir,seperation,offset_normal));
                                     let second=Some(create_collision(a,dir,seperation,offset_normal));
                                     WallCollision{collisions:[first,second]}
@@ -309,11 +309,13 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         }
         circles.send_and_uniforms(canvas,diameter-4.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
+        /*
         let mut lines = canvas.lines(1.0);
         for b in bots.iter(){
             lines.add(b.pos.into(),(b.pos+b.vel*100.0).into());
         }
         lines.send_and_uniforms(canvas).with_color([0.0,1.0,0.2,1.0]).draw();
+        */
 
         //Draw arrow
         let dim:Rect<f32>=dim.inner_into();
