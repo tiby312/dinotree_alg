@@ -9,13 +9,13 @@ mod maps{
 █    █   █     █
 █    █   █  █  █
 █        █  █  █
-█    █████  █  █
-█      █       █
+█    ██ █   █  █
+█   █  █       █
 █     █     █  █
-█    █         █
-█   █          █
+█    █     █   █
+█   █   █      █
 █        █     █
-█              █
+█         █    █
 ████████████████
 "};
 }
@@ -38,8 +38,14 @@ impl BotCollisionHash{
     }
 }
 
-fn single_hash<T>(a:&T)->usize{
-    a as *const _ as usize
+#[derive(PartialOrd,PartialEq,Eq,Ord,Copy,Clone)]
+pub struct WallCollisionHash{
+    a:usize,
+    dir:grid::CardDir
+}
+fn single_hash<T>(a:&T,dir:grid::CardDir)->WallCollisionHash{
+    WallCollisionHash{a:a as *const _ as usize,dir}
+    //a as *const _ as usize
 }
 
 
@@ -54,7 +60,7 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 3000;
+    let num_bot = 2000;
     //let num_bot=100;
 
     let radius = 4.0;
@@ -132,7 +138,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a2=now.elapsed().as_millis();
 
             let bias_factor=0.3;
-            let allowed_penetration=radius*0.1;
+            let allowed_penetration=radius*0.5;
             let num_iterations=20;
             
         
@@ -169,7 +175,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             //so that there is no chance of mutating it twice
             #[derive(Debug)]
             struct WallCollision{
-                collisions:[Option<(f32,Vec2<f32>,f32)>;2],
+                collisions:[Option<(f32,Vec2<f32>,grid::CardDir,f32)>;2],
             }
 
             let mut wall_collisions={
@@ -177,25 +183,25 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
                 tree.collect_all(|rect,a|{
                     let arr=duckduckgeo::grid::collide::is_colliding(&walls,&grid_viewport,rect.as_ref(),radius);
-                    let create_collision=|bot:&mut Bot,seperation:f32,offset_normal:Vec2<f32>|{
+                    let create_collision=|bot:&mut Bot,dir:grid::CardDir,seperation:f32,offset_normal:Vec2<f32>|{
                         let bias=-bias_factor*(1.0/num_iterations as f32)*( (-seperation+allowed_penetration).min(0.0));
 
-                        let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&single_hash(bot))){ //TODO inefficient to check if its none every time
+                        let impulse=if let Some(&impulse)=ka3.and_then(|(_,j)|j.get(&single_hash(bot,dir))){ //TODO inefficient to check if its none every time
                             let k=offset_normal*impulse;
                             bot.vel+=k;
                             impulse
                         }else{
                             0.0
                         };
-                        (bias,offset_normal,impulse)
+                        (bias,offset_normal,dir,impulse)
                     };
                     match arr[0]{
-                        Some((seperation,offset_normal))=>{
-                            let first=Some(create_collision(a,seperation,offset_normal));
+                        Some((seperation,dir,offset_normal))=>{
+                            let first=Some(create_collision(a,dir,seperation,offset_normal));
 
                             let wall=match arr[1]{
-                                Some((seperation,offset_normal))=>{
-                                    let second=Some(create_collision(a,seperation,offset_normal));
+                                Some((seperation,dir,offset_normal))=>{
+                                    let second=Some(create_collision(a,dir,seperation,offset_normal));
                                     WallCollision{collisions:[first,second]}
                                 },
                                 None=>{
@@ -251,7 +257,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 wall_collisions.for_every(&mut tree,|bot,wall|{
                     //dbg!(&wall);
                     for k in wall.collisions.iter_mut(){
-                        if let &mut Some((bias,offset_normal,ref mut acc))=k{
+                        if let &mut Some((bias,offset_normal,_dir,ref mut acc))=k{
                             
                             let impulse=bias-bot.vel.dot(offset_normal);
 
@@ -274,11 +280,13 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let mut ka3=BTreeMap::new();
             wall_collisions.for_every(&mut tree,|bot,wall|{
+                
                 for k in wall.collisions.iter_mut(){
-                    if let &mut Some((_,_,impulse))=k{
-                        ka3.insert(single_hash(bot),impulse);
+                    if let &mut Some((_,_,dir,impulse))=k{
+                        ka3.insert(single_hash(bot,dir),impulse);
                     }
                 } 
+                
             });
             
             ka=Some((ka2,ka3));
