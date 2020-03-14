@@ -6,15 +6,15 @@ mod maps{
     use duckduckgeo::grid::*;
     pub const GRID_STR1:Map<'static>= Map{dim:vec2(16,12),str:"\
 ████████████████
-█    █   █     █
-█    █   █  █  █
-█        █  █  █
-█    ██ █   █  █
-█   █  █       █
+█    █         █
+█   █  █ █  █  █
+█  █  █  █ █   █
+█ █  █  █   ██ █
+█   █  █     █ █
 █     █     █  █
-█    █     █   █
-█   █   █      █
-█        █     █
+█ █  █   █ █   █
+█   █   █   █  █
+█        █   █ █
 █         █    █
 ████████████████
 "};
@@ -63,7 +63,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let num_bot = 3000;
     //let num_bot=100;
 
-    let radius = 4.0;
+    let radius = 3.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -103,7 +103,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        for _ in 0..4{
+        for _ in 0..2{
             let now = Instant::now();
             
 
@@ -137,9 +137,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
            
             let a2=now.elapsed().as_millis();
 
-            let bias_factor=0.3;
+            let bias_factor=0.2;
             let allowed_penetration=radius*0.5;
-            let num_iterations=20;
+            let num_iterations=8;
             
         
             let mut collision_list={
@@ -307,7 +307,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         for b in bots.iter(){
             circles.add(b.pos.into());
         }
-        circles.send_and_uniforms(canvas,diameter-4.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
+        circles.send_and_uniforms(canvas,diameter-2.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
         
         /*
         let mut lines = canvas.lines(1.0);
