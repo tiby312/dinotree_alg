@@ -32,20 +32,22 @@ impl<'a,A:Axis,N:Num,T> CollectableDinoTree<'a,A,N,T>{
         unsafe{&mut *j}
     }
 
-    pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N>,&mut T)->Option<D>)->SingleCollisionList<'a,T,D>{
-         
-        let a=self.tree.as_tree_mut().collect_all(|a,b|{
-            match func(a,unsafe{b.as_mut()}){
-                Some(d)=>{
-                    Some((*b,d))
-                },
-                None=>{
-                    None
+    /*
+
+
+    pub fn collect_all<D>(&mut self,mut func:impl FnMut(&Rect<N::Num>,&mut <N::T as HasInner>::Inner)->Option<D>)->Vec<D>{
+        let mut res=Vec::new();
+        for node in self.inner.get_nodes_mut().iter_mut(){
+            for b in node.get_mut().bots.iter_mut(){
+                let (x,y)=b.unpack();
+                if let Some(d)=func(x,y){
+                    res.push(d);
                 }
             }
-        });
-        SingleCollisionList{_p:PhantomData,a}
-    }
+        }
+        res
+    }*/
+
 }
 
 
@@ -57,6 +59,26 @@ pub struct Collision<T>{
 
 impl<'a,A:Axis+Send+Sync,N:Num+Send+Sync,T:Send+Sync> CollectableDinoTree<'a,A,N,T>{
 
+    pub fn collect_all_par<D:Send+Sync>(&mut self,func:impl Fn(&Rect<N>,&mut T)->Option<D>+Send+Sync+Copy)->SingleCollisionList<'a,T,D>{
+         
+        let tree=self.tree.as_tree_mut();
+        use rayon::prelude::*;
+
+        let par=tree.inner.get_nodes_mut().par_iter_mut().map(|node|{
+            let mut a=Vec::new();
+            for b in node.get_mut().bots.iter_mut(){
+                let (x,y)=b.unpack();
+                if let Some(d)=func(x,unsafe{y.as_mut()}){
+                    a.push((*y,d))
+                }
+            }
+            a
+        }).flat_map(|a|a);
+
+        let a:Vec<_>=par.collect();
+
+        SingleCollisionList{_p:PhantomData,a}
+    }
     pub fn collect_collisions_list_par <D:Send+Sync>(&mut self,func:impl Fn(&mut T,&mut T)->Option<D>+Send+Sync+Copy)->BotCollision<'a,T,D>{
     
         let cols=self.tree.as_tree_mut().collect_collisions_list_par(|a,b|{
@@ -83,6 +105,14 @@ impl<'a,T,D> SingleCollisionList<'a,T,D>{
         for (a,d) in self.a.iter_mut(){
             func(unsafe{&mut *a.as_mut()},d)
         }
+    }
+}
+impl<'a,T:Send+Sync,D:Send+Sync> SingleCollisionList<'a,T,D>{
+    pub fn for_every_par<'b,A:Axis,N:Num>(&'b mut self,_:&'b mut CollectableDinoTree<'a,A,N,T>,func:impl Fn(&mut T,&mut D)+Send+Sync+Copy){
+        use rayon::prelude::*;
+        self.a.par_iter_mut().for_each(|(a,d)|{
+            func(unsafe{&mut *a.as_mut()},d)
+        });
     }
 }
 

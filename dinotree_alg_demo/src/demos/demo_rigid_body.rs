@@ -113,7 +113,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     .unwrap()
             });
 
-            let a1=now.elapsed().as_millis();
+            
 
 
             
@@ -135,11 +135,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             });
 
            
-            let a2=now.elapsed().as_millis();
+            
 
             let bias_factor=0.2;
             let allowed_penetration=radius*0.5;
-            let num_iterations=8;
+            let num_iterations=16;
             
         
             let mut collision_list={
@@ -181,7 +181,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let mut wall_collisions={
                 let ka3 = ka.as_ref();
 
-                tree.collect_all(|rect,a|{
+                tree.collect_all_par(|rect,a|{
                     let arr=duckduckgeo::grid::collide::is_colliding(&walls,&grid_viewport,rect.as_ref(),radius);
                     let create_collision=|bot:&mut Bot,dir:grid::CardDir,seperation:f32,offset_normal:Vec2<f32>|{
                         let bias=-bias_factor*(1.0/num_iterations as f32)*( (-seperation+allowed_penetration).min(0.0));
@@ -219,8 +219,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 })
             };
 
+            let a1=now.elapsed().as_millis();
+
             //integrate forvces
-            for b in tree.get_bots_mut().iter_mut() {
+            //for b in tree.get_bots_mut().iter_mut() {
+            use rayon::prelude::*;
+            tree.get_bots_mut().par_iter_mut().for_each(|b|{
                 if b.vel.is_nan(){
                     b.vel=vec2same(0.0);
                 }
@@ -234,9 +238,11 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 }
                 let g=0.01;
                 b.vel+=vec2(g*counter.cos(),g*counter.sin());
-            }
+            });
 
-            let a3=now.elapsed().as_millis();   
+            let a2=now.elapsed().as_millis();
+
+        
             
             for _ in 0..num_iterations{
 
@@ -254,7 +260,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     b.vel+=k;
                 });     
 
-                wall_collisions.for_every(&mut tree,|bot,wall|{
+                wall_collisions.for_every_par(&mut tree,|bot,wall|{
                     //dbg!(&wall);
                     for k in wall.collisions.iter_mut(){
                         if let &mut Some((bias,offset_normal,_dir,ref mut acc))=k{
@@ -270,7 +276,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     }; 
                 })
             }
-
+             let a3=now.elapsed().as_millis();   
 
             let mut ka2=BTreeMap::new();
             collision_list.for_every_pair(&mut tree,|a,b,&mut (_,_,impulse)|{
