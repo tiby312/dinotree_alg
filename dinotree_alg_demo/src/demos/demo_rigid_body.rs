@@ -60,10 +60,10 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 10000;
+    let num_bot = 20000;
     //let num_bot=100;
 
-    let radius = 2.0;
+    let radius = 1.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -141,6 +141,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let allowed_penetration=radius*0.5;
             let num_iterations=20;
             
+            let a1=now.elapsed().as_micros();
         
             let mut collision_list={
                 let ka3 = ka.as_ref();
@@ -219,7 +220,6 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 })
             };
 
-            let a1=now.elapsed().as_micros();
 
             //integrate forvces
             //for b in tree.get_bots_mut().iter_mut() {
