@@ -106,6 +106,11 @@ impl<'a,T,D> SingleCollisionList<'a,T,D>{
             func(unsafe{&mut *a.as_mut()},d)
         }
     }
+
+    pub fn get<'b,A:Axis,N:Num>(&self,_:&'b CollectableDinoTree<'a,A,N,T>)->&[(&T,D)]{
+        let k=unsafe{&*(self.a.as_slice() as *const _ as *const [(&T,D)])};
+        k
+    }
 }
 impl<'a,T:Send+Sync,D:Send+Sync> SingleCollisionList<'a,T,D>{
     pub fn for_every_par<'b,A:Axis,N:Num>(&'b mut self,_:&'b mut CollectableDinoTree<'a,A,N,T>,func:impl Fn(&mut T,&mut D)+Send+Sync+Copy){
@@ -114,6 +119,7 @@ impl<'a,T:Send+Sync,D:Send+Sync> SingleCollisionList<'a,T,D>{
             func(unsafe{&mut *a.as_mut()},d)
         });
     }
+
 }
 
 pub struct BotCollision<'a,T,D>{
@@ -122,6 +128,14 @@ pub struct BotCollision<'a,T,D>{
 }
 
 impl<'a,T,D> BotCollision<'a,T,D>{
+    ///IMPORTANT iter_mut() not allowed since user could store the returned mutable references, but iter() is allowed.
+    pub fn iter<'b,A:Axis,N:Num>(&self,_:&'b CollectableDinoTree<'a,A,N,T>)->impl Iterator<Item=((&T,&T,&D))>{
+        self.cols.iter().map(|(Collision{a,b},d)|{
+            let a=unsafe{&*a.as_ref()};
+            let b=unsafe{&*b.as_ref()};
+            (a,b,d)
+        })
+    }
     pub fn for_every_pair<'b,A:Axis,N:Num>(&'b mut self,_:&'b mut CollectableDinoTree<'a,A,N,T>,mut func:impl FnMut(&mut T,&mut T,&mut D)){
         
         self.cols.for_every_pair_mut(|(Collision{a,b},d)|{
@@ -132,6 +146,14 @@ impl<'a,T,D> BotCollision<'a,T,D>{
     }
 }
 impl<'a,T:Send+Sync,D:Send+Sync> BotCollision<'a,T,D>{
+    /*
+    pub fn par_iter(&self)->rayon::slice::Iter<Vec<(Collision<&T>,D)>>{
+        use rayon::prelude::*;
+        let sl=unsafe{& *((&self.cols.nodes) as *const _ as *const Vec<Vec<(Collision<&T>,D)>>)};
+        let ss:& [_]=sl;
+        ss.par_iter()
+    }
+    */
     pub fn for_every_pair_par<'b,A:Axis,N:Num>(&'b mut self,_:&'b mut CollectableDinoTree<'a,A,N,T>,func:impl Fn(&mut T,&mut T,&mut D)+Send+Sync+Copy){
         
         self.cols.for_every_pair_par_mut(|(Collision{a,b},d)|{

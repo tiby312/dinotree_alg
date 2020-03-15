@@ -63,8 +63,7 @@ pub mod bbox_helper {
 
         DinoTree {
             inner: compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
-            axis: tree.axis,
-            bot_ptr:bots as *const _
+            axis: tree.axis
         }
     }
 }
@@ -159,8 +158,7 @@ use crate::query::*;
 ///The data structure this crate revoles around.
 pub struct DinoTree<A: Axis, N: Node> {
     axis: A,
-    inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
-    bot_ptr:*const [N::T] //just used for reference. TODO check that tree still implements Send+Sync
+    inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>
 }
 
 ///The type of the axis of the first node in the dinotree.
@@ -663,13 +661,9 @@ impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
 
 
 impl<A: Axis, N: Node> DinoTree<A, N> {
-    pub fn get_bots(&self)->&[N::T]{
-        unsafe{&*self.bot_ptr}
-    }
+  
 
-    pub fn get_bots_mut(&mut self)->&mut [N::T]{
-        unsafe{&mut *(self.bot_ptr as *mut _)}
-    }
+  
     /// # Examples
     ///
     /// ```
@@ -858,7 +852,6 @@ mod builder {
         pub fn build_not_sorted_par(&mut self) -> NotSorted<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-            let bot_ptr=bots as *const _;
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
             let inner = create_tree_par(
                 self.axis,
@@ -872,7 +865,6 @@ mod builder {
             NotSorted(DinoTree {
                 axis: self.axis,
                 inner,
-                bot_ptr
             })
         }
 
@@ -880,7 +872,6 @@ mod builder {
         pub fn build_par(&mut self) -> DinoTree<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-            let bot_ptr=bots as *const _;
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
             let inner = create_tree_par(
                 self.axis,
@@ -893,8 +884,7 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner,
-                bot_ptr
+                inner
             }
         }
     }
@@ -938,7 +928,6 @@ mod builder {
         pub fn build_not_sorted_seq(&mut self) -> NotSorted<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-            let bot_ptr=bots as *const _;
             let inner = create_tree_seq(
                 self.axis,
                 bots,
@@ -949,8 +938,7 @@ mod builder {
             );
             NotSorted(DinoTree {
                 axis: self.axis,
-                inner,
-                bot_ptr
+                inner
             })
         }
 
@@ -958,7 +946,6 @@ mod builder {
         pub fn build_seq(&mut self) -> DinoTree<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-            let bot_ptr=bots as *const _;
             let inner = create_tree_seq(
                 self.axis,
                 bots,
@@ -969,8 +956,7 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner,
-                bot_ptr
+                inner
             }
         }
 
@@ -1002,7 +988,6 @@ mod builder {
         ) -> DinoTree<A, NodeMut<'a, T>> {
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
-            let bot_ptr=bots as *const _;
             let inner = create_tree_seq(
                 self.axis,
                 bots,
@@ -1013,8 +998,7 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner,
-                bot_ptr
+                inner
             }
         }
     }

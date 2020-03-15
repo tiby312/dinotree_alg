@@ -51,6 +51,9 @@ impl<T:?Sized> MyPtr<T>{
     pub unsafe fn as_mut(&mut self)->&mut T{
         self.0.as_mut()
     }
+    pub unsafe fn as_ref(&self)->&T{
+        self.0.as_ref()
+    }
 }
 unsafe impl<T:?Sized> Send for MyPtr<T>{}
 unsafe impl<T:?Sized> Sync for MyPtr<T>{}
@@ -150,7 +153,7 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTree { axis, inner,bot_ptr:bots as *const _ }
+    DinoTree { axis, inner}
 }
 
 fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
@@ -169,7 +172,7 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTree { axis, inner,bot_ptr:bots as *const _ }
+    DinoTree { axis, inner}
 }
 
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`

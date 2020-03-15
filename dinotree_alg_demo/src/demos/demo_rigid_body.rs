@@ -60,10 +60,10 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 3000;
+    let num_bot = 10000;
     //let num_bot=100;
 
-    let radius = 3.0;
+    let radius = 2.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -139,7 +139,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             let bias_factor=0.2;
             let allowed_penetration=radius*0.5;
-            let num_iterations=16;
+            let num_iterations=20;
             
         
             let mut collision_list={
@@ -219,7 +219,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 })
             };
 
-            let a1=now.elapsed().as_millis();
+            let a1=now.elapsed().as_micros();
 
             //integrate forvces
             //for b in tree.get_bots_mut().iter_mut() {
@@ -240,7 +240,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 b.vel+=vec2(g*counter.cos(),g*counter.sin());
             });
 
-            let a2=now.elapsed().as_millis();
+            let a2=now.elapsed().as_micros();
 
         
             
@@ -276,26 +276,26 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     }; 
                 })
             }
-             let a3=now.elapsed().as_millis();   
+            let a3=now.elapsed().as_micros();   
 
-            let mut ka2=BTreeMap::new();
-            collision_list.for_every_pair(&mut tree,|a,b,&mut (_,_,impulse)|{
-                let hash=BotCollisionHash::new(a,b);
-                ka2.insert(hash,impulse);
+ 
+            let (ka2,ka3):(BTreeMap<_,_>,BTreeMap<_,_>)=rayon::join(||{
+                collision_list.iter(&tree).map(|(a,b,&(_,_,impulse))|{
+                    (BotCollisionHash::new(a,b),impulse)
+                }).collect()
+            },
+            ||{
+                wall_collisions.get(&tree).iter().flat_map(|(bot,wall)|{
+                    let k=wall.collisions.iter().filter(|a|a.is_some()).map(|a|a.unwrap());
+                    k.map(move |(_,_,dir,impulse)|{
+                        (single_hash(bot,dir),impulse)
+                    })
+                }).collect()
             });
 
-            let mut ka3=BTreeMap::new();
-            wall_collisions.for_every(&mut tree,|bot,wall|{
-                for k in wall.collisions.iter_mut(){
-                    if let &mut Some((_,_,dir,impulse))=k{
-                        ka3.insert(single_hash(bot,dir),impulse);
-                    }
-                } 
-            });
-            
             ka=Some((ka2,ka3));
 
-            let a4=now.elapsed().as_millis();
+            let a4=now.elapsed().as_micros();
 
             //integrate position
             for b in bots.iter_mut() {

@@ -50,11 +50,15 @@ fn parallelize<T:Visitor+Send+Sync>(a:T,func:impl Fn(T::Item)+Sync+Send+Copy) wh
 }
 
 pub struct CollisionList<D>{
-    nodes:Vec<Vec<D>>
+    pub(crate) nodes:Vec<Vec<D>>
 }
 
 impl<D> CollisionList<D>{
 
+
+    pub fn iter(&self)->impl Iterator<Item=(&D)>{
+        self.nodes.iter().flat_map(|a|a.iter())
+    }
     pub fn for_every_pair_mut(&mut self,mut func:impl FnMut(&mut D)){
         for n in self.nodes.iter_mut(){
             for c in n.iter_mut(){
