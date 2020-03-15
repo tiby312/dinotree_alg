@@ -60,10 +60,10 @@ use std::time::Instant;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
-    let num_bot = 20000;
+    let num_bot = 3000;
     //let num_bot=100;
 
-    let radius = 1.0;
+    let radius = 3.0;
     let diameter=radius*2.0;
     let diameter2=diameter*diameter;
 
@@ -105,6 +105,43 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     Demo::new(move |cursor, canvas, _check_naive| {
         for _ in 0..2{
             let now = Instant::now();
+            /*
+            {
+                let liquid_radius=10.0;
+                let mut tree2:dinotree_alg::collectable::CollectableDinoTree<_,NotNan<_>,_>=dinotree_alg::collectable::CollectableDinoTree::new(&mut bots,|b| {
+                    Rect::from_point(b.pos, vec2same(liquid_radius))
+                        .inner_try_into()
+                        .unwrap()
+                });
+
+                tree2.get_mut().find_collisions_mut_par(|a,b|{
+                    let offset=b.pos-a.pos;
+
+                    //  |----c----|       |----c----|
+                    let distance=offset.magnitude();
+
+                    if distance>0.001 && distance<liquid_radius*2.0{
+
+                        let normal=offset/distance;
+
+                        let ff=0.001*   (liquid_radius-distance)/(liquid_radius*2.0);
+
+                        let velociy_diff = b.vel - a.vel;
+                        let damping_ratio = 0.00001;
+                        let spring_dampen = velociy_diff.dot(normal) * damping_ratio;
+                            
+                        a.vel-=normal*(ff-spring_dampen);
+                        b.vel+=normal*(ff-spring_dampen);
+
+                        let visc=0.002;
+                        a.vel+=velociy_diff*visc;
+                        b.vel+=velociy_diff*visc;
+                    }
+                });
+            }
+            */
+            
+
             
 
             let mut tree=dinotree_alg::collectable::CollectableDinoTree::new(&mut bots,|b| {
