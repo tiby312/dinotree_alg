@@ -50,6 +50,52 @@ fn single_hash<T>(a:&T,dir:grid::CardDir)->WallCollisionHash{
 
 
 
+type WorldNum=f32;
+
+fn cast_ray(grid:&grid::GridViewPort,walls:&grid::Grid2D,point:Vec2<WorldNum>,dir:Vec2<WorldNum>,max_tval:WorldNum)->Option<grid::raycast::CollideCellEvent>{
+
+    let ray=axgeom::Ray{point,dir};
+    
+    let caster= grid::raycast::RayCaster::new(grid,ray);
+    
+
+    if let Some(wall)=walls.get_option(grid.to_grid(point)){
+        let grid_mod=grid.to_grid_mod(point);
+        if wall{
+            return None;
+        }
+        //assert!(!wall,"We are starting the raycast inside a wall! point:{:?} grid mod:{:?}",point,grid_mod);
+    }
+
+
+    for a in caster{
+        if a.tval<=max_tval{                
+            match walls.get_option(a.cell){
+                Some(wall)=>{
+                    if wall{                                
+                        
+                        if let Some(wall) = walls.get_option(a.cell+a.dir_hit.into_vec()){
+                            if wall{
+                                panic!("dont know how to handle this case")
+                            }
+                        }
+                    
+                        return Some(a);
+                    }       
+                },
+                None=>{
+                    return None; //We've ray casted off the wall grid.
+                }       
+            }
+        }else{
+            return None;
+        }
+    }
+    unreachable!()
+}
+
+
+
 #[derive(Copy, Clone)]
 pub struct Bot {
     pos: Vec2<f32>,
@@ -103,7 +149,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        for _ in 0..2{
+        for _ in 0..1{
             let now = Instant::now();
             /*
             {
@@ -335,12 +381,102 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let a4=now.elapsed().as_micros();
 
             //integrate position
-            for b in bots.iter_mut() {
+            for b in tree.get_bots_mut().iter_mut() {
                 b.pos+=b.vel;
             }
             
             counter+=0.001;
             println!("yo= {} {} {} {}",a1,a2-a1,a3-a2,a4-a3);
+
+            {
+                let ray_start=cursor.inner_into();//vec2(320.0,420.0);
+                use axgeom::Ray;
+
+                struct RayT<'a> {
+                    _p:core::marker::PhantomData<&'a f32>,
+                    pub radius: f32,
+                }
+
+                impl<'a> RayCast for RayT<'a> {
+                    type N = F32n;
+                    type T = BBox<F32n, &'a mut Bot>;
+
+                    fn compute_distance_to_bot(
+                        &self,
+                        ray: &Ray<Self::N>,
+                        bot: &Self::T,
+                    ) -> axgeom::CastResult<Self::N> {
+                        ray.inner_into::<f32>()
+                            .cast_to_circle(bot.inner().pos, self.radius)
+                            .map(|a| NotNan::new(a).unwrap())
+                    }
+                    fn compute_distance_to_rect(
+                        &self,
+                        ray: &Ray<Self::N>,
+                        rect: &Rect<Self::N>,
+                    ) -> axgeom::CastResult<Self::N> {
+                        ray.cast_to_rect(rect)
+                    }
+                }
+                let mut ray_cast = canvas.lines(1.0);
+
+                for dir in 0..360i32 {
+                    let dir = dir as f32 * (std::f32::consts::PI / 180.0);
+                    let x = (dir.cos() ) as f32;
+                    let y = (dir.sin() ) as f32;
+
+                    let ray = {
+                        let k = vec2(x, y).inner_try_into().unwrap();
+                        Ray {
+                            point: ray_start.inner_try_into().unwrap(),
+                            dir: k,
+                        }
+                    };
+
+
+                    let res = tree
+                        .get_mut()
+                        .raycast_fine_mut(ray, &mut RayT { radius,_p:core::marker::PhantomData }, dim);
+
+
+
+
+                    
+                    let dis=match res{
+                        RayCastResult::Hit((_,dis))=>{
+                            let dis:f32=dis.into_inner();
+                            if let Some(c)=cast_ray(&grid_viewport,&walls,ray_start,vec2(dir.cos(),dir.sin()),400.0){
+                                if c.tval<dis{
+                                    c.tval
+                                }else{
+                                    dis
+                                }
+                            }else{
+                                dis
+                            }
+
+                        },
+                        RayCastResult::NoHit=>{
+                            if let Some(c)=cast_ray(&grid_viewport,&walls,ray_start,vec2(dir.cos(),dir.sin()),400.0){
+                                c.tval
+                            }else{
+                                400.0
+                            }
+                        }
+                    };
+                    
+                    /*
+                    let dis = match res {
+                        RayCastResult::Hit((_, dis)) => dis.into_inner(),
+                        RayCastResult::NoHit => 800.0,
+                    };
+                    */
+
+                    let end = ray.inner_into().point_at_tval(dis);
+                    ray_cast.add(ray.point.inner_into().into(), end.into());
+                }
+                ray_cast.send_and_uniforms(canvas).with_color([0.5, 0.5, 0.5, 1.0]).draw();
+            }
         }
 
         wall_save.uniforms(canvas,grid_viewport.spacing).draw();
@@ -351,6 +487,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             circles.add(b.pos.into());
         }
         circles.send_and_uniforms(canvas,diameter-2.0).with_color([1.0, 1.0, 0.0, 0.6]).draw();
+        
         
         /*
         let mut lines = canvas.lines(1.0);
