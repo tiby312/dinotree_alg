@@ -14,6 +14,7 @@ rayon = "1.2"
 axgeom="1.6"
 compt = "1.6"
 egaku2d = "0.5"
+seq_impulse = {path="../../seq_impulse"}
 
 [dependencies.dinotree_alg]
 path = ".."
