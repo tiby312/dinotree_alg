@@ -77,8 +77,6 @@ pub mod collectable;
 
 pub mod analyze;
 
-pub use rigid::CollisionList;
-mod rigid;
 
 pub(crate) use self::notsorted::NotSorted;
 mod notsorted {
@@ -231,16 +229,7 @@ impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
 where
     N::T:HasInner + Send + Sync
 {
-    //TODO documennt
-    ///Sometimes you want want to iterate over all the collisions multiple times.
-    ///this function lets you do this safely. it is implemented on top of
-    ///find__collisions_mut_par_ext
-    pub fn collect_collisions_list_par<K:Send+Sync>(
-            &mut self,collision:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<K> + Send +Sync
-    )->CollisionList<K>
-    {
-        rigid::create_collision_list(self,collision)
-    }
+   
     /// # Examples
     ///
     ///```
@@ -366,7 +355,7 @@ where
 
 
 impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
-
+   
     /// # Examples
     ///
     ///```
