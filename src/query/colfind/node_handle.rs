@@ -63,7 +63,7 @@ impl<K: ColMulti + Splitter> NodeHandler for HandleNoSorted<K> {
     fn handle_node(&mut self, _axis: impl Axis, bots: PMut<[Self::T]>) {
         let func = &mut self.func;
 
-        tools::for_every_pair(bots, |a, b| {
+        tools::for_every_pair(bots, move |a, b| {
             if a.get().intersects_rect(b.get()) {
                 func.collide(a, b);
             }

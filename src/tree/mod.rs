@@ -8,7 +8,7 @@ pub mod bbox_helper {
     pub fn create_bbox_indirect<'a, N: Num, T>(
         bots: &'a mut [BBox<N, T>],
     ) -> Vec<BBoxIndirect<'a, BBox<N, T>>> {
-        bots.iter_mut().map(|a| BBoxIndirect::new(a)).collect()
+        bots.iter_mut().map(move |a| BBoxIndirect::new(a)).collect()
     }
 
     ///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.
@@ -33,7 +33,7 @@ pub mod bbox_helper {
                 .get_nodes()
                 .iter()
                 .flat_map(|a| a.range.iter())
-                .map(|a| BBox::new(a.rect, *a.inner))
+                .map(move |a| BBox::new(a.rect, *a.inner))
                 .collect(),
         )
     }
@@ -48,7 +48,7 @@ pub mod bbox_helper {
             .inner
             .get_nodes()
             .iter()
-            .map(|node| {
+            .map(move |node| {
                 let mut k: &mut [_] = &mut [];
                 core::mem::swap(&mut bots, &mut k);
                 let (first, mut rest) = k.split_at_mut(node.range.len());
@@ -117,14 +117,14 @@ mod notsorted {
     {
         pub fn find_collisions_mut_par(
             &mut self,
-            func: impl Fn(PMut<N::T>, PMut<N::T>) + Send + Sync,
+            func: impl Fn(PMut<N::T>, PMut<N::T>) + Send + Sync+Copy,
         ) {
-            colfind::NotSortedQueryBuilder::new(self).query_par(|a, b| func(a, b));
+            colfind::NotSortedQueryBuilder::new(self).query_par(move |a, b| func(a, b));
         }
     }
     impl<A: Axis, N: Node> NotSorted<A, N> {
         pub fn find_collisions_mut(&mut self, mut func: impl FnMut(PMut<N::T>, PMut<N::T>)) {
-            colfind::NotSortedQueryBuilder::new(self).query_seq(|a, b| func(a, b));
+            colfind::NotSortedQueryBuilder::new(self).query_seq(move |a, b| func(a, b));
         }
 
         #[inline(always)]
@@ -244,8 +244,8 @@ where
     ///assert_eq!(bots[0].inner,1);
     ///assert_eq!(bots[1].inner,1);
     ///```
-    pub fn find_collisions_mut_par(&mut self, func: impl Fn( &mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync) {
-        query::colfind::QueryBuilder::new(self).query_par(|mut a,mut b| func(a.inner_mut(), b.inner_mut()));
+    pub fn find_collisions_mut_par(&mut self, func: impl Fn( &mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner) + Send + Sync+Copy) {
+        query::colfind::QueryBuilder::new(self).query_par(move |mut a,mut b| func(a.inner_mut(), b.inner_mut()));
     }
 
 
@@ -538,7 +538,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
         other: &mut [X],
         func: impl Fn(&mut <N::T as HasInner>::Inner, &mut X::Inner),
     ) {
-        intersect_with::intersect_with_mut(self, other, |a,b|(func)(a.into_inner(),b.into_inner()))
+        intersect_with::intersect_with_mut(self, other, move |a,b|(func)(a.into_inner(),b.into_inner()))
     }
 
 
@@ -556,7 +556,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
     ///
     ///```
     pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<N::Num>, mut func: impl FnMut(&mut <N::T as HasInner>::Inner)) {
-        rect::for_all_not_in_rect_mut(self, rect, |a|(func)(a.into_inner()));
+        rect::for_all_not_in_rect_mut(self, rect,move |a|(func)(a.into_inner()));
     }
 
     /// # Examples
@@ -577,7 +577,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
         rect: &Rect<N::Num>,
         mut func: impl FnMut(&mut <N::T as HasInner>::Inner),
     ) {
-        rect::for_all_intersect_rect_mut(self, rect, |a|(func)(a.into_inner()));
+        rect::for_all_intersect_rect_mut(self, rect, move |a|(func)(a.into_inner()));
     }
 
     /// # Examples
@@ -594,7 +594,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
     ///
     ///```
     pub fn for_all_in_rect_mut(&mut self, rect: &Rect<N::Num>, mut func: impl FnMut(&mut <N::T as HasInner>::Inner)) {
-        rect::for_all_in_rect_mut(self, rect, |a|(func)(a.into_inner()));
+        rect::for_all_in_rect_mut(self, rect,move  |a|(func)(a.into_inner()));
     }
 
     /// # Examples
@@ -612,7 +612,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
     ///assert_eq!(bots[1].inner,1);
     ///```
     pub fn find_collisions_mut(&mut self, mut func: impl FnMut(&mut <N::T as HasInner>::Inner, &mut <N::T as HasInner>::Inner)) {
-        colfind::QueryBuilder::new(self).query_seq(|a, b| func(a.into_inner(), b.into_inner()));
+        colfind::QueryBuilder::new(self).query_seq(move |a, b| func(a.into_inner(), b.into_inner()));
     }
 
 
@@ -1061,7 +1061,7 @@ pub mod node {
 
             #[inline(always)]
             fn dfs_preorder(self, mut func: impl FnMut(Self::Item)) {
-                self.inner.dfs_preorder(|a| func(PMut::new(a)));
+                self.inner.dfs_preorder(move |a| func(PMut::new(a)));
             }
         }
     }
@@ -1161,7 +1161,7 @@ fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
     let k = tree
         .get_nodes()
         .iter()
-        .fold(0, |acc, a| acc + a.range.len());
+        .fold(0,move |acc, a| acc + a.range.len());
     debug_assert_eq!(k, num_bots);
 
     tree
@@ -1199,7 +1199,7 @@ fn create_tree_par<
     let k = tree
         .get_nodes()
         .iter()
-        .fold(0, |acc, a| acc + a.range.len());
+        .fold(0,move |acc, a| acc + a.range.len());
     debug_assert_eq!(k, num_bots);
 
     tree
@@ -1377,7 +1377,7 @@ fn bench_cont(b: &mut test::Bencher) {
     let bots: Vec<_> = s
         .as_isize()
         .take(100_000)
-        .map(|pos| BBox::new(aabb_create_isize(pos, 5), ()))
+        .map(move |pos| BBox::new(aabb_create_isize(pos, 5), ()))
         .collect();
 
     b.iter(|| {
@@ -1474,7 +1474,7 @@ fn construct_non_leaf<T: Aabb>(
     let med = if bots.is_empty() {
         return ConstructResult::Empty(bots);
     } else {
-        let closure = |a: &T, b: &T| -> core::cmp::Ordering { oned::compare_bots(div_axis, a, b) };
+        let closure =move |a: &T, b: &T| -> core::cmp::Ordering { oned::compare_bots(div_axis, a, b) };
 
         let k = {
             let mm = bots.len() / 2;

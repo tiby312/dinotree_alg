@@ -20,7 +20,7 @@ pub trait ColMulti {
 
 ///Naive algorithm.
 pub fn query_naive_mut<T: Aabb>(bots: PMut<[T]>, mut func: impl FnMut(PMut<T>, PMut<T>)) {
-    tools::for_every_pair(bots, |a, b| {
+    tools::for_every_pair(bots,move |a, b| {
         if a.get().intersects_rect(b.get()) {
             func(a, b);
         }
@@ -36,7 +36,7 @@ pub fn query_sweep_mut<T: Aabb>(
     ///Sorts the bots.
     #[inline(always)]
     fn sweeper_update<I: Aabb, A: Axis>(axis: A, collision_botids: &mut [I]) {
-        let sclosure = |a: &I, b: &I| -> core::cmp::Ordering {
+        let sclosure = move |a: &I, b: &I| -> core::cmp::Ordering {
             let (p1, p2) = (a.get().get_range(axis).start, b.get().get_range(axis).start);
             if p1 > p2 {
                 return core::cmp::Ordering::Greater;

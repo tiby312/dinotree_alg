@@ -109,7 +109,7 @@ impl<I: Aabb> Sweeper<I> {
                 {
                     let crr = curr_bot.get().get_range(axis);
                     //change this to do retain and then iter
-                    active.retain(|that_bot| that_bot.get().get_range(axis).end > crr.start);
+                    active.retain(move |that_bot| that_bot.get().get_range(axis).end > crr.start);
                 }
 
                 for that_bot in active.iter_mut() {
