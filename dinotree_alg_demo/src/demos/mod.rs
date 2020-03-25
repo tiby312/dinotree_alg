@@ -11,3 +11,5 @@ pub mod demo_raycast_grid;
 pub mod demo_knearest;
 
 pub mod demo_rigid_body;
+
+mod seq_impulse;

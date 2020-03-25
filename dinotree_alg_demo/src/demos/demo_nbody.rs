@@ -32,12 +32,12 @@ impl<'b> NodeMassTrait for Bla<'b> {
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self, mut a: &mut &'b mut Bot, mut b: &mut &'b mut Bot) {
+    fn handle_bot_with_bot(&self, a: &mut &'b mut Bot, b: &mut &'b mut Bot) {
         let _ = duckduckgeo::gravitate([(a.pos,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self, a: &mut Self::No, mut b:&mut &'b mut Bot) {
+    fn handle_node_with_bot(&self, a: &mut Self::No, b:&mut &'b mut Bot) {
         let _ = duckduckgeo::gravitate([(a.center,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
@@ -220,7 +220,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                 */
             }
 
-            tree.find_collisions_mut_par(|mut a, mut b| {
+            tree.find_intersections_mut_par(|a, b| {
                 let (a, b) = if a.mass > b.mass {
                     (a, b)
                 } else {

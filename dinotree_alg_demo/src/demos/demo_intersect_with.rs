@@ -124,7 +124,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 },
             );
 
-            tree.find_collisions_mut_par(|a, b| {
+            tree.find_intersections_mut_par(|a, b| {
                 let _ = duckduckgeo::repel([(a.pos,&mut a.force),(b.pos,&mut b.force)], 0.001, 2.0);
             });
         }

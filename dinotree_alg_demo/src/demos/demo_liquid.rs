@@ -75,7 +75,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         let mut tree = DinoTree::new_par(&mut k);
 
-        tree.find_collisions_mut_par(|a,b| {
+        tree.find_intersections_mut_par(|a,b| {
             let _ = a.solve(b, radius);
         });
 

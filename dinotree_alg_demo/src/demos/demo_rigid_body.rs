@@ -31,7 +31,7 @@ pub struct Bot {
     pos: Vec2<f32>,
     vel: Vec2<f32>
 }
-impl seq_impulse::VelocitySolvable for Bot{
+impl super::seq_impulse::VelocitySolvable for Bot{
     #[inline(always)]
     fn pos(&self)->&Vec2<f32>{
         &self.pos
@@ -79,7 +79,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     };
 
 
-    let mut solver=seq_impulse::CollisionVelocitySolver::new();
+    let mut solver=super::seq_impulse::CollisionVelocitySolver::new();
 
 
     Demo::new(move |cursor, canvas, _check_naive| {
@@ -160,7 +160,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     })
 }
 
-
+/*
 mod raycast{
     use duckduckgeo::grid::GridViewPort;
     use duckduckgeo::grid::Grid2D;
@@ -291,3 +291,4 @@ mod raycast{
     }
 
 }
+*/

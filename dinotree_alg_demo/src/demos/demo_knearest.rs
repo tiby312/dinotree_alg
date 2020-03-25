@@ -4,8 +4,6 @@ use std::cell::RefCell;
 #[derive(Copy, Clone)]
 struct Bot {
     id: usize,
-    pos: Vec2<f32>,
-    radius: Vec2<f32>,
     rect:Rect<f32>
 }
 
@@ -20,7 +18,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         .with_radius(2.0, 50.0)
         .take(40)
         .enumerate()
-        .map(|(id, (pos, radius))| Bot { id, pos, radius ,rect:Rect::from_point(pos, radius)})
+        .map(|(id, (pos, radius))| Bot { id,rect:Rect::from_point(pos, radius)})
         .collect();
 
     let mut tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {

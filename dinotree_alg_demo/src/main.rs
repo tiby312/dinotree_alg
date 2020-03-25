@@ -51,12 +51,13 @@ mod demo_iter {
                 6 => demo_knearest::make_demo(area,canvas),
                 7 => demo_nbody::make_demo(area),
                 8 => demo_raycast_grid::make_demo(area,canvas),
+                9 => demo_raycast_f32::make_demo(area,canvas),
                 
                 _ => unreachable!("Not possible"),
             };
             self.0 += 1;
 
-            if self.0 == 9 {
+            if self.0 == 10 {
                 self.0 = 0
             }
             k
@@ -112,7 +113,7 @@ fn main() {
                 WindowEvent::Resized(_logical_size) => {}
                 WindowEvent::CursorMoved {
                     device_id: _,
-                    position: position,
+                    position,
                     ..
                 } => {
                     //let dpi=sys.get_hidpi_factor();
