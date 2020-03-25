@@ -154,7 +154,7 @@ mod notsorted {
 use crate::query::*;
 
 ///The data structure this crate revoles around.
-pub struct DinoTree<A: Axis, N: Node> {
+pub struct DinoTree<A: Axis, N> {
     axis: A,
     inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>
 }
@@ -648,6 +648,88 @@ impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
 }
 */
 
+impl<A:Axis,N>DinoTree<A,N>{
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use axgeom::Axis;
+    ///assert!(tree.axis().is_equal_to(default_axis()));
+    ///```
+    pub fn axis(&self) -> A {
+        self.axis
+    }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use compt::Visitor;
+    ///for mut b in tree.vistr_mut().dfs_preorder_iter().flat_map(|n|n.get_mut().bots.iter_mut()){
+    ///    *b.inner_mut()+=1;    
+    ///}
+    ///assert_eq!(bots[0].inner,1);
+    ///```
+    pub(crate) fn vistr_mut(&mut self) -> VistrMut<N> {
+        VistrMut {
+            inner: self.inner.vistr_mut(),
+        }
+    }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use compt::Visitor;
+    ///let mut test = Vec::new();
+    ///for b in tree.vistr().dfs_preorder_iter().flat_map(|n|n.get().bots.iter()){
+    ///    test.push(b);
+    ///}
+    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
+    ///```
+    pub fn vistr(&self) -> Vistr<N> {
+        self.inner.vistr()
+    }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///assert_eq!(tree.get_height(),analyze::compute_tree_height_heuristic(400,analyze::DEFAULT_NUMBER_ELEM_PER_NODE));
+    ///```
+    ///
+    pub fn get_height(&self) -> usize {
+        self.inner.get_height()
+    }
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///assert_eq!(tree.num_nodes(),analyze::nodes_left(0,tree.get_height() ));
+    ///
+    ///```
+    pub fn num_nodes(&self) -> usize {
+        self.inner.get_nodes().len()
+    }
+
+}
 
 impl<A: Axis, N: Node> DinoTree<A, N> {
   
@@ -741,85 +823,6 @@ impl<A: Axis, N: Node> DinoTree<A, N> {
     ///
     pub fn for_all_in_rect<'a>(&'a self, rect: &Rect<N::Num>, func: impl FnMut(&'a N::T)) {
         rect::for_all_in_rect(self, rect, func);
-    }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = [axgeom::rect(0,10,0,10)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///use axgeom::Axis;
-    ///assert!(tree.axis().is_equal_to(default_axis()));
-    ///```
-    pub fn axis(&self) -> A {
-        self.axis
-    }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///use compt::Visitor;
-    ///for mut b in tree.vistr_mut().dfs_preorder_iter().flat_map(|n|n.get_mut().bots.iter_mut()){
-    ///    *b.inner_mut()+=1;    
-    ///}
-    ///assert_eq!(bots[0].inner,1);
-    ///```
-    pub(crate) fn vistr_mut(&mut self) -> VistrMut<N> {
-        VistrMut {
-            inner: self.inner.vistr_mut(),
-        }
-    }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = [axgeom::rect(0,10,0,10)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///use compt::Visitor;
-    ///let mut test = Vec::new();
-    ///for b in tree.vistr().dfs_preorder_iter().flat_map(|n|n.get().bots.iter()){
-    ///    test.push(b);
-    ///}
-    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
-    ///```
-    pub fn vistr(&self) -> Vistr<N> {
-        self.inner.vistr()
-    }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///assert_eq!(tree.get_height(),analyze::compute_tree_height_heuristic(400,analyze::DEFAULT_NUMBER_ELEM_PER_NODE));
-    ///```
-    ///
-    pub fn get_height(&self) -> usize {
-        self.inner.get_height()
-    }
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::prelude::*;
-    ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///assert_eq!(tree.num_nodes(),analyze::nodes_left(0,tree.get_height() ));
-    ///
-    ///```
-    pub fn num_nodes(&self) -> usize {
-        self.inner.get_nodes().len()
     }
 }
 
@@ -1012,11 +1015,11 @@ pub mod node {
 
         /// Tree Iterator that returns a protected mutable reference to each node.
         #[repr(transparent)]
-        pub struct VistrMut<'a, N: Node> {
+        pub struct VistrMut<'a, N> {
             pub(crate) inner: compt::dfs_order::VistrMut<'a, N, compt::dfs_order::PreOrder>,
         }
 
-        impl<'a, N: Node> VistrMut<'a, N> {
+        impl<'a, N> VistrMut<'a, N> {
             ///It is safe to borrow the iterator and then produce mutable references from that
             ///as long as by the time the borrow ends, all the produced references also go away.
             #[inline(always)]
@@ -1027,7 +1030,7 @@ pub mod node {
             }
         }
 
-        impl<'a, N: Node> core::ops::Deref for VistrMut<'a, N> {
+        impl<'a, N> core::ops::Deref for VistrMut<'a, N> {
             type Target = Vistr<'a, N>;
 
             #[inline(always)]
@@ -1036,9 +1039,9 @@ pub mod node {
             }
         }
 
-        unsafe impl<'a, N: Node> compt::FixedDepthVisitor for VistrMut<'a, N> {}
+        unsafe impl<'a, N> compt::FixedDepthVisitor for VistrMut<'a, N> {}
 
-        impl<'a, N: Node> Visitor for VistrMut<'a, N> {
+        impl<'a, N> Visitor for VistrMut<'a, N> {
             type Item = PMut<'a, N>;
 
             #[inline(always)]

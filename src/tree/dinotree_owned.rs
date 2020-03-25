@@ -119,7 +119,7 @@ pub struct NodePtr<T: Aabb> {
     //  div is none
     div: Option<T::Num>,
 }
-
+/*
 impl<T: Aabb> Node for NodePtr<T> {
     type T = T;
     type Num = T::Num;
@@ -138,7 +138,7 @@ impl<T: Aabb> Node for NodePtr<T> {
         }
     }
 }
-
+*/
 
 fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
     let inner = DinoTree::with_axis(axis, bots);
@@ -270,12 +270,12 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         }
     }
 
-    pub fn as_tree(&self) -> &DinoTree<A, NodePtr<T>> {
-        self.tree.as_ref().unwrap()
+    pub fn as_tree(&self) -> &DinoTree<A, NodeMut<T>> {
+        unsafe{&*(self.tree.as_ref().unwrap() as *const _ as *const _)}
     }
 
-    pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, NodePtr<T>> {
-        self.tree.as_mut().unwrap()
+    pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, NodeMut<T>> {
+        unsafe{&mut *(self.tree.as_mut().unwrap() as *mut _ as *mut _)}
     }
     pub fn get_bots(&self) -> &[T] {
         &self.bots
