@@ -105,7 +105,7 @@ pub mod par;
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
 
-pub(crate) mod pmut;
+pub mod pmut;
 
 ///A collection of different bounding box containers.
 pub mod bbox;

@@ -108,16 +108,16 @@ unsafe impl<T:Aabb> Sync for NodePtr<T> {}
 
 ///A Node in a dinotree.
 pub struct NodePtr<T: Aabb> {
-    range: core::ptr::NonNull<[T]>,
+    _range: core::ptr::NonNull<[T]>,
 
     //range is empty iff cont is none.
-    cont: Option<axgeom::Range<T::Num>>,
+    _cont: Option<axgeom::Range<T::Num>>,
     //for non leafs:
     //  div is some iff mid is nonempty.
     //  div is none iff mid is empty.
     //for leafs:
     //  div is none
-    div: Option<T::Num>,
+    _div: Option<T::Num>,
 }
 /*
 impl<T: Aabb> Node for NodePtr<T> {
@@ -147,9 +147,9 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<
         .into_nodes()
         .drain(..)
         .map(|node| NodePtr {
-            range: core::ptr::NonNull::new(node.range).unwrap(),
-            cont: node.cont,
-            div: node.div,
+            _range: core::ptr::NonNull::new(node.range).unwrap(),
+            _cont: node.cont,
+            _div: node.div,
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
@@ -166,9 +166,9 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
         .into_nodes()
         .drain(..)
         .map(|node| NodePtr {
-            range: core::ptr::NonNull::new(node.range).unwrap(),
-            cont: node.cont,
-            div: node.div,
+            _range: core::ptr::NonNull::new(node.range).unwrap(),
+            _cont: node.cont,
+            _div: node.div,
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();

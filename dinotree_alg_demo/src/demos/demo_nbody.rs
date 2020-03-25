@@ -19,7 +19,7 @@ struct Bla<'a> {
 }
 impl<'b> NodeMassTrait for Bla<'b> {
     type No = NodeMass;
-    type Item = BBoxMut<'b, F32n, Bot>;
+    type Item = BBox<F32n, &'b mut Bot>;
     type Num = F32n;
 
     fn get_rect(a: &Self::No) -> &axgeom::Rect<F32n> {
@@ -32,12 +32,12 @@ impl<'b> NodeMassTrait for Bla<'b> {
     }
 
     //gravitate a bot with a bot
-    fn handle_bot_with_bot(&self, mut a: &mut Bot, mut b: &mut Bot) {
+    fn handle_bot_with_bot(&self, mut a: &mut &'b mut Bot, mut b: &mut &'b mut Bot) {
         let _ = duckduckgeo::gravitate([(a.pos,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self, a: &mut Self::No, mut b:&mut Bot) {
+    fn handle_node_with_bot(&self, a: &mut Self::No, mut b:&mut &'b mut Bot) {
         let _ = duckduckgeo::gravitate([(a.center,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
     }
 
@@ -70,7 +70,7 @@ impl<'b> NodeMassTrait for Bla<'b> {
         }
     }
 
-    fn apply_to_bots<'a, I: Iterator<Item = &'a mut Bot>>(
+    fn apply_to_bots<'a, I: Iterator<Item = &'a mut &'b mut Bot>>(
         &'a self,
         a: &'a Self::No,
         it: I,

@@ -16,9 +16,9 @@ fn main() {
     let mut tree = DinoTree::new(&mut ref_aabbs);
 
     //Find all colliding aabbs.
-    tree.find_collisions_mut(|mut a, mut b| {
-        *a.inner_mut() += 1;
-        *b.inner_mut() += 1;
+    tree.find_intersections_mut(|a, b| {
+        *a += 1;
+        *b += 1;
     });
 
     assert_eq!(aabbs[0].inner, 1);

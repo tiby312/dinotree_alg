@@ -8,7 +8,7 @@ struct Bot {
     rect:Rect<i32>
 }
 
-impl analyze::HasId for Bot {
+impl analyze::HasId for &mut Bot {
     fn get_id(&self) -> usize {
         self.id
     }

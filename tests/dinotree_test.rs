@@ -5,7 +5,7 @@ pub struct Bot {
     id: usize,
     aabb: axgeom::Rect<i64>,
 }
-impl analyze::HasId for Bot {
+impl analyze::HasId for &mut Bot {
     fn get_id(&self) -> usize {
         self.id
     }

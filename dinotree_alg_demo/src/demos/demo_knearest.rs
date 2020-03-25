@@ -37,12 +37,13 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, check_naive| {
-        struct Kn {
+        struct Kn<'a> {
+            _p:core::marker::PhantomData<&'a mut Bot>,
             rects: RefCell<egaku2d::shapes::RectSession>,
         };
 
-        impl Knearest for Kn {
-            type T = BBoxPtr<F32n, Bot>;
+        impl<'a> Knearest for Kn<'a> {
+            type T = BBox<F32n, &'a mut Bot>;
             type N = F32n;
 
             fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
@@ -93,6 +94,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let mut vv = {
             let rects = canvas.rects();
             let mut kn = Kn {
+                _p:core::marker::PhantomData,
                 rects: RefCell::new(rects),
             };
             let k=tree.as_owned_mut()

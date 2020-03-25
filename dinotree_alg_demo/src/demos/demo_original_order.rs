@@ -212,7 +212,7 @@ impl DividerDrawer for Bla {
 
 fn draw_bot_lines<A: axgeom::Axis>(
     axis: A,
-    stuff: Vistr<NodeMut<BBoxMut<F32n, Bot>>>,
+    stuff: Vistr<NodeMut<BBox<F32n, &mut Bot>>>,
     rect: &axgeom::Rect<F32n>,
     lines: &mut egaku2d::shapes::LineSession,
 ) {

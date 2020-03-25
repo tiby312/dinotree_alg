@@ -1,3 +1,4 @@
+
 //! Provides a mutable pointer type that is more restrictive that &mut T, in order
 //! to protect tree invariants.
 //! PMut is short for protected mutable reference.
@@ -13,7 +14,7 @@
 //! let mut bots=[BBox::new(axgeom::Rect::new(0,10,0,10),0)];
 //! let mut tree=DinoTree::new(&mut bots);
 //!
-//! tree.find_collisions_mut(|mut a,mut b|{
+//! tree.find_intersections_pmut(|mut a,mut b|{
 //!    //We cannot allow the user to swap these two
 //!    //bots. They should be allowed to mutate
 //!    //whats inside each of them (aside from their aabb),
@@ -31,7 +32,7 @@ use crate::inner_prelude::*;
 
 
 
-
+/*
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.
 pub(crate) struct PMutPtr<T: ?Sized> {
@@ -45,6 +46,7 @@ impl<T: ?Sized> PMutPtr<T> {
     }
 
 }
+*/
 
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.
@@ -54,11 +56,12 @@ pub struct PMut<'a, T: ?Sized> {
 
 
 impl<'a, T: ?Sized> PMut<'a, T> {
-
+    /*
     #[inline(always)]
     fn as_ptr(&mut self)->PMutPtr<T>{
         PMutPtr{inner:self.inner as *mut _}
     }
+    */
     #[inline(always)]
     pub fn new(inner: &'a mut T) -> PMut<'a, T> {
         PMut { inner }
@@ -88,7 +91,7 @@ impl<'a, T: Node> PMut<'a, T> {
 impl<'a,T:HasInner> PMut<'a,T>{
 
     #[inline(always)]
-    pub fn unpack(mut self)->(&'a Rect<T::Num>,&'a mut T::Inner){
+    pub fn unpack(self)->(&'a Rect<T::Num>,&'a mut T::Inner){
         self.inner.get_inner_mut()
     }
 }

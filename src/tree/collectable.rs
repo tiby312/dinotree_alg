@@ -44,13 +44,13 @@ impl<'a,A:Axis,N:Num,T> CollectableDinoTree<'a,A,N,T>{
     }
 
 
-    pub fn collect_collisions_list<D:Send+Sync>(&mut self,func:impl Fn(&mut T,&mut T)->Option<D>+Send+Sync+Copy)->BotCollision<'a,T,D>{
+    pub fn collect_intersections_list<D:Send+Sync>(&mut self,func:impl Fn(&mut T,&mut T)->Option<D>+Send+Sync+Copy)->BotCollision<'a,T,D>{
 
-        let mut collisions=Vec::new();
+        let mut intersections=Vec::new();
 
-        self.tree.as_tree_mut().find_collisions_mut(|a,b|{
+        self.tree.as_tree_mut().find_intersections_mut(|a,b|{
             if let Some(d)=func(unsafe{a.as_mut()},unsafe{b.as_mut()}){
-                collisions.push((  *a,*b,d))
+                intersections.push((  *a,*b,d))
             }
         });
 
@@ -95,7 +95,7 @@ impl<'a,A:Axis+Send+Sync,N:Num+Send+Sync,T:Send+Sync> CollectableDinoTree<'a,A,N
     }
 
 
-    pub fn collect_collisions_list_par <D:Send+Sync>(&mut self,func:impl Fn(&mut T,&mut T)->Option<D>+Send+Sync+Copy)->BotCollisionPar<'a,T,D>{
+    pub fn collect_intersections_list_par <D:Send+Sync>(&mut self,func:impl Fn(&mut T,&mut T)->Option<D>+Send+Sync+Copy)->BotCollisionPar<'a,T,D>{
     
         let cols=create_collision_list_par(self.tree.as_tree_mut(),|a,b|{
             match func(unsafe{a.as_mut()},unsafe{b.as_mut()}){
@@ -211,7 +211,7 @@ fn create_collision_list<'a,A:Axis,N:Node,D>
     let mut nodes:Vec<_>=Vec::new();
 
 
-    tree.find_collisions_mut(|a,b|{
+    tree.find_intersections_mut(|a,b|{
         if let Some(d)=func(a,b){
             nodes.push(d);
         }
@@ -239,7 +239,7 @@ fn create_collision_list_par<'a,A:Axis,N:Node + Send+Sync,D:Send+Sync>
     let mut nodes:Vec<Vec<D>>=(0..compt::compute_num_nodes(height)).map(|_|Vec::new()).collect();
     let mtree=compt::dfs_order::CompleteTree::from_preorder_mut(&mut nodes).unwrap();
     
-    tree.find_collisions_par_ext(move |a|{
+    tree.find_intersections_par_ext(move |a|{
         let next=a.next.take();
         if let Some([left,right])=next{
             let l=Foo::new(left);

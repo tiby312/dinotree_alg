@@ -4,8 +4,8 @@ use dinotree_alg::prelude::*;
 fn main() {
     let mut aabbs = [
         bbox(rect(0isize, 10, 0, 10), 0),
-        bbox(rect(15, 20, 15, 20), 0),
-        bbox(rect(5, 15, 5, 15), 0),
+        bbox(rect(15, 20, 15, 20), 1),
+        bbox(rect(5, 15, 5, 15), 2),
     ];
 
     {
@@ -35,14 +35,14 @@ fn main() {
             |a, b| b.distance_squared_to_point(a).unwrap_or(0),
             border,
         );
-        assert_eq!(res[0].bot.get(), &rect(15, 20, 15, 20));
-        assert_eq!(res[1].bot.get(), &rect(5, 15, 5, 15));
+        assert_eq!(res[0].bot,&1);
+        assert_eq!(res[1].bot,&2);
 
         let ray = axgeom::Ray {
             point: vec2(-10, 1),
             dir: vec2(1, 0),
         };
         let res = tree.raycast_mut(ray, |ray, r| ray.cast_to_rect(r), border);
-        assert_eq!(res.unwrap().0[0].get(), &rect(0, 10, 0, 10));
+        assert_eq!(res.unwrap().0[0], &0);
     }
 }
