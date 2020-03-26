@@ -63,6 +63,7 @@
 extern crate alloc;
 extern crate is_sorted;
 extern crate pdqselect;
+pub extern crate axgeom;
 
 ///Prelude to include by using: pub use dinotree::prelude::*
 pub mod prelude {
@@ -73,6 +74,7 @@ pub mod prelude {
     pub use crate::tree::node::*;
     pub use crate::*;
 }
+
 
 mod inner_prelude {
     pub(crate) use super::*;

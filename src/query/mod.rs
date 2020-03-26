@@ -4,7 +4,7 @@ mod inner_prelude {
     pub use crate::inner_prelude::*;
     pub(crate) use crate::query::tools;
     pub use alloc::vec::Vec;
-    pub use axgeom;
+    pub(crate) use axgeom;
     pub use axgeom::*;
     pub use compt;
     pub use compt::*;

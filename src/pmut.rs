@@ -30,24 +30,6 @@
 
 use crate::inner_prelude::*;
 
-
-
-/*
-///A protected mutable reference.
-///See the pmut module documentation for more explanation.
-pub(crate) struct PMutPtr<T: ?Sized> {
-    pub(crate) inner: *mut T, //TODO make this private
-}
-
-impl<T: ?Sized> PMutPtr<T> {
-    #[inline(always)]
-    pub(crate) unsafe fn as_ref<'a>(&self)->PMut<'a,T>{
-        PMut{inner:&mut *self.inner}
-    }
-
-}
-*/
-
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.
 pub struct PMut<'a, T: ?Sized> {

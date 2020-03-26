@@ -235,6 +235,8 @@ where
     N::T:HasInner + Send + Sync
 {
    
+    /// Find all intersections in parallel
+    ///
     /// # Examples
     ///
     ///```
@@ -254,10 +256,23 @@ where
     }
 
 
-
-
-
-    ///TODO document
+    /// Allows the user to potentially collect some aspect of every intersection in parallel.
+    ///
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::prelude::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),1u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let intersections=tree.find_intersections_par_ext(
+    ///     |_|Vec::new(),              //Start a new thread 
+    ///     |a,mut b|a.append(&mut b),  //Combine two threads
+    ///     |v,a,b|v.push((*a,*b)),     //What to do for each intersection for a thread. 
+    ///     Vec::new()                  //Starting thread
+    ///);
+    ///
+    ///assert_eq!(intersections.len(),1);
+    ///```
     pub fn find_intersections_par_ext<B:Send+Sync>(
         &mut self,
         split: impl Fn(&mut B)->B + Send + Sync+Copy,
@@ -323,26 +338,8 @@ where
 }
 
 
-impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
-where
-    N::T: Send + Sync,
+impl<A: Axis, N: Node> DinoTree<A, N>
 {
-   
-
-    #[cfg(feature = "nbody")]
-    pub fn nbody_mut_par<X: query::nbody::NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send>(
-        &mut self,
-        ncontext: &X,
-        rect: Rect<N::Num>,
-    ) where
-        X::No: Send,
-        N::T: Send + Copy,
-        N::T:HasInner
-    {
-        query::nbody::nbody_par(self, ncontext, rect)
-    }
-
-    //TODO remove send/sync trait bounds
     #[cfg(feature = "nbody")]
     pub fn nbody_mut<X: query::nbody::NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send>(
         &mut self,
@@ -355,6 +352,24 @@ where
     {
         query::nbody::nbody(self, ncontext, rect)
     }
+}
+
+impl<A: Axis, N: Node + Send + Sync> DinoTree<A, N>
+where
+    N::T: Send + Sync,
+{
+    #[cfg(feature = "nbody")]
+    pub fn nbody_mut_par<X: query::nbody::NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send>(
+        &mut self,
+        ncontext: &X,
+        rect: Rect<N::Num>,
+    ) where
+        X::No: Send,
+        N::T: Send + Copy,
+        N::T:HasInner
+    {
+        query::nbody::nbody_par(self, ncontext, rect)
+    } 
 }
 
 
@@ -602,6 +617,7 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
         rect::for_all_in_rect_mut(self, rect,move  |a|(func)(a.into_inner()));
     }
 
+    /// Find all aabb intersections
     /// # Examples
     ///
     ///```
@@ -620,6 +636,9 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
         colfind::QueryBuilder::new(self).query_seq(move |a, b| func(a.into_inner(), b.into_inner()));
     }
 
+    /// Find all aabb intersections and return a PMut<T> of it. Unlike the regular `find_intersections_mut`, this allows the
+    /// user to access a read only reference of the AABB.
+    ///
     /// # Examples
     ///
     ///```
@@ -637,38 +656,8 @@ impl<A: Axis, N: Node> DinoTree<A, N> where N::T:HasInner{
     pub fn find_intersections_pmut(&mut self, mut func: impl FnMut(PMut<N::T>, PMut<N::T>)) {
         colfind::QueryBuilder::new(self).query_seq(move |a, b| func(a, b));
     }
-
-
-}
-/*
-pub struct SingleCollisionList<D>{
-    a:Vec<D>
 }
 
-unsafe impl<T:HasInner,D> Send for SingleCol<T,D>{}
-unsafe impl<T:HasInner,D> Sync for SingleCol<T,D>{}
-struct SingleCol<T:HasInner,D>{
-    inner:*mut T::Inner,
-    mag:D
-}
-
-impl<T:Aabb+HasInner+Send+Sync,D:Send+Sync> SingleCollisionList<T,D>{
-
-     pub fn for_every_par(&mut self,arr:&mut [T],func:impl Fn(&mut T::Inner,&mut D)+Send+Sync+Copy){
-        use rayon::prelude::*;
-        assert_eq!(self.bot_ptr,arr as *const _ );
-        self.a.par_iter_mut().for_each(|a|func(unsafe{&mut *a.inner},&mut a.mag));
-    }
-}
-impl<T:Aabb+HasInner,D> SingleCollisionList<T,D>{
-    pub fn for_every(&mut self,arr:&mut [T],mut func:impl FnMut(&mut T::Inner,&mut D)){
-        assert_eq!(self.bot_ptr,arr as *const _ );
-        for a in self.a.iter_mut(){
-            func(unsafe{&mut *a.inner},&mut a.mag)
-        }
-    }
-}
-*/
 
 impl<A:Axis,N>DinoTree<A,N>{
 

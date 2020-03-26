@@ -54,11 +54,14 @@ impl<T:?Sized> MyPtr<T>{
     pub unsafe fn as_ref(&self)->&T{
         self.0.as_ref()
     }
+    pub fn as_ptr(&self)->*const T{
+        self.0.as_ptr()
+    }
 }
 unsafe impl<T:?Sized> Send for MyPtr<T>{}
 unsafe impl<T:?Sized> Sync for MyPtr<T>{}
 
-pub fn myptr<T>(a:&mut T)->MyPtr<T>{
+pub fn myptr<T:?Sized>(a:&mut T)->MyPtr<T>{
     MyPtr(unsafe{NonNull::new_unchecked(a as *mut _)})
 }
 
