@@ -1,3 +1,52 @@
+
+//! # Examples
+//!
+//!```
+//!
+//!use dinotree_alg::prelude::*;
+//!use axgeom::{vec2,Rect,Vec2};
+//!
+//!struct Bot{
+//!    pos:Vec2<isize>,
+//!    inner:isize    
+//!}
+//!
+//!let radius=3;
+//!let mut bots = [Bot{pos:vec2(4isize,8),inner:0isize},Bot{pos:vec2(4isize,6),inner:0}];
+//!
+//!//Create a collectable dinotree.
+//!let mut tree = collectable::CollectableDinoTree::new(&mut bots,|r|{
+//!     Rect::from_point(r.pos,vec2(radius,radius))    
+//!});
+//!
+//!//Collect all intersections so we can iterate through them later
+//!let mut intersections=tree.collect_intersections_list(|a,b|{
+//!     a.inner+=1;
+//!     b.inner+=2;
+//!     Some(1) 
+//!});
+//!
+//!//We can perform other queries while we have the intersections stored from earlier
+//!tree.get_mut().for_all_in_rect_mut(&axgeom::rect(0,10,0,10),|a|{
+//!    a.inner+=10;  
+//!});
+//!
+//!
+//!for _ in 0..3{
+//!     //Query all other intersections
+//!     intersections.for_every_pair_mut(&mut tree,|a,b,d|{
+//!         a.inner+=*d;
+//!         b.inner+=*d;
+//!     });
+//!}
+//!
+//!assert_eq!(bots[0].inner,5);
+//!assert_eq!(bots[1].inner,17);
+//!
+//!```
+
+
+
 use dinotree_owned::MyPtr;
 use dinotree_owned::myptr;
 use dinotree_owned::*;
