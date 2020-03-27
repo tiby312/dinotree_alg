@@ -3,31 +3,7 @@ use std;
 
 use axgeom::Ray;
 
-struct RayT {
-    pub radius: f32,
-}
 
-impl RayCast for RayT {
-    type N = F32n;
-    type T = BBox<F32n, Bot>;
-
-    fn compute_distance_to_bot(
-        &self,
-        ray: &Ray<Self::N>,
-        bot: &Self::T,
-    ) -> axgeom::CastResult<Self::N> {
-        ray.inner_into::<f32>()
-            .cast_to_circle(bot.inner().center, self.radius)
-            .map(|a| NotNan::new(a).unwrap())
-    }
-    fn compute_distance_to_rect(
-        &self,
-        ray: &Ray<Self::N>,
-        rect: &Rect<Self::N>,
-    ) -> axgeom::CastResult<Self::N> {
-        ray.cast_to_rect(rect)
-    }
-}
 
 #[derive(Copy, Clone)]
 struct Bot {
@@ -88,17 +64,25 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
                 if check_naive {
                     tree.get_bots_mut(|bots| {
+                        struct RayT {
+                            pub radius: f32,
+                        }
+                        /*
                         analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                             dim,
                             ray,
                             &mut RayT { radius },
                         );
+                        */
                     });
                 }
 
-                let res = tree
+                let (_,res) = tree
                     .as_tree_mut()
-                    .raycast_fine_mut(ray, &mut RayT { radius }, dim);
+                    .raycast_fine_mut(ray,radius,
+                        move |_r,ray,rect| ray.cast_to_rect(rect),
+                        move |r,ray,t|ray.inner_into::<f32>().cast_to_circle(t.inner().center, *r).map(|a| NotNan::new(a).unwrap())
+                , dim);
 
                 let dis = match res {
                     RayCastResult::Hit((_, dis)) => dis.into_inner(),

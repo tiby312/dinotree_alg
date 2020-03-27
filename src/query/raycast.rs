@@ -52,7 +52,7 @@ pub trait RayCast {
     ///Returns true if the ray intersects with this rectangle.
     ///This function allows as to prune which nodes to visit.
     fn compute_distance_to_rect(
-        &self,
+        &mut self,
         ray: &Ray<Self::N>,
         a: &Rect<Self::N>,
     ) -> axgeom::CastResult<Self::N>;
@@ -68,7 +68,7 @@ pub trait RayCast {
     ///contains within it's bounding box.
     ///Its default implementation just calls compute_distance_to_rect()
     fn compute_distance_to_bot(
-        &self,
+        &mut self,
         ray: &Ray<Self::N>,
         a: &Self::T,
     ) -> axgeom::CastResult<Self::N> {
@@ -87,7 +87,7 @@ impl<T: Aabb, K: Fn(&Ray<T::Num>, &Rect<T::Num>) -> axgeom::CastResult<T::Num>> 
     type N = T::Num;
 
     fn compute_distance_to_rect(
-        &self,
+        &mut self,
         ray: &Ray<Self::N>,
         a: &Rect<Self::N>,
     ) -> axgeom::CastResult<Self::N> {

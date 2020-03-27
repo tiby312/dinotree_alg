@@ -13,29 +13,6 @@ mod ray_f32 {
         pub height: usize,
     }
 
-    impl RayCast for RayT{
-        type T = BBox<F32n, Bot2>;
-        type N = F32n;
-
-        fn compute_distance_to_bot(
-            &self,
-            ray: &Ray<Self::N>,
-            bot: &Self::T,
-        ) -> axgeom::CastResult<Self::N> {
-            if let Some(r) = &self.rects {
-                r.borrow_mut().add(bot.get().inner_into().into());
-            }
-            Self::compute_distance_to_rect(self, ray, bot.get())
-        }
-
-        fn compute_distance_to_rect(
-            &self,
-            ray: &Ray<Self::N>,
-            rect: &Rect<Self::N>,
-        ) -> axgeom::CastResult<Self::N> {
-            ray.cast_to_rect(&rect)
-        }
-    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -90,6 +67,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
         if check_naive {
             tree.get_bots_mut(|bots| {
+                /*
                 analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                     dim,
                     ray,
@@ -98,6 +76,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         height,
                     },
                 );
+                */
             });
         }
 
@@ -107,7 +86,17 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 rects: Some(RefCell::new(rects)),
                 height,
             };
-            let test = tree.as_tree_mut().raycast_fine_mut(ray, &mut rr, dim);
+            let (_,test) = tree.as_tree_mut().raycast_fine_mut(
+                ray, 
+                &mut rr, 
+                move |_rr,ray,rect|ray.cast_to_rect(&rect),
+                move |rr,ray,t|{
+                    if let Some(r) = &rr.rects {
+                        r.borrow_mut().add(t.get().inner_into().into());
+                    }
+                    ray.cast_to_rect(t.get())
+                },
+                dim);
             rr.rects.unwrap().borrow_mut().send_and_uniforms(canvas).with_color([4.0, 0.0, 0.0, 0.4]).draw();
             test
         };

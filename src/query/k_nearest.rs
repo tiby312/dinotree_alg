@@ -27,11 +27,11 @@ pub trait Knearest {
     type T: Aabb<Num = Self::N>;
     type N: Num;
 
-    fn distance_to_rect(&self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N;
+    fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N;
 
     ///User defined expensive distance function. Here the user can return fine-grained distance
     ///of the shape contained in T instead of its bounding box.
-    fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
+    fn distance_to_bot(&mut self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
         self.distance_to_rect(point, bot.get())
     }
 }
@@ -44,7 +44,7 @@ impl<T: Aabb, K: Fn(Vec2<T::Num>, &Rect<T::Num>) -> T::Num> Knearest for Kneares
     type T = T;
     type N = T::Num;
 
-    fn distance_to_rect(&self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N {
+    fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N {
         (self.inner)(point, rect)
     }
 }
@@ -175,7 +175,7 @@ struct Blap<'a: 'b, 'b, K: Knearest> {
 }
 
 impl<'a: 'b, 'b, K: Knearest> Blap<'a, 'b, K> {
-    fn should_traverse_rect(&self, rect: &Rect<K::N>) -> bool {
+    fn should_traverse_rect(&mut self, rect: &Rect<K::N>) -> bool {
         if let Some(dis) = self.closest.full_and_max_distance() {
             self.knear.distance_to_rect(self.point, rect) < dis
         } else {

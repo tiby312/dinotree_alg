@@ -365,28 +365,12 @@ impl<'a,A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a,A, T>
 
 
 impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
-   
+
     /// # Examples
     ///
     ///```
     ///use dinotree_alg::prelude::*;
     ///use axgeom::*;
-    ///
-    ///struct Foo;
-    ///impl RayCast for Foo{
-    ///    type T=BBox<i32,Vec2<i32>>;
-    ///    type N=i32;
-    ///    fn compute_distance_to_rect(&self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
-    ///        ray.cast_to_rect(a)
-    ///    }
-    ///
-    ///    fn compute_distance_to_bot(&self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
-    ///         //Do more fine-grained collision checking.
-    ///         //Here we know the two aabbs intersect, but do an additional check
-    ///         //to see if they intersect as circles.
-    ///         ray.inner_as::<f32>().cast_to_circle(a.inner.inner_as(),5.).map(|a|a as i32)
-    ///    }
-    ///}
     ///
     ///let border = rect(0,100,0,100);
     ///
@@ -394,24 +378,57 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     ///                bbox(rect(2,5,2,5),vec2(4,4)),
     ///                bbox(rect(4,10,4,10),vec2(5,5))];
     ///
-    ///
     ///let mut bots_copy=bots.clone();
     ///let mut tree = DinoTree::new(&mut bots);
     ///let ray=ray(vec2(5,-5),vec2(0,1));
-    ///let res = tree.raycast_fine_mut(ray,&mut Foo,border);
+    ///let (counter,res) = tree.raycast_fine_mut(
+    ///     ray,0,
+    ///     |c,ray,r|{*c+=1;ray.cast_to_rect(r)},
+    ///     |c,ray,t|{*c+=1;ray.inner_as::<f32>().cast_to_circle(t.inner.inner_as(),5.).map(|a|a as i32)},   //Do more fine-grained checking here.
+    ///     border);
     ///
     ///let (bots,dis)=res.unwrap();
     ///assert_eq!(dis,4);
     ///assert_eq!(bots.len(),1);
     ///assert_eq!(bots[0],&vec2(4,4));
+    ///assert_eq!(counter,3);
     ///```
-    pub fn raycast_fine_mut(
+    pub fn raycast_fine_mut<Acc>(
         &mut self,
         ray: axgeom::Ray<T::Num>,
-        rtrait: &mut impl raycast::RayCast<N = T::Num, T = T>,
+        start: Acc,
+        broad:impl Fn(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+        fine:impl Fn(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
         border: Rect<T::Num>,
-    ) -> raycast::RayCastResult<T::Inner,T::Num> {
-        raycast::raycast_mut(self, border, ray, rtrait)
+    ) -> (Acc,raycast::RayCastResult<T::Inner,T::Num>) {
+
+        struct Foo<A,B,C,T>{
+            a:A,
+            broad:B,
+            fine:C,
+            _p:PhantomData<T>
+        };
+        impl<
+            A,
+            B:Fn(&mut A,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+            C:Fn(&mut A,&Ray<T::Num>,&T)->CastResult<T::Num>,
+            T:Aabb> raycast::RayCast for Foo<A,B,C,T>{
+           type T=T;
+           type N=T::Num;
+           fn compute_distance_to_rect(&mut self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
+               (self.broad)(&mut self.a,ray,a)
+           }
+        
+           fn compute_distance_to_bot(&mut self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
+                (self.fine)(&mut self.a, ray, a)
+           }
+        }
+
+        let mut rtrait=Foo{a:start,broad,fine,_p:PhantomData};
+
+        let result=raycast::raycast_mut(self, border, ray, &mut rtrait);
+        
+        (rtrait.a,result)
     }
 
     /// # Examples
@@ -482,6 +499,8 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         k_nearest::k_nearest_mut(self, point, num, &mut knear, border)
     }
 
+
+
     /// # Examples
     ///
     ///```
@@ -489,21 +508,6 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     ///use axgeom::*;
     ///let border = rect(0,100,0,100);
     ///
-    ///struct Foo;
-    ///impl Knearest for Foo{
-    ///     type T=BBox<i32,Vec2<i32>>;
-    ///     type N=i32;
-    ///     fn distance_to_rect(&self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N{
-    ///         rect.distance_squared_to_point(point).unwrap_or(0)
-    ///     }
-    ///
-    ///     fn distance_to_bot(&self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N{
-    ///         //Do more fine-grained checking here.
-    ///         //At this point we know the aabbs intersect.
-    ///         //Do additional checking to see if they intersect as circles
-    ///         bot.inner.distance_squared_to_point(point)
-    ///     }
-    ///}
     ///let mut bots = [bbox(rect(0,10,0,10),vec2(0,0)),
     ///                bbox(rect(2,5,2,5),vec2(0,5)),
     ///                bbox(rect(4,10,4,10),vec2(3,3))];
@@ -511,20 +515,49 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     ///let mut bots_copy=bots.clone();
     ///let mut tree = DinoTree::new(&mut bots);
     ///
-    ///let res = tree.k_nearest_fine_mut(vec2(0,0),2,&mut Foo,border);
+    ///let (counter,res) = tree.k_nearest_fine_mut(
+    ///     vec2(0,0),
+    ///     2,
+    ///     0,
+    ///     |c,p,r|{*c+=1;r.distance_squared_to_point(p).unwrap_or(0)},
+    ///     |c,p,t|{*c+=1;t.inner.distance_squared_to_point(p)},    //Do more fine-grained checking here.
+    ///     border);
     ///
     ///assert_eq!(res.len(),2);
     ///assert_eq!(*res[0].bot,bots_copy[0].inner);
     ///assert_eq!(*res[1].bot,bots_copy[2].inner);
+    ///assert_eq!(counter,3);
     ///```
-    pub fn k_nearest_fine_mut(
+    pub fn k_nearest_fine_mut<Acc>(
         &mut self,
         point: Vec2<T::Num>,
         num: usize,
-        knear: &mut impl k_nearest::Knearest<N = T::Num, T = T>,
+        start:Acc,
+        broad:impl Fn(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
+        fine:impl Fn(&mut Acc,Vec2<T::Num>,&T)->T::Num,
         border: Rect<T::Num>,
-    ) -> Vec<k_nearest::KnearestResult<T::Inner,T::Num>> {
-        k_nearest::k_nearest_mut(self, point, num, knear, border)
+    ) -> (Acc,Vec<k_nearest::KnearestResult<T::Inner,T::Num>>) {
+        struct Foo<Acc,B,F,T:Aabb>{
+            acc:Acc,
+            broad:B,
+            fine:F,
+            _p:PhantomData<T>
+        }
+        impl<Acc,B:Fn(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:Fn(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> k_nearest::Knearest for Foo<Acc,B,F,T>{
+            type T=T;
+            type N=T::Num;
+            fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N{
+                (self.broad)(&mut self.acc,point,rect)
+            }
+    
+             fn distance_to_bot(&mut self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N{
+                (self.fine)(&mut self.acc,point,bot)
+            }
+        }
+        let mut foo=Foo{acc:start,broad,fine,_p:PhantomData};
+
+        let res=k_nearest::k_nearest_mut(self, point, num, &mut foo, border);
+        (foo.acc,res)
     }
 
     /// # Examples
