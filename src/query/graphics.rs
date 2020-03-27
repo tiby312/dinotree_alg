@@ -15,10 +15,10 @@ pub trait DividerDrawer {
 
 ///Calls the user supplied function on each divider.
 ///Since the leaves do not have dividers, it is not called for the leaves.
-pub fn draw<A: Axis, N: Node, D: DividerDrawer<N = N::Num>>(
-    gentree: &DinoTree<A, N>,
+pub fn draw<A: Axis, T: Aabb, D: DividerDrawer<N = T::Num>>(
+    gentree: &DinoTree<A, T>,
     dr: &mut D,
-    rect: &Rect<N::Num>,
+    rect: &Rect<T::Num>,
 ) {
     fn recc<A: Axis, N: Node, D: DividerDrawer<N = N::Num>>(
         axis: A,

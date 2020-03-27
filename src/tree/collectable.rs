@@ -75,9 +75,9 @@ impl<'a,A:Axis,N:Num,T> CollectableDinoTree<'a,A,N,T>{
         self.bots
     }
 
-    pub fn get_mut(&mut self)->&mut DinoTree<A,NodeMut<BBox<N,&mut T>>>{
+    pub fn get_mut(&mut self)->&mut DinoTree<A,BBox<N,&mut T>>{
         let k=self.tree.as_tree_mut() as *mut _;
-        let j=k as *mut DinoTree<A,NodeMut<BBox<N,&mut T>>>;
+        let j=k as *mut DinoTree<A,BBox<N,&mut T>>;
         unsafe{&mut *j}
     }
 
@@ -266,9 +266,9 @@ impl<'a,T:Send+Sync,D:Send+Sync> BotCollisionPar<'a,T,D>{
 }
 
 
-fn create_collision_list<'a,A:Axis,N:Node,D>
-                (tree:&mut DinoTree<A,N>,mut func:impl FnMut(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<D>)->Vec<D>
-                where N::T:HasInner{
+fn create_collision_list<'a,A:Axis,T:Aabb+HasInner,D>
+                (tree:&mut DinoTree<A,T>,mut func:impl FnMut(&mut T::Inner,&mut T::Inner)->Option<D>)->Vec<D>
+{
 
     let mut nodes:Vec<_>=Vec::new();
 
@@ -281,9 +281,9 @@ fn create_collision_list<'a,A:Axis,N:Node,D>
 
     nodes
 }
-fn create_collision_list_par<'a,A:Axis,N:Node + Send+Sync,D:Send+Sync>
-                (tree:&mut DinoTree<A,N>,func:impl Fn(&mut <N::T as HasInner>::Inner,&mut <N::T as HasInner>::Inner)->Option<D>+Send+Sync+Copy)->Vec<Vec<D>>
-                where N::T:HasInner+Send+Sync{
+fn create_collision_list_par<'a,A:Axis,T:Aabb + HasInner + Send+Sync,D:Send+Sync>
+                (tree:&mut DinoTree<A,T>,func:impl Fn(&mut T::Inner,&mut T::Inner)->Option<D>+Send+Sync+Copy)->Vec<Vec<D>>
+{
     struct Foo<T:Visitor>{
         current:T::Item,
         next:Option<[T;2]>,

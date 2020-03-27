@@ -411,7 +411,7 @@ impl Splitter for SplitterEmpty {
 
 ///Returns false if the tree's invariants are not met.
 #[must_use]
-pub fn assert_invariants<A: Axis, N: Node>(tree: &DinoTree<A, N>) -> bool {
+pub fn assert_invariants<A: Axis, T: Aabb>(tree: &DinoTree<A, T>) -> bool {
     inner(tree.axis(), tree.vistr().with_depth(compt::Depth(0))).is_ok()
 }
 

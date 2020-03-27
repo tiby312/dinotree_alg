@@ -143,7 +143,7 @@ impl<T: Aabb> Node for NodePtr<T> {
 }
 */
 
-fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
+fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
     let inner = DinoTree::with_axis(axis, bots);
     let inner: Vec<_> = inner
         .inner
@@ -156,13 +156,13 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTree { axis, inner}
+    DinoTreeOwn { axis, inner}
 }
 
 fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
     axis: A,
     bots: &mut [T],
-) -> DinoTree<A, NodePtr<T>> {
+) -> DinoTreeOwn<A, T> {
     let inner = DinoTree::with_axis_par(axis, bots);
     let inner: Vec<_> = inner
         .inner
@@ -175,7 +175,7 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTree { axis, inner}
+    DinoTreeOwn { axis, inner}
 }
 
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`
@@ -238,9 +238,16 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
     }
 }
 
+
+///The data structure this crate revoles around.
+pub struct DinoTreeOwn<A: Axis, T:Aabb> {
+    axis: A,
+    inner: compt::dfs_order::CompleteTreeContainer<NodePtr<T>, compt::dfs_order::PreOrder>
+}
+
 ///An owned dinotree componsed of `T:Aabb`
 pub struct DinoTreeOwned<A: Axis, T: Aabb> {
-    tree: Option<DinoTree<A, NodePtr<T>>>,
+    tree: Option<DinoTreeOwn<A, T>>,
     bots: Vec<T>,
 }
 
@@ -273,11 +280,11 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         }
     }
 
-    pub fn as_tree(&self) -> &DinoTree<A, NodeMut<T>> {
+    pub fn as_tree(&self) -> &DinoTree<A, T> {
         unsafe{&*(self.tree.as_ref().unwrap() as *const _ as *const _)}
     }
 
-    pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, NodeMut<T>> {
+    pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, T> {
         unsafe{&mut *(self.tree.as_mut().unwrap() as *mut _ as *mut _)}
     }
     pub fn get_bots(&self) -> &[T] {
@@ -289,7 +296,7 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
 
         let axis = {
             let tree = self.tree.take().unwrap();
-            tree.axis()
+            tree.axis
         };
         self.tree = Some(make_owned(axis, &mut self.bots));
     }

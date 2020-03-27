@@ -587,16 +587,14 @@ trait Bok2 {
 ///Parallel version.
 pub fn nbody_par<
     A: Axis,
-    J: Node + Send + Sync,
-    N: NodeMassTrait<Num = J::Num, Item = J::T> + Sync + Send,
+    T: Aabb + HasInner + Send + Sync,
+    N: NodeMassTrait<Num = T::Num, Item = T> + Sync + Send,
 >(
-    t1: &mut DinoTree<A, J>,
+    t1: &mut DinoTree<A, T>,
     ncontext: &N,
-    rect: Rect<J::Num>,
+    rect: Rect<T::Num>,
 ) where
     N::No: Send,
-    J::T: Send + Copy,
-    J::T:HasInner
 {
     let axis = t1.axis();
 
@@ -619,15 +617,13 @@ pub fn nbody_par<
 ///Sequential version.
 pub fn nbody<
     A: Axis,
-    J: Node + Send + Sync,
-    N: NodeMassTrait<Num = J::Num, Item = J::T> + Send + Sync,
+    T: Aabb +HasInner+ Send + Sync,
+    N: NodeMassTrait<Num = T::Num, Item = T> + Send + Sync,
 >(
-    t1: &mut DinoTree<A, J>,
+    t1: &mut DinoTree<A, T>,
     ncontext: &N,
-    rect: Rect<J::Num>,
-) where
-    J::T: Send + Sync,
-    J::T:HasInner
+    rect: Rect<T::Num>,
+)
 {
     let axis = t1.axis();
 

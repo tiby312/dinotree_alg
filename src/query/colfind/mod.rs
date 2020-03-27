@@ -75,17 +75,15 @@ pub fn query_sweep_mut<T: Aabb>(
 }
 
 ///Builder for a query on a NotSorted Dinotree.
-pub struct NotSortedQueryBuilder<'a, A: Axis, N: Node> {
+pub struct NotSortedQueryBuilder<'a,'b:'a, A: Axis, T: Aabb> {
     switch_height: usize,
-    tree: &'a mut NotSorted<A, N>,
+    tree: &'a mut NotSorted<'b,A, T>,
 }
 
-impl<'a, A: Axis, N: Node + Send + Sync> NotSortedQueryBuilder<'a, A, N>
-where
-    N::T: Send + Sync,
+impl<'a,'b:'a, A: Axis, T: Aabb + Send + Sync> NotSortedQueryBuilder<'a, 'b,A, T>
 {
     #[inline(always)]
-    pub fn query_par(self, func: impl Fn(PMut<N::T>, PMut<N::T>) + Copy + Send + Sync) {
+    pub fn query_par(self, func: impl Fn(PMut<T>, PMut<T>) + Copy + Send + Sync) {
         let b = inner::QueryFn::new(func);
         let mut sweeper = HandleNoSorted::new(b);
         let height = self.tree.get_height();
@@ -99,9 +97,9 @@ where
     }
 }
 
-impl<'a, A: Axis, N: Node> NotSortedQueryBuilder<'a, A, N> {
+impl<'a,'b:'a, A: Axis, T: Aabb> NotSortedQueryBuilder<'a,'b, A, T> {
     #[inline(always)]
-    pub fn new(tree: &'a mut NotSorted<A, N>) -> NotSortedQueryBuilder<'a, A, N> {
+    pub fn new(tree: &'a mut NotSorted<'b,A, T>) -> NotSortedQueryBuilder<'a,'b, A, T> {
         let switch_height = par::SWITCH_SEQUENTIAL_DEFAULT;
         NotSortedQueryBuilder {
             switch_height,
@@ -112,7 +110,7 @@ impl<'a, A: Axis, N: Node> NotSortedQueryBuilder<'a, A, N> {
     #[inline(always)]
     pub fn query_with_splitter_seq(
         self,
-        func: impl FnMut(PMut<N::T>, PMut<N::T>),
+        func: impl FnMut(PMut<T>, PMut<T>),
         splitter: &mut impl Splitter,
     ) {
         let b = inner::QueryFnMut::new(func);
@@ -125,7 +123,7 @@ impl<'a, A: Axis, N: Node> NotSortedQueryBuilder<'a, A, N> {
     }
 
     #[inline(always)]
-    pub fn query_seq(self, func: impl FnMut(PMut<N::T>, PMut<N::T>)) {
+    pub fn query_seq(self, func: impl FnMut(PMut<T>, PMut<T>)) {
         let b = inner::QueryFnMut::new(func);
         let mut sweeper = HandleNoSorted::new(b);
 
@@ -137,18 +135,16 @@ impl<'a, A: Axis, N: Node> NotSortedQueryBuilder<'a, A, N> {
 }
 
 ///Builder for a query on a DinoTree.
-pub struct QueryBuilder<'a, A: Axis, N: Node> {
+pub struct QueryBuilder<'a,'b:'a,A: Axis, T: Aabb> {
     switch_height: usize,
-    tree: &'a mut DinoTree<A, N>,
+    tree: &'a mut DinoTree<'b,A, T>,
 }
 
-impl<'a, A: Axis, N: Node + Send + Sync> QueryBuilder<'a, A, N>
-where
-    N::T: Send + Sync,
+impl<'a,'b:'a, A: Axis, T: Aabb + Send + Sync> QueryBuilder<'a,'b, A, T>
 {
     ///Perform the query in parallel
     #[inline(always)]
-    pub fn query_par(self, func: impl Fn(PMut<N::T>, PMut<N::T>) + Clone + Send + Sync) {
+    pub fn query_par(self, func: impl Fn(PMut<T>, PMut<T>) + Clone + Send + Sync) {
         let b = inner::QueryFn::new(func);
         let mut sweeper = HandleSorted::new(b);
 
@@ -165,7 +161,7 @@ where
     ///The clos will split and add only at levels that are handled in parallel.
     ///This can be useful if the use wants to create a list of colliding pair indicies, but still wants paralleism.
     #[inline(always)]
-    pub fn query_splitter_par<C: ColMulti<T = N::T> + Splitter + Send + Sync>(self, clos: C) -> C {
+    pub fn query_splitter_par<C: ColMulti<T = T> + Splitter + Send + Sync>(self, clos: C) -> C {
         let axis = self.tree.axis();
         let height = self.tree.get_height();
         let vistr_mut = self.tree.vistr_mut();
@@ -180,10 +176,10 @@ where
     }
 }
 
-impl<'a, A: Axis, N: Node> QueryBuilder<'a, A, N> {
+impl<'a,'b:'a, A: Axis, T: Aabb> QueryBuilder<'a,'b, A, T> {
     ///Create the builder.
     #[inline(always)]
-    pub fn new(tree: &'a mut DinoTree<A, N>) -> QueryBuilder<'a, A, N> {
+    pub fn new(tree: &'a mut DinoTree<'b,A, T>) -> QueryBuilder<'a, 'b,A, T> {
         let switch_height = par::SWITCH_SEQUENTIAL_DEFAULT;
         QueryBuilder {
             switch_height,
@@ -201,7 +197,7 @@ impl<'a, A: Axis, N: Node> QueryBuilder<'a, A, N> {
 
     ///Perform the query sequentially.
     #[inline(always)]
-    pub fn query_seq(self, func: impl FnMut(PMut<N::T>, PMut<N::T>)) {
+    pub fn query_seq(self, func: impl FnMut(PMut<T>, PMut<T>)) {
         let b = inner::QueryFnMut::new(func);
         let mut sweeper = HandleSorted::new(b);
         let mut splitter = SplitterEmpty;
@@ -216,7 +212,7 @@ impl<'a, A: Axis, N: Node> QueryBuilder<'a, A, N> {
     #[inline(always)]
     pub fn query_with_splitter_seq(
         self,
-        func: impl FnMut(PMut<N::T>, PMut<N::T>),
+        func: impl FnMut(PMut<T>, PMut<T>),
         splitter: &mut impl Splitter,
     ) {
         let b = inner::QueryFnMut::new(func);

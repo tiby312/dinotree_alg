@@ -12,10 +12,10 @@ use crate::query::rect::*;
 ///But using the api, it is possible to build up a tree using the current trees dividers
 ///to exploit the divide and conquer properties of this problem.
 ///The two trees could be recursed at the same time to break up the problem.
-pub fn intersect_with_mut<A: Axis, N: Node, X: Aabb<Num = N::Num>>(
-    tree: &mut DinoTree<A, N>,
+pub fn intersect_with_mut<A: Axis, T: Aabb, X: Aabb<Num = T::Num>>(
+    tree: &mut DinoTree<A, T>,
     b: &mut [X],
-    func: impl Fn(PMut<N::T>, PMut<X>),
+    func: impl Fn(PMut<T>, PMut<X>),
 ) {
     //TODO instead of create just a list of BBox, construct a tree using the dividors of the current tree.
     //This way we can paralleliz this function.

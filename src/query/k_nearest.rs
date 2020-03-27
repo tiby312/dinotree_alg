@@ -368,13 +368,13 @@ mod mutable {
         closest.into_sorted().drain(..).map(|a|KnearestResult{bot:a.bot.into_inner(),mag:a.mag}).collect()
     }
 
-    pub fn k_nearest_mut<'a, A: Axis, N: Node>(
-        tree: &'a mut DinoTree<A, N>,
-        point: Vec2<N::Num>,
+    pub fn k_nearest_mut<'a, A: Axis, T: Aabb+HasInner>(
+        tree: &'a mut DinoTree<A, T>,
+        point: Vec2<T::Num>,
         num: usize,
-        knear: &mut impl Knearest<N = N::Num, T = N::T>,
-        rect: Rect<N::Num>,
-    ) -> Vec<KnearestResult<'a, <N::T as HasInner>::Inner,N::Num>>  where N::T:HasInner{
+        knear: &mut impl Knearest<N = T::Num, T = T>,
+        rect: Rect<T::Num>,
+    ) -> Vec<KnearestResult<'a, T::Inner,T::Num>> {
         let axis = tree.axis();
 
         let dt = tree.vistr_mut().with_depth(Depth(0));

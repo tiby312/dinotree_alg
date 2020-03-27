@@ -65,10 +65,10 @@ pub fn naive_for_all_not_in_rect_mut<T: Aabb>(
     }
 }
 
-pub fn for_all_not_in_rect_mut<A: Axis, N: Node>(
-    tree: &mut DinoTree<A, N>,
-    rect: &Rect<N::Num>,
-    closure: impl FnMut(PMut<N::T>),
+pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb>(
+    tree: &mut DinoTree<A, T>,
+    rect: &Rect<T::Num>,
+    closure: impl FnMut(PMut<T>),
 ) {
     fn rect_recurse<A: Axis, N: Node, F: FnMut(PMut<N::T>)>(
         axis: A,
@@ -115,12 +115,12 @@ mod mutable {
     use crate::query::colfind::oned::get_section_mut;
 
     rect!(VistrMut<N>, PMut<N::T>, get_section_mut, get_mut);
-    pub fn for_all_intersect_rect_mut<A: Axis, N: Node>(
-        tree: &mut DinoTree<A, N>,
-        rect: &Rect<N::Num>,
-        mut closure: impl FnMut(PMut<N::T>),
+    pub fn for_all_intersect_rect_mut<A: Axis, T:Aabb>(
+        tree: &mut DinoTree<A, T>,
+        rect: &Rect<T::Num>,
+        mut closure: impl FnMut(PMut<T>),
     ) {
-        let mut f = |a: PMut<N::T>| {
+        let mut f = |a: PMut<T>| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
@@ -155,12 +155,12 @@ mod mutable {
             }
         }
     }
-    pub fn for_all_in_rect_mut<A: Axis, N: Node>(
-        tree: &mut DinoTree<A, N>,
-        rect: &Rect<N::Num>,
-        mut closure: impl FnMut(PMut<N::T>),
+    pub fn for_all_in_rect_mut<A: Axis, T: Aabb>(
+        tree: &mut DinoTree<A, T>,
+        rect: &Rect<T::Num>,
+        mut closure: impl FnMut(PMut<T>),
     ) {
-        let mut f = |a: PMut<N::T>| {
+        let mut f = |a: PMut<T>| {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }
@@ -177,12 +177,12 @@ mod constant {
     use crate::query::colfind::oned::get_section;
     rect!(Vistr<'a, N>, &'a N::T, get_section, get);
 
-    pub fn for_all_intersect_rect<'a, A: Axis, N: Node>(
-        tree: &'a DinoTree<A, N>,
-        rect: &Rect<N::Num>,
-        mut closure: impl FnMut(&'a N::T),
+    pub fn for_all_intersect_rect<'a, A: Axis, T: Aabb>(
+        tree: &'a DinoTree<A, T>,
+        rect: &Rect<T::Num>,
+        mut closure: impl FnMut(&'a T),
     ) {
-        let mut f = |a: &'a N::T| {
+        let mut f = |a: &'a T| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
@@ -192,12 +192,12 @@ mod constant {
         self::rect_recurse(axis, ta, rect, &mut f);
     }
 
-    pub fn for_all_in_rect<'a, A: Axis, N: Node>(
-        tree: &'a DinoTree<A, N>,
-        rect: &Rect<N::Num>,
-        mut closure: impl FnMut(&'a N::T),
+    pub fn for_all_in_rect<'a, A: Axis, T: Aabb>(
+        tree: &'a DinoTree<A, T>,
+        rect: &Rect<T::Num>,
+        mut closure: impl FnMut(&'a T),
     ) {
-        let mut f = |a: &'a N::T| {
+        let mut f = |a: &'a T| {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }
@@ -227,13 +227,13 @@ pub struct RectIntersectErr;
 ///
 ///Handles a multi rect mut "sessions" within which
 ///the user can query multiple non intersecting rectangles.
-pub struct MultiRectMut<'a, A: Axis, N: Node> {
-    tree: &'a mut DinoTree<A, N>,
-    rects: Vec<Rect<N::Num>>,
+pub struct MultiRectMut<'a,'b:'a, A: Axis, T:Aabb> {
+    tree: &'a mut DinoTree<'b,A, T>,
+    rects: Vec<Rect<T::Num>>,
 }
 
-impl<'a, A: Axis, N: Node> MultiRectMut<'a, A, N> {
-    pub fn new(tree: &'a mut DinoTree<A, N>) -> Self {
+impl<'a,'b:'a, A: Axis,T:Aabb> MultiRectMut<'a,'b, A, T> {
+    pub fn new(tree: &'a mut DinoTree<'b,A, T>) -> Self {
         MultiRectMut {
             tree,
             rects: Vec::new(),
@@ -241,8 +241,8 @@ impl<'a, A: Axis, N: Node> MultiRectMut<'a, A, N> {
     }
     pub fn for_all_in_rect_mut(
         &mut self,
-        rect: Rect<N::Num>,
-        mut func: impl FnMut(PMut<'a, N::T>),
+        rect: Rect<T::Num>,
+        mut func: impl FnMut(PMut<'a, T>),
     ) -> Result<(), RectIntersectErr> {
         for r in self.rects.iter() {
             if rect.get_intersect_rect(r).is_some() {
@@ -252,9 +252,9 @@ impl<'a, A: Axis, N: Node> MultiRectMut<'a, A, N> {
 
         self.rects.push(rect);
 
-        for_all_in_rect_mut(self.tree, &rect, |bbox: PMut<N::T>| {
+        for_all_in_rect_mut(self.tree, &rect, |bbox: PMut<T>| {
             //This is only safe to do because the user is unable to mutate the bounding box.
-            let bbox: PMut<'a, N::T> = unsafe { core::mem::transmute(bbox) };
+            let bbox: PMut<'a,T > = unsafe { core::mem::transmute(bbox) };
             func(bbox);
         });
 
