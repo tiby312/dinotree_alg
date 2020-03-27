@@ -156,7 +156,7 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTreeOwn { axis, inner}
+    DinoTreeOwn { axis, _inner:inner}
 }
 
 fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
@@ -175,7 +175,7 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTreeOwn { axis, inner}
+    DinoTreeOwn { axis, _inner:inner}
 }
 
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`
@@ -242,7 +242,7 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
 ///The data structure this crate revoles around.
 pub struct DinoTreeOwn<A: Axis, T:Aabb> {
     axis: A,
-    inner: compt::dfs_order::CompleteTreeContainer<NodePtr<T>, compt::dfs_order::PreOrder>
+    _inner: compt::dfs_order::CompleteTreeContainer<NodePtr<T>, compt::dfs_order::PreOrder>
 }
 
 ///An owned dinotree componsed of `T:Aabb`

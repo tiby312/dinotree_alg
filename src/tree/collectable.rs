@@ -159,7 +159,7 @@ impl<'a,A:Axis+Send+Sync,N:Num+Send+Sync,T:Send+Sync> CollectableDinoTree<'a,A,N
                 }
             }
         });
-        BotCollisionPar{cols,_p:PhantomData,orig:self.get_bots().as_ptr()}
+        BotCollisionPar{cols,_p:PhantomData,orig:myptr(self.get_bots_mut())}
     }
 }
 
@@ -220,17 +220,17 @@ impl<'a,T,D> BotCollision<'a,T,D>{
 pub struct BotCollisionPar<'a,T,D>{
     _p:PhantomData<&'a mut T>,
     cols:Vec<Vec<(    MyPtr<T>,MyPtr<T>,D)>>,
-    orig:*const T
+    orig:MyPtr<[T]>
 }
 
 impl<'a,T,D> BotCollisionPar<'a,T,D>{
 
     pub fn get<'b,A:Axis,N:Num>(&self,c:&'b CollectableDinoTree<'a,A,N,T>)->&'b [Vec<( &T,&T,D)>]{
-        assert_eq!(self.orig,c.get_bots().as_ptr());
+        assert_eq!(self.orig.as_ptr(),c.get_bots() as *const _);
         unsafe{&*(&self.cols as &[_] as *const _ as *const _) }
     }
     pub fn for_every_pair_mut<'b,A:Axis,N:Num>(&'b mut self,c:&'b mut CollectableDinoTree<'a,A,N,T>,mut func:impl FnMut(&mut T,&mut T,&mut D)){
-        assert_eq!(self.orig,c.get_bots().as_ptr());
+        assert_eq!(self.orig.as_ptr(),c.get_bots() as *const _);
         for a in self.cols.iter_mut(){
             for (a,b,d) in a.iter_mut(){
                 let a=unsafe{a.as_mut()};
@@ -243,7 +243,7 @@ impl<'a,T,D> BotCollisionPar<'a,T,D>{
 impl<'a,T:Send+Sync,D:Send+Sync> BotCollisionPar<'a,T,D>{
  
     pub fn for_every_pair_mut_par<'b,A:Axis,N:Num>(&'b mut self,c:&'b mut CollectableDinoTree<'a,A,N,T>,func:impl Fn(&mut T,&mut T,&mut D)+Send+Sync+Copy){
-        assert_eq!(self.orig,c.get_bots().as_ptr());
+        assert_eq!(self.orig.as_ptr(),c.get_bots() as *const _);
 
         fn parallelize<T:Visitor+Send+Sync>(a:T,func:impl Fn(T::Item)+Sync+Send+Copy) where T::Item:Send+Sync{
             let (n,l)=a.next();
