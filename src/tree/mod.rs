@@ -397,8 +397,8 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         &mut self,
         ray: axgeom::Ray<T::Num>,
         start: Acc,
-        broad:impl Fn(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
-        fine:impl Fn(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
+        broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+        fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
         border: Rect<T::Num>,
     ) -> (Acc,raycast::RayCastResult<T::Inner,T::Num>) {
 
@@ -410,8 +410,8 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         };
         impl<
             A,
-            B:Fn(&mut A,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
-            C:Fn(&mut A,&Ray<T::Num>,&T)->CastResult<T::Num>,
+            B:FnMut(&mut A,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+            C:FnMut(&mut A,&Ray<T::Num>,&T)->CastResult<T::Num>,
             T:Aabb> raycast::RayCast for Foo<A,B,C,T>{
            type T=T;
            type N=T::Num;
@@ -455,7 +455,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     pub fn raycast_mut(
         &mut self,
         ray: axgeom::Ray<T::Num>,
-        rtrait: impl Fn(&Ray<T::Num>, &Rect<T::Num>) -> axgeom::CastResult<T::Num>,
+        rtrait: impl FnMut(&Ray<T::Num>, &Rect<T::Num>) -> axgeom::CastResult<T::Num>,
         border: Rect<T::Num>,
     ) -> raycast::RayCastResult<T::Inner,T::Num> {
         let mut rtrait = raycast::RayCastFineWrapper {
@@ -489,7 +489,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         &mut self,
         point: Vec2<T::Num>,
         num: usize,
-        distance: impl Fn(Vec2<T::Num>, &Rect<T::Num>) -> T::Num,
+        distance: impl FnMut(Vec2<T::Num>, &Rect<T::Num>) -> T::Num,
         border: Rect<T::Num>,
     ) -> Vec<k_nearest::KnearestResult<T::Inner,T::Num>> {
         let mut knear = k_nearest::KnearestWrapper {
@@ -533,8 +533,8 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         point: Vec2<T::Num>,
         num: usize,
         start:Acc,
-        broad:impl Fn(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
-        fine:impl Fn(&mut Acc,Vec2<T::Num>,&T)->T::Num,
+        broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
+        fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
         border: Rect<T::Num>,
     ) -> (Acc,Vec<k_nearest::KnearestResult<T::Inner,T::Num>>) {
         struct Foo<Acc,B,F,T:Aabb>{
@@ -543,7 +543,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
             fine:F,
             _p:PhantomData<T>
         }
-        impl<Acc,B:Fn(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:Fn(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> k_nearest::Knearest for Foo<Acc,B,F,T>{
+        impl<Acc,B:FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> k_nearest::Knearest for Foo<Acc,B,F,T>{
             type T=T;
             type N=T::Num;
             fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N{

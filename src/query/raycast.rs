@@ -80,7 +80,7 @@ pub(crate) struct RayCastFineWrapper<T: Aabb, K> {
     pub(crate) inner: K,
     pub(crate) _p: PhantomData<T>,
 }
-impl<T: Aabb, K: Fn(&Ray<T::Num>, &Rect<T::Num>) -> axgeom::CastResult<T::Num>> RayCast
+impl<T: Aabb, K: FnMut(&Ray<T::Num>, &Rect<T::Num>) -> axgeom::CastResult<T::Num>> RayCast
     for RayCastFineWrapper<T, K>
 {
     type T = T;
