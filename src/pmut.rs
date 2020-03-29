@@ -8,7 +8,7 @@
 //! ```rust
 //! extern crate dinotree_alg;
 //! extern crate axgeom;
-//! use dinotree_alg::prelude::*;
+//! use dinotree_alg::*;
 //!
 //!
 //! let mut bots=[BBox::new(axgeom::Rect::new(0,10,0,10),0)];

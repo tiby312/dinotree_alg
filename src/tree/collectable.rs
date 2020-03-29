@@ -3,7 +3,7 @@
 //!
 //!```
 //!
-//!use dinotree_alg::prelude::*;
+//!use dinotree_alg::*;
 //!use axgeom::{vec2,Rect,Vec2};
 //!
 //!struct Bot{

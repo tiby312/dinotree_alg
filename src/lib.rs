@@ -94,7 +94,7 @@ mod tree;
 
 ///Contains code to write generic code that can be run in parallel, or sequentially. The api is exposed
 ///in case users find it useful when writing parallel query code to operate on the tree.
-mod par;
+pub mod par;
 
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;

@@ -1,5 +1,5 @@
 use axgeom::rect;
-use dinotree_alg::prelude::*;
+use dinotree_alg::*;
 
 fn main() {
     let mut aabbs = [

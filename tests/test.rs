@@ -3,9 +3,10 @@ extern crate compt;
 extern crate dinotree_alg;
 
 use compt::*;
-use dinotree_alg::par::*;
-use dinotree_alg::prelude::*;
 
+use dinotree_alg::*;
+use dinotree_alg::analyze::*;
+use dinotree_alg::par::*;
 #[test]
 fn test_par_heur() {
     let p = compute_level_switch_sequential(6, 6);

@@ -1,5 +1,5 @@
 use axgeom;
-use dinotree_alg::prelude::*;
+use dinotree_alg::*;
 
 pub struct Bot {
     id: usize,
@@ -25,7 +25,7 @@ fn test1() {
             })
             .collect();
 
-        let mut bb = bbox_helper::create_bbox_mut(&mut bots, |b| b.aabb);
+        let mut bb:Vec<_> = bots.iter_mut().map(|b|bbox(b.aabb,b)).collect();
 
         analyze::NaiveAlgs::new(&mut bb).assert_find_collisions_mut();
     }

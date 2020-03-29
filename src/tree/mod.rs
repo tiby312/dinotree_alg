@@ -168,7 +168,7 @@ impl<'a,A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a,A, T>
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),0u8)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///tree.find_intersections_mut_par(|a,b|{
@@ -189,7 +189,7 @@ impl<'a,A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a,A, T>
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),1u8)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///let intersections=tree.find_intersections_par_ext(
@@ -301,7 +301,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///use axgeom::*;
     ///
     ///let border = rect(0,100,0,100);
@@ -366,7 +366,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///use axgeom::*;
     ///let border = rect(0,100,0,100);
     ///
@@ -400,7 +400,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///use axgeom::*;
     ///let border = rect(0,100,0,100);
     ///
@@ -436,7 +436,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///use axgeom::*;
     ///let border = rect(0,100,0,100);
     ///
@@ -495,7 +495,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
     ///let mut bots2 = [bbox(axgeom::rect(5,15,5,15),0u8)];
     ///let mut tree = DinoTree::new(&mut bots1);
@@ -520,7 +520,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///tree.for_all_not_in_rect_mut(&axgeom::rect(10,20,10,20),|a|{
@@ -537,7 +537,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///tree.for_all_intersect_rect_mut(&axgeom::rect(9,20,9,20),|a|{
@@ -558,7 +558,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///tree.for_all_in_rect_mut(&axgeom::rect(0,10,0,10),|a|{
@@ -576,7 +576,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),0u8)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///tree.find_intersections_mut(|a,b|{
@@ -597,7 +597,7 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),0u8)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///tree.find_intersections_pmut(|mut a,mut b|{
@@ -619,7 +619,7 @@ impl<'a,A:Axis,T:Aabb> DinoTree<'a,A,T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [axgeom::rect(0,10,0,10)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///
@@ -634,7 +634,7 @@ impl<'a,A:Axis,T:Aabb> DinoTree<'a,A,T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///
@@ -654,7 +654,7 @@ impl<'a,A:Axis,T:Aabb> DinoTree<'a,A,T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [axgeom::rect(0,10,0,10)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///
@@ -672,7 +672,7 @@ impl<'a,A:Axis,T:Aabb> DinoTree<'a,A,T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
     ///let mut tree = DinoTree::new(&mut bots);
     ///
@@ -686,7 +686,7 @@ impl<'a,A:Axis,T:Aabb> DinoTree<'a,A,T>{
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = vec![axgeom::rect(0,10,0,10);400];
     ///let mut tree = DinoTree::new(&mut bots);
     ///
@@ -706,11 +706,11 @@ impl<'a,A: Axis, T: Aabb> DinoTree<'a,A, T> {
     /// # Examples
     ///
     /// ```
-    /// use dinotree_alg::prelude::*;
+    /// use dinotree_alg::*;
     /// use axgeom::*;
     ///
     /// struct Drawer;
-    /// impl DividerDrawer for Drawer{
+    /// impl dinotree_alg::query::DividerDrawer for Drawer{
     ///     type N=i32;
     ///     fn draw_divider<A:Axis>(
     ///             &mut self,
@@ -743,14 +743,14 @@ impl<'a,A: Axis, T: Aabb> DinoTree<'a,A, T> {
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
     ///let mut tree = DinoTree::new(&mut bots1);
     ///let mut multi = tree.multi_rect();
     ///
     ///multi.for_all_in_rect_mut(axgeom::rect(0,10,0,10),|a|{}).unwrap();
     ///let res = multi.for_all_in_rect_mut(axgeom::rect(5,15,5,15),|a|{});
-    ///assert_eq!(res,Err(RectIntersectErr));
+    ///assert_eq!(res,Err(dinotree_alg::query::RectIntersectErr));
     ///```
     #[must_use]
     pub fn multi_rect<'b>(&'b mut self) -> rect::MultiRectMut<'b,'a,A, T> {
@@ -759,7 +759,7 @@ impl<'a,A: Axis, T: Aabb> DinoTree<'a,A, T> {
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///let mut test = Vec::new();
@@ -779,7 +779,7 @@ impl<'a,A: Axis, T: Aabb> DinoTree<'a,A, T> {
     /// # Examples
     ///
     ///```
-    ///use dinotree_alg::prelude::*;
+    ///use dinotree_alg::*;
     ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
     ///let mut tree = DinoTree::new(&mut bots);
     ///let mut test = Vec::new();
@@ -1052,7 +1052,7 @@ pub mod node {
     impl<'a, T: Aabb> Node for NodeMut<'a, T> {
         type T = T;
         type Num = T::Num;
-        fn get(&self) -> NodeRef<Self::T> {
+        fn get(&self) -> NodeRef<Self::T> { //TODO point as struct impl
             NodeRef {
                 bots: self.range,
                 cont: &self.cont,
@@ -1080,6 +1080,24 @@ pub mod node {
         //for leafs:
         //  div is none
         pub(crate) div: Option<T::Num>,
+    }
+
+
+    impl<'a, T: Aabb> NodeMut<'a, T> {
+        pub fn get(&self) -> NodeRef<T> {
+            NodeRef {
+                bots: self.range,
+                cont: &self.cont,
+                div: &self.div,
+            }
+        }
+        pub fn get_mut(&mut self) -> NodeRefMut<T> {
+            NodeRefMut {
+                bots: PMut::new(self.range),
+                cont: &self.cont,
+                div: &self.div,
+            }
+        }
     }
 
     ///Mutable reference to a node in the dinotree.
