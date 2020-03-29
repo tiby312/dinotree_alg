@@ -7,7 +7,7 @@ Please see the [dinotree-book](https://dinotree-book.netlify.com) which is a wor
 
 ### Inner projects
 
-The dinotree_alg_demo inner project is meant to show case the use of these algorithms. It depends on the piston 2d engine to draw to the screen. 
+The dinotree_alg_demo inner project is meant to show case the use of these algorithms. 
 
 ### Analysis
 
