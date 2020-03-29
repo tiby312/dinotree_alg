@@ -65,16 +65,6 @@ extern crate is_sorted;
 extern crate pdqselect;
 pub extern crate axgeom;
 
-///Prelude to include by using: pub use dinotree::prelude::*
-pub mod prelude {
-    pub use crate::bbox::*;
-    pub use crate::par;
-    //pub use crate::pmut::*;
-    pub use crate::query::*;
-    pub use crate::tree::node::*;
-    pub use crate::*;
-}
-
 
 mod inner_prelude {
     pub(crate) use super::*;
@@ -102,7 +92,7 @@ mod tree;
 
 ///Contains code to write generic code that can be run in parallel, or sequentially. The api is exposed
 ///in case users find it useful when writing parallel query code to operate on the tree.
-pub mod par;
+mod par;
 
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
@@ -110,7 +100,8 @@ mod oned;
 pub mod pmut;
 
 ///A collection of different bounding box containers.
-pub mod bbox;
+mod bbox;
+pub use crate::bbox::*;
 
 ///Generic slice utillity functions.
 pub mod util;

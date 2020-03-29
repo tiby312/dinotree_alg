@@ -146,7 +146,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         let no_mass_bots = &mut no_mass_bots;
         let bots = &mut bots;
 
-        let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
+        let mut k:Vec<_>=bots.iter_mut().map(|b|bbox(b.create_aabb(),b)).collect();
+
+        //let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
         {
             let mut tree = DinoTree::new_par(&mut k);

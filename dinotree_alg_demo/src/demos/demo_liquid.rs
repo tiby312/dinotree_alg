@@ -65,14 +65,15 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         .collect();
 
     Demo::new(move |cursor, canvas, _check_naive| {
-        let mut k = bbox_helper::create_bbox_mut(&mut bots, |bot| {
+        let mut k:Vec<_>=bots.iter_mut().map(|bot|{
             let p = bot.pos;
             let r = radius;
-            Rect::new(p.x - r, p.x + r, p.y - r, p.y + r)
+            let rect=Rect::new(p.x - r, p.x + r, p.y - r, p.y + r)
                 .inner_try_into::<NotNan<f32>>()
-                .unwrap()
-        });
-
+                .unwrap();
+            bbox(rect,bot)
+        }).collect();
+        
         let mut tree = DinoTree::new_par(&mut k);
 
         tree.find_intersections_mut_par(|a,b| {

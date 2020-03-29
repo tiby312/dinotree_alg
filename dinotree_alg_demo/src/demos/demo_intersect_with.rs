@@ -75,14 +75,20 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         }
         bots[0].pos = cursor.inner_into();
 
+        let mut k=bots.iter_mut().map(|b|{
+            bbox(b.rect.inner_try_into().unwrap(),b)
+        }).collect::<Vec<_>>();
+        /*
         let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
             b.rect
                 .inner_try_into()
                 .unwrap()
         });
+        */
 
         {
-            let mut walls = bbox_helper::create_bbox_mut(&mut walls, |wall| wall.0);
+            let mut walls=walls.iter_mut().map(|a|bbox(a.0,a)).collect::<Vec<_>>();
+            //let mut walls = bbox_helper::create_bbox_mut(&mut walls, |wall| wall.0);
             let mut tree = DinoTree::new_par(&mut k);
 
             tree.intersect_with_mut(&mut walls, |mut bot, wall| {

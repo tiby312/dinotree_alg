@@ -41,11 +41,13 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             b.update();
         }
 
-        let mut k = bbox_helper::create_bbox_mut(&mut bots, |b| {
-            Rect::from_point(b.pos, vec2same(radius))
+        let mut k:Vec<_>=bots.iter_mut().map(|b|{
+            let r=Rect::from_point(b.pos, vec2same(radius))
                 .inner_try_into()
-                .unwrap()
-        });
+                .unwrap();
+            bbox(r,b)
+        }).collect();
+        
         let mut tree = DinoTree::new_par(&mut k);
 
         {

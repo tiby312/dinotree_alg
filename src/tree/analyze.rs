@@ -11,6 +11,69 @@ pub use crate::tree::notsorted::NotSorted;
 
 pub use crate::tree::builder::DinoTreeBuilder;
 
+
+///Helper module for creating Vecs of different types of BBoxes.
+pub mod bbox_helper {
+    use crate::inner_prelude::*;
+
+    ///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.
+    pub fn create_bbox_mut<'a, N: Num, T>(
+        bots: &'a mut [T],
+        mut aabb_create: impl FnMut(&T) -> Rect<N>,
+    ) -> Vec<BBox< N, &'a mut T>> {
+        bots.iter_mut()
+            .map(move |k| BBox::new(aabb_create(k), k))
+            .collect()
+    }
+
+    ///Helper struct to construct a DinoTree of `(Rect<N>,T)` from a dinotree of `(Rect<N>,&mut T)`
+    pub struct IntoDirectHelper<N, T>(Vec<BBox<N, T>>);
+
+    ///Convenience function to create a list of `(Rect<N>,T)` from a `(Rect<N>,&mut T)`. `T` must implement Copy.
+    pub fn generate_direct<A: Axis, N: Num, T: Copy>(
+        tree: &DinoTree<A, BBox<N,&mut T>>,
+    ) -> IntoDirectHelper<N, T> {
+        IntoDirectHelper(
+            tree.inner
+                .get_nodes()
+                .iter()
+                .flat_map(|a| a.range.iter())
+                .map(move |a| BBox::new(a.rect, *a.inner))
+                .collect(),
+        )
+    }
+
+    ///Take a DinoTree of `(Rect<N>,&mut T)` and creates a new one of type `(Rect<N>,T)`
+    pub fn into_direct<'a, A: Axis, N: Num, T>(
+        tree: &DinoTree<'a,A, BBox<N,&mut T>>,
+        bots: &'a mut IntoDirectHelper<N, T>,
+    ) -> DinoTree<'a,A, BBox<N, T>> {
+        let mut bots = &mut bots.0 as &'a mut [_];
+        let nodes: Vec<_> = tree
+            .inner
+            .get_nodes()
+            .iter()
+            .map(move |node| {
+                let mut k: &mut [_] = &mut [];
+                core::mem::swap(&mut bots, &mut k);
+                let (first, mut rest) = k.split_at_mut(node.range.len());
+                core::mem::swap(&mut bots, &mut rest);
+                NodeMut {
+                    range: first,
+                    cont: node.cont,
+                    div: node.div,
+                }
+            })
+            .collect();
+
+        DinoTree {
+            inner: compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
+            axis: tree.axis
+        }
+    }
+}
+
+
 pub trait HasId {
     fn get_id(&self) -> usize;
 }
