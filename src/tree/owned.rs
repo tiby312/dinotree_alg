@@ -2,7 +2,7 @@
 //! ## An owned `(Rect<N>,T)` example
 //!
 //! ```rust
-//! use dinotree_alg::{*,dinotree_owned::*};
+//! use dinotree_alg::{*,owned::*};
 //! use axgeom::*;
 //!
 //! fn not_lifetimed()->DinoTreeOwned<DefaultA,BBox<i32,f32>>
@@ -18,7 +18,7 @@
 //! ## An owned `(Rect<N>,*mut T)` example
 //!
 //! ```rust
-//! use dinotree_alg::{*,dinotree_owned::*};
+//! use dinotree_alg::{*,owned::*};
 //! use axgeom::*;
 //!
 //! fn not_lifetimed()->DinoTreeOwnedBBoxPtr<DefaultA,i32,Vec2<i32>>

@@ -15,7 +15,7 @@ pub mod prelude {
     pub use dists;
 
     pub use dinotree_alg::analyze;
-    pub use dinotree_alg::dinotree_owned::*;
+    pub use dinotree_alg::owned::*;
     pub use dinotree_alg::*;
     pub use dinotree_alg::node::*;
     pub use dinotree_alg::query::*;

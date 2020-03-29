@@ -5,8 +5,20 @@ extern crate dinotree_alg;
 use compt::*;
 
 use dinotree_alg::*;
-use dinotree_alg::analyze::*;
-use dinotree_alg::par::*;
+use dinotree_alg::analyze::par::*;
+use axgeom::*;
+
+///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.
+fn create_bbox_mut<'a, N: Num, T>(
+    bots: &'a mut [T],
+    mut aabb_create: impl FnMut(&T) -> Rect<N>,
+) -> Vec<BBox< N, &'a mut T>> {
+    bots.iter_mut()
+        .map(move |k| BBox::new(aabb_create(k), k))
+        .collect()
+}
+
+
 #[test]
 fn test_par_heur() {
     let p = compute_level_switch_sequential(6, 6);
@@ -27,7 +39,7 @@ fn test_parallel() {
 fn test_zero_sized() {
     let mut bots = vec![(); 1];
 
-    let mut bots = bbox_helper::create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
+    let mut bots = create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
 
     let tree = DinoTree::new(&mut bots);
 
@@ -42,7 +54,7 @@ fn test_zero_sized() {
 fn test_zero_sized2() {
     let mut bots = vec![(); 1];
 
-    let mut bots = bbox_helper::create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
+    let mut bots = create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
 
     let tree = DinoTree::new(&mut bots);
 
@@ -56,7 +68,7 @@ fn test_zero_sized2() {
 fn test_one() {
     let mut bots = vec![0usize; 1];
 
-    let mut bots = bbox_helper::create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
+    let mut bots = create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
 
     let tree = DinoTree::new(&mut bots);
 
@@ -70,7 +82,7 @@ fn test_one() {
 #[test]
 fn test_empty() {
     let mut bots: Vec<()> = Vec::new();
-    let mut bots = bbox_helper::create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
+    let mut bots = create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
     let tree = DinoTree::new(&mut bots);
 
     let (n, _) = tree.vistr().next();
@@ -84,7 +96,7 @@ fn test_empty() {
 fn test_many() {
     let mut bots = vec![0usize; 1000];
 
-    let mut bots = bbox_helper::create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
+    let mut bots = create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
 
     let tree = DinoTree::new(&mut bots);
 
@@ -112,8 +124,8 @@ fn test_send_sync_dinotree() {
     let mut bots1: Vec<()> = Vec::new();
     let mut bots2: Vec<()> = Vec::new();
 
-    let mut bots1 = bbox_helper::create_bbox_mut(&mut bots1, |_| axgeom::Rect::new(0, 0, 0, 0));
-    let mut bots2 = bbox_helper::create_bbox_mut(&mut bots2, |_| axgeom::Rect::new(0, 0, 0, 0));
+    let mut bots1 = create_bbox_mut(&mut bots1, |_| axgeom::Rect::new(0, 0, 0, 0));
+    let mut bots2 = create_bbox_mut(&mut bots2, |_| axgeom::Rect::new(0, 0, 0, 0));
 
     //Check that its send
     let (t1, t2) = rayon::join(|| DinoTree::new(&mut bots1), || DinoTree::new(&mut bots2));

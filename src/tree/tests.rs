@@ -11,7 +11,7 @@ fn assert_length<I: core::iter::ExactSizeIterator>(it: I) {
 fn test() {
     let mut bots = vec![0usize; 1234];
 
-    let mut bots = bbox_helper::create_bbox_mut(&mut bots, |_b| axgeom::Rect::new(0isize, 0, 0, 0));
+    let mut bots:Vec<_> = bots.iter_mut().map(|a|bbox(axgeom::Rect::new(0isize,0,0,0),a)).collect();
 
     let mut tree = DinoTree::new(&mut bots);
 

@@ -89,7 +89,8 @@ pub mod query;
 use axgeom::*;
 
 ///Contains generic code used in all dinotree versions
-pub use self::tree::{DinoTree,analyze,collectable,owned};
+//pub use self::tree::{DinoTree,analyze,collectable,owned,DefaultA,default_axis};
+pub use self::tree::*;
 mod tree;
 
 
