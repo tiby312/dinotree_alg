@@ -47,9 +47,9 @@
 
 
 
-use dinotree_owned::MyPtr;
-use dinotree_owned::myptr;
-use dinotree_owned::*;
+use owned::MyPtr;
+use owned::myptr;
+use owned::*;
 use super::*;
 
 

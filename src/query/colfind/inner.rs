@@ -70,7 +70,7 @@ impl<'a, N: Node, NN: NodeHandler<T = N::T>, B: Axis> GoDownRecurser<'a, N, NN, 
     }
 }
 
-pub struct ColFindRecurser<N: Node, K: Splitter, S: NodeHandler<T = N::T> + Splitter> {
+pub(crate) struct ColFindRecurser<N: Node, K: Splitter, S: NodeHandler<T = N::T> + Splitter> {
     _p: PhantomData<(N, K, S)>,
 }
 impl<

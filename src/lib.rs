@@ -79,7 +79,7 @@ mod inner_prelude {
     pub use core::marker::PhantomData;
 
     pub(crate) use crate::bbox::*;
-    pub(crate) use crate::par;
+    pub(crate) use crate::tree::par;
     pub(crate) use crate::pmut::*;
     pub(crate) use crate::tree::*;
 }
@@ -89,17 +89,15 @@ pub mod query;
 use axgeom::*;
 
 ///Contains generic code used in all dinotree versions
-pub use self::tree::*;
+pub use self::tree::{DinoTree,analyze,collectable,owned};
 mod tree;
 
-///Contains code to write generic code that can be run in parallel, or sequentially. The api is exposed
-///in case users find it useful when writing parallel query code to operate on the tree.
-pub mod par;
+
 
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
 
-pub mod pmut;
+mod pmut;
 
 ///A collection of different bounding box containers.
 mod bbox;

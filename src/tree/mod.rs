@@ -7,12 +7,16 @@ mod tests;
 
 ///A version of dinotree that is not lifetimed and uses unsafe{} to own the elements
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`.
-pub mod dinotree_owned;
+pub mod owned;
 
 ///A verion of dinotree where the user can collect and store queries to use later.
 pub mod collectable;
 
 pub mod analyze;
+
+///Contains code to write generic code that can be run in parallel, or sequentially. The api is exposed
+///in case users find it useful when writing parallel query code to operate on the tree.
+pub mod par;
 
 
 pub(crate) use self::notsorted::NotSorted;
@@ -72,6 +76,7 @@ mod notsorted {
             self.0.get_height()
         }
 
+        
         #[inline(always)]
         pub fn vistr(&self) -> Vistr<NodeMut<'a,T>> {
             self.0.inner.vistr()
@@ -83,6 +88,7 @@ mod notsorted {
                 inner: self.0.inner.vistr_mut(),
             }
         }
+        
     }
 }
 
@@ -1038,10 +1044,8 @@ pub mod node {
     }
     pub use vistr_mut::VistrMut;
 
-    ///Expose a node trait api so that we can have nodes made up of both
-    ///&mut [T] and *mut [T].
-    ///We ideally want to use the lifetimed version of `NodeMut`, but
-    ///but for `DinoTreeOwned` we must use `NodePtr`.
+    ///Expose a node trait api to hide the lifetime of NodeMut.
+    ///This way query algorithms do not need to worry about this lifetime.
     pub trait Node {
         type T: Aabb<Num = Self::Num>;
         type Num: Num;

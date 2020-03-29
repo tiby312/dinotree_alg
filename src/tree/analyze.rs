@@ -4,7 +4,8 @@
 use crate::inner_prelude::*;
 use crate::query::*;
 
-
+pub use crate::tree::par;
+pub use crate::tree::node;
 pub use crate::query::colfind::ColMulti;
 pub use crate::query::colfind::NotSortedQueryBuilder;
 pub use crate::query::colfind::QueryBuilder;
@@ -16,16 +17,6 @@ pub use crate::tree::builder::DinoTreeBuilder;
 ///Helper module for creating Vecs of different types of BBoxes.
 pub mod bbox_helper {
     use crate::inner_prelude::*;
-
-    ///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.
-    pub fn create_bbox_mut<'a, N: Num, T>(
-        bots: &'a mut [T],
-        mut aabb_create: impl FnMut(&T) -> Rect<N>,
-    ) -> Vec<BBox< N, &'a mut T>> {
-        bots.iter_mut()
-            .map(move |k| BBox::new(aabb_create(k), k))
-            .collect()
-    }
 
     ///Helper struct to construct a DinoTree of `(Rect<N>,T)` from a dinotree of `(Rect<N>,&mut T)`
     pub struct IntoDirectHelper<N, T>(Vec<BBox<N, T>>);

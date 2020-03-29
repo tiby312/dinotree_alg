@@ -59,11 +59,14 @@ impl<'a, T: ?Sized> PMut<'a, T> {
         self.inner
     }
 }
+
 impl<'a, T: Node> PMut<'a, T> {
+    
     #[inline(always)]
     pub fn get(self) -> NodeRef<'a, T::T> {
         self.inner.get()
     }
+
     #[inline(always)]
     pub fn get_mut(self) -> NodeRefMut<'a, T::T> {
         self.inner.get_mut()
