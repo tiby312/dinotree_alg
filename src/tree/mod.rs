@@ -9,7 +9,7 @@ mod tests;
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`.
 pub mod dinotree_owned;
 
-///A verion os dinotree where the user can collect and store queries to use later.
+///A verion of dinotree where the user can collect and store queries to use later.
 pub mod collectable;
 
 pub mod analyze;

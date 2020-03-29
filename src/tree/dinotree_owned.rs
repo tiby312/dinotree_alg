@@ -39,7 +39,7 @@ use core::ptr::NonNull;
 
 
 #[repr(transparent)]
-pub struct MyPtr<T:?Sized>(NonNull<T>);
+pub(crate) struct MyPtr<T:?Sized>(NonNull<T>);
 impl<T:?Sized> Clone for MyPtr<T>{
     fn clone(&self)->Self{
         MyPtr(self.0)
@@ -51,9 +51,6 @@ impl<T:?Sized> MyPtr<T>{
     pub unsafe fn as_mut(&mut self)->&mut T{
         self.0.as_mut()
     }
-    pub unsafe fn as_ref(&self)->&T{
-        self.0.as_ref()
-    }
     pub fn as_ptr(&self)->*const T{
         self.0.as_ptr()
     }
@@ -61,56 +58,16 @@ impl<T:?Sized> MyPtr<T>{
 unsafe impl<T:?Sized> Send for MyPtr<T>{}
 unsafe impl<T:?Sized> Sync for MyPtr<T>{}
 
-pub fn myptr<T:?Sized>(a:&mut T)->MyPtr<T>{
+pub(crate) fn myptr<T:?Sized>(a:&mut T)->MyPtr<T>{
     MyPtr(unsafe{NonNull::new_unchecked(a as *mut _)})
 }
 
-/*
-///Equivalent to: `(Rect<N>,*mut T)`
-#[repr(C)]
-pub struct BBoxPtr<N, T> {
-    rect: axgeom::Rect<N>,
-    inner: core::ptr::NonNull<T>,
-}
-
-impl<N, T> BBoxPtr<N, T> {
-    #[inline(always)]
-    pub fn new(rect: axgeom::Rect<N>, inner: core::ptr::NonNull<T>) -> BBoxPtr<N, T> {
-        BBoxPtr { rect, inner }
-    }
-}
-
-unsafe impl<N, T> Send for BBoxPtr<N, T> {}
-unsafe impl<N, T> Sync for BBoxPtr<N, T> {}
-
-unsafe impl<N: Num, T> Aabb for BBoxPtr<N, T> {
-    type Num = N;
-    #[inline(always)]
-    fn get(&self) -> &Rect<Self::Num> {
-        &self.rect
-    }
-}
-
-impl<N: Num, T> HasInner for BBoxPtr<N, T> {
-    type Inner = T;
-
-    #[inline(always)]
-    fn get_inner(&self) -> (&Rect<N>, &Self::Inner) {
-        (&self.rect, unsafe { self.inner.as_ref() })
-    }
-
-    #[inline(always)]
-    fn get_inner_mut(&mut self) -> (&Rect<N>, &mut Self::Inner) {
-        (&self.rect, unsafe { self.inner.as_mut() })
-    }
-}
-*/
 
 unsafe impl<T:Aabb> Send for NodePtr<T> {}
 unsafe impl<T:Aabb> Sync for NodePtr<T> {}
 
 ///A Node in a dinotree.
-pub struct NodePtr<T: Aabb> {
+pub(crate) struct NodePtr<T: Aabb> {
     _range: core::ptr::NonNull<[T]>,
 
     //range is empty iff cont is none.
@@ -122,26 +79,6 @@ pub struct NodePtr<T: Aabb> {
     //  div is none
     _div: Option<T::Num>,
 }
-/*
-impl<T: Aabb> Node for NodePtr<T> {
-    type T = T;
-    type Num = T::Num;
-    fn get(&self) -> NodeRef<Self::T> {
-        NodeRef {
-            bots: unsafe { self.range.as_ref() },
-            cont: &self.cont,
-            div: &self.div,
-        }
-    }
-    fn get_mut(&mut self) -> NodeRefMut<Self::T> {
-        NodeRefMut {
-            bots: PMut::new(unsafe { self.range.as_mut() }),
-            cont: &self.cont,
-            div: &self.div,
-        }
-    }
-}
-*/
 
 fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
     let inner = DinoTree::with_axis(axis, bots);
@@ -240,7 +177,7 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
 
 
 ///The data structure this crate revoles around.
-pub struct DinoTreeOwn<A: Axis, T:Aabb> {
+pub(crate) struct DinoTreeOwn<A: Axis, T:Aabb> {
     axis: A,
     _inner: compt::dfs_order::CompleteTreeContainer<NodePtr<T>, compt::dfs_order::PreOrder>
 }
