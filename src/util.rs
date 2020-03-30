@@ -93,3 +93,54 @@ impl<'a, T, F: FnMut(&T, &T) -> bool> Iterator for SliceSplit<'a, T, F> {
         Some(first)
     }
 }
+
+
+
+
+
+//TODO use this!!!!
+pub mod small_ref{
+    use core::marker::PhantomData;
+    pub struct SmallRef<'a,T>(u16,PhantomData<&'a mut T>);
+
+
+    pub struct Base<'a,T>(*const [T],PhantomData<&'a T>);
+
+    impl<'a,T> Base<'a,T>{
+        fn conv_mut(&'a self,b:&'a mut SmallRef<'a,T>)->&'a mut T{
+            let k=unsafe{&*self.0};
+            let j=&k[b.0 as usize] as *const _;
+            let l=unsafe{&mut *(j as *mut _)};
+            l
+        }
+    }
+
+
+    pub struct IterMut<'a,T>{
+        counter:usize,
+        length:usize,
+        _p:PhantomData<&'a mut T>
+    }
+    impl<'a,T> Iterator for IterMut<'a,T>{
+        type Item=SmallRef<'a,T>;
+        fn next(&mut self)->Option<SmallRef<'a,T>>{
+            let k=if self.counter>=self.length{
+                None
+            }else{
+                Some(SmallRef(self.counter as u16,PhantomData))
+            };
+            self.counter+=1;
+            k
+        }
+    }
+
+    pub fn make<'a,T>(arr:&'a mut [T])->(Base<'a,T>,IterMut<'a,T>){
+        assert!(arr.len()<u16::max_value() as usize);
+        let base=Base(arr as *const _,PhantomData);
+        let it=IterMut{counter:0,length:arr.len(),_p:PhantomData};
+        (base,it)
+    }
+
+
+
+}
