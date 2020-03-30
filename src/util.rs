@@ -105,12 +105,20 @@ pub mod small_ref{
 
 
     pub struct Base<'a,T>(*const [T],PhantomData<&'a T>);
-
+    unsafe impl<T> Send for Base<'_,T>{}
+    unsafe impl<T> Sync for Base<'_,T>{}
+    
     impl<'a,T> Base<'a,T>{
-        fn conv_mut(&'a self,b:&'a mut SmallRef<'a,T>)->&'a mut T{
+        pub fn conv_mut(&'a self,b:&'a mut SmallRef<'a,T>)->&'a mut T{
             let k=unsafe{&*self.0};
             let j=&k[b.0 as usize] as *const _;
             let l=unsafe{&mut *(j as *mut _)};
+            l
+        }
+        pub fn conv(&'a self,b:&'a SmallRef<'a,T>)->&'a T{
+            let k=unsafe{&*self.0};
+            let j=&k[b.0 as usize] as *const _;
+            let l=unsafe{& *(j as *const _)};
             l
         }
     }
@@ -121,6 +129,8 @@ pub mod small_ref{
         length:usize,
         _p:PhantomData<&'a mut T>
     }
+
+    impl<'a,T> core::iter::FusedIterator for IterMut<'a,T>{}
     impl<'a,T> Iterator for IterMut<'a,T>{
         type Item=SmallRef<'a,T>;
         fn next(&mut self)->Option<SmallRef<'a,T>>{
