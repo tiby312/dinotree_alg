@@ -100,7 +100,7 @@ impl<'a, T, F: FnMut(&T, &T) -> bool> Iterator for SliceSplit<'a, T, F> {
 
 
 
-
+/*
 //TODO use this!!!!
 pub mod small_ref{
     use crate::tree::owned::MyPtr;
@@ -143,9 +143,10 @@ pub mod small_ref{
             BasePtr(self.0)
         }
         #[inline(always)]
-        pub fn conv_mut(&'a self,b:&'a mut SmallRef<'a,T>)->&'a mut T{
+        pub fn conv_mut<'b>(&'b self,b:&'b mut SmallRef<'a,T>)->&'b mut T{
             let k=unsafe{&*self.0};
-            let j=&k[b.0 as usize] as *const _;
+            //let j=&k[b.0 as usize] as *const _;
+            let j=unsafe{k.get_unchecked(b.0 as usize) as *const _};
             let l=unsafe{&mut *(j as *mut _)};
             l
         }
@@ -187,7 +188,5 @@ pub mod small_ref{
         let it=IterMut{counter:0,length:arr.len(),_p:PhantomData};
         (base,it)
     }
-
-
-
 }
+*/

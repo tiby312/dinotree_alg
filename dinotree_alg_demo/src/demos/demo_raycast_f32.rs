@@ -63,7 +63,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 };
 
                 if check_naive {
-                    tree.get_bots_mut(|bots| {
+                    tree.get_bots_mut(move |_bots| {
                         struct RayT {
                             pub radius: f32,
                         }

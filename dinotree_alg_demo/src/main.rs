@@ -7,7 +7,7 @@ use glutin::event::VirtualKeyCode;
 use glutin::event::WindowEvent;
 use glutin::event_loop::ControlFlow;
 use egaku2d::glutin;
-use dists::uniform_rand::UniformRandGen;
+
 #[macro_use]
 pub(crate) mod support;
 pub(crate) mod demos;
@@ -42,9 +42,9 @@ mod demo_iter {
             let area: Rect<F32n> = area.inner_try_into().unwrap();
 
             let k: Demo = match curr {
-                0 => demo_raycast_f32::make_demo(area,canvas),
-                1 => demo_raycast_f32_debug::make_demo(area,canvas),
-                2 => demo_liquid::make_demo(area),
+                0 => demo_liquid::make_demo(area),
+                1 => demo_raycast_f32::make_demo(area,canvas),
+                2 => demo_raycast_f32_debug::make_demo(area,canvas),
                 3 => demo_multirect::make_demo(area,canvas),
                 4 => demo_original_order::make_demo(area),
                 5 => demo_intersect_with::make_demo(area,canvas),

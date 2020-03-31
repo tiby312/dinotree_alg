@@ -66,7 +66,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let height = tree.as_tree().get_height();
 
         if check_naive {
-            tree.get_bots_mut(|bots| {
+            tree.get_bots_mut(|_bots| {
                 /*
                 analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                     dim,

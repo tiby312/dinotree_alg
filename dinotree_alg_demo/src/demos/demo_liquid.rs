@@ -56,7 +56,6 @@ impl Liquid {
         spring_force_mag
     }
 }
-
 pub fn make_demo(dim: Rect<F32n>) -> Demo {
     let radius = 50.0;
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
@@ -64,7 +63,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         .map(|pos| Liquid::new(pos))
         .collect();
 
+
     Demo::new(move |cursor, canvas, _check_naive| {
+        
+        
         let mut k:Vec<_>=bots.iter_mut().map(|bot|{
             let p = bot.pos;
             let r = radius;
@@ -73,23 +75,28 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                 .unwrap();
             bbox(rect,bot)
         }).collect();
-        
+
+
         let mut tree = DinoTree::new_par(&mut k);
 
-        tree.find_intersections_mut_par(|a,b| {
+        
+        tree.find_intersections_mut_par(move | a, b| {
+        
             let _ = a.solve(b, radius);
         });
 
         let vv = vec2same(100.0).inner_try_into().unwrap();
         let cc = cursor.inner_into();
 
-        tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
+        tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), move |b| {
+            
             let _ = duckduckgeo::repel_one(b.pos,&mut b.acc, cc, 0.001, 100.0);
         });
 
         {
             let dim2 = dim.inner_into();
-            tree.for_all_not_in_rect_mut(&dim, |a| {
+            tree.for_all_not_in_rect_mut(&dim, move |a| {
+                
                 duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.5);
             });
         }
