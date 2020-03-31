@@ -98,23 +98,58 @@ impl<'a, T, F: FnMut(&T, &T) -> bool> Iterator for SliceSplit<'a, T, F> {
 
 
 
+
+
+
 //TODO use this!!!!
 pub mod small_ref{
+    use crate::tree::owned::MyPtr;
     use core::marker::PhantomData;
+
+
+    pub struct SmallRefPtr<T>(u16,PhantomData<MyPtr<T>>);
+    impl<T> SmallRefPtr<T>{
+        #[inline(always)]
+        pub unsafe fn into_ref<'a>(self)->SmallRef<'a,T>{
+            SmallRef(self.0,PhantomData)
+        }
+    }
+
     pub struct SmallRef<'a,T>(u16,PhantomData<&'a mut T>);
 
+    impl<'a,T> SmallRef<'a,T>{
+        #[inline(always)]
+        pub fn into_ptr(self)->SmallRefPtr<T>{
+            SmallRefPtr(self.0,PhantomData)
+        }
+    }
+
+
+    pub struct BasePtr<T>(*const [T]);
+    impl<T> BasePtr<T>{
+        #[inline(always)]
+        pub unsafe fn into_ref<'a>(self)->Base<'a,T>{
+            Base(self.0,PhantomData)
+        }
+    }
 
     pub struct Base<'a,T>(*const [T],PhantomData<&'a T>);
     unsafe impl<T> Send for Base<'_,T>{}
     unsafe impl<T> Sync for Base<'_,T>{}
     
     impl<'a,T> Base<'a,T>{
+        #[inline(always)]
+        pub fn into_ptr(self)->BasePtr<T>{
+            BasePtr(self.0)
+        }
+        #[inline(always)]
         pub fn conv_mut(&'a self,b:&'a mut SmallRef<'a,T>)->&'a mut T{
             let k=unsafe{&*self.0};
             let j=&k[b.0 as usize] as *const _;
             let l=unsafe{&mut *(j as *mut _)};
             l
         }
+        #[inline(always)]
         pub fn conv(&'a self,b:&'a SmallRef<'a,T>)->&'a T{
             let k=unsafe{&*self.0};
             let j=&k[b.0 as usize] as *const _;
@@ -133,6 +168,7 @@ pub mod small_ref{
     impl<'a,T> core::iter::FusedIterator for IterMut<'a,T>{}
     impl<'a,T> Iterator for IterMut<'a,T>{
         type Item=SmallRef<'a,T>;
+        #[inline(always)]
         fn next(&mut self)->Option<SmallRef<'a,T>>{
             let k=if self.counter>=self.length{
                 None
@@ -144,6 +180,7 @@ pub mod small_ref{
         }
     }
 
+    #[inline(always)]
     pub fn make<'a,T>(arr:&'a mut [T])->(Base<'a,T>,IterMut<'a,T>){
         assert!(arr.len()<u16::max_value() as usize);
         let base=Base(arr as *const _,PhantomData);

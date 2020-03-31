@@ -184,7 +184,7 @@ pub(crate) struct DinoTreeOwn<A: Axis, T:Aabb> {
 
 ///An owned dinotree componsed of `T:Aabb`
 pub struct DinoTreeOwned<A: Axis, T: Aabb> {
-    tree: Option<DinoTreeOwn<A, T>>,
+    tree: DinoTreeOwn<A, T>,
     bots: Vec<T>,
 }
 
@@ -203,7 +203,7 @@ impl<A: Axis, T: Aabb + Send + Sync> DinoTreeOwned<A, T> {
     ///Create an owned dinotree in one thread.
     pub fn with_axis_par(axis: A, mut bots: Vec<T>) -> DinoTreeOwned<A, T> {
         DinoTreeOwned {
-            tree: Some(make_owned_par(axis, &mut bots)),
+            tree: make_owned_par(axis, &mut bots),
             bots,
         }
     }
@@ -212,17 +212,17 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     ///Create an owned dinotree in one thread.
     pub fn with_axis(axis: A, mut bots: Vec<T>) -> DinoTreeOwned<A, T> {
         DinoTreeOwned {
-            tree: Some(make_owned(axis, &mut bots)),
+            tree: make_owned(axis, &mut bots),
             bots,
         }
     }
 
     pub fn as_tree(&self) -> &DinoTree<A, T> {
-        unsafe{&*(self.tree.as_ref().unwrap() as *const _ as *const _)}
+        unsafe{&*(&self.tree as *const _ as *const _)}
     }
 
     pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, T> {
-        unsafe{&mut *(self.tree.as_mut().unwrap() as *mut _ as *mut _)}
+        unsafe{&mut *(&mut self.tree as *mut _ as *mut _)}
     }
     pub fn get_bots(&self) -> &[T] {
         &self.bots
@@ -231,10 +231,7 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     pub fn get_bots_mut(&mut self, mut func: impl FnMut(&mut [T])) {
         func(&mut self.bots);
 
-        let axis = {
-            let tree = self.tree.take().unwrap();
-            tree.axis
-        };
-        self.tree = Some(make_owned(axis, &mut self.bots));
+        let axis = self.tree.axis;
+        self.tree = make_owned(axis, &mut self.bots);
     }
 }

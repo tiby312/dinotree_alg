@@ -3,7 +3,7 @@ pub mod prelude {
 
     pub use crate::Demo;
 
-    pub use super::f32n;
+    pub use duckduckgeo::f32n;
     pub use ordered_float::NotNan;
     pub use egaku2d::*;
     //pub use super::ColorGenerator;
@@ -49,6 +49,4 @@ impl Iterator for ColorGenerator {
 
 use duckduckgeo::F32n;
 use axgeom::ordered_float::NotNan;
-pub fn f32n(a: f32) -> F32n {
-    NotNan::new(a).unwrap()
-}
+
