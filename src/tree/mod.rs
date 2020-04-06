@@ -52,19 +52,17 @@ mod notsorted {
         }
     }
 
-    impl<'a,A: Axis, T: Aabb + Send + Sync> NotSorted<'a,A, T>
+    impl<'a,A: Axis, T: Aabb + HasInner + Send + Sync> NotSorted<'a,A, T>
     {
         pub fn find_intersections_mut_par(
             &mut self,
-            func: impl Fn(PMut<T>, PMut<T>) + Send + Sync+Copy,
-        ) {
-            colfind::NotSortedQueryBuilder::new(self).query_par(move |a, b| func(a, b));
+            func: impl Fn(&mut T::Inner, &mut T::Inner) + Send + Sync+Copy,
+        ){ 
+            colfind::NotSortedQueryBuilder::new(self).query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
         }
     }
+
     impl<'a,A: Axis, T: Aabb> NotSorted<'a,A, T> {
-        pub fn find_intersections_mut(&mut self, mut func: impl FnMut(PMut<T>, PMut<T>)) {
-            colfind::NotSortedQueryBuilder::new(self).query_seq(move |a, b| func(a, b));
-        }
 
         #[inline(always)]
         pub fn axis(&self) -> A {
@@ -88,6 +86,12 @@ mod notsorted {
                 inner: self.0.inner.vistr_mut(),
             }
         }
+    }
+    impl<'a,A: Axis, T: Aabb+HasInner> NotSorted<'a,A, T> {
+        pub fn find_intersections_mut(&mut self, mut func: impl FnMut(&mut T::Inner, &mut T::Inner)) {
+            colfind::NotSortedQueryBuilder::new(self).query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()  ));
+        }
+
         
     }
 }
