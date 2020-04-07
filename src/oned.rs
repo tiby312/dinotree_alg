@@ -15,7 +15,7 @@ unsafe fn swap_unchecked<T>(arr: &mut [T], a: usize, b: usize) {
 }
 
 /// Sorts the bots into three bins. Those to the left of the divider, those that intersect with the divider, and those to the right.
-/// They will be laid out in memory s.t.  middile<left<right
+/// They will be laid out in memory s.t.  middile < left < right
 pub fn bin_middle_left_right<'b, A: Axis, X: Aabb>(
     axis: A,
     med: &X::Num,
@@ -66,7 +66,7 @@ pub fn bin_middle_left_right<'b, A: Axis, X: Aabb>(
 }
 
 /// Sorts the bots into three bins. Those to the left of the divider, those that intersect with the divider, and those to the right.
-/// They will be laid out in memory s.t.  middile<left<right
+/// They will be laid out in memory s.t.  middile < left < right
 pub(crate) unsafe fn bin_middle_left_right_unchecked<'b, A: Axis, X: Aabb>(
     axis: A,
     med: &X::Num,
