@@ -5,6 +5,7 @@ use std::cell::RefCell;
 
 use axgeom::Ray;
 
+/*
 mod ray_f32 {
     use super::*;
 
@@ -14,6 +15,7 @@ mod ray_f32 {
     }
 
 }
+*/
 
 #[derive(Copy, Clone, Debug)]
 pub struct Bot2 {
@@ -63,11 +65,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
         rect_save.uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.3]).draw();
 
-        let height = tree.as_tree().get_height();
 
         if check_naive {
             tree.get_bots_mut(|_bots| {
                 /*
+
+                let height = tree.as_tree().get_height();
                 analyze::NaiveAlgs::new(bots).assert_raycast_mut(
                     dim,
                     ray,
@@ -81,23 +84,18 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         }
 
         let test = {
-            let rects = canvas.rects();
-            let mut rr = ray_f32::RayT {
-                rects: Some(RefCell::new(rects)),
-                height,
-            };
-            let (_,test) = tree.as_tree_mut().raycast_fine_mut(
+            let mut rects = canvas.rects();
+            
+            let (_,test) = tree.as_tree_mut().raycast_mut(
                 ray, 
-                &mut rr, 
+                &mut rects, 
                 move |_rr,ray,rect|ray.cast_to_rect(&rect),
-                move |rr,ray,t|{
-                    if let Some(r) = &rr.rects {
-                        r.borrow_mut().add(t.get().inner_into().into());
-                    }
+                move |rects,ray,t|{
+                    rects.add(t.get().inner_into().into());
                     ray.cast_to_rect(t.get())
                 },
                 dim);
-            rr.rects.unwrap().borrow_mut().send_and_uniforms(canvas).with_color([4.0, 0.0, 0.0, 0.4]).draw();
+            rects.send_and_uniforms(canvas).with_color([4.0, 0.0, 0.0, 0.4]).draw();
             test
         };
 
@@ -115,57 +113,5 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             .send_and_uniforms(canvas)
             .with_color([1., 1., 1., 0.2])
             .draw();
-
-        /*
-        struct Bla<'a, 'b: 'a> {
-            c: &'a Context,
-            g: &'a mut G2d<'b>,
-        }
-        impl<'a, 'b: 'a> DividerDrawer for Bla<'a, 'b> {
-            type N = F32n;
-            fn draw_divider<A: axgeom::Axis>(
-                &mut self,
-                axis: A,
-                div: F32n,
-                cont: [F32n; 2],
-                length: [F32n; 2],
-                depth: usize,
-            ) {
-                let div = div.into_inner();
-                let length = [length[0].into_inner(), length[1].into_inner()];
-                let cont = [cont[0].into_inner(), cont[1].into_inner()];
-
-                let arr = if axis.is_xaxis() {
-                    [div as f64, length[0] as f64, div as f64, length[1] as f64]
-                } else {
-                    [length[0] as f64, div as f64, length[1] as f64, div as f64]
-                };
-
-                let radius = (1isize.max(5 - depth as isize)) as f64;
-
-                line(
-                    [0.0, 0.0, 0.0, 0.5], // black
-                    radius,               // radius of line
-                    arr,                  // [x0, y0, x1,y1] coordinates of line
-                    self.c.transform,
-                    self.g,
-                );
-
-                let [x1, y1, w1, w2] = if axis.is_xaxis() {
-                    [cont[0], length[0], cont[1] - cont[0], length[1] - length[0]]
-                } else {
-                    [length[0], cont[0], length[1] - length[0], cont[1] - cont[0]]
-                };
-
-                let [x1, y1, w1, w2] = [x1 as f64, y1 as f64, w1 as f64, w2 as f64];
-
-                let square = [x1, y1, w1, w2];
-                rectangle([0.0, 1.0, 1.0, 0.2], square, self.c.transform, self.g);
-            }
-        }
-
-        let mut dd = Bla { c: &c, g };
-        self.tree.as_tree().draw( &mut dd, &self.dim);
-        */
     })
 }

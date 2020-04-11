@@ -79,7 +79,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
                 let (_,res) = tree
                     .as_tree_mut()
-                    .raycast_fine_mut(ray,radius,
+                    .raycast_mut(ray,radius,
                         move |_r,ray,rect| ray.cast_to_rect(rect),
                         move |r,ray,t|ray.inner_into::<f32>().cast_to_circle(t.inner().center, *r).map(|a| NotNan::new(a).unwrap())
                 , dim);
