@@ -92,28 +92,36 @@ pub struct NaiveAlgs<'a, T> {
     bots: &'a mut [T],
 }
 
+
 impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
 
     #[must_use]
-    pub fn raycast_mut(
+    pub fn raycast_mut<Acc>(
         &mut self,
         ray: axgeom::Ray<T::Num>,
-        rtrait: &mut impl raycast::RayCast<N = T::Num, T = T>,
-    ) -> raycast::RayCastResult<T::Inner,T::Num> {
+        start: Acc,
+        broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+        fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
+    ) -> (Acc,raycast::RayCastResult<T::Inner,T::Num>) {
         let bots = PMut::new(self.bots);
-        raycast::raycast_naive_mut(bots, ray, rtrait)
+        let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
+        let j=raycast::raycast_naive_mut(bots, ray, &mut rtrait);
+        (rtrait.a,j)
     }
 
 
     #[must_use]
-    pub fn k_nearest_mut(
+    pub fn k_nearest_mut<Acc>(
         &mut self,
         point: Vec2<T::Num>,
         num: usize,
-        knear: &mut impl k_nearest::Knearest<N = T::Num, T = T>,
-    ) -> Vec<k_nearest::KnearestResult<T::Inner,T::Num>> {
-        let bots = PMut::new(self.bots);
-        k_nearest::k_nearest_naive_mut(bots, point, num, knear)
+        start:Acc,
+        broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
+        fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
+    ) -> (Acc,Vec<k_nearest::KnearestResult<T::Inner,T::Num>>) {
+        let mut knear=k_nearest::KnearestClosure{acc:start,broad,fine,_p:PhantomData};
+        let j=k_nearest::k_nearest_naive_mut(PMut::new(self.bots), point, num, &mut knear);
+        (knear.acc,j)
     }
 
 }
@@ -158,18 +166,23 @@ impl<'a, T: Aabb> NaiveAlgs<'a, T> {
 }
 
 impl<'a, T: HasInner> NaiveAlgs<'a, T> {
-    pub fn assert_k_nearest_mut(
+   
+    pub fn assert_k_nearest_mut<Acc>(
         &mut self,
         point: Vec2<T::Num>,
         num: usize,
-        knear: &mut impl k_nearest::Knearest<N = T::Num, T = T>,
+        start:Acc,
+        broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
+        fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
         rect: Rect<T::Num>,
-    ) where
+    )->Acc where
         T::Inner: HasId,
     {
+        let mut knear=k_nearest::KnearestClosure{acc:start,broad,fine,_p:PhantomData};
+        
         let mut res_naive: Vec<_> = {
             let bots = PMut::new(self.bots);
-            k_nearest::k_nearest_naive_mut(bots, point, num, knear)
+            k_nearest::k_nearest_naive_mut(bots, point, num, &mut knear)
                 .drain(..)
                 .map(|a| UnitMut2 {
                     id: a.bot.get_id(),
@@ -179,7 +192,7 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
         };
         let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
 
-        let mut res_dinotree: Vec<_> = k_nearest::k_nearest_mut(&mut tree, point, num, knear, rect)
+        let mut res_dinotree: Vec<_> = k_nearest::k_nearest_mut(&mut tree, point, num, &mut knear, rect)
             .drain(..)
             .map(|a| UnitMut2 {
                 id: a.bot.get_id(),
@@ -203,6 +216,8 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
 
             assert!(res);
         }
+
+        knear.acc
     }
 
     pub fn assert_for_all_not_in_rect_mut(&mut self, rect: &axgeom::Rect<T::Num>)
@@ -285,19 +300,23 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
         assert!(res);
     }
 
-    pub fn assert_raycast_mut(
+
+    pub fn assert_raycast_mut<Acc>(
         &mut self,
         rect: axgeom::Rect<T::Num>,
         ray: axgeom::Ray<T::Num>,
-        rtrait: &mut impl raycast::RayCast<N = T::Num, T = T>,
-    ) where
+        start: Acc,
+        broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+        fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,    
+    )->Acc where
         T::Inner: HasId,
         T::Num: core::fmt::Debug,
     {
         //TODO need to make sure naive also restricts its search to be in just the rect.
         //Otherwise in some cases this function will panic when it shouldnt.
+        let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
 
-        let res_naive = match raycast::raycast_naive_mut(PMut::new(self.bots), ray, rtrait) {
+        let res_naive = match raycast::raycast_naive_mut(PMut::new(self.bots), ray, &mut rtrait) {
             raycast::RayCastResult::Hit((mut a, b)) => Some((
                 a.drain(..).map(|a| a.get_id()).collect::<Vec<_>>(),
                 b,
@@ -307,7 +326,7 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
 
         let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
 
-        let res_dinotree = match raycast::raycast_mut(&mut tree, rect, ray, rtrait) {
+        let res_dinotree = match raycast::raycast_mut(&mut tree, rect, ray, &mut rtrait) {
             raycast::RayCastResult::Hit((mut a, b)) => Some((
                 a.drain(..).map(|a| a.get_id()).collect::<Vec<_>>(),
                 b,
@@ -336,6 +355,7 @@ impl<'a, T: HasInner> NaiveAlgs<'a, T> {
                 panic!("fail");
             }
         }
+        rtrait.a
     }
 
     pub fn assert_find_collisions_mut(&mut self)

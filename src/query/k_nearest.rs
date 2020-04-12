@@ -22,6 +22,26 @@
 use crate::query::inner_prelude::*;
 use core::cmp::Ordering;
 
+
+pub struct KnearestClosure<Acc,B,F,T:Aabb>{
+    pub acc:Acc,
+    pub broad:B,
+    pub fine:F,
+    pub _p:PhantomData<T>
+}
+impl<Acc,B:FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> Knearest for KnearestClosure<Acc,B,F,T>{
+    type T=T;
+    type N=T::Num;
+    fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N{
+        (self.broad)(&mut self.acc,point,rect)
+    }
+
+     fn distance_to_bot(&mut self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N{
+        (self.fine)(&mut self.acc,point,bot)
+    }
+}
+
+
 ///The geometric functions that the user must provide.
 pub trait Knearest {
     type T: Aabb<Num = Self::N>;
@@ -36,6 +56,7 @@ pub trait Knearest {
     }
 }
 
+/*
 pub(crate) struct KnearestWrapper<T: Aabb, K> {
     pub(crate) inner: K,
     pub(crate) _p: PhantomData<T>,
@@ -48,6 +69,7 @@ impl<T: Aabb, K: FnMut(Vec2<T::Num>, &Rect<T::Num>) -> T::Num> Knearest for Knea
         (self.inner)(point, rect)
     }
 }
+*/
 
 fn make_rect_from_range<A: Axis, N: Num>(axis: A, range: &Range<N>, rect: &Rect<N>) -> Rect<N> {
     if axis.is_xaxis() {

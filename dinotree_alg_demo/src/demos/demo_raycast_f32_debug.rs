@@ -1,21 +1,7 @@
 use crate::support::prelude::*;
 
-use std;
-use std::cell::RefCell;
-
 use axgeom::Ray;
 
-/*
-mod ray_f32 {
-    use super::*;
-
-    pub struct RayT {
-        pub rects: Option<RefCell<egaku2d::shapes::RectSession>>,
-        pub height: usize,
-    }
-
-}
-*/
 
 #[derive(Copy, Clone, Debug)]
 pub struct Bot2 {

@@ -344,29 +344,8 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         border: Rect<T::Num>,
     ) -> (Acc,raycast::RayCastResult<T::Inner,T::Num>) {
 
-        struct Foo<A,B,C,T>{
-            a:A,
-            broad:B,
-            fine:C,
-            _p:PhantomData<T>
-        };
-        impl<
-            A,
-            B:FnMut(&mut A,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
-            C:FnMut(&mut A,&Ray<T::Num>,&T)->CastResult<T::Num>,
-            T:Aabb> raycast::RayCast for Foo<A,B,C,T>{
-           type T=T;
-           type N=T::Num;
-           fn compute_distance_to_rect(&mut self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
-               (self.broad)(&mut self.a,ray,a)
-           }
-        
-           fn compute_distance_to_bot(&mut self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
-                (self.fine)(&mut self.a, ray, a)
-           }
-        }
 
-        let mut rtrait=Foo{a:start,broad,fine,_p:PhantomData};
+        let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
 
         let result=raycast::raycast_mut(self, border, ray, &mut rtrait);
         
@@ -409,25 +388,8 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
         border: Rect<T::Num>,
     ) -> (Acc,Vec<k_nearest::KnearestResult<T::Inner,T::Num>>) {
-        struct Foo<Acc,B,F,T:Aabb>{
-            acc:Acc,
-            broad:B,
-            fine:F,
-            _p:PhantomData<T>
-        }
-        impl<Acc,B:FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> k_nearest::Knearest for Foo<Acc,B,F,T>{
-            type T=T;
-            type N=T::Num;
-            fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N{
-                (self.broad)(&mut self.acc,point,rect)
-            }
-    
-             fn distance_to_bot(&mut self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N{
-                (self.fine)(&mut self.acc,point,bot)
-            }
-        }
-        let mut foo=Foo{acc:start,broad,fine,_p:PhantomData};
-
+        
+        let mut foo=k_nearest::KnearestClosure{acc:start,broad,fine,_p:PhantomData};
         let res=k_nearest::k_nearest_mut(self, point, num, &mut foo, border);
         (foo.acc,res)
     }

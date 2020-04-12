@@ -13,6 +13,33 @@ impl analyze::HasId for Bot {
     }
 }
 
+ fn distance_to_rect(rect:&Rect<f32>,point:Vec2<f32>)->f32{
+    let dis = rect.distance_squared_to_point(point);
+    let dis = match dis {
+        Some(dis) => dis,
+        None => {
+            //If a point is insert a rect, the distance to it is zero.
+            //So if multiple points are inside of a rect, its not clear the order in which
+            //they should be returned.
+            //So in the case that a point is in the rect, we establish our own ordering,
+            //by falling back on the distance between the center of a rect and the point.
+            //Since the distance between a rect and a point that is outside of the rect is
+            //guarenteeded to be positive, we have all the negative numbers in which to
+            //apply our custom ordering for bots that are inside of the rect.
+
+            //The main reason that we are doing this is so that there arn't
+            //multiple solutions to the k_nearest problem so that we can easily
+            //verify the solution against the naive implementation.
+
+            //If you don't care about a single solution existing, you can simply return zero
+            //for the cases that the point is inside of the rect.
+
+            0.0
+        }
+    };
+    dis
+}
+
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(2.0, 50.0)
@@ -50,32 +77,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let mut vv = {
             let mut rects = canvas.rects();
 
-            fn distance_to_rect(rect:&Rect<f32>,point:Vec2<f32>)->f32{
-                let dis = rect.distance_squared_to_point(point);
-                let dis = match dis {
-                    Some(dis) => dis,
-                    None => {
-                        //If a point is insert a rect, the distance to it is zero.
-                        //So if multiple points are inside of a rect, its not clear the order in which
-                        //they should be returned.
-                        //So in the case that a point is in the rect, we establish our own ordering,
-                        //by falling back on the distance between the center of a rect and the point.
-                        //Since the distance between a rect and a point that is outside of the rect is
-                        //guarenteeded to be positive, we have all the negative numbers in which to
-                        //apply our custom ordering for bots that are inside of the rect.
-
-                        //The main reason that we are doing this is so that there arn't
-                        //multiple solutions to the k_nearest problem so that we can easily
-                        //verify the solution against the naive implementation.
-
-                        //If you don't care about a single solution existing, you can simply return zero
-                        //for the cases that the point is inside of the rect.
-
-                        0.0
-                    }
-                };
-                dis
-            }
+           
             let (_,k)=tree.as_owned_mut()
                 .as_tree_mut()
                 .k_nearest_mut(cursor, 3, &mut rects,
@@ -100,23 +102,17 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             .collect();
 
         if check_naive {
-            //unimplemented!()
-            /*
-            let mut kn = Kn {
-                c: &c,
-                g: RefCell::new(g),
-                draw: false,
-            };
-            let dim=self.dim;
-            tree.as_owned_mut().get_bots_mut(|bots|{
-                analyze::NaiveAlgs::new(bots).assert_k_nearest_mut(
-                    cursor,
-                    3,
-                    &mut kn,
-                    dim,
-                );
-            });
-            */
+            let mut k:Vec<_>=tree.as_owned_mut().get_bots().iter().map(|a|bbox(a.rect,*a.inner)).collect();
+            let mut j=dinotree_alg::analyze::NaiveAlgs::new(&mut k);
+            j.assert_k_nearest_mut(cursor, 3, &mut rects,
+                    move |_a,point,rect|{
+                        f32n(distance_to_rect(rect.as_ref(),point.inner_into()))
+                    },
+                    move |rects,point,t|{
+                        rects.add(t.get().inner_into().into());
+                        f32n(distance_to_rect(t.get().as_ref(),point.inner_into()))
+                    },
+                    dim);
         }
 
         vv.reverse();

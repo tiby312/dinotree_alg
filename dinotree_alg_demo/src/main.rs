@@ -84,7 +84,7 @@ fn main() {
 
     println!("Press \"N\" to go to the next example");
 
-    let check_naive = false;
+    let mut check_naive = false;
     let mut cursor = vec2same(0.);
     let mut timer = egaku2d::RefreshTimer::new(16);
     events_loop.run(move |event, _, control_flow| {
@@ -100,7 +100,12 @@ fn main() {
                                 curr = demo_iter.next(area,sys.canvas_mut());
                             }
                             Some(VirtualKeyCode::C) => {
-                                check_naive != check_naive;
+                                check_naive = !check_naive;
+                                if check_naive{
+                                    println!("naive checking is on");
+                                }else{
+                                    println!("naive checking is off");
+                                }
                             }
                             _ => {}
                         }

@@ -76,6 +76,30 @@ pub trait RayCast {
     }
 }
 
+
+pub(crate) struct RayCastClosure<A,B,C,T>{
+    pub a:A,
+    pub broad:B,
+    pub fine:C,
+    pub _p:PhantomData<T>
+}
+impl<
+    A,
+    B:FnMut(&mut A,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+    C:FnMut(&mut A,&Ray<T::Num>,&T)->CastResult<T::Num>,
+    T:Aabb> RayCast for RayCastClosure<A,B,C,T>{
+   type T=T;
+   type N=T::Num;
+   fn compute_distance_to_rect(&mut self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
+       (self.broad)(&mut self.a,ray,a)
+   }
+
+   fn compute_distance_to_bot(&mut self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
+        (self.fine)(&mut self.a, ray, a)
+   }
+}
+
+/*
 pub(crate) struct RayCastFineWrapper<T: Aabb, K> {
     pub(crate) inner: K,
     pub(crate) _p: PhantomData<T>,
@@ -94,6 +118,7 @@ impl<T: Aabb, K: FnMut(&Ray<T::Num>, &Rect<T::Num>) -> axgeom::CastResult<T::Num
         (self.inner)(ray, a)
     }
 }
+*/
 
 fn make_rect_from_range<A: Axis, N: Num>(axis: A, range: &Range<N>, rect: &Rect<N>) -> Rect<N> {
     if axis.is_xaxis() {
