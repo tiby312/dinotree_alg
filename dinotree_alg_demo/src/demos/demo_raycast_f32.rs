@@ -61,7 +61,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         dir: k,
                     }
                 };
-
+                /*
                 if check_naive {
                     tree.get_bots_mut(move |_bots| {
                         struct RayT {
@@ -76,7 +76,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         */
                     });
                 }
-
+                */
                 let (_,res) = tree
                     .as_tree_mut()
                     .raycast_mut(ray,radius,

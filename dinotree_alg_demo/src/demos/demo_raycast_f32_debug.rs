@@ -51,10 +51,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
         rect_save.uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.3]).draw();
 
-
+        /*
         if check_naive {
             tree.get_bots_mut(|_bots| {
-                /*
+                
 
                 let height = tree.as_tree().get_height();
                 analyze::NaiveAlgs::new(bots).assert_raycast_mut(
@@ -65,9 +65,10 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         height,
                     },
                 );
-                */
+                
             });
         }
+        */
 
         let test = {
             let mut rects = canvas.rects();

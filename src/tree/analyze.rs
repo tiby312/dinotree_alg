@@ -29,7 +29,7 @@ pub mod bbox_helper {
             tree.inner
                 .get_nodes()
                 .iter()
-                .flat_map(|a| a.range.iter())
+                .flat_map(|a| a.range.as_ref().iter())
                 .map(move |a| BBox::new(a.rect, *a.inner))
                 .collect(),
         )
@@ -51,7 +51,7 @@ pub mod bbox_helper {
                 let (first, mut rest) = k.split_at_mut(node.range.len());
                 core::mem::swap(&mut bots, &mut rest);
                 NodeMut {
-                    range: first,
+                    range: PMut::new(first),
                     cont: node.cont,
                     div: node.div,
                 }

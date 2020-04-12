@@ -68,7 +68,7 @@ unsafe impl<T:Aabb> Sync for NodePtr<T> {}
 
 ///A Node in a dinotree.
 pub(crate) struct NodePtr<T: Aabb> {
-    _range: core::ptr::NonNull<[T]>,
+    _range: PMutPtr<[T]>,
 
     //range is empty iff cont is none.
     _cont: Option<axgeom::Range<T::Num>>,
@@ -86,8 +86,8 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
         .inner
         .into_nodes()
         .drain(..)
-        .map(|node| NodePtr {
-            _range: core::ptr::NonNull::new(node.range).unwrap(),
+        .map(|mut node| NodePtr {
+            _range: node.range.as_ptr(),
             _cont: node.cont,
             _div: node.div,
         })
@@ -105,8 +105,8 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
         .inner
         .into_nodes()
         .drain(..)
-        .map(|node| NodePtr {
-            _range: core::ptr::NonNull::new(node.range).unwrap(),
+        .map(|mut node| NodePtr {
+            _range: node.range.as_ptr(),
             _cont: node.cont,
             _div: node.div,
         })
@@ -228,10 +228,15 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         &self.bots
     }
 
+
+
+
+    /*
     pub fn get_bots_mut(&mut self, mut func: impl FnMut(&mut [T])) {
         func(&mut self.bots);
 
         let axis = self.tree.axis;
         self.tree = make_owned(axis, &mut self.bots);
     }
+    */
 }

@@ -46,6 +46,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let r1 = axgeom::Rect::new(cc.x - 100, cc.x + 100, cc.y - 100, cc.y + 100);
         let r2 = axgeom::Rect::new(100, 400, 100, 400);
 
+        /*
         if check_naive {
             tree.as_owned_mut().get_bots_mut(|bots| {
                 let mut na = analyze::NaiveAlgs::new(bots);
@@ -56,6 +57,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 na.assert_for_all_not_in_rect_mut(&r1);
             });
         }
+        */
 
         //test MultiRect
         {

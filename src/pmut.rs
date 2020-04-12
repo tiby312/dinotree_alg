@@ -32,18 +32,28 @@ use crate::inner_prelude::*;
 
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.
+#[repr(transparent)]
+pub(crate) struct PMutPtr<T: ?Sized> {
+    pub(crate) inner:core::ptr::NonNull<T>, //TODO make this private
+}
+
+
+
+///A protected mutable reference.
+///See the pmut module documentation for more explanation.
+#[repr(transparent)]
 pub struct PMut<'a, T: ?Sized> {
     pub(crate) inner: &'a mut T, //TODO make this private
 }
 
 
 impl<'a, T: ?Sized> PMut<'a, T> {
-    /*
+    
     #[inline(always)]
-    fn as_ptr(&mut self)->PMutPtr<T>{
-        PMutPtr{inner:self.inner as *mut _}
+    pub(crate) fn as_ptr(&mut self)->PMutPtr<T>{
+        PMutPtr{inner:unsafe{core::ptr::NonNull::new_unchecked(self.inner as *mut _)}}
     }
-    */
+    
     #[inline(always)]
     pub fn new(inner: &'a mut T) -> PMut<'a, T> {
         PMut { inner }
@@ -100,6 +110,17 @@ impl<'a, T: HasInner> HasInner for PMut<'a, T> {
         self.inner.get_inner_mut()
     }
 }
+
+
+impl<'a,T> core::ops::Deref for PMut<'a,T> {
+    type Target = &'a T;
+
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        unsafe{&*(self as *const _ as *const _)}
+    }
+}
+
 
 //TODO use this
 impl<'a,T:HasInner> PMut<'a,T>{

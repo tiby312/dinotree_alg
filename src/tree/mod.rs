@@ -954,14 +954,14 @@ pub mod node {
         type Num = T::Num;
         fn get(&self) -> NodeRef<Self::T> { //TODO point as struct impl
             NodeRef {
-                bots: self.range,
+                bots: self.range.as_ref(),
                 cont: &self.cont,
                 div: &self.div,
             }
         }
         fn get_mut(&mut self) -> NodeRefMut<Self::T> {
             NodeRefMut {
-                bots: PMut::new(self.range),
+                bots: self.range.as_mut(),
                 cont: &self.cont,
                 div: &self.div,
             }
@@ -970,7 +970,7 @@ pub mod node {
 
     ///A lifetimed node in a dinotree.
     pub struct NodeMut<'a, T: Aabb> {
-        pub(crate) range: &'a mut [T],
+        pub(crate) range: PMut<'a,[T]>,
 
         //range is empty iff cont is none.
         pub(crate) cont: Option<axgeom::Range<T::Num>>,
@@ -986,14 +986,14 @@ pub mod node {
     impl<'a, T: Aabb> NodeMut<'a, T> {
         pub fn get(&self) -> NodeRef<T> {
             NodeRef {
-                bots: self.range,
+                bots: self.range.as_ref(),
                 cont: &self.cont,
                 div: &self.div,
             }
         }
         pub fn get_mut(&mut self) -> NodeRefMut<T> {
             NodeRefMut {
-                bots: PMut::new(self.range),
+                bots: self.range.as_mut(),
                 cont: &self.cont,
                 div: &self.div,
             }
@@ -1108,7 +1108,7 @@ impl<'a, T: Aabb, K: Splitter, S: Sorter> Recurser<'a, T, K, S> {
         let cont = create_cont(axis, rest);
 
         NodeMut {
-            range: rest,
+            range: PMut::new(rest),
             cont,
             div: None,
         }
@@ -1128,7 +1128,7 @@ impl<'a, T: Aabb, K: Splitter, S: Sorter> Recurser<'a, T, K, S> {
                 right,
             } => (
                 NodeMut {
-                    range: mid,
+                    range: PMut::new(mid),
                     cont,
                     div: Some(div),
                 },
@@ -1139,7 +1139,7 @@ impl<'a, T: Aabb, K: Splitter, S: Sorter> Recurser<'a, T, K, S> {
                 //let (a,empty) = tools::duplicate_empty_slice(empty);
                 //let (b,c) = tools::duplicate_empty_slice(empty);
                 let node = NodeMut {
-                    range: empty,
+                    range: PMut::new(empty),
                     cont: None,
                     div: None,
                 };
