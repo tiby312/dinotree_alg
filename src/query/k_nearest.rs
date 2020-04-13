@@ -23,21 +23,21 @@ use crate::query::inner_prelude::*;
 use core::cmp::Ordering;
 
 
-pub struct KnearestClosure<Acc,B,F,T:Aabb>{
-    pub acc:Acc,
+pub struct KnearestClosure<'a,Acc,B,F,T:Aabb>{
+    pub acc:&'a mut Acc,
     pub broad:B,
     pub fine:F,
     pub _p:PhantomData<T>
 }
-impl<Acc,B:FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> Knearest for KnearestClosure<Acc,B,F,T>{
+impl<Acc,B:FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> Knearest for KnearestClosure<'_,Acc,B,F,T>{
     type T=T;
     type N=T::Num;
     fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N{
-        (self.broad)(&mut self.acc,point,rect)
+        (self.broad)(self.acc,point,rect)
     }
 
      fn distance_to_bot(&mut self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N{
-        (self.fine)(&mut self.acc,point,bot)
+        (self.fine)(self.acc,point,bot)
     }
 }
 

@@ -8,11 +8,6 @@ pub struct Bot2 {
     id: usize,
 }
 
-impl analyze::HasId for Bot2 {
-    fn get_id(&self) -> usize {
-        self.id
-    }
-}
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
@@ -51,29 +46,24 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
         rect_save.uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.3]).draw();
 
-        /*
+        
         if check_naive {
-            tree.get_bots_mut(|_bots| {
-                
-
-                let height = tree.as_tree().get_height();
-                analyze::NaiveAlgs::new(bots).assert_raycast_mut(
-                    dim,
-                    ray,
-                    &mut ray_f32::RayT {
-                        rects: None,
-                        height,
-                    },
-                );
-                
-            });
+            tree.as_tree_mut().assert_raycast_mut(
+                ray, 
+                &mut rects, 
+                move |_rr,ray,rect|ray.cast_to_rect(&rect),
+                move |rects,ray,t|{
+                    rects.add(t.get().inner_into().into());
+                    ray.cast_to_rect(t.get())
+                },
+                dim);
         }
-        */
+        
 
         let test = {
             let mut rects = canvas.rects();
             
-            let (_,test) = tree.as_tree_mut().raycast_mut(
+            let test = tree.as_tree_mut().raycast_mut(
                 ray, 
                 &mut rects, 
                 move |_rr,ray,rect|ray.cast_to_rect(&rect),

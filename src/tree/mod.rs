@@ -101,7 +101,8 @@ use crate::query::*;
 ///The data structure this crate revoles around.
 pub struct DinoTree<'a,A: Axis, T:Aabb> {
     axis: A,
-    inner: compt::dfs_order::CompleteTreeContainer<NodeMut<'a,T>, compt::dfs_order::PreOrder>
+    inner: compt::dfs_order::CompleteTreeContainer<NodeMut<'a,T>, compt::dfs_order::PreOrder>,
+    bots:PMutPtr<[T]>
 }
 
 ///The type of the axis of the first node in the dinotree.
@@ -169,6 +170,176 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<'a,A , T> {
 
 
 
+
+impl<'a,A:Axis,T:Aabb+HasInner+Send+Sync> DinoTree<'a,A,T>
+{
+
+    pub fn assert_find_intersections_mut(&mut self){
+        let mut res_dino=Vec::new();
+        self.find_intersections_mut(|a,b|{
+            let a=a as *const _ as usize;
+            let b=b as *const _ as usize;
+            let k=if a<b{(a,b)}else{(b,a)};
+            res_dino.push(k);
+        });
+
+        let mut res_naive=Vec::new();
+        NaiveAlgs::new(self.get_bots_mut()).find_intersections_mut(|a,b|{
+            let a=a as *const _ as usize;
+            let b=b as *const _ as usize;
+            let k=if a<b{(a,b)}else{(b,a)};
+            res_naive.push(k);
+        });
+
+        res_naive.sort();
+        res_dino.sort();
+
+        assert_eq!(res_naive.len(),res_dino.len());
+        assert!(res_naive.iter().eq(res_dino.iter()));
+
+
+    }
+    pub fn assert_k_nearest_mut<Acc>(
+        &mut self,
+        point: Vec2<T::Num>,
+        num: usize,
+        acc:&mut Acc,
+        mut broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
+        mut fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
+        rect: Rect<T::Num>,
+    )
+    {
+
+        let bots=self.get_bots_mut();
+
+        let mut res_naive = NaiveAlgs::new(bots).k_nearest_mut(point, num, acc,&mut broad,&mut fine)
+                    .drain(..)
+                    .map(|a| (a.bot as *const _ as usize,a.mag))
+                    .collect::<Vec<_>>();
+            
+        let mut r=self.k_nearest_mut(point,num,acc,broad,fine,rect);
+        let mut res_dino:Vec<_>=r.drain(..).map(|a|(a.bot as *const _ as usize,a.mag)).collect();
+        
+        res_naive.sort();
+        res_dino.sort();
+
+        assert_eq!(res_naive.len(),res_dino.len());
+        assert!(res_naive.iter().eq(res_dino.iter()));
+    
+    }
+
+    pub fn assert_raycast_mut<Acc>(
+        &mut self,
+        ray: axgeom::Ray<T::Num>,
+        start: &mut Acc,
+        mut broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
+        mut fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
+        border:Rect<T::Num>
+    )
+    {
+
+        let bots=self.get_bots_mut();
+
+        let mut res_naive = Vec::new();
+        match NaiveAlgs::new(bots).raycast_mut(ray, start,&mut broad,&mut fine){
+            RayCastResult::Hit((bots,mag))=>{
+                for a in bots.iter(){
+                    let j=(*a) as *const _ as usize;
+                    res_naive.push((j,mag))
+                }
+            },
+            RayCastResult::NoHit=>{
+                //do nothing
+            }
+        }
+
+        let mut res_dino = Vec::new();
+        match self.raycast_mut(ray, start,broad,fine,border){
+            RayCastResult::Hit((bots,mag))=>{
+                for a in bots.iter(){
+                    let j=(*a) as *const _ as usize;
+                    res_dino.push((j,mag))
+                }
+            },
+            RayCastResult::NoHit=>{
+                //do nothing
+            }
+        }
+                    
+        
+        res_naive.sort();
+        res_dino.sort();
+
+        assert_eq!(res_naive.len(),res_dino.len());
+        assert!(res_naive.iter().eq(res_dino.iter()));
+        
+    }
+
+    //TODO condense the below into macro
+    pub fn assert_for_all_in_rect_mut(&mut self, rect: &axgeom::Rect<T::Num>)
+    {
+
+        let mut res_dino=Vec::new();
+        self.for_all_in_rect_mut(rect,|a|{
+            res_dino.push(a as *const _ as usize);
+        });
+
+        let mut res_naive=Vec::new();
+        NaiveAlgs::new(self.get_bots_mut()).for_all_in_rect_mut(rect,|a|{
+            res_naive.push(a as *const _ as usize);
+        });
+
+        res_dino.sort();
+        res_naive.sort();
+
+        assert_eq!(res_naive.len(),res_dino.len());
+        assert!(res_naive.iter().eq(res_dino.iter()));
+        
+    }
+
+    pub fn assert_for_all_not_in_rect_mut(&mut self, rect: &axgeom::Rect<T::Num>)
+    {
+
+        let mut res_dino=Vec::new();
+        self.for_all_not_in_rect_mut(rect,|a|{
+            res_dino.push(a as *const _ as usize);
+        });
+
+        let mut res_naive=Vec::new();
+        NaiveAlgs::new(self.get_bots_mut()).for_all_not_in_rect_mut(rect,|a|{
+            res_naive.push(a as *const _ as usize);
+        });
+
+        res_dino.sort();
+        res_naive.sort();
+
+        assert_eq!(res_naive.len(),res_dino.len());
+        assert!(res_naive.iter().eq(res_dino.iter()));
+        
+    }
+
+    pub fn assert_for_all_intersect_rect_mut(&mut self, rect: &axgeom::Rect<T::Num>)
+    {
+
+        let mut res_dino=Vec::new();
+        self.for_all_intersect_rect_mut(rect,|a|{
+            res_dino.push(a as *const _ as usize);
+        });
+
+        let mut res_naive=Vec::new();
+        NaiveAlgs::new(self.get_bots_mut()).for_all_intersect_rect_mut(rect,|a|{
+            res_naive.push(a as *const _ as usize);
+        });
+
+        res_dino.sort();
+        res_naive.sort();
+
+        assert_eq!(res_naive.len(),res_dino.len());
+        assert!(res_naive.iter().eq(res_dino.iter()));
+        
+    }
+
+}
 
 impl<'a,A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a,A, T>
 {
@@ -338,18 +509,13 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     pub fn raycast_mut<Acc>(
         &mut self,
         ray: axgeom::Ray<T::Num>,
-        start: Acc,
+        start: &mut Acc,
         broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
         fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
         border: Rect<T::Num>,
-    ) -> (Acc,raycast::RayCastResult<T::Inner,T::Num>) {
-
-
+    ) -> raycast::RayCastResult<T::Inner,T::Num> {
         let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
-
-        let result=raycast::raycast_mut(self, border, ray, &mut rtrait);
-        
-        (rtrait.a,result)
+        raycast::raycast_mut(self, border, ray, &mut rtrait)
     }
 
     /// # Examples
@@ -383,15 +549,14 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
         &mut self,
         point: Vec2<T::Num>,
         num: usize,
-        start:Acc,
+        start:&mut Acc,
         broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
         fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
         border: Rect<T::Num>,
-    ) -> (Acc,Vec<k_nearest::KnearestResult<T::Inner,T::Num>>) {
+    ) -> Vec<k_nearest::KnearestResult<T::Inner,T::Num>> {
         
         let mut foo=k_nearest::KnearestClosure{acc:start,broad,fine,_p:PhantomData};
-        let res=k_nearest::k_nearest_mut(self, point, num, &mut foo, border);
-        (foo.acc,res)
+        k_nearest::k_nearest_mut(self, point, num, &mut foo, border)
     }
 
     /// # Examples
@@ -517,6 +682,14 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
 
 
 impl<'a,A:Axis,T:Aabb> DinoTree<'a,A,T>{
+
+
+    pub fn get_bots(&self)->&[T]{
+        &unsafe{self.bots.as_mut()}
+    }
+    pub fn get_bots_mut(&mut self)->PMut<[T]>{
+        unsafe{self.bots.as_mut()}
+    }
 
     /// # Examples
     ///
@@ -712,6 +885,7 @@ mod builder {
     impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
         ///Build not sorted in parallel
         pub fn build_not_sorted_par(&mut self) -> NotSorted<'a,A, T> {
+            let b=PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
@@ -727,11 +901,13 @@ mod builder {
             NotSorted(DinoTree {
                 axis: self.axis,
                 inner,
+                bots:b
             })
         }
 
         ///Build in parallel
         pub fn build_par(&mut self) -> DinoTree<'a,A, T> {
+            let b=PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
@@ -746,7 +922,8 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner
+                inner,
+                bots:b
             }
         }
     }
@@ -788,6 +965,7 @@ mod builder {
 
         ///Build not sorted sequentially
         pub fn build_not_sorted_seq(&mut self) -> NotSorted<'a,A,T> {
+            let b=PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let inner = create_tree_seq(
@@ -800,12 +978,14 @@ mod builder {
             );
             NotSorted(DinoTree {
                 axis: self.axis,
-                inner
+                inner,
+                bots:b
             })
         }
 
         ///Build sequentially
         pub fn build_seq(&mut self) -> DinoTree<'a,A,T> {
+            let b=PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let inner = create_tree_seq(
@@ -818,7 +998,8 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner
+                inner,
+                bots:b
             }
         }
 
@@ -848,6 +1029,7 @@ mod builder {
             &mut self,
             splitter: &mut S,
         ) -> DinoTree<'a,A,T> {
+            let b=PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let inner = create_tree_seq(
@@ -860,7 +1042,8 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner
+                inner,
+                bots:b
             }
         }
     }
@@ -897,6 +1080,11 @@ pub mod node {
                 VistrMut {
                     inner: self.inner.create_wrap_mut(),
                 }
+            }
+
+            #[inline(always)]
+            pub fn as_slice_mut(&mut self)->PMut<[N]>{
+                PMut::new(self.inner.as_slice_mut())
             }
         }
 

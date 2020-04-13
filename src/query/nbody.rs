@@ -48,8 +48,7 @@ pub trait NodeMassTrait: Clone {
 }
 
 ///Naive version simply visits every pair.
-pub fn naive_mut<T: Aabb>(bots: &mut [T], func: impl FnMut(PMut<T>, PMut<T>)) {
-    let bots = PMut::new(bots);
+pub fn naive_mut<T: Aabb>(bots: PMut<[T]>, func: impl FnMut(PMut<T>, PMut<T>)) {
     tools::for_every_pair(bots, func);
 }
 

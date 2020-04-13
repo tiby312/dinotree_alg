@@ -77,75 +77,13 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         lines.send_and_uniforms(canvas).with_color([1.0, 0.5, 1.0, 0.6]).draw();
     
 
-        if !check_naive {
-            tree.find_intersections_mut_par(|a, b| {
-                let _ = duckduckgeo::repel([(a.pos,&mut a.force), (b.pos,&mut b.force)], 0.001, 2.0);
-            });
-        } else {
-            /*
-            let mut res=Vec::new();
-            colfind::QueryBuilder::new(&mut tree).query_seq(|mut a,mut b| {
-                let a=a.inner_mut();
-                let b=b.inner_mut();
-                let _ = duckduckgeo::repel(a,b,0.001,2.0);
-                let (a,b)=if a.id<b.id{
-                    (a,b)
-                }else{
-                    (b,a)
-                };
-                res.push((a.id,b.id));
-            });
+        tree.find_intersections_mut_par(|a, b| {
+            let _ = duckduckgeo::repel([(a.pos,&mut a.force), (b.pos,&mut b.force)], 0.001, 2.0);
+        });
 
-
-
-            let mut res2=Vec::new();
-
-            colfind::query_naive_mut(tree.get_bots_mut(),|mut a,mut b|{
-                let a=a.inner_mut();
-                let b=b.inner_mut();
-                let (a,b)=if a.id<b.id{
-                    (a,b)
-                }else{
-                    (b,a)
-                };
-                res2.push((a.id,b.id))
-            });
-
-            let cmp=|a:&(usize,usize),b:&(usize,usize)|{
-                use std::cmp::Ordering;
-
-                match a.0.cmp(&b.0){
-                    Ordering::Less=>{
-                        Ordering::Less
-                    },
-                    Ordering::Greater=>{
-                        Ordering::Greater
-                    },
-                    Ordering::Equal=>{
-                        match a.1.cmp(&b.1){
-                            Ordering::Less=>{
-                                Ordering::Less
-                            },
-                            Ordering::Greater=>{
-                                Ordering::Greater
-                            },
-                            Ordering::Equal=>{
-                                Ordering::Equal
-                            }
-                        }
-                    }
-                }
-            };
-
-            res.sort_by(cmp);
-            res2.sort_by(cmp);
-            println!("lens={:?}",(res.len(),res2.len()));
-            assert_eq!(res.len(),res2.len());
-            for (a,b) in res.iter().zip(res2.iter()){
-                assert_eq!(a,b)
-            }
-            */
-            unimplemented!()
+        
+        if check_naive {
+           tree.assert_find_intersections_mut(); 
         }
 
 

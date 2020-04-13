@@ -228,15 +228,15 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         &self.bots
     }
 
-
-
-
-    /*
-    pub fn get_bots_mut(&mut self, mut func: impl FnMut(&mut [T])) {
+    pub fn rebuild(&mut self, mut func: impl FnMut(&mut [T])) {
         func(&mut self.bots);
 
         let axis = self.tree.axis;
         self.tree = make_owned(axis, &mut self.bots);
     }
-    */
+
+    pub fn get_bots_mut(&mut self)->PMut<[T]>{
+        PMut::new(&mut self.bots)
+    }
+    
 }

@@ -7,11 +7,6 @@ struct Bot {
     rect:Rect<f32>
 }
 
-impl analyze::HasId for Bot {
-    fn get_id(&self) -> usize {
-        self.id
-    }
-}
 
  fn distance_to_rect(rect:&Rect<f32>,point:Vec2<f32>)->f32{
     let dis = rect.distance_squared_to_point(point);
@@ -78,7 +73,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let mut rects = canvas.rects();
 
            
-            let (_,k)=tree.as_owned_mut()
+            let k=tree.as_owned_mut()
                 .as_tree_mut()
                 .k_nearest_mut(cursor, 3, &mut rects,
                     move |_a,point,rect|{
@@ -102,9 +97,9 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             .collect();
 
         if check_naive {
-            let mut k:Vec<_>=tree.as_owned_mut().get_bots().iter().map(|a|bbox(a.rect,*a.inner)).collect();
-            let mut j=dinotree_alg::analyze::NaiveAlgs::new(&mut k);
-            j.assert_k_nearest_mut(cursor, 3, &mut rects,
+            //let mut k:Vec<_>=tree.as_owned_mut`().get_bots().iter().map(|a|bbox(a.rect,*a.inner)).collect();
+            //let mut j=dinotree_alg::analyze::NaiveAlgs::new(&mut k);
+            tree.as_owned_mut().as_tree_mut().assert_k_nearest_mut(cursor, 3, &mut rects,
                     move |_a,point,rect|{
                         f32n(distance_to_rect(rect.as_ref(),point.inner_into()))
                     },

@@ -11,11 +11,6 @@ struct Bot {
     center: Vec2<f32>,
 }
 
-impl analyze::HasId for Bot {
-    fn get_id(&self) -> usize {
-        self.id
-    }
-}
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let radius = 20.0;
@@ -61,25 +56,20 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                         dir: k,
                     }
                 };
-                /*
-                if check_naive {
-                    tree.get_bots_mut(move |_bots| {
-                        struct RayT {
-                            pub radius: f32,
-                        }
-                        /*
-                        analyze::NaiveAlgs::new(bots).assert_raycast_mut(
-                            dim,
-                            ray,
-                            &mut RayT { radius },
-                        );
-                        */
-                    });
+
+
+                
+                let mut radius=radius;
+                if check_naive{
+                    tree.as_tree_mut().assert_raycast_mut(ray,&mut radius,
+                        move |_r,ray,rect| ray.cast_to_rect(rect),
+                        move |r,ray,t|ray.inner_into::<f32>().cast_to_circle(t.inner().center, *r).map(|a| NotNan::new(a).unwrap())
+                    , dim);
                 }
-                */
-                let (_,res) = tree
+
+                let res = tree
                     .as_tree_mut()
-                    .raycast_mut(ray,radius,
+                    .raycast_mut(ray,&mut radius,
                         move |_r,ray,rect| ray.cast_to_rect(rect),
                         move |r,ray,t|ray.inner_into::<f32>().cast_to_circle(t.inner().center, *r).map(|a| NotNan::new(a).unwrap())
                 , dim);

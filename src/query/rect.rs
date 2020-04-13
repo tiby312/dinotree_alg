@@ -78,7 +78,7 @@ pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb>(
     ) -> F {
         let (nn, rest) = it.next();
         let nn = nn.get_mut();
-        //TODO exploit sorted property.
+
         for a in nn.bots.iter_mut() {
             if !rect.contains_rect(a.get()) {
                 closure(a);
@@ -86,15 +86,30 @@ pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb>(
         }
 
         match rest {
-            Some([left, right]) => {
+            Some([mut left, mut right]) => {
                 let div = match nn.div {
                     Some(b) => b,
                     None => return closure,
                 };
 
                 match rect.get_range(axis).contains_ext(*div) {
-                    core::cmp::Ordering::Less => rect_recurse(axis.next(), left, rect, closure),
-                    core::cmp::Ordering::Greater => rect_recurse(axis.next(), right, rect, closure),
+                    core::cmp::Ordering::Greater => {
+                        
+                        for a in right.as_slice_mut(){
+                            for b in a.get_mut().bots.iter_mut(){
+                                closure(b)
+                            }
+                        }
+                        rect_recurse(axis.next(), left, rect, closure)
+                    },
+                    core::cmp::Ordering::Less => {
+                        for a in left.as_slice_mut(){
+                            for b in a.get_mut().bots.iter_mut(){
+                                closure(b)
+                            }
+                        }
+                        rect_recurse(axis.next(), right, rect, closure)
+                    },
                     core::cmp::Ordering::Equal => {
                         let closure = rect_recurse(axis.next(), left, rect, closure);
                         rect_recurse(axis.next(), right, rect, closure)

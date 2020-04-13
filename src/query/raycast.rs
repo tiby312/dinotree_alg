@@ -77,8 +77,8 @@ pub trait RayCast {
 }
 
 
-pub(crate) struct RayCastClosure<A,B,C,T>{
-    pub a:A,
+pub(crate) struct RayCastClosure<'a,A,B,C,T>{
+    pub a:&'a mut A,
     pub broad:B,
     pub fine:C,
     pub _p:PhantomData<T>
@@ -87,7 +87,7 @@ impl<
     A,
     B:FnMut(&mut A,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
     C:FnMut(&mut A,&Ray<T::Num>,&T)->CastResult<T::Num>,
-    T:Aabb> RayCast for RayCastClosure<A,B,C,T>{
+    T:Aabb> RayCast for RayCastClosure<'_,A,B,C,T>{
    type T=T;
    type N=T::Num;
    fn compute_distance_to_rect(&mut self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{

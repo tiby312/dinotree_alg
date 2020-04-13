@@ -37,6 +37,12 @@ pub(crate) struct PMutPtr<T: ?Sized> {
     pub(crate) inner:core::ptr::NonNull<T>, //TODO make this private
 }
 
+impl<T:?Sized> PMutPtr<T>{
+    pub unsafe fn as_mut<'a>(&'a self)->PMut<'a,T>{
+        PMut::new(&mut *self.inner.as_ptr())
+    }
+}
+
 
 
 ///A protected mutable reference.
@@ -112,7 +118,7 @@ impl<'a, T: HasInner> HasInner for PMut<'a, T> {
 }
 
 
-impl<'a,T> core::ops::Deref for PMut<'a,T> {
+impl<'a,T:?Sized> core::ops::Deref for PMut<'a,T> {
     type Target = &'a T;
 
     #[inline(always)]

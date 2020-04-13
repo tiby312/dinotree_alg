@@ -41,6 +41,8 @@ pub mod bbox_helper {
         bots: &'a mut IntoDirectHelper<N, T>,
     ) -> DinoTree<'a,A, BBox<N, T>> {
         let mut bots = &mut bots.0 as &'a mut [_];
+
+        let b=PMut::new(bots).as_ptr();
         let nodes: Vec<_> = tree
             .inner
             .get_nodes()
@@ -60,37 +62,27 @@ pub mod bbox_helper {
 
         DinoTree {
             inner: compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
-            axis: tree.axis
+            axis: tree.axis,
+            bots:b
         }
     }
 }
 
 
-pub trait HasId {
-    fn get_id(&self) -> usize;
+pub fn find_collisions_sweep_mut<A: Axis,T:Aabb+HasInner>(
+    bots: &mut [T] ,
+    axis: A,
+    mut func: impl FnMut(&mut T::Inner, &mut T::Inner),
+) {
+    colfind::query_sweep_mut(axis, bots, |a, b| func(a.into_inner(), b.into_inner()));
 }
 
-#[derive(Debug, Eq, Ord, PartialOrd, PartialEq)]
-struct IDPair {
-    a: usize,
-    b: usize,
-}
-
-impl IDPair {
-    fn new(a: usize, b: usize) -> IDPair {
-        let (a, b) = if a <= b { (a, b) } else { (b, a) };
-        IDPair { a, b }
-    }
-}
-
-struct UnitMut2<N> {
-    id: usize,
-    mag: N,
-}
 
 pub struct NaiveAlgs<'a, T> {
-    bots: &'a mut [T],
+    bots: PMut<'a,[T]>,
 }
+
+
 
 
 impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
@@ -99,14 +91,12 @@ impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
     pub fn raycast_mut<Acc>(
         &mut self,
         ray: axgeom::Ray<T::Num>,
-        start: Acc,
+        start: &mut Acc,
         broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
         fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
-    ) -> (Acc,raycast::RayCastResult<T::Inner,T::Num>) {
-        let bots = PMut::new(self.bots);
+    ) -> raycast::RayCastResult<T::Inner,T::Num> {
         let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
-        let j=raycast::raycast_naive_mut(bots, ray, &mut rtrait);
-        (rtrait.a,j)
+        raycast::raycast_naive_mut(self.bots.as_mut(), ray, &mut rtrait)
     }
 
 
@@ -115,278 +105,44 @@ impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
         &mut self,
         point: Vec2<T::Num>,
         num: usize,
-        start:Acc,
+        start:&mut Acc,
         broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
         fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
-    ) -> (Acc,Vec<k_nearest::KnearestResult<T::Inner,T::Num>>) {
+    ) -> Vec<k_nearest::KnearestResult<T::Inner,T::Num>> {
         let mut knear=k_nearest::KnearestClosure{acc:start,broad,fine,_p:PhantomData};
-        let j=k_nearest::k_nearest_naive_mut(PMut::new(self.bots), point, num, &mut knear);
-        (knear.acc,j)
+        k_nearest::k_nearest_naive_mut(self.bots.as_mut(), point, num, &mut knear)
     }
 
 }
-impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
 
+impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
+    pub fn for_all_in_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
+        rect::naive_for_all_in_rect_mut(self.bots.as_mut(), rect, |a|(func)(a.into_inner()));
+    }
     pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
-        let bots = PMut::new(self.bots);
-        rect::naive_for_all_not_in_rect_mut(bots, rect, |a|(func)(a.into_inner()));
+        rect::naive_for_all_not_in_rect_mut(self.bots.as_mut(), rect, |a|(func)(a.into_inner()));
     }
 
     pub fn for_all_intersect_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
-        let bots = PMut::new(self.bots);
-        rect::naive_for_all_intersect_rect_mut(bots, rect, |a|(func)(a.into_inner()));
+        rect::naive_for_all_intersect_rect_mut(self.bots.as_mut(), rect, |a|(func)(a.into_inner()));
     }
 
-    pub fn find_collisions_mut(&mut self, mut func: impl FnMut(&mut T::Inner, &mut T::Inner)) {
-        let bots = PMut::new(self.bots);
-        colfind::query_naive_mut(bots, |a, b| func(a.into_inner(), b.into_inner()));
+    pub fn find_intersections_mut(&mut self, mut func: impl FnMut(&mut T::Inner, &mut T::Inner)) {
+        colfind::query_naive_mut(self.bots.as_mut(), |a, b| func(a.into_inner(), b.into_inner()));
     }
 
-    pub fn find_collisions_sweep_mut<A: Axis>(
-        &mut self,
-        axis: A,
-        mut func: impl FnMut(&mut T::Inner, &mut T::Inner),
-    ) {
-        colfind::query_sweep_mut(axis, self.bots, |a, b| func(a.into_inner(), b.into_inner()));
-    }
 }
 
 impl<'a, T: Aabb> NaiveAlgs<'a, T> {
     #[must_use]
-    pub fn new(bots: &'a mut [T]) -> NaiveAlgs<T> {
-        NaiveAlgs { bots }
+    pub fn new(bots: PMut<[T]>) -> NaiveAlgs<T> {
+        NaiveAlgs { bots}
     }
 
 
     #[cfg(feature = "nbody")]
     pub fn nbody(&mut self, func: impl FnMut(PMut<T>, PMut<T>)) {
-        nbody::naive_mut(self.bots, func);
-    }
-
-}
-
-impl<'a, T: HasInner> NaiveAlgs<'a, T> {
-   
-    pub fn assert_k_nearest_mut<Acc>(
-        &mut self,
-        point: Vec2<T::Num>,
-        num: usize,
-        start:Acc,
-        broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
-        fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
-        rect: Rect<T::Num>,
-    )->Acc where
-        T::Inner: HasId,
-    {
-        let mut knear=k_nearest::KnearestClosure{acc:start,broad,fine,_p:PhantomData};
-        
-        let mut res_naive: Vec<_> = {
-            let bots = PMut::new(self.bots);
-            k_nearest::k_nearest_naive_mut(bots, point, num, &mut knear)
-                .drain(..)
-                .map(|a| UnitMut2 {
-                    id: a.bot.get_id(),
-                    mag: a.mag,
-                })
-                .collect()
-        };
-        let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
-
-        let mut res_dinotree: Vec<_> = k_nearest::k_nearest_mut(&mut tree, point, num, &mut knear, rect)
-            .drain(..)
-            .map(|a| UnitMut2 {
-                id: a.bot.get_id(),
-                mag: a.mag,
-            })
-            .collect();
-
-        assert_eq!(res_naive.len(), res_dinotree.len());
-
-        let r_naive = util::SliceSplitMut::new(&mut res_naive, |a, b| a.mag == b.mag);
-        let r_dinotree = util::SliceSplitMut::new(&mut res_dinotree, |a, b| a.mag == b.mag);
-
-        for (a, b) in r_naive.zip(r_dinotree) {
-            assert_eq!(a.len(), b.len());
-            a.sort_by(|a, b| a.id.cmp(&b.id));
-            b.sort_by(|a, b| a.id.cmp(&b.id));
-
-            let res = a.iter().zip(b.iter()).fold(true, |acc, (a, b)| {
-                acc & ((a.id == b.id) && (a.mag == b.mag))
-            });
-
-            assert!(res);
-        }
-
-        knear.acc
-    }
-
-    pub fn assert_for_all_not_in_rect_mut(&mut self, rect: &axgeom::Rect<T::Num>)
-    where
-        T::Inner: HasId,
-    {
-        let mut naive_res = Vec::new();
-        {
-            let bots = PMut::new(self.bots);
-            rect::naive_for_all_not_in_rect_mut(bots, rect, |a| naive_res.push(a.inner().get_id()));
-        }
-
-        let mut dinotree_res = Vec::new();
-        let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
-        rect::for_all_not_in_rect_mut(&mut tree, rect, |a| dinotree_res.push(a.inner().get_id()));
-
-        assert_eq!(naive_res.len(), dinotree_res.len());
-        naive_res.sort();
-        dinotree_res.sort();
-
-        let res = naive_res
-            .iter()
-            .zip(dinotree_res.iter())
-            .fold(true, |acc, (a, b)| acc & (*a == *b));
-
-        assert!(res);
-    }
-
-    pub fn assert_for_all_in_rect_mut(&mut self, rect: &axgeom::Rect<T::Num>)
-    where
-        T::Inner: HasId,
-    {
-        let mut naive_res = Vec::new();
-        {
-            let bots = PMut::new(self.bots);
-            rect::naive_for_all_in_rect_mut(bots, rect, |a| naive_res.push(a.inner().get_id()));
-        }
-        let mut dinotree_res = Vec::new();
-        let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
-        rect::for_all_in_rect_mut(&mut tree, rect, |a| dinotree_res.push(a.inner().get_id()));
-
-        assert_eq!(naive_res.len(), dinotree_res.len());
-        naive_res.sort();
-        dinotree_res.sort();
-
-        let res = naive_res
-            .iter()
-            .zip(dinotree_res.iter())
-            .fold(true, |acc, (a, b)| acc & (*a == *b));
-
-        assert!(res);
-    }
-
-    pub fn assert_for_all_intersect_rect_mut(&mut self, rect: &axgeom::Rect<T::Num>)
-    where
-        T::Inner: HasId,
-    {
-        let mut naive_res = Vec::new();
-        {
-            let bots = PMut::new(self.bots);
-            rect::naive_for_all_intersect_rect_mut(bots, rect, |a| {
-                naive_res.push(a.inner().get_id())
-            });
-        }
-        let mut dinotree_res = Vec::new();
-        let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
-        rect::for_all_intersect_rect_mut(&mut tree, rect, |a| {
-            dinotree_res.push(a.inner().get_id())
-        });
-
-        assert_eq!(naive_res.len(), dinotree_res.len());
-        naive_res.sort();
-        dinotree_res.sort();
-
-        let res = naive_res
-            .iter()
-            .zip(dinotree_res.iter())
-            .fold(true, |acc, (a, b)| acc & (*a == *b));
-
-        assert!(res);
-    }
-
-
-    pub fn assert_raycast_mut<Acc>(
-        &mut self,
-        rect: axgeom::Rect<T::Num>,
-        ray: axgeom::Ray<T::Num>,
-        start: Acc,
-        broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
-        fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,    
-    )->Acc where
-        T::Inner: HasId,
-        T::Num: core::fmt::Debug,
-    {
-        //TODO need to make sure naive also restricts its search to be in just the rect.
-        //Otherwise in some cases this function will panic when it shouldnt.
-        let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
-
-        let res_naive = match raycast::raycast_naive_mut(PMut::new(self.bots), ray, &mut rtrait) {
-            raycast::RayCastResult::Hit((mut a, b)) => Some((
-                a.drain(..).map(|a| a.get_id()).collect::<Vec<_>>(),
-                b,
-            )),
-            raycast::RayCastResult::NoHit => None,
-        };
-
-        let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
-
-        let res_dinotree = match raycast::raycast_mut(&mut tree, rect, ray, &mut rtrait) {
-            raycast::RayCastResult::Hit((mut a, b)) => Some((
-                a.drain(..).map(|a| a.get_id()).collect::<Vec<_>>(),
-                b,
-            )),
-            raycast::RayCastResult::NoHit => None,
-        };
-
-        match (res_naive, res_dinotree) {
-            (Some((mut naive_bots, naive_dis)), Some((mut dinotree_bots, dinotree_dis))) => {
-                assert_eq!(naive_dis, dinotree_dis);
-                assert_eq!(naive_bots.len(), dinotree_bots.len());
-                //let mut naive_bots:Vec<_> = naive_bots.iter().map(|a|a.inner().get_id()).collect();
-                //let mut dinotree_bots:Vec<_> = dinotree_bots.iter().map(|a|a.inner().get_id()).collect();
-                naive_bots.sort();
-                dinotree_bots.sort();
-
-                let res = naive_bots
-                    .iter()
-                    .zip(dinotree_bots.iter())
-                    .fold(true, |acc, (a, b)| acc & (*a == *b));
-
-                assert!(res);
-            }
-            (None, None) => {}
-            _ => {
-                panic!("fail");
-            }
-        }
-        rtrait.a
-    }
-
-    pub fn assert_find_collisions_mut(&mut self)
-    where
-        T::Inner: HasId,
-    {
-        let mut naive_pairs = Vec::new();
-        colfind::query_naive_mut(PMut::new(self.bots), |a, b| {
-            naive_pairs.push(IDPair::new(a.inner().get_id(), b.inner().get_id()));
-        });
-
-        let mut tree = DinoTreeBuilder::new(self.bots).build_seq();
-
-        let mut dinotree_pairs = Vec::new();
-        colfind::QueryBuilder::new(&mut tree).query_seq(|a, b| {
-            dinotree_pairs.push(IDPair::new(a.inner().get_id(), b.inner().get_id()));
-        });
-
-        naive_pairs.sort();
-        dinotree_pairs.sort();
-
-        let res = naive_pairs
-            .iter()
-            .zip(dinotree_pairs.iter())
-            .fold(true, |acc, (a, b)| acc & (*a == *b));
-        assert!(
-            res,
-            "naive={} dinotree={}",
-            naive_pairs.len(),
-            dinotree_pairs.len()
-        );
+        nbody::naive_mut(self.bots.as_mut(), func);
     }
 }
 
