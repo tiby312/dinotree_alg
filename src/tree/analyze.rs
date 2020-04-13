@@ -94,9 +94,10 @@ impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
         start: &mut Acc,
         broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
         fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
+        border:Rect<T::Num>
     ) -> raycast::RayCastResult<T::Inner,T::Num> {
         let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
-        raycast::raycast_naive_mut(self.bots.as_mut(), ray, &mut rtrait)
+        raycast::raycast_naive_mut(self.bots.as_mut(), ray, &mut rtrait,border)
     }
 
 

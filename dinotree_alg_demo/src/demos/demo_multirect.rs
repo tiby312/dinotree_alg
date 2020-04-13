@@ -67,29 +67,29 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             match res {
                 Ok(()) => {
-                    /*
+                    
                     canvas.rects()
                         .add(r1.inner_as().into())
                         .add(r2.inner_as().into())
                         .send_and_uniforms(canvas)
                         .with_color([0.0, 0.0, 0.0, 0.5])
                         .draw();
-                    */
+                    
                     let mut rects = canvas.rects();
                     for r in to_draw.iter() {
                         rects.add(r.get().inner_as().into());
                     }
-                    //rects.send_and_uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.2]).draw();
+                    rects.send_and_uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.2]).draw();
                 }
                 Err(_) => {
-                    /*
+                    
                     canvas.rects()
                         .add(r1.inner_as().into())
                         .add(r2.inner_as().into())
                         .send_and_uniforms(canvas)
                         .with_color([1.0, 0.0, 0.0, 0.5])
                         .draw();
-                        */
+                        
                 }
             }
         }
@@ -99,19 +99,19 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         tree.as_owned().as_tree().for_all_intersect_rect(&r1, |a| {
             rects.add(a.get().inner_as().into());
         });
-        //rects.send_and_uniforms(canvas).with_color([0.0, 0.0, 1.0, 0.2]).draw();
+        rects.send_and_uniforms(canvas).with_color([0.0, 0.0, 1.0, 0.2]).draw();
         
 
         //test for_all_not_in_rect_mut
         //let mut r1 = dim.inner_into::<f32>().inner_as::<i32>().clone();
         //r1.grow(-40);
 
-        /*
+        
         canvas.rects()
             .add(r1.inner_as().into())
             .send_and_uniforms(canvas).with_color([1.0, 0.0, 0.0, 0.2])
             .draw();
-        */
+        
         let mut rects = canvas.rects();
         tree.as_owned_mut()
             .as_tree_mut()

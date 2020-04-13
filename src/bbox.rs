@@ -1,43 +1,5 @@
 use crate::inner_prelude::*;
 
-
-/*
-///Equivalent to: `&mut (Rect<N>,T)`
-#[repr(transparent)]
-#[derive(Debug)]
-pub struct BBoxIndirect<'a, T> {
-    pub inner: &'a mut T,
-}
-impl<'a, T> BBoxIndirect<'a, T> {
-    pub fn new(inner: &'a mut T) -> Self {
-        BBoxIndirect { inner }
-    }
-}
-
-unsafe impl<'a, T: Aabb> Aabb for BBoxIndirect<'a, T> {
-    type Num = T::Num;
-    #[inline(always)]
-    fn get(&self) -> &Rect<Self::Num> {
-        self.inner.get()
-    }
-}
-impl<'a, T: HasInner> HasInner for BBoxIndirect<'a, T> {
-    type Inner = T::Inner;
-
-    #[inline(always)]
-    fn get_inner(&self) -> (&Rect<T::Num>, &Self::Inner) {
-        self.inner.get_inner()
-    }
-
-    #[inline(always)]
-    fn get_inner_mut(&mut self) -> (&Rect<T::Num>, &mut Self::Inner) {
-        self.inner.get_inner_mut()
-    }
-}
-*/
-
-
-
 ///Shorthand constructor of `BBox`
 pub fn bbox<N, T>(rect: axgeom::Rect<N>, inner: T) -> BBox<N, T> {
     BBox::new(rect, inner)

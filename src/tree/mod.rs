@@ -241,7 +241,7 @@ impl<'a,A:Axis,T:Aabb+HasInner+Send+Sync> DinoTree<'a,A,T>
         let bots=self.get_bots_mut();
 
         let mut res_naive = Vec::new();
-        match NaiveAlgs::new(bots).raycast_mut(ray, start,&mut broad,&mut fine){
+        match NaiveAlgs::new(bots).raycast_mut(ray, start,&mut broad,&mut fine,border){
             RayCastResult::Hit((bots,mag))=>{
                 for a in bots.iter(){
                     let j=(*a) as *const _ as usize;
@@ -270,6 +270,7 @@ impl<'a,A:Axis,T:Aabb+HasInner+Send+Sync> DinoTree<'a,A,T>
         res_naive.sort();
         res_dino.sort();
 
+        //dbg!("{:?}  {:?}",res_naive.len(),res_dino.len());
         assert_eq!(res_naive.len(),res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
         

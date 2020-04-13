@@ -61,10 +61,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 
                 let mut radius=radius;
                 if check_naive{
+                    /*
                     tree.as_tree_mut().assert_raycast_mut(ray,&mut radius,
                         move |_r,ray,rect| ray.cast_to_rect(rect),
                         move |r,ray,t|ray.inner_into::<f32>().cast_to_circle(t.inner().center, *r).map(|a| NotNan::new(a).unwrap())
                     , dim);
+                    */
                 }
 
                 let res = tree

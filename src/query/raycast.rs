@@ -99,26 +99,6 @@ impl<
    }
 }
 
-/*
-pub(crate) struct RayCastFineWrapper<T: Aabb, K> {
-    pub(crate) inner: K,
-    pub(crate) _p: PhantomData<T>,
-}
-impl<T: Aabb, K: FnMut(&Ray<T::Num>, &Rect<T::Num>) -> axgeom::CastResult<T::Num>> RayCast
-    for RayCastFineWrapper<T, K>
-{
-    type T = T;
-    type N = T::Num;
-
-    fn compute_distance_to_rect(
-        &mut self,
-        ray: &Ray<Self::N>,
-        a: &Rect<Self::N>,
-    ) -> axgeom::CastResult<Self::N> {
-        (self.inner)(ray, a)
-    }
-}
-*/
 
 fn make_rect_from_range<A: Axis, N: Num>(axis: A, range: &Range<N>, rect: &Rect<N>) -> Rect<N> {
     if axis.is_xaxis() {
@@ -301,11 +281,14 @@ mod mutable {
         bots: PMut<'a, [T]>,
         ray: Ray<T::Num>,
         rtrait: &mut impl RayCast<N = T::Num, T = T>,
+        border:Rect<T::Num>
     ) -> RayCastResult<'a, T::Inner,T::Num> where T:HasInner {
         let mut closest = Closest { closest: None };
 
         for b in bots.iter_mut() {
-            closest.consider(&ray, b, rtrait);
+            if border.intersects_rect(b.get()){
+                closest.consider(&ray, b, rtrait);
+            }
         }
 
         match closest.closest {
