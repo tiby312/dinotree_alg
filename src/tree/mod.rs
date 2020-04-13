@@ -495,8 +495,9 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     ///let mut bots_copy=bots.clone();
     ///let mut tree = DinoTree::new(&mut bots);
     ///let ray=ray(vec2(5,-5),vec2(0,1));
-    ///let (counter,res) = tree.raycast_fine_mut(
-    ///     ray,0,
+    ///let mut counter =0;
+    ///let res = tree.raycast_mut(
+    ///     ray,&mut counter,
     ///     |c,ray,r|{*c+=1;ray.cast_to_rect(r)},
     ///     |c,ray,t|{*c+=1;ray.inner_as::<f32>().cast_to_circle(t.inner.inner_as(),5.).map(|a|a as i32)},   //Do more fine-grained checking here.
     ///     border);
@@ -533,10 +534,11 @@ impl<'a,A: Axis, T: Aabb+HasInner> DinoTree<'a,A, T>{
     ///let mut bots_copy=bots.clone();
     ///let mut tree = DinoTree::new(&mut bots);
     ///
-    ///let (counter,res) = tree.k_nearest_fine_mut(
+    ///let mut counter = 0;
+    ///let res = tree.k_nearest_mut(
     ///     vec2(0,0),
     ///     2,
-    ///     0,
+    ///     &mut counter,
     ///     |c,p,r|{*c+=1;r.distance_squared_to_point(p).unwrap_or(0)},
     ///     |c,p,t|{*c+=1;t.inner.distance_squared_to_point(p)},    //Do more fine-grained checking here.
     ///     border);

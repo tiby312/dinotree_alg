@@ -37,6 +37,9 @@ pub(crate) struct PMutPtr<T: ?Sized> {
     pub(crate) inner:core::ptr::NonNull<T>, //TODO make this private
 }
 
+unsafe impl<T:?Sized> Send for PMutPtr<T> {}
+unsafe impl<T:?Sized> Sync for PMutPtr<T> {}
+
 impl<T:?Sized> PMutPtr<T>{
     pub unsafe fn as_mut<'a>(&'a self)->PMut<'a,T>{
         PMut::new(&mut *self.inner.as_ptr())

@@ -32,7 +32,9 @@ fn main() {
         let res = tree.k_nearest_mut(
             vec2(30, 30),
             2,
-            |a, b| b.distance_squared_to_point(a).unwrap_or(0),
+            &mut (),
+            |(),a, b| b.distance_squared_to_point(a).unwrap_or(0),
+            |(),a, b| b.rect.distance_squared_to_point(a).unwrap_or(0),
             border,
         );
         assert_eq!(res[0].bot,&1);
@@ -42,7 +44,7 @@ fn main() {
             point: vec2(-10, 1),
             dir: vec2(1, 0),
         };
-        let res = tree.raycast_mut(ray, |ray, r| ray.cast_to_rect(r), border);
+        let res = tree.raycast_mut(ray, &mut (),|(),ray, r| ray.cast_to_rect(r),|(),ray, b| ray.cast_to_rect(b.get()), border);
         assert_eq!(res.unwrap().0[0], &0);
     }
 }
