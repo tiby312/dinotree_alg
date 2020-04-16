@@ -4,23 +4,22 @@ use axgeom::Ray;
 
 
 #[derive(Copy, Clone, Debug)]
-pub struct Bot2 {
-    id: usize,
-}
+pub struct Bot;
 
 
 pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
+    
     let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(1.0, 5.0)
-        .enumerate()
         .take(500)
-        .map(|(id, (pos, radius))| {
+        .map(|(pos, radius)| {
             bbox(
                 Rect::from_point(pos, radius).inner_try_into().unwrap(),
-                Bot2 { id },
+                Bot,
             )
         })
         .collect();
+    
 
     let mut counter: f32 = 0.0;
     let mut tree = DinoTreeOwned::new_par(ii);
@@ -34,6 +33,8 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
 
     Demo::new(move |cursor, canvas, check_naive| {
+        let tree=tree.as_tree_mut();
+
         let ray: Ray<F32n> = {
             counter += 0.004;
             let point: Vec2<f32> = cursor.inner_into::<f32>().inner_as();
@@ -47,37 +48,28 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         rect_save.uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.3]).draw();
 
         
-        /*
+        
         if check_naive {
-            tree.as_tree_mut().assert_raycast_mut(
+            tree.assert_raycast_mut(
                 ray, 
                 &mut rects, 
-
-                move |_rr,ray,rect|ray.cast_to_rect(&rect),
+                move |_r,ray,rect| ray.inner_into::<f32>().cast_to_rect(rect.as_ref()).map(|a|f32n(a)),
                 move |rects,ray,t|{
                     rects.add(t.get().inner_into().into());
-                    ray.cast_to_rect(t.get())
+                    ray.inner_into::<f32>().cast_to_rect(t.get().as_ref()).map(|a|f32n(a))
                 },
                 dim);
         }
-        */
+        
 
         let test = {
             let mut rects = canvas.rects();
             
-            let test = tree.as_tree_mut().raycast_mut(
+            let test = tree.raycast_mut(
                 ray, 
                 &mut rects, 
-                //move |_rr,ray,rect|ray.cast_to_rect(&rect),
                 move |_r,ray,rect| ray.inner_into::<f32>().cast_to_rect(rect.as_ref()).map(|a|f32n(a)),
-                
-                /*        
-                move |rects,ray,t|{
-                    rects.add(t.get().inner_into().into());
-                    ray.cast_to_rect(t.get())
-                },*/
-                move |_r,ray,d| ray.inner_into::<f32>().cast_to_rect(d.get().as_ref()).map(|a|f32n(a)),
-                        
+                move |_r,ray,d| ray.inner_into::<f32>().cast_to_rect(d.get().as_ref()).map(|a|f32n(a)),  
                 dim);
             rects.send_and_uniforms(canvas).with_color([4.0, 0.0, 0.0, 0.4]).draw();
             test

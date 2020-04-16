@@ -3,7 +3,6 @@ use crate::support::prelude::*;
 
 #[derive(Copy, Clone)]
 struct Bot {
-    id: usize,
     rect:Rect<f32>
 }
 
@@ -39,8 +38,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(2.0, 50.0)
         .take(40)
-        .enumerate()
-        .map(|(id, (pos, radius))| Bot { id,rect:Rect::from_point(pos, radius)})
+        .map(|(pos, radius)| Bot { rect:Rect::from_point(pos, radius)})
         .collect();
 
     let mut tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {

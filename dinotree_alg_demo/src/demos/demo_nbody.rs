@@ -155,15 +155,16 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
             let border = dim;
 
-            if !check_naive {
-                tree.nbody_mut(
-                    &mut Bla {
-                        num_pairs_checked: 0,
-                        _p: PhantomData,
-                    },
-                    border,
-                );
-            } else {
+            tree.nbody_mut(
+                &mut Bla {
+                    num_pairs_checked: 0,
+                    _p: PhantomData,
+                },
+                border,
+            );
+            
+            if check_naive {
+                
                 /*
                 let mut bla = Bla {
                     num_pairs_checked: 0,
