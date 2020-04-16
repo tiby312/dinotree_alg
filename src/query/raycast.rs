@@ -167,6 +167,7 @@ struct Blap<'a: 'b, 'b, R: RayCast> {
 }
 impl<'a: 'b, 'b, R: RayCast> Blap<'a, 'b, R> {
     fn should_handle_rect(&mut self, rect: &Rect<R::N>) -> bool {
+        
         match self.rtrait.compute_distance_to_rect(&self.ray, rect) {
             axgeom::CastResult::Hit(val) => match self.closest.get_dis() {
                 Some(dis) => {
@@ -283,11 +284,14 @@ mod mutable {
         rtrait: &mut impl RayCast<N = T::Num, T = T>,
         border:Rect<T::Num>
     ) -> RayCastResult<'a, T::Inner,T::Num> where T:HasInner {
+
+                
         let mut closest = Closest { closest: None };
+
 
         for b in bots.iter_mut() {
             if border.intersects_rect(b.get()){
-                closest.consider(&ray, b, rtrait);
+                 closest.consider(&ray, b, rtrait);
             }
         }
 
@@ -295,6 +299,8 @@ mod mutable {
             Some((mut a, b)) => RayCastResult::Hit((a.drain(..).map(|a|a.into_inner()).collect(), b)),
             None => RayCastResult::NoHit,
         }
+
+        
     }
 
     pub fn raycast_mut<'a, A: Axis, T: Aabb+HasInner>(

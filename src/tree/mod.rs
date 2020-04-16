@@ -235,7 +235,7 @@ impl<'a,A:Axis,T:Aabb+HasInner+Send+Sync> DinoTree<'a,A,T>
         mut broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
         mut fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
         border:Rect<T::Num>
-    )
+    ) where <T as Aabb>::Num: core::fmt::Debug 
     {
 
         let bots=self.get_bots_mut();
@@ -271,8 +271,8 @@ impl<'a,A:Axis,T:Aabb+HasInner+Send+Sync> DinoTree<'a,A,T>
         res_dino.sort();
 
         //dbg!("{:?}  {:?}",res_naive.len(),res_dino.len());
-        assert_eq!(res_naive.len(),res_dino.len());
-        assert!(res_naive.iter().eq(res_dino.iter()));
+        assert_eq!(res_naive.len(),res_dino.len(),"len:{:?}",(res_naive,res_dino));
+        assert!(res_naive.iter().eq(res_dino.iter()),"nop:{:?}",(res_naive,res_dino));
         
     }
 

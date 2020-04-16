@@ -47,10 +47,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         rect_save.uniforms(canvas).with_color([0.0, 0.0, 0.0, 0.3]).draw();
 
         
+        /*
         if check_naive {
             tree.as_tree_mut().assert_raycast_mut(
                 ray, 
                 &mut rects, 
+
                 move |_rr,ray,rect|ray.cast_to_rect(&rect),
                 move |rects,ray,t|{
                     rects.add(t.get().inner_into().into());
@@ -58,7 +60,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 },
                 dim);
         }
-        
+        */
 
         let test = {
             let mut rects = canvas.rects();
@@ -66,11 +68,16 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             let test = tree.as_tree_mut().raycast_mut(
                 ray, 
                 &mut rects, 
-                move |_rr,ray,rect|ray.cast_to_rect(&rect),
+                //move |_rr,ray,rect|ray.cast_to_rect(&rect),
+                move |_r,ray,rect| ray.inner_into::<f32>().cast_to_rect(rect.as_ref()).map(|a|f32n(a)),
+                
+                /*        
                 move |rects,ray,t|{
                     rects.add(t.get().inner_into().into());
                     ray.cast_to_rect(t.get())
-                },
+                },*/
+                move |_r,ray,d| ray.inner_into::<f32>().cast_to_rect(d.get().as_ref()).map(|a|f32n(a)),
+                        
                 dim);
             rects.send_and_uniforms(canvas).with_color([4.0, 0.0, 0.0, 0.4]).draw();
             test

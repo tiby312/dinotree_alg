@@ -33,4 +33,3 @@ nbody = []
 # and only builds that target
 targets = ["x86_64-unknown-linux-gnu"]
 
-

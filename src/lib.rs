@@ -98,7 +98,7 @@ mod tree;
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
 
-mod pmut;
+pub mod pmut;
 
 ///A collection of different bounding box containers.
 mod bbox;
