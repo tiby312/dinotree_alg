@@ -107,7 +107,8 @@ unsafe impl<'a, T: Aabb> Aabb for PMut<'a, T> {
         self.inner.get()
     }
 }
-impl<'a, T: HasInner> HasInner for PMut<'a, T> {
+
+unsafe impl<'a, T: HasInner> HasInner for PMut<'a, T> {
     type Inner = T::Inner;
     #[inline(always)]
     fn get_inner(&self) -> (&Rect<T::Num>, &Self::Inner) {

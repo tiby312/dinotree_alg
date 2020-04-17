@@ -137,7 +137,14 @@ unsafe impl<N: Num> Aabb for Rect<N> {
 
 ///Trait exposes an api where you can return a read-only reference to the axis-aligned bounding box
 ///and at the same time return a mutable reference to a seperate inner section.
-pub trait HasInner: Aabb {
+///
+///The trait in unsafe since an incorrect implementation could allow the user to get mutable
+///references to each element in the tree allowing them to swap them and thus violating
+///invariants of the tree. This can be done if the user were to implement with type Inner=Self
+///
+///We have no easy way to ensure that the Inner type only points to the inner portion of a AABB
+///so we mark this trait as unsafe.
+pub unsafe trait HasInner: Aabb {
     type Inner;
     #[inline(always)]
     fn inner_mut(&mut self) -> &mut Self::Inner {
