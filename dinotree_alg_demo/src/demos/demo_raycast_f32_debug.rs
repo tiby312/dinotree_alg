@@ -7,8 +7,8 @@ pub struct Bot;
 
 pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
     let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
-        .with_radius(1.0, 5.0)
-        .take(500)
+        .with_radius(1.0, 3.0)
+        .take(5000)
         .map(|(pos, radius)| bbox(Rect::from_point(pos, radius).inner_try_into().unwrap(), Bot))
         .collect();
 
@@ -70,7 +70,9 @@ pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
                         .cast_to_rect(rect.as_ref())
                         .map(|a| f32n(a))
                 },
-                move |_r, ray, d| {
+                move |r, ray, d| {
+                    r.add(d.get().inner_into().into());
+                    
                     ray.inner_into::<f32>()
                         .cast_to_rect(d.get().as_ref())
                         .map(|a| f32n(a))
