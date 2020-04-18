@@ -23,7 +23,7 @@ Screen capture from the inner dinotree_alg_demo project.
 
 ```rust
 use axgeom::rect;
-use dinotree_alg::prelude::*;
+use dinotree_alg::*;
 
 fn main() {
     let mut aabbs = [
