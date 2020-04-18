@@ -39,8 +39,7 @@ use axgeom::Ray;
 use core::cmp::Ordering;
 
 //pub type RayCastResult<'a, T> = axgeom::CastResult<(Vec<PMut<'a, T>>, <T as Aabb>::Num)>;
-pub type RayCastResult<'a, T,N> = axgeom::CastResult<(Vec<&'a mut T>,N)>;
-
+pub type RayCastResult<'a, T, N> = axgeom::CastResult<(Vec<&'a mut T>, N)>;
 
 ///This is the trait that defines raycast specific geometric functions that are needed by this raytracing algorithm.
 ///By containing all these functions in this trait, we can keep the trait bounds of the underlying Num to a minimum
@@ -76,29 +75,33 @@ pub trait RayCast {
     }
 }
 
-
-pub(crate) struct RayCastClosure<'a,A,B,C,T>{
-    pub a:&'a mut A,
-    pub broad:B,
-    pub fine:C,
-    pub _p:PhantomData<T>
+pub(crate) struct RayCastClosure<'a, A, B, C, T> {
+    pub a: &'a mut A,
+    pub broad: B,
+    pub fine: C,
+    pub _p: PhantomData<T>,
 }
 impl<
-    A,
-    B:FnMut(&mut A,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
-    C:FnMut(&mut A,&Ray<T::Num>,&T)->CastResult<T::Num>,
-    T:Aabb> RayCast for RayCastClosure<'_,A,B,C,T>{
-   type T=T;
-   type N=T::Num;
-   fn compute_distance_to_rect(&mut self, ray: &Ray<Self::N>, a: &Rect<Self::N>) -> CastResult<Self::N>{
-       (self.broad)(&mut self.a,ray,a)
-   }
+        A,
+        B: FnMut(&mut A, &Ray<T::Num>, &Rect<T::Num>) -> CastResult<T::Num>,
+        C: FnMut(&mut A, &Ray<T::Num>, &T) -> CastResult<T::Num>,
+        T: Aabb,
+    > RayCast for RayCastClosure<'_, A, B, C, T>
+{
+    type T = T;
+    type N = T::Num;
+    fn compute_distance_to_rect(
+        &mut self,
+        ray: &Ray<Self::N>,
+        a: &Rect<Self::N>,
+    ) -> CastResult<Self::N> {
+        (self.broad)(&mut self.a, ray, a)
+    }
 
-   fn compute_distance_to_bot(&mut self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
+    fn compute_distance_to_bot(&mut self, ray: &Ray<Self::N>, a: &Self::T) -> CastResult<Self::N> {
         (self.fine)(&mut self.a, ray, a)
-   }
+    }
 }
-
 
 fn make_rect_from_range<A: Axis, N: Num>(axis: A, range: &Range<N>, rect: &Rect<N>) -> Rect<N> {
     if axis.is_xaxis() {
@@ -167,7 +170,6 @@ struct Blap<'a: 'b, 'b, R: RayCast> {
 }
 impl<'a: 'b, 'b, R: RayCast> Blap<'a, 'b, R> {
     fn should_handle_rect(&mut self, rect: &Rect<R::N>) -> bool {
-        
         match self.rtrait.compute_distance_to_rect(&self.ray, rect) {
             axgeom::CastResult::Hit(val) => match self.closest.get_dis() {
                 Some(dis) => {
@@ -282,33 +284,33 @@ mod mutable {
         bots: PMut<'a, [T]>,
         ray: Ray<T::Num>,
         rtrait: &mut impl RayCast<N = T::Num, T = T>,
-        border:Rect<T::Num>
-    ) -> RayCastResult<'a, T::Inner,T::Num> where T:HasInner {
-
-                
+        border: Rect<T::Num>,
+    ) -> RayCastResult<'a, T::Inner, T::Num>
+    where
+        T: HasInner,
+    {
         let mut closest = Closest { closest: None };
 
-
         for b in bots.iter_mut() {
-            if border.intersects_rect(b.get()){
-                 closest.consider(&ray, b, rtrait);
+            if border.intersects_rect(b.get()) {
+                closest.consider(&ray, b, rtrait);
             }
         }
 
         match closest.closest {
-            Some((mut a, b)) => RayCastResult::Hit((a.drain(..).map(|a|a.into_inner()).collect(), b)),
+            Some((mut a, b)) => {
+                RayCastResult::Hit((a.drain(..).map(|a| a.into_inner()).collect(), b))
+            }
             None => RayCastResult::NoHit,
         }
-
-        
     }
 
-    pub fn raycast_mut<'a, A: Axis, T: Aabb+HasInner>(
+    pub fn raycast_mut<'a, A: Axis, T: Aabb + HasInner>(
         tree: &'a mut DinoTree<A, T>,
         rect: Rect<T::Num>,
         ray: Ray<T::Num>,
         rtrait: &mut impl RayCast<N = T::Num, T = T>,
-    ) -> RayCastResult<'a, T::Inner,T::Num> {
+    ) -> RayCastResult<'a, T::Inner, T::Num> {
         let axis = tree.axis();
         let dt = tree.vistr_mut().with_depth(Depth(0));
 
@@ -321,7 +323,9 @@ mod mutable {
         recc(axis, dt, rect, &mut blap);
 
         match blap.closest.closest {
-            Some((mut a, b)) => RayCastResult::Hit((a.drain(..).map(|a|a.into_inner()).collect(), b)),
+            Some((mut a, b)) => {
+                RayCastResult::Hit((a.drain(..).map(|a| a.into_inner()).collect(), b))
+            }
             None => RayCastResult::NoHit,
         }
     }

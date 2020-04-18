@@ -22,25 +22,29 @@
 use crate::query::inner_prelude::*;
 use core::cmp::Ordering;
 
-
-pub struct KnearestClosure<'a,Acc,B,F,T:Aabb>{
-    pub acc:&'a mut Acc,
-    pub broad:B,
-    pub fine:F,
-    pub _p:PhantomData<T>
+pub struct KnearestClosure<'a, Acc, B, F, T: Aabb> {
+    pub acc: &'a mut Acc,
+    pub broad: B,
+    pub fine: F,
+    pub _p: PhantomData<T>,
 }
-impl<Acc,B:FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,F:FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,T:Aabb> Knearest for KnearestClosure<'_,Acc,B,F,T>{
-    type T=T;
-    type N=T::Num;
-    fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N{
-        (self.broad)(self.acc,point,rect)
+impl<
+        Acc,
+        B: FnMut(&mut Acc, Vec2<T::Num>, &Rect<T::Num>) -> T::Num,
+        F: FnMut(&mut Acc, Vec2<T::Num>, &T) -> T::Num,
+        T: Aabb,
+    > Knearest for KnearestClosure<'_, Acc, B, F, T>
+{
+    type T = T;
+    type N = T::Num;
+    fn distance_to_rect(&mut self, point: Vec2<Self::N>, rect: &Rect<Self::N>) -> Self::N {
+        (self.broad)(self.acc, point, rect)
     }
 
-     fn distance_to_bot(&mut self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N{
-        (self.fine)(self.acc,point,bot)
+    fn distance_to_bot(&mut self, point: Vec2<Self::N>, bot: &Self::T) -> Self::N {
+        (self.fine)(self.acc, point, bot)
     }
 }
-
 
 ///The geometric functions that the user must provide.
 pub trait Knearest {
@@ -352,25 +356,22 @@ mod con{
 }
 */
 
-
-
 /// Returned by k_nearest_mut
-pub struct KnearestResult<'a, T,N> {
+pub struct KnearestResult<'a, T, N> {
     pub bot: &'a mut T,
     pub mag: N,
 }
-
 
 pub use self::mutable::k_nearest_naive_mut;
 mod mutable {
     use super::*;
 
-    pub fn k_nearest_naive_mut<'a, K: Knearest<T = T, N = T::Num>, T: Aabb+HasInner>(
+    pub fn k_nearest_naive_mut<'a, K: Knearest<T = T, N = T::Num>, T: Aabb + HasInner>(
         bots: PMut<'a, [T]>,
         point: Vec2<K::N>,
         num: usize,
         k: &mut K,
-    ) -> Vec<KnearestResult<'a, T::Inner,T::Num>> {
+    ) -> Vec<KnearestResult<'a, T::Inner, T::Num>> {
         //let bots=ProtectedBBoxSlice::new(bots);
 
         let mut closest = ClosestCand::new(num);
@@ -387,16 +388,23 @@ mod mutable {
             closest.consider((b, d));
         }
 
-        closest.into_sorted().drain(..).map(|a|KnearestResult{bot:a.bot.into_inner(),mag:a.mag}).collect()
+        closest
+            .into_sorted()
+            .drain(..)
+            .map(|a| KnearestResult {
+                bot: a.bot.into_inner(),
+                mag: a.mag,
+            })
+            .collect()
     }
 
-    pub fn k_nearest_mut<'a, A: Axis, T: Aabb+HasInner>(
+    pub fn k_nearest_mut<'a, A: Axis, T: Aabb + HasInner>(
         tree: &'a mut DinoTree<A, T>,
         point: Vec2<T::Num>,
         num: usize,
         knear: &mut impl Knearest<N = T::Num, T = T>,
         rect: Rect<T::Num>,
-    ) -> Vec<KnearestResult<'a, T::Inner,T::Num>> {
+    ) -> Vec<KnearestResult<'a, T::Inner, T::Num>> {
         let axis = tree.axis();
 
         let dt = tree.vistr_mut().with_depth(Depth(0));
@@ -412,6 +420,13 @@ mod mutable {
         recc(axis, dt, rect, &mut blap);
 
         //blap.closest.into_sorted()
-        blap.closest.into_sorted().drain(..).map(|a|KnearestResult{bot:a.bot.into_inner(),mag:a.mag}).collect()
+        blap.closest
+            .into_sorted()
+            .drain(..)
+            .map(|a| KnearestResult {
+                bot: a.bot.into_inner(),
+                mag: a.mag,
+            })
+            .collect()
     }
 }

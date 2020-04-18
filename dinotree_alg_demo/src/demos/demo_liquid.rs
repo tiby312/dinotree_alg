@@ -63,25 +63,22 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         .map(|pos| Liquid::new(pos))
         .collect();
 
-
     Demo::new(move |cursor, canvas, _check_naive| {
-        
-        
-        let mut k:Vec<_>=bots.iter_mut().map(|bot|{
-            let p = bot.pos;
-            let r = radius;
-            let rect=Rect::new(p.x - r, p.x + r, p.y - r, p.y + r)
-                .inner_try_into::<NotNan<f32>>()
-                .unwrap();
-            bbox(rect,bot)
-        }).collect();
-
+        let mut k: Vec<_> = bots
+            .iter_mut()
+            .map(|bot| {
+                let p = bot.pos;
+                let r = radius;
+                let rect = Rect::new(p.x - r, p.x + r, p.y - r, p.y + r)
+                    .inner_try_into::<NotNan<f32>>()
+                    .unwrap();
+                bbox(rect, bot)
+            })
+            .collect();
 
         let mut tree = DinoTree::new_par(&mut k);
 
-        
-        tree.find_intersections_mut_par(move | a, b| {
-        
+        tree.find_intersections_mut_par(move |a, b| {
             let _ = a.solve(b, radius);
         });
 
@@ -89,15 +86,13 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         let cc = cursor.inner_into();
 
         tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), move |b| {
-            
-            let _ = duckduckgeo::repel_one(b.pos,&mut b.acc, cc, 0.001, 100.0);
+            let _ = duckduckgeo::repel_one(b.pos, &mut b.acc, cc, 0.001, 100.0);
         });
 
         {
             let dim2 = dim.inner_into();
             tree.for_all_not_in_rect_mut(&dim, move |a| {
-                
-                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.5);
+                duckduckgeo::collide_with_border(&mut a.pos, &mut a.vel, &dim2, 0.5);
             });
         }
 
@@ -111,6 +106,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         for bot in bots.iter() {
             circle.add(bot.pos.into());
         }
-        circle.send_and_uniforms(canvas,2.0).with_color([1.0, 0.6, 0.7, 0.5]).draw();
+        circle
+            .send_and_uniforms(canvas, 2.0)
+            .with_color([1.0, 0.6, 0.7, 0.5])
+            .draw();
     })
 }

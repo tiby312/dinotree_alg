@@ -13,8 +13,8 @@ mod inner_prelude {
 }
 
 pub use crate::query::graphics::DividerDrawer;
-pub use crate::query::k_nearest::{KnearestResult};
-pub use crate::query::raycast::{RayCastResult};
+pub use crate::query::k_nearest::KnearestResult;
+pub use crate::query::raycast::RayCastResult;
 pub use crate::query::rect::{MultiRectMut, RectIntersectErr};
 
 #[cfg(feature = "nbody")]

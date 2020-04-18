@@ -6,7 +6,7 @@ pub struct Bot {
     pos: Vec2<f32>,
     vel: Vec2<f32>,
     force: Vec2<f32>,
-    rect:Rect<f32>,
+    rect: Rect<f32>,
     wall_move: [Option<(F32n, f32)>; 2],
 }
 
@@ -25,7 +25,7 @@ impl Bot {
 #[derive(Copy, Clone)]
 struct Wall(axgeom::Rect<F32n>);
 
-pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
+pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
     let radius = 5.0;
     let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .take(4000)
@@ -34,7 +34,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             vel: vec2same(0.0),
             force: vec2same(0.0),
             wall_move: [None; 2],
-            rect:Rect::from_point(pos, vec2same(radius))
+            rect: Rect::from_point(pos, vec2same(radius)),
         })
         .collect();
 
@@ -48,9 +48,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
     for wall in walls.iter() {
         rects.add(wall.0.inner_into().into());
     }
-    let rect_save=rects.save(canvas);
-
-
+    let rect_save = rects.save(canvas);
 
     Demo::new(move |cursor, canvas, _check_naive| {
         for b in bots.iter_mut() {
@@ -71,17 +69,17 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
 
             duckduckgeo::wrap_position(&mut b.pos, dim.inner_into());
 
-            b.rect=Rect::from_point(b.pos,vec2same(radius));
+            b.rect = Rect::from_point(b.pos, vec2same(radius));
         }
         bots[0].pos = cursor.inner_into();
 
-        let mut k=bots.iter_mut().map(|b|{
-            bbox(b.rect.inner_try_into().unwrap(),b)
-        }).collect::<Vec<_>>();
-    
+        let mut k = bots
+            .iter_mut()
+            .map(|b| bbox(b.rect.inner_try_into().unwrap(), b))
+            .collect::<Vec<_>>();
 
         {
-            let mut walls=walls.iter_mut().map(|a|bbox(a.0,a)).collect::<Vec<_>>();
+            let mut walls = walls.iter_mut().map(|a| bbox(a.0, a)).collect::<Vec<_>>();
             //let mut walls = bbox_helper::create_bbox_mut(&mut walls, |wall| wall.0);
             let mut tree = DinoTree::new_par(&mut k);
 
@@ -120,22 +118,28 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                     .inner_try_into()
                     .unwrap(),
                 |b| {
-                    let _ = duckduckgeo::repel_one(b.pos,&mut b.force, cc, 0.001, 20.0);
+                    let _ = duckduckgeo::repel_one(b.pos, &mut b.force, cc, 0.001, 20.0);
                 },
             );
 
             tree.find_intersections_mut_par(|a, b| {
-                let _ = duckduckgeo::repel([(a.pos,&mut a.force),(b.pos,&mut b.force)], 0.001, 2.0);
+                let _ =
+                    duckduckgeo::repel([(a.pos, &mut a.force), (b.pos, &mut b.force)], 0.001, 2.0);
             });
         }
 
-        
-        rect_save.uniforms(canvas).with_color([0.7,0.7,0.7,0.3]).draw();
+        rect_save
+            .uniforms(canvas)
+            .with_color([0.7, 0.7, 0.7, 0.3])
+            .draw();
 
         let mut circles = canvas.circles();
         for bot in k.iter() {
             circles.add(bot.inner().pos.into());
         }
-        circles.send_and_uniforms(canvas,radius).with_color([1.0, 0.0, 0.5, 0.3]).draw();
+        circles
+            .send_and_uniforms(canvas, radius)
+            .with_color([1.0, 0.0, 0.5, 0.3])
+            .draw();
     })
 }

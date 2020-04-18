@@ -37,34 +37,32 @@
 use super::*;
 use core::ptr::NonNull;
 
-
 #[repr(transparent)]
-pub(crate) struct MyPtr<T:?Sized>(NonNull<T>);
-impl<T:?Sized> Clone for MyPtr<T>{
-    fn clone(&self)->Self{
+pub(crate) struct MyPtr<T: ?Sized>(NonNull<T>);
+impl<T: ?Sized> Clone for MyPtr<T> {
+    fn clone(&self) -> Self {
         MyPtr(self.0)
     }
 }
-impl<T:?Sized> Copy for MyPtr<T>{}
+impl<T: ?Sized> Copy for MyPtr<T> {}
 
-impl<T:?Sized> MyPtr<T>{
-    pub unsafe fn as_mut(&mut self)->&mut T{
+impl<T: ?Sized> MyPtr<T> {
+    pub unsafe fn as_mut(&mut self) -> &mut T {
         self.0.as_mut()
     }
-    pub fn as_ptr(&self)->*const T{
+    pub fn as_ptr(&self) -> *const T {
         self.0.as_ptr()
     }
 }
-unsafe impl<T:?Sized> Send for MyPtr<T>{}
-unsafe impl<T:?Sized> Sync for MyPtr<T>{}
+unsafe impl<T: ?Sized> Send for MyPtr<T> {}
+unsafe impl<T: ?Sized> Sync for MyPtr<T> {}
 
-pub(crate) fn myptr<T:?Sized>(a:&mut T)->MyPtr<T>{
-    MyPtr(unsafe{NonNull::new_unchecked(a as *mut _)})
+pub(crate) fn myptr<T: ?Sized>(a: &mut T) -> MyPtr<T> {
+    MyPtr(unsafe { NonNull::new_unchecked(a as *mut _) })
 }
 
-
-unsafe impl<T:Aabb> Send for NodePtr<T> {}
-unsafe impl<T:Aabb> Sync for NodePtr<T> {}
+unsafe impl<T: Aabb> Send for NodePtr<T> {}
+unsafe impl<T: Aabb> Sync for NodePtr<T> {}
 
 ///A Node in a dinotree.
 pub(crate) struct NodePtr<T: Aabb> {
@@ -93,13 +91,14 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTreeOwn { axis, _inner:inner,_bots:PMut::new(bots).as_ptr()}
+    DinoTreeOwn {
+        axis,
+        _inner: inner,
+        _bots: PMut::new(bots).as_ptr(),
+    }
 }
 
-fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
-    axis: A,
-    bots: &mut [T],
-) -> DinoTreeOwn<A, T> {
+fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
     let inner = DinoTree::with_axis_par(axis, bots);
     let inner: Vec<_> = inner
         .inner
@@ -112,7 +111,11 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTreeOwn { axis, _inner:inner,_bots:PMut::new(bots).as_ptr()}
+    DinoTreeOwn {
+        axis,
+        _inner: inner,
+        _bots: PMut::new(bots).as_ptr(),
+    }
 }
 
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`
@@ -158,14 +161,14 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
 
 impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
     pub fn as_owned(&self) -> &DinoTreeOwned<A, BBox<N, &T>> {
-        let a=&self.tree as *const _;
-        let b=a as *const DinoTreeOwned<A,BBox<N,&T>>;
-        unsafe{&*b}
+        let a = &self.tree as *const _;
+        let b = a as *const DinoTreeOwned<A, BBox<N, &T>>;
+        unsafe { &*b }
     }
     pub fn as_owned_mut(&mut self) -> &mut DinoTreeOwned<A, BBox<N, &mut T>> {
-        let a=&mut self.tree as *mut _;
-        let b=a as *mut DinoTreeOwned<A,BBox<N,&mut T>>;
-        unsafe{&mut *b}
+        let a = &mut self.tree as *mut _;
+        let b = a as *mut DinoTreeOwned<A, BBox<N, &mut T>>;
+        unsafe { &mut *b }
     }
     pub fn get_bots(&self) -> &[T] {
         &self.bots
@@ -175,12 +178,11 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
     }
 }
 
-
 ///The data structure this crate revoles around.
-pub(crate) struct DinoTreeOwn<A: Axis, T:Aabb> {
+pub(crate) struct DinoTreeOwn<A: Axis, T: Aabb> {
     axis: A,
     _inner: compt::dfs_order::CompleteTreeContainer<NodePtr<T>, compt::dfs_order::PreOrder>,
-    _bots:PMutPtr<[T]>
+    _bots: PMutPtr<[T]>,
 }
 
 ///An owned dinotree componsed of `T:Aabb`
@@ -219,11 +221,11 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     }
 
     pub fn as_tree(&self) -> &DinoTree<A, T> {
-        unsafe{&*(&self.tree as *const _ as *const _)}
+        unsafe { &*(&self.tree as *const _ as *const _) }
     }
 
     pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, T> {
-        unsafe{&mut *(&mut self.tree as *mut _ as *mut _)}
+        unsafe { &mut *(&mut self.tree as *mut _ as *mut _) }
     }
     pub fn get_bots(&self) -> &[T] {
         &self.bots
@@ -236,8 +238,7 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         self.tree = make_owned(axis, &mut self.bots);
     }
 
-    pub fn get_bots_mut(&mut self)->PMut<[T]>{
+    pub fn get_bots_mut(&mut self) -> PMut<[T]> {
         PMut::new(&mut self.bots)
     }
-    
 }

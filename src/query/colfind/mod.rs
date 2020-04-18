@@ -20,7 +20,7 @@ pub trait ColMulti {
 
 ///Naive algorithm.
 pub fn query_naive_mut<T: Aabb>(bots: PMut<[T]>, mut func: impl FnMut(PMut<T>, PMut<T>)) {
-    tools::for_every_pair(bots,move |a, b| {
+    tools::for_every_pair(bots, move |a, b| {
         if a.get().intersects_rect(b.get()) {
             func(a, b);
         }
@@ -75,13 +75,12 @@ pub fn query_sweep_mut<T: Aabb>(
 }
 
 ///Builder for a query on a NotSorted Dinotree.
-pub struct NotSortedQueryBuilder<'a,'b:'a, A: Axis, T: Aabb> {
+pub struct NotSortedQueryBuilder<'a, 'b: 'a, A: Axis, T: Aabb> {
     switch_height: usize,
-    tree: &'a mut NotSorted<'b,A, T>,
+    tree: &'a mut NotSorted<'b, A, T>,
 }
 
-impl<'a,'b:'a, A: Axis, T: Aabb + Send + Sync> NotSortedQueryBuilder<'a, 'b,A, T>
-{
+impl<'a, 'b: 'a, A: Axis, T: Aabb + Send + Sync> NotSortedQueryBuilder<'a, 'b, A, T> {
     #[inline(always)]
     pub fn query_par(self, func: impl Fn(PMut<T>, PMut<T>) + Copy + Send + Sync) {
         let b = inner::QueryFn::new(func);
@@ -97,9 +96,9 @@ impl<'a,'b:'a, A: Axis, T: Aabb + Send + Sync> NotSortedQueryBuilder<'a, 'b,A, T
     }
 }
 
-impl<'a,'b:'a, A: Axis, T: Aabb> NotSortedQueryBuilder<'a,'b, A, T> {
+impl<'a, 'b: 'a, A: Axis, T: Aabb> NotSortedQueryBuilder<'a, 'b, A, T> {
     #[inline(always)]
-    pub fn new(tree: &'a mut NotSorted<'b,A, T>) -> NotSortedQueryBuilder<'a,'b, A, T> {
+    pub fn new(tree: &'a mut NotSorted<'b, A, T>) -> NotSortedQueryBuilder<'a, 'b, A, T> {
         let switch_height = par::SWITCH_SEQUENTIAL_DEFAULT;
         NotSortedQueryBuilder {
             switch_height,
@@ -135,13 +134,12 @@ impl<'a,'b:'a, A: Axis, T: Aabb> NotSortedQueryBuilder<'a,'b, A, T> {
 }
 
 ///Builder for a query on a DinoTree.
-pub struct QueryBuilder<'a,'b:'a,A: Axis, T: Aabb> {
+pub struct QueryBuilder<'a, 'b: 'a, A: Axis, T: Aabb> {
     switch_height: usize,
-    tree: &'a mut DinoTree<'b,A, T>,
+    tree: &'a mut DinoTree<'b, A, T>,
 }
 
-impl<'a,'b:'a, A: Axis, T: Aabb + Send + Sync> QueryBuilder<'a,'b, A, T>
-{
+impl<'a, 'b: 'a, A: Axis, T: Aabb + Send + Sync> QueryBuilder<'a, 'b, A, T> {
     ///Perform the query in parallel
     #[inline(always)]
     pub fn query_par(self, func: impl Fn(PMut<T>, PMut<T>) + Clone + Send + Sync) {
@@ -176,10 +174,10 @@ impl<'a,'b:'a, A: Axis, T: Aabb + Send + Sync> QueryBuilder<'a,'b, A, T>
     }
 }
 
-impl<'a,'b:'a, A: Axis, T: Aabb> QueryBuilder<'a,'b, A, T> {
+impl<'a, 'b: 'a, A: Axis, T: Aabb> QueryBuilder<'a, 'b, A, T> {
     ///Create the builder.
     #[inline(always)]
-    pub fn new(tree: &'a mut DinoTree<'b,A, T>) -> QueryBuilder<'a, 'b,A, T> {
+    pub fn new(tree: &'a mut DinoTree<'b, A, T>) -> QueryBuilder<'a, 'b, A, T> {
         let switch_height = par::SWITCH_SEQUENTIAL_DEFAULT;
         QueryBuilder {
             switch_height,

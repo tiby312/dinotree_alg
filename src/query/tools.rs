@@ -1,5 +1,5 @@
-use crate::Aabb;
 use crate::pmut::PMut;
+use crate::Aabb;
 
 pub(crate) fn for_every_pair<T: Aabb>(mut arr: PMut<[T]>, mut func: impl FnMut(PMut<T>, PMut<T>)) {
     loop {

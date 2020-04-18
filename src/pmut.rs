@@ -1,4 +1,3 @@
-
 //! Provides a mutable pointer type that is more restrictive that &mut T, in order
 //! to protect tree invariants.
 //! PMut is short for protected mutable reference.
@@ -34,19 +33,17 @@ use crate::inner_prelude::*;
 ///See the pmut module documentation for more explanation.
 #[repr(transparent)]
 pub(crate) struct PMutPtr<T: ?Sized> {
-    pub(crate) inner:core::ptr::NonNull<T>, //TODO make this private
+    pub(crate) inner: core::ptr::NonNull<T>, //TODO make this private
 }
 
-unsafe impl<T:?Sized> Send for PMutPtr<T> {}
-unsafe impl<T:?Sized> Sync for PMutPtr<T> {}
+unsafe impl<T: ?Sized> Send for PMutPtr<T> {}
+unsafe impl<T: ?Sized> Sync for PMutPtr<T> {}
 
-impl<T:?Sized> PMutPtr<T>{
-    pub unsafe fn as_mut<'a>(&'a self)->PMut<'a,T>{
+impl<T: ?Sized> PMutPtr<T> {
+    pub unsafe fn as_mut<'a>(&'a self) -> PMut<'a, T> {
         PMut::new(&mut *self.inner.as_ptr())
     }
 }
-
-
 
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.
@@ -55,14 +52,14 @@ pub struct PMut<'a, T: ?Sized> {
     pub(crate) inner: &'a mut T, //TODO make this private
 }
 
-
 impl<'a, T: ?Sized> PMut<'a, T> {
-    
     #[inline(always)]
-    pub(crate) fn as_ptr(&mut self)->PMutPtr<T>{
-        PMutPtr{inner:unsafe{core::ptr::NonNull::new_unchecked(self.inner as *mut _)}}
+    pub(crate) fn as_ptr(&mut self) -> PMutPtr<T> {
+        PMutPtr {
+            inner: unsafe { core::ptr::NonNull::new_unchecked(self.inner as *mut _) },
+        }
     }
-    
+
     #[inline(always)]
     pub fn new(inner: &'a mut T) -> PMut<'a, T> {
         PMut { inner }
@@ -72,7 +69,6 @@ impl<'a, T: ?Sized> PMut<'a, T> {
         PMut { inner: self.inner }
     }
 
-
     #[inline(always)]
     pub fn as_ref(&self) -> &T {
         self.inner
@@ -80,7 +76,6 @@ impl<'a, T: ?Sized> PMut<'a, T> {
 }
 
 impl<'a, T: Node> PMut<'a, T> {
-    
     #[inline(always)]
     pub fn get(self) -> NodeRef<'a, T::T> {
         self.inner.get()
@@ -92,10 +87,9 @@ impl<'a, T: Node> PMut<'a, T> {
     }
 }
 
-impl<'a,T:HasInner> PMut<'a,T>{
-
+impl<'a, T: HasInner> PMut<'a, T> {
     #[inline(always)]
-    pub fn unpack(self)->(&'a Rect<T::Num>,&'a mut T::Inner){
+    pub fn unpack(self) -> (&'a Rect<T::Num>, &'a mut T::Inner) {
         self.inner.get_inner_mut()
     }
 }
@@ -121,21 +115,19 @@ unsafe impl<'a, T: HasInner> HasInner for PMut<'a, T> {
     }
 }
 
-
-impl<'a,T:?Sized> core::ops::Deref for PMut<'a,T> {
+impl<'a, T: ?Sized> core::ops::Deref for PMut<'a, T> {
     type Target = &'a T;
 
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
-        unsafe{&*(self as *const _ as *const _)}
+        unsafe { &*(self as *const _ as *const _) }
     }
 }
 
-
 //TODO use this
-impl<'a,T:HasInner> PMut<'a,T>{
+impl<'a, T: HasInner> PMut<'a, T> {
     #[inline(always)]
-    pub fn into_inner(self)->&'a mut T::Inner{
+    pub fn into_inner(self) -> &'a mut T::Inner {
         self.inner.get_inner_mut().1
     }
 }

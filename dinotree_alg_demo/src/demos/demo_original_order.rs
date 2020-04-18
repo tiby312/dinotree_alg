@@ -41,63 +41,76 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             b.update();
         }
 
-        let mut k:Vec<_>=bots.iter_mut().map(|b|{
-            let r=Rect::from_point(b.pos, vec2same(radius))
-                .inner_try_into()
-                .unwrap();
-            bbox(r,b)
-        }).collect();
-        
+        let mut k: Vec<_> = bots
+            .iter_mut()
+            .map(|b| {
+                let r = Rect::from_point(b.pos, vec2same(radius))
+                    .inner_try_into()
+                    .unwrap();
+                bbox(r, b)
+            })
+            .collect();
+
         let mut tree = DinoTree::new_par(&mut k);
 
         {
             let dim2 = dim.inner_into();
             tree.for_all_not_in_rect_mut(&dim, |a| {
-                duckduckgeo::collide_with_border(&mut a.pos,&mut a.vel, &dim2, 0.5);
+                duckduckgeo::collide_with_border(&mut a.pos, &mut a.vel, &dim2, 0.5);
             });
         }
 
         let vv = vec2same(100.0).inner_try_into().unwrap();
         let cc = cursor.inner_into();
         tree.for_all_in_rect_mut(&axgeom::Rect::from_point(cursor, vv), |b| {
-            let _ = duckduckgeo::repel_one(b.pos,&mut b.force, cc, 0.001, 20.0);
+            let _ = duckduckgeo::repel_one(b.pos, &mut b.force, cc, 0.001, 20.0);
         });
 
-        
         let rects = canvas.rects();
         let mut dd = Bla { rects };
         tree.draw(&mut dd, &dim);
-        dd.rects.send_and_uniforms(canvas).with_color([0.0, 1.0, 1.0, 0.6]).draw();
-    
+        dd.rects
+            .send_and_uniforms(canvas)
+            .with_color([0.0, 1.0, 1.0, 0.6])
+            .draw();
 
         //draw lines to the bots.
-        
+
         let mut lines = canvas.lines(2.0);
         draw_bot_lines(tree.axis(), tree.vistr(), &dim, &mut lines);
-        lines.send_and_uniforms(canvas).with_color([1.0, 0.5, 1.0, 0.6]).draw();
-    
+        lines
+            .send_and_uniforms(canvas)
+            .with_color([1.0, 0.5, 1.0, 0.6])
+            .draw();
 
         tree.find_intersections_mut_par(|a, b| {
-            let _ = duckduckgeo::repel([(a.pos,&mut a.force), (b.pos,&mut b.force)], 0.001, 2.0);
+            let _ = duckduckgeo::repel([(a.pos, &mut a.force), (b.pos, &mut b.force)], 0.001, 2.0);
         });
 
-        
         if check_naive {
-           analyze::Assert::find_intersections_mut(&mut tree); 
+            analyze::Assert::find_intersections_mut(&mut tree);
         }
-
 
         let mut circles = canvas.circles();
         for bot in bots.iter() {
             circles.add(bot.pos.into()); //TODO we're not testing that the bots were draw in the right order
         }
-        circles.send_and_uniforms(canvas,radius).with_color([1.0, 1.0, 0.0, 0.6]).draw();
-        
-        let mut lines = canvas.lines(radius*0.5);
-        for bot in bots.iter(){
-            lines.add(bot.pos.into(),  (bot.pos+vec2(0.0,(bot.id % 100) as f32)*0.1).into() );
+        circles
+            .send_and_uniforms(canvas, radius)
+            .with_color([1.0, 1.0, 0.0, 0.6])
+            .draw();
+
+        let mut lines = canvas.lines(radius * 0.5);
+        for bot in bots.iter() {
+            lines.add(
+                bot.pos.into(),
+                (bot.pos + vec2(0.0, (bot.id % 100) as f32) * 0.1).into(),
+            );
         }
-        lines.send_and_uniforms(canvas).with_color([0.0,0.0,1.0,0.5]).draw();
+        lines
+            .send_and_uniforms(canvas)
+            .with_color([0.0, 0.0, 1.0, 0.5])
+            .draw();
     })
 }
 

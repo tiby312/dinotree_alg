@@ -8,7 +8,6 @@ fn main() {
         bbox(rect(5, 15, 5, 15), 2),
     ];
 
-
     //Create a layer of direction.
     let mut ref_aabbs = aabbs.iter_mut().collect::<Vec<_>>();
 
@@ -33,19 +32,23 @@ fn main() {
         vec2(30, 30),
         2,
         &mut (),
-        |(),a, b| b.distance_squared_to_point(a).unwrap_or(0),
-        |(),a, b| b.rect.distance_squared_to_point(a).unwrap_or(0),
+        |(), a, b| b.distance_squared_to_point(a).unwrap_or(0),
+        |(), a, b| b.rect.distance_squared_to_point(a).unwrap_or(0),
         border,
     );
-    assert_eq!(res[0].bot,&1);
-    assert_eq!(res[1].bot,&2);
-
+    assert_eq!(res[0].bot, &1);
+    assert_eq!(res[1].bot, &2);
 
     let ray = axgeom::Ray {
         point: vec2(-10, 1),
         dir: vec2(1, 0),
     };
-    let res = tree.raycast_mut(ray, &mut (),|(),ray, r| ray.cast_to_rect(r),|(),ray, b| ray.cast_to_rect(b.get()), border);
+    let res = tree.raycast_mut(
+        ray,
+        &mut (),
+        |(), ray, r| ray.cast_to_rect(r),
+        |(), ray, b| ray.cast_to_rect(b.get()),
+        border,
+    );
     assert_eq!(res.unwrap().0[0], &0);
-    
 }

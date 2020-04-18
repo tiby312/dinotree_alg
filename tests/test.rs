@@ -4,20 +4,19 @@ extern crate dinotree_alg;
 
 use compt::*;
 
-use dinotree_alg::*;
-use dinotree_alg::analyze::par::*;
 use axgeom::*;
+use dinotree_alg::analyze::par::*;
+use dinotree_alg::*;
 
 ///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.
 fn create_bbox_mut<'a, N: Num, T>(
     bots: &'a mut [T],
     mut aabb_create: impl FnMut(&T) -> Rect<N>,
-) -> Vec<BBox< N, &'a mut T>> {
+) -> Vec<BBox<N, &'a mut T>> {
     bots.iter_mut()
         .map(move |k| BBox::new(aabb_create(k), k))
         .collect()
 }
-
 
 #[test]
 fn test_par_heur() {
@@ -134,4 +133,3 @@ fn test_send_sync_dinotree() {
     let (p1, p2) = (&t1, &t2);
     rayon::join(|| p1, || p2);
 }
-

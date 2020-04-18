@@ -28,17 +28,35 @@ impl<'b> NodeMassTrait for Bla<'b> {
 
     //gravitate this nodemass with another node mass
     fn handle_node_with_node(&self, a: &mut Self::No, b: &mut Self::No) {
-        let _ = duckduckgeo::gravitate([(a.center,a.mass,&mut a.force),(b.center,b.mass,&mut b.force)], 0.0001, 0.004);
+        let _ = duckduckgeo::gravitate(
+            [
+                (a.center, a.mass, &mut a.force),
+                (b.center, b.mass, &mut b.force),
+            ],
+            0.0001,
+            0.004,
+        );
     }
 
     //gravitate a bot with a bot
     fn handle_bot_with_bot(&self, a: &mut &'b mut Bot, b: &mut &'b mut Bot) {
-        let _ = duckduckgeo::gravitate([(a.pos,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
+        let _ = duckduckgeo::gravitate(
+            [(a.pos, a.mass, &mut a.force), (b.pos, b.mass, &mut b.force)],
+            0.0001,
+            0.004,
+        );
     }
 
     //gravitate a nodemass with a bot
-    fn handle_node_with_bot(&self, a: &mut Self::No, b:&mut &'b mut Bot) {
-        let _ = duckduckgeo::gravitate([(a.center,a.mass,&mut a.force),(b.pos,b.mass,&mut b.force)], 0.0001, 0.004);
+    fn handle_node_with_bot(&self, a: &mut Self::No, b: &mut &'b mut Bot) {
+        let _ = duckduckgeo::gravitate(
+            [
+                (a.center, a.mass, &mut a.force),
+                (b.pos, b.mass, &mut b.force),
+            ],
+            0.0001,
+            0.004,
+        );
     }
 
     fn new<'a, I: Iterator<Item = &'a Self::Item>>(
@@ -83,7 +101,7 @@ impl<'b> NodeMassTrait for Bla<'b> {
                 let forcex = total_forcex * (i.mass / a.mass);
                 let forcey = total_forcey * (i.mass / a.mass);
 
-                i.force+=vec2(forcex, forcey);
+                i.force += vec2(forcex, forcey);
             }
         }
     }
@@ -146,7 +164,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         let no_mass_bots = &mut no_mass_bots;
         let bots = &mut bots;
 
-        let mut k:Vec<_>=bots.iter_mut().map(|b|bbox(b.create_aabb(),b)).collect();
+        let mut k: Vec<_> = bots.iter_mut().map(|b| bbox(b.create_aabb(), b)).collect();
 
         //let mut k = bbox_helper::create_bbox_mut(bots, |b| b.create_aabb());
 
@@ -162,9 +180,9 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
                 },
                 border,
             );
-            
+
             if check_naive {
-                
+
                 /*
                 let mut bla = Bla {
                     num_pairs_checked: 0,
@@ -224,11 +242,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
             }
 
             tree.find_intersections_mut_par(|a, b| {
-                let (a, b) = if a.mass > b.mass {
-                    (a, b)
-                } else {
-                    (b, a)
-                };
+                let (a, b) = if a.mass > b.mass { (a, b) } else { (b, a) };
 
                 if b.mass != 0.0 {
                     let ma = a.mass;
@@ -261,7 +275,10 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         for bot in k.iter() {
             rects.add(bot.rect.inner_into().into());
         }
-        rects.send_and_uniforms(canvas).with_color([0.9, 0.9, 0.3, 0.6]).draw();
+        rects
+            .send_and_uniforms(canvas)
+            .with_color([0.9, 0.9, 0.3, 0.6])
+            .draw();
 
         {
             let mut new_bots = Vec::new();

@@ -4,15 +4,14 @@
 use crate::inner_prelude::*;
 use crate::query::*;
 
-pub use crate::tree::par;
-pub use crate::tree::node;
 pub use crate::query::colfind::ColMulti;
 pub use crate::query::colfind::NotSortedQueryBuilder;
 pub use crate::query::colfind::QueryBuilder;
+pub use crate::tree::node;
 pub use crate::tree::notsorted::NotSorted;
+pub use crate::tree::par;
 
 pub use crate::tree::builder::DinoTreeBuilder;
-
 
 ///Helper module for creating Vecs of different types of BBoxes.
 pub mod bbox_helper {
@@ -23,7 +22,7 @@ pub mod bbox_helper {
 
     ///Convenience function to create a list of `(Rect<N>,T)` from a `(Rect<N>,&mut T)`. `T` must implement Copy.
     pub fn generate_direct<A: Axis, N: Num, T: Copy>(
-        tree: &DinoTree<A, BBox<N,&mut T>>,
+        tree: &DinoTree<A, BBox<N, &mut T>>,
     ) -> IntoDirectHelper<N, T> {
         IntoDirectHelper(
             tree.inner
@@ -37,12 +36,12 @@ pub mod bbox_helper {
 
     ///Take a DinoTree of `(Rect<N>,&mut T)` and creates a new one of type `(Rect<N>,T)`
     pub fn into_direct<'a, A: Axis, N: Num, T>(
-        tree: &DinoTree<'a,A, BBox<N,&mut T>>,
+        tree: &DinoTree<'a, A, BBox<N, &mut T>>,
         bots: &'a mut IntoDirectHelper<N, T>,
-    ) -> DinoTree<'a,A, BBox<N, T>> {
+    ) -> DinoTree<'a, A, BBox<N, T>> {
         let mut bots = &mut bots.0 as &'a mut [_];
 
-        let b=PMut::new(bots).as_ptr();
+        let b = PMut::new(bots).as_ptr();
         let nodes: Vec<_> = tree
             .inner
             .get_nodes()
@@ -63,26 +62,23 @@ pub mod bbox_helper {
         DinoTree {
             inner: compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
             axis: tree.axis,
-            bots:b
+            bots: b,
         }
     }
 }
 
-
-pub fn find_collisions_sweep_mut<A: Axis,T:Aabb+HasInner>(
-    bots: &mut [T] ,
+pub fn find_collisions_sweep_mut<A: Axis, T: Aabb + HasInner>(
+    bots: &mut [T],
     axis: A,
     mut func: impl FnMut(&mut T::Inner, &mut T::Inner),
 ) {
     colfind::query_sweep_mut(axis, bots, |a, b| func(a.into_inner(), b.into_inner()));
 }
 
-
 /// Collection of functions that panics if the dinotree result differs from the naive solution.
 /// Should never panic unless invariants of the tree data struct have been violated.    
 pub struct Assert;
-impl Assert{
-
+impl Assert {
     ///Returns false if the tree's invariants are not met.
     #[must_use]
     pub fn tree_invariants<A: Axis, T: Aabb>(tree: &DinoTree<A, T>) -> bool {
@@ -171,237 +167,261 @@ impl Assert{
         Ok(())
     }
 
-    pub fn find_intersections_mut<A:Axis,T:Aabb+HasInner>(tree:&mut DinoTree<A,T>){
-        let mut res_dino=Vec::new();
-        tree.find_intersections_mut(|a,b|{
-            let a=a as *const _ as usize;
-            let b=b as *const _ as usize;
-            let k=if a<b{(a,b)}else{(b,a)};
+    pub fn find_intersections_mut<A: Axis, T: Aabb + HasInner>(tree: &mut DinoTree<A, T>) {
+        let mut res_dino = Vec::new();
+        tree.find_intersections_mut(|a, b| {
+            let a = a as *const _ as usize;
+            let b = b as *const _ as usize;
+            let k = if a < b { (a, b) } else { (b, a) };
             res_dino.push(k);
         });
 
-        let mut res_naive=Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).find_intersections_mut(|a,b|{
-            let a=a as *const _ as usize;
-            let b=b as *const _ as usize;
-            let k=if a<b{(a,b)}else{(b,a)};
+        let mut res_naive = Vec::new();
+        NaiveAlgs::new(tree.get_bots_mut()).find_intersections_mut(|a, b| {
+            let a = a as *const _ as usize;
+            let b = b as *const _ as usize;
+            let k = if a < b { (a, b) } else { (b, a) };
             res_naive.push(k);
         });
 
         res_naive.sort();
         res_dino.sort();
 
-        assert_eq!(res_naive.len(),res_dino.len());
+        assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
 
-    pub fn k_nearest_mut<Acc,A:Axis,T:Aabb+HasInner>(
-        tree:&mut DinoTree<A,T>,
+    pub fn k_nearest_mut<Acc, A: Axis, T: Aabb + HasInner>(
+        tree: &mut DinoTree<A, T>,
         point: Vec2<T::Num>,
         num: usize,
-        acc:&mut Acc,
-        mut broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
-        mut fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
+        acc: &mut Acc,
+        mut broad: impl FnMut(&mut Acc, Vec2<T::Num>, &Rect<T::Num>) -> T::Num,
+        mut fine: impl FnMut(&mut Acc, Vec2<T::Num>, &T) -> T::Num,
         rect: Rect<T::Num>,
-    )
-    {
+    ) {
+        let bots = tree.get_bots_mut();
 
-        let bots=tree.get_bots_mut();
+        let mut res_naive = NaiveAlgs::new(bots)
+            .k_nearest_mut(point, num, acc, &mut broad, &mut fine)
+            .drain(..)
+            .map(|a| (a.bot as *const _ as usize, a.mag))
+            .collect::<Vec<_>>();
 
-        let mut res_naive = NaiveAlgs::new(bots).k_nearest_mut(point, num, acc,&mut broad,&mut fine)
-                    .drain(..)
-                    .map(|a| (a.bot as *const _ as usize,a.mag))
-                    .collect::<Vec<_>>();
-            
-        let mut r=tree.k_nearest_mut(point,num,acc,broad,fine,rect);
-        let mut res_dino:Vec<_>=r.drain(..).map(|a|(a.bot as *const _ as usize,a.mag)).collect();
-        
+        let mut r = tree.k_nearest_mut(point, num, acc, broad, fine, rect);
+        let mut res_dino: Vec<_> = r
+            .drain(..)
+            .map(|a| (a.bot as *const _ as usize, a.mag))
+            .collect();
+
         res_naive.sort();
         res_dino.sort();
 
-        assert_eq!(res_naive.len(),res_dino.len());
+        assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
-    
     }
 
-    pub fn raycast_mut<Acc,A:Axis,T:Aabb+HasInner>(
-        tree:&mut DinoTree<A,T>,
+    pub fn raycast_mut<Acc, A: Axis, T: Aabb + HasInner>(
+        tree: &mut DinoTree<A, T>,
         ray: axgeom::Ray<T::Num>,
         start: &mut Acc,
-        mut broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
-        mut fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
-        border:Rect<T::Num>
-    ) where <T as Aabb>::Num: core::fmt::Debug 
+        mut broad: impl FnMut(&mut Acc, &Ray<T::Num>, &Rect<T::Num>) -> CastResult<T::Num>,
+        mut fine: impl FnMut(&mut Acc, &Ray<T::Num>, &T) -> CastResult<T::Num>,
+        border: Rect<T::Num>,
+    ) where
+        <T as Aabb>::Num: core::fmt::Debug,
     {
-
-        let bots=tree.get_bots_mut();
+        let bots = tree.get_bots_mut();
 
         let mut res_naive = Vec::new();
-        match NaiveAlgs::new(bots).raycast_mut(ray, start,&mut broad,&mut fine,border){
-            RayCastResult::Hit((bots,mag))=>{
-                for a in bots.iter(){
-                    let j=(*a) as *const _ as usize;
-                    res_naive.push((j,mag))
+        match NaiveAlgs::new(bots).raycast_mut(ray, start, &mut broad, &mut fine, border) {
+            RayCastResult::Hit((bots, mag)) => {
+                for a in bots.iter() {
+                    let j = (*a) as *const _ as usize;
+                    res_naive.push((j, mag))
                 }
-            },
-            RayCastResult::NoHit=>{
+            }
+            RayCastResult::NoHit => {
                 //do nothing
             }
         }
 
         let mut res_dino = Vec::new();
-        match tree.raycast_mut(ray, start,broad,fine,border){
-            RayCastResult::Hit((bots,mag))=>{
-                for a in bots.iter(){
-                    let j=(*a) as *const _ as usize;
-                    res_dino.push((j,mag))
+        match tree.raycast_mut(ray, start, broad, fine, border) {
+            RayCastResult::Hit((bots, mag)) => {
+                for a in bots.iter() {
+                    let j = (*a) as *const _ as usize;
+                    res_dino.push((j, mag))
                 }
-            },
-            RayCastResult::NoHit=>{
+            }
+            RayCastResult::NoHit => {
                 //do nothing
             }
         }
-                    
-        
+
         res_naive.sort();
         res_dino.sort();
 
         //dbg!("{:?}  {:?}",res_naive.len(),res_dino.len());
-        assert_eq!(res_naive.len(),res_dino.len(),"len:{:?}",(res_naive,res_dino));
-        assert!(res_naive.iter().eq(res_dino.iter()),"nop:{:?}",(res_naive,res_dino));
-        
+        assert_eq!(
+            res_naive.len(),
+            res_dino.len(),
+            "len:{:?}",
+            (res_naive, res_dino)
+        );
+        assert!(
+            res_naive.iter().eq(res_dino.iter()),
+            "nop:{:?}",
+            (res_naive, res_dino)
+        );
     }
 
-    pub fn for_all_in_rect_mut<A:Axis,T:Aabb+HasInner>(tree:&mut DinoTree<A,T>, rect: &axgeom::Rect<T::Num>)
-    {
-
-        let mut res_dino=Vec::new();
-        tree.for_all_in_rect_mut(rect,|a|{
+    pub fn for_all_in_rect_mut<A: Axis, T: Aabb + HasInner>(
+        tree: &mut DinoTree<A, T>,
+        rect: &axgeom::Rect<T::Num>,
+    ) {
+        let mut res_dino = Vec::new();
+        tree.for_all_in_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
-        let mut res_naive=Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).for_all_in_rect_mut(rect,|a|{
+        let mut res_naive = Vec::new();
+        NaiveAlgs::new(tree.get_bots_mut()).for_all_in_rect_mut(rect, |a| {
             res_naive.push(a as *const _ as usize);
         });
 
         res_dino.sort();
         res_naive.sort();
 
-        assert_eq!(res_naive.len(),res_dino.len());
+        assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
-        
     }
 
     /// Panics if the result differs from the naive solution.
     /// Should never panic unless invariants of the tree data struct have been violated.
-    pub fn for_all_not_in_rect_mut<A:Axis,T:Aabb+HasInner>(tree:&mut DinoTree<A,T>, rect: &axgeom::Rect<T::Num>)
-    {
-
-        let mut res_dino=Vec::new();
-        tree.for_all_not_in_rect_mut(rect,|a|{
+    pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb + HasInner>(
+        tree: &mut DinoTree<A, T>,
+        rect: &axgeom::Rect<T::Num>,
+    ) {
+        let mut res_dino = Vec::new();
+        tree.for_all_not_in_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
-        let mut res_naive=Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).for_all_not_in_rect_mut(rect,|a|{
+        let mut res_naive = Vec::new();
+        NaiveAlgs::new(tree.get_bots_mut()).for_all_not_in_rect_mut(rect, |a| {
             res_naive.push(a as *const _ as usize);
         });
 
         res_dino.sort();
         res_naive.sort();
 
-        assert_eq!(res_naive.len(),res_dino.len());
+        assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
-        
     }
 
-    pub fn for_all_intersect_rect_mut<A:Axis,T:Aabb+HasInner>(tree:&mut DinoTree<A,T>, rect: &axgeom::Rect<T::Num>)
-    {
-
-        let mut res_dino=Vec::new();
-        tree.for_all_intersect_rect_mut(rect,|a|{
+    pub fn for_all_intersect_rect_mut<A: Axis, T: Aabb + HasInner>(
+        tree: &mut DinoTree<A, T>,
+        rect: &axgeom::Rect<T::Num>,
+    ) {
+        let mut res_dino = Vec::new();
+        tree.for_all_intersect_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
-        let mut res_naive=Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).for_all_intersect_rect_mut(rect,|a|{
+        let mut res_naive = Vec::new();
+        NaiveAlgs::new(tree.get_bots_mut()).for_all_intersect_rect_mut(rect, |a| {
             res_naive.push(a as *const _ as usize);
         });
 
         res_dino.sort();
         res_naive.sort();
 
-        assert_eq!(res_naive.len(),res_dino.len());
+        assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
-        
     }
 }
-
-
 
 pub struct NaiveAlgs<'a, T> {
-    bots: PMut<'a,[T]>,
+    bots: PMut<'a, [T]>,
 }
 
-
-
-
-impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
-
+impl<'a, T: Aabb + HasInner> NaiveAlgs<'a, T> {
     #[must_use]
     pub fn raycast_mut<Acc>(
         &mut self,
         ray: axgeom::Ray<T::Num>,
         start: &mut Acc,
-        broad:impl FnMut(&mut Acc,&Ray<T::Num>,&Rect<T::Num>)->CastResult<T::Num>,
-        fine:impl FnMut(&mut Acc,&Ray<T::Num>,&T)->CastResult<T::Num>,
-        border:Rect<T::Num>
-    ) -> raycast::RayCastResult<T::Inner,T::Num> {
-        let mut rtrait=raycast::RayCastClosure{a:start,broad,fine,_p:PhantomData};
-        raycast::raycast_naive_mut(self.bots.as_mut(), ray, &mut rtrait,border)
+        broad: impl FnMut(&mut Acc, &Ray<T::Num>, &Rect<T::Num>) -> CastResult<T::Num>,
+        fine: impl FnMut(&mut Acc, &Ray<T::Num>, &T) -> CastResult<T::Num>,
+        border: Rect<T::Num>,
+    ) -> raycast::RayCastResult<T::Inner, T::Num> {
+        let mut rtrait = raycast::RayCastClosure {
+            a: start,
+            broad,
+            fine,
+            _p: PhantomData,
+        };
+        raycast::raycast_naive_mut(self.bots.as_mut(), ray, &mut rtrait, border)
     }
-
 
     #[must_use]
     pub fn k_nearest_mut<Acc>(
         &mut self,
         point: Vec2<T::Num>,
         num: usize,
-        start:&mut Acc,
-        broad:impl FnMut(&mut Acc,Vec2<T::Num>,&Rect<T::Num>)->T::Num,
-        fine:impl FnMut(&mut Acc,Vec2<T::Num>,&T)->T::Num,
-    ) -> Vec<k_nearest::KnearestResult<T::Inner,T::Num>> {
-        let mut knear=k_nearest::KnearestClosure{acc:start,broad,fine,_p:PhantomData};
+        start: &mut Acc,
+        broad: impl FnMut(&mut Acc, Vec2<T::Num>, &Rect<T::Num>) -> T::Num,
+        fine: impl FnMut(&mut Acc, Vec2<T::Num>, &T) -> T::Num,
+    ) -> Vec<k_nearest::KnearestResult<T::Inner, T::Num>> {
+        let mut knear = k_nearest::KnearestClosure {
+            acc: start,
+            broad,
+            fine,
+            _p: PhantomData,
+        };
         k_nearest::k_nearest_naive_mut(self.bots.as_mut(), point, num, &mut knear)
     }
-
 }
 
-impl<'a, T: Aabb+HasInner> NaiveAlgs<'a, T> {
-    pub fn for_all_in_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
-        rect::naive_for_all_in_rect_mut(self.bots.as_mut(), rect, |a|(func)(a.into_inner()));
+impl<'a, T: Aabb + HasInner> NaiveAlgs<'a, T> {
+    pub fn for_all_in_rect_mut(
+        &mut self,
+        rect: &Rect<T::Num>,
+        mut func: impl FnMut(&mut T::Inner),
+    ) {
+        rect::naive_for_all_in_rect_mut(self.bots.as_mut(), rect, |a| (func)(a.into_inner()));
     }
-    pub fn for_all_not_in_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
-        rect::naive_for_all_not_in_rect_mut(self.bots.as_mut(), rect, |a|(func)(a.into_inner()));
+    pub fn for_all_not_in_rect_mut(
+        &mut self,
+        rect: &Rect<T::Num>,
+        mut func: impl FnMut(&mut T::Inner),
+    ) {
+        rect::naive_for_all_not_in_rect_mut(self.bots.as_mut(), rect, |a| (func)(a.into_inner()));
     }
 
-    pub fn for_all_intersect_rect_mut(&mut self, rect: &Rect<T::Num>, mut func: impl FnMut(&mut T::Inner)) {
-        rect::naive_for_all_intersect_rect_mut(self.bots.as_mut(), rect, |a|(func)(a.into_inner()));
+    pub fn for_all_intersect_rect_mut(
+        &mut self,
+        rect: &Rect<T::Num>,
+        mut func: impl FnMut(&mut T::Inner),
+    ) {
+        rect::naive_for_all_intersect_rect_mut(self.bots.as_mut(), rect, |a| {
+            (func)(a.into_inner())
+        });
     }
 
     pub fn find_intersections_mut(&mut self, mut func: impl FnMut(&mut T::Inner, &mut T::Inner)) {
-        colfind::query_naive_mut(self.bots.as_mut(), |a, b| func(a.into_inner(), b.into_inner()));
+        colfind::query_naive_mut(self.bots.as_mut(), |a, b| {
+            func(a.into_inner(), b.into_inner())
+        });
     }
-
 }
 
 impl<'a, T: Aabb> NaiveAlgs<'a, T> {
     #[must_use]
     pub fn new(bots: PMut<[T]>) -> NaiveAlgs<T> {
-        NaiveAlgs { bots}
+        NaiveAlgs { bots }
     }
-
 
     #[cfg(feature = "nbody")]
     pub fn nbody(&mut self, func: impl FnMut(PMut<T>, PMut<T>)) {

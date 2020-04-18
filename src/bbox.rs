@@ -5,7 +5,6 @@ pub fn bbox<N, T>(rect: axgeom::Rect<N>, inner: T) -> BBox<N, T> {
     BBox::new(rect, inner)
 }
 
-
 ///A bounding box container object that implements Aabb and HasInner.
 ///Note that `&mut BBox<N,T>` also implements Aabb and HasInner.
 ///

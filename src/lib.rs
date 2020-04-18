@@ -56,7 +56,6 @@
 //! the Aabb trait is unsafe.
 //!
 
-
 #![no_std]
 
 #[macro_use]
@@ -66,7 +65,6 @@ extern crate pdqselect;
 
 ///axgeom crate is re-exported for easy access to the `Rect<T>` type which is what a `BBox` is composed of.
 pub extern crate axgeom;
-
 
 mod inner_prelude {
     pub(crate) use super::*;
@@ -79,8 +77,8 @@ mod inner_prelude {
     pub use core::marker::PhantomData;
 
     pub(crate) use crate::bbox::*;
-    pub(crate) use crate::tree::par;
     pub(crate) use crate::pmut::*;
+    pub(crate) use crate::tree::par;
     pub(crate) use crate::tree::*;
 }
 
@@ -92,8 +90,6 @@ use axgeom::*;
 //pub use self::tree::{DinoTree,analyze,collectable,owned,DefaultA,default_axis};
 pub use self::tree::*;
 mod tree;
-
-
 
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
@@ -157,5 +153,3 @@ pub unsafe trait HasInner: Aabb {
     fn get_inner(&self) -> (&Rect<Self::Num>, &Self::Inner);
     fn get_inner_mut(&mut self) -> (&Rect<Self::Num>, &mut Self::Inner);
 }
-
-

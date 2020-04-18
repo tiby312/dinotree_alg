@@ -1,13 +1,11 @@
 use crate::support::prelude::*;
 
-
 #[derive(Copy, Clone)]
 struct Bot {
-    rect:Rect<f32>
+    rect: Rect<f32>,
 }
 
-
- fn distance_to_rect(rect:&Rect<f32>,point:Vec2<f32>)->f32{
+fn distance_to_rect(rect: &Rect<f32>, point: Vec2<f32>) -> f32 {
     let dis = rect.distance_squared_to_point(point);
     let dis = match dis {
         Some(dis) => dis,
@@ -34,28 +32,24 @@ struct Bot {
     dis
 }
 
-pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
+pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
     let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
         .with_radius(2.0, 50.0)
         .take(40)
-        .map(|(pos, radius)| Bot { rect:Rect::from_point(pos, radius)})
+        .map(|(pos, radius)| Bot {
+            rect: Rect::from_point(pos, radius),
+        })
         .collect();
 
-    let mut tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| {
-        bot.rect
-            .inner_try_into()
-            .unwrap()
-    });
+    let mut tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| bot.rect.inner_try_into().unwrap());
 
     let mut rects = canvas.rects();
     for bot in tree.as_owned().get_bots().iter() {
         rects.add(bot.get().inner_into().into());
     }
-    let rect_save=rects.save(canvas);
-
+    let rect_save = rects.save(canvas);
 
     Demo::new(move |cursor, canvas, check_naive| {
-        
         let cols = [
             [1.0, 0.0, 0.0, 0.6], //red closest
             [0.0, 1.0, 0.0, 0.6], //green second closest
@@ -70,19 +64,21 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         let mut vv = {
             let mut rects = canvas.rects();
 
-           
-            let k=tree.as_owned_mut()
-                .as_tree_mut()
-                .k_nearest_mut(cursor, 3, &mut rects,
-                    move |_a,point,rect|{
-                        f32n(distance_to_rect(rect.as_ref(),point.inner_into()))
-                    },
-                    move |rects,point,t|{
-                        rects.add(t.get().inner_into().into());
-                        f32n(distance_to_rect(t.get().as_ref(),point.inner_into()))
-                    },
-                    dim);
-            rects.send_and_uniforms(canvas).with_color([1.0, 0.5, 0.3, 0.3]).draw();
+            let k = tree.as_owned_mut().as_tree_mut().k_nearest_mut(
+                cursor,
+                3,
+                &mut rects,
+                move |_a, point, rect| f32n(distance_to_rect(rect.as_ref(), point.inner_into())),
+                move |rects, point, t| {
+                    rects.add(t.get().inner_into().into());
+                    f32n(distance_to_rect(t.get().as_ref(), point.inner_into()))
+                },
+                dim,
+            );
+            rects
+                .send_and_uniforms(canvas)
+                .with_color([1.0, 0.5, 0.3, 0.3])
+                .draw();
             k
         };
 
@@ -95,27 +91,34 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
             .collect();
 
         if check_naive {
-            analyze::Assert::k_nearest_mut(tree.as_owned_mut().as_tree_mut(),cursor, 3, &mut rects,
-                    move |_a,point,rect|{
-                        f32n(distance_to_rect(rect.as_ref(),point.inner_into()))
-                    },
-                    move |rects,point,t|{
-                        rects.add(t.get().inner_into().into());
-                        f32n(distance_to_rect(t.get().as_ref(),point.inner_into()))
-                    },
-                    dim);
+            analyze::Assert::k_nearest_mut(
+                tree.as_owned_mut().as_tree_mut(),
+                cursor,
+                3,
+                &mut rects,
+                move |_a, point, rect| f32n(distance_to_rect(rect.as_ref(), point.inner_into())),
+                move |rects, point, t| {
+                    rects.add(t.get().inner_into().into());
+                    f32n(distance_to_rect(t.get().as_ref(), point.inner_into()))
+                },
+                dim,
+            );
         }
 
         vv.reverse();
         let vv_iter = dinotree_alg::util::SliceSplit::new(&mut vv, |a, b| a.mag == b.mag);
 
-        rect_save.uniforms(canvas).with_color([0.0,0.0,0.0,0.3]).draw();    
-        
+        rect_save
+            .uniforms(canvas)
+            .with_color([0.0, 0.0, 0.0, 0.3])
+            .draw();
+
         for (a, color) in vv_iter.zip(cols.iter()) {
             if let Some(k) = a.first() {
-                canvas.circles()
+                canvas
+                    .circles()
                     .add(cursor.inner_into().into())
-                    .send_and_uniforms(canvas,k.mag.into_inner().sqrt()*2.0)
+                    .send_and_uniforms(canvas, k.mag.into_inner().sqrt() * 2.0)
                     .with_color(*color)
                     .draw();
             }

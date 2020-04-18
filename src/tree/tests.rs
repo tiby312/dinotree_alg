@@ -1,6 +1,4 @@
-
 use super::*;
-
 
 fn assert_length<I: core::iter::ExactSizeIterator>(it: I) {
     let len = it.size_hint().0;
@@ -11,7 +9,10 @@ fn assert_length<I: core::iter::ExactSizeIterator>(it: I) {
 fn test() {
     let mut bots = vec![0usize; 1234];
 
-    let mut bots:Vec<_> = bots.iter_mut().map(|a|bbox(axgeom::Rect::new(0isize,0,0,0),a)).collect();
+    let mut bots: Vec<_> = bots
+        .iter_mut()
+        .map(|a| bbox(axgeom::Rect::new(0isize, 0, 0, 0), a))
+        .collect();
 
     let mut tree = DinoTree::new(&mut bots);
 
@@ -31,7 +32,7 @@ fn test() {
 
     recc(tree.vistr_mut());
     //recursively check that the length is correct at each node.
-    fn recc(a: VistrMut<NodeMut<BBox<isize,&mut usize>>>) {
+    fn recc(a: VistrMut<NodeMut<BBox<isize, &mut usize>>>) {
         let (_nn, rest) = a.next();
         match rest {
             Some([mut left, mut right]) => {

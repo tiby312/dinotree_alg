@@ -94,12 +94,6 @@ impl<'a, T, F: FnMut(&T, &T) -> bool> Iterator for SliceSplit<'a, T, F> {
     }
 }
 
-
-
-
-
-
-
 /*
 //TODO use this!!!!
 pub mod small_ref{
@@ -136,7 +130,7 @@ pub mod small_ref{
     pub struct Base<'a,T>(*const [T],PhantomData<&'a T>);
     unsafe impl<T> Send for Base<'_,T>{}
     unsafe impl<T> Sync for Base<'_,T>{}
-    
+
     impl<'a,T> Base<'a,T>{
         #[inline(always)]
         pub fn into_ptr(self)->BasePtr<T>{
