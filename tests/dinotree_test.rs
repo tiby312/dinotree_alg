@@ -19,6 +19,6 @@ fn test1() {
 
         let mut tree = DinoTree::new(&mut bots);
 
-        tree.assert_find_intersections_mut();
+        analyze::Assert::find_intersections_mut(&mut tree);
     }
 }
