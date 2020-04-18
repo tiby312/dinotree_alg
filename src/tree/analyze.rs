@@ -342,6 +342,7 @@ impl Assert {
     }
 }
 
+///Provides the naive implementation of the dinotree api.
 pub struct NaiveAlgs<'a, T> {
     bots: PMut<'a, [T]>,
 }
