@@ -44,13 +44,12 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         
         if check_naive {
             let tree = tree.as_owned_mut().as_tree_mut();
-
-            tree.assert_for_all_in_rect_mut(&r1);
-            tree.assert_for_all_in_rect_mut(&r2);
-            tree.assert_for_all_intersect_rect_mut(&r1);
-            tree.assert_for_all_intersect_rect_mut(&r2);
-            tree.assert_for_all_not_in_rect_mut(&r1);
-        
+            use analyze::Assert;
+            Assert::for_all_in_rect_mut(tree,&r1);
+            Assert::for_all_in_rect_mut(tree,&r2);
+            Assert::for_all_intersect_rect_mut(tree,&r1);
+            Assert::for_all_intersect_rect_mut(tree,&r2);
+            Assert::for_all_not_in_rect_mut(tree,&r1);
         }
         
 

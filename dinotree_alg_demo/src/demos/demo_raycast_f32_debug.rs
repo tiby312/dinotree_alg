@@ -50,7 +50,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
         
         
         if check_naive {
-            tree.assert_raycast_mut(
+            analyze::Assert::raycast_mut(tree,
                 ray, 
                 &mut rects, 
                 move |_r,ray,rect| ray.inner_into::<f32>().cast_to_rect(rect.as_ref()).map(|a|f32n(a)),

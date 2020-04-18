@@ -65,7 +65,7 @@ pub fn make_demo(dim: Rect<F32n>,canvas:&mut SimpleCanvas) -> Demo {
                 let mut radius=radius;
                 
                 if check_naive{
-                    tree.assert_raycast_mut(ray,&mut radius,
+                    analyze::Assert::raycast_mut(tree,ray,&mut radius,
                         move |_r,ray,rect| ray.inner_into::<f32>().cast_to_rect(rect.as_ref()).map(|a|f32n(a)),
                         move |r,ray,t|ray.inner_into::<f32>().cast_to_circle(t.inner().center, *r).map(|a| NotNan::new(a).unwrap()),
                      dim);

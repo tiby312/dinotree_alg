@@ -83,7 +83,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
         
         if check_naive {
-           tree.assert_find_intersections_mut(); 
+           analyze::Assert::find_intersections_mut(&mut tree); 
         }
 
 
