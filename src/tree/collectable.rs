@@ -105,7 +105,7 @@ impl<'a, A: Axis, N: Num, T> CollectableDinoTree<'a, A, N, T> {
 
     pub fn collect_intersections_list<D: Send + Sync>(
         &mut self,
-        func: impl Fn(&mut T, &mut T) -> Option<D> + Send + Sync + Copy,
+        mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
     ) -> BotCollision<'a, T, D> {
         let mut intersections = Vec::new();
 
