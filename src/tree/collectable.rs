@@ -107,14 +107,7 @@ impl<'a, A: Axis, N: Num, T> CollectableDinoTree<'a, A, N, T> {
         &mut self,
         func: impl Fn(&mut T, &mut T) -> Option<D> + Send + Sync + Copy,
     ) -> BotCollision<'a, T, D> {
-        let mut intersections = Vec::new();
-
-        self.tree.as_tree_mut().find_intersections_mut(|a, b| {
-            if let Some(d) = func(unsafe { a.as_mut() }, unsafe { b.as_mut() }) {
-                intersections.push((*a, *b, d))
-            }
-        });
-
+        
         let cols = create_collision_list(self.tree.as_tree_mut(), |a, b| {
             match func(unsafe { a.as_mut() }, unsafe { b.as_mut() }) {
                 Some(d) => Some((*a, *b, d)),
