@@ -39,8 +39,8 @@
 //!     });
 //!}
 //!
-//!assert_eq!(bots[0].inner,5);
-//!assert_eq!(bots[1].inner,17);
+//!assert_eq!(bots[0].inner,4);
+//!assert_eq!(bots[1].inner,15);
 //!
 //!```
 
