@@ -6,7 +6,8 @@ pub mod prelude {
     pub use dinotree_alg::owned::*;
     pub use dinotree_alg::query::*;
     pub use dinotree_alg::*;
-    pub use dists;
+    //pub use dists;
+    pub use crate::dists::*;
     pub use dists::uniform_rand::UniformRandGen;
     pub use duckduckgeo::array2_inner_into;
     pub use duckduckgeo::bot::*;

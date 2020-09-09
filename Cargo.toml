@@ -14,7 +14,7 @@ edition = "2018"
 members = [ "dinotree_alg_demo"]
 
 [dev-dependencies]
-dists = "0.3"
+dists = "0.4"
 
 [dependencies]
 is_sorted = "0.1"
