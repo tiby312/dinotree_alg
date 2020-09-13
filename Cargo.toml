@@ -1,6 +1,6 @@
 [package]
 name = "dinotree_alg"
-version = "0.8.10"
+version = "0.8.11"
 authors = ["Ken Reed <kenakioreed@gmail.com>"]
 description = "Dinotree algorithms"
 license = "MIT/Apache-2.0"
@@ -14,7 +14,7 @@ edition = "2018"
 members = [ "dinotree_alg_demo"]
 
 [dev-dependencies]
-dists = "0.3"
+dists = "0.4"
 
 [dependencies]
 is_sorted = "0.1"

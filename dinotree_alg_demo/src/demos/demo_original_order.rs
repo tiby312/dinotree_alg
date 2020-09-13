@@ -25,12 +25,12 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
     let radius = 5.0;
 
-    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+    let mut bots: Vec<_> = dists::rand2_iter(dim.inner_into())
         .take(num_bot)
         .enumerate()
-        .map(|(id, pos)| Bot {
+        .map(|(id, [x,y])| Bot {
             id,
-            pos,
+            pos:vec2(x,y),
             vel: vec2same(0.0),
             force: vec2same(0.0),
         })

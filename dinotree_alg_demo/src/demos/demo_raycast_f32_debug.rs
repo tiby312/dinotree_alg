@@ -6,10 +6,10 @@ use axgeom::Ray;
 pub struct Bot;
 
 pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
-    let ii: Vec<_> = UniformRandGen::new(dim.inner_into())
-        .with_radius(1.0, 3.0)
+    let ii: Vec<_> = dists::rand2_iter(dim.inner_into())
+        .zip(dists::rand_iter(1.0,3.0))
         .take(5000)
-        .map(|(pos, radius)| bbox(Rect::from_point(pos, radius).inner_try_into().unwrap(), Bot))
+        .map(|([x,y], radius)| bbox(Rect::from_point(vec2(x,y), vec2same(radius)).inner_try_into().unwrap(), Bot))
         .collect();
 
     let mut counter: f32 = 0.0;

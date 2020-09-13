@@ -14,7 +14,7 @@ use core::marker::PhantomData;
 
 #[derive(Clone, Copy)]
 struct Bla<'a> {
-    num_pairs_checked: usize,
+    _num_pairs_checked: usize,
     _p: PhantomData<&'a usize>,
 }
 impl<'b> NodeMassTrait for Bla<'b> {
@@ -145,11 +145,11 @@ impl Bot {
 }
 
 pub fn make_demo(dim: Rect<F32n>) -> Demo {
-    let mut bots: Vec<_> = UniformRandGen::new(dim.inner_into())
+    let mut bots: Vec<_> = dists::rand2_iter(dim.inner_into())
         .take(4000)
-        .map(|pos| Bot {
+        .map(|[x,y]| Bot {
             mass: 100.0,
-            pos,
+            pos:vec2(x,y),
             vel: vec2same(0.0),
             force: vec2same(0.0),
         })
@@ -175,7 +175,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
 
             tree.nbody_mut(
                 &mut Bla {
-                    num_pairs_checked: 0,
+                    _num_pairs_checked: 0,
                     _p: PhantomData,
                 },
                 border,

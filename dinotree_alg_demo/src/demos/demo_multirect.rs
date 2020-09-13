@@ -9,14 +9,14 @@ struct Bot {
 }
 
 pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
-    let bots: Vec<_> = UniformRandGen::new(dim.inner_into())
-        .with_radius(5.0, 20.0)
+    let bots: Vec<_> = dists::rand2_iter(dim.inner_into())
+        .zip(dists::rand_iter(5.0,20.0))
         .take(200)
         .enumerate()
-        .map(|(id, (pos, radius))| {
-            let pos: Vec2<f32> = pos;
+        .map(|(id, ([x,y], radius))| {
+            let pos: Vec2<f32> = vec2(x,y);
             let pos = pos.inner_as::<i32>();
-            let radius = radius.inner_as();
+            let radius = vec2same(radius).inner_as();
             let rect = Rect::from_point(pos, radius);
             Bot {
                 pos,
