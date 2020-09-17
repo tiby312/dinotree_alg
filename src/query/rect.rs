@@ -53,10 +53,10 @@ macro_rules! rect {
     };
 }
 
-pub fn naive_for_all_not_in_rect_mut<T: Aabb>(
-    bots: PMut<[T]>,
+pub fn naive_for_all_not_in_rect_mut<'a,T: Aabb>(
+    bots: PMut<'a,[T]>,
     rect: &Rect<T::Num>,
-    mut closure: impl FnMut(PMut<T>),
+    mut closure: impl FnMut(PMut<'a,T>),
 ) {
     for b in bots.iter_mut() {
         if !rect.contains_rect(b.get()) {
@@ -65,14 +65,14 @@ pub fn naive_for_all_not_in_rect_mut<T: Aabb>(
     }
 }
 
-pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb>(
-    tree: &mut DinoTree<A, T>,
+pub fn for_all_not_in_rect_mut<'a,A: Axis, T: Aabb>(
+    tree: &'a mut DinoTree<A, T>,
     rect: &Rect<T::Num>,
-    closure: impl FnMut(PMut<T>),
+    closure: impl FnMut(PMut<'a,T>),
 ) {
-    fn rect_recurse<A: Axis, N: Node, F: FnMut(PMut<N::T>)>(
+    fn rect_recurse<'a,A: Axis, N: Node, F: FnMut(PMut<'a,N::T>)>(
         axis: A,
-        it: VistrMut<N>,
+        it: VistrMut<'a,N>,
         rect: &Rect<N::Num>,
         mut closure: F,
     ) -> F {
@@ -86,7 +86,7 @@ pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb>(
         }
 
         match rest {
-            Some([mut left, mut right]) => {
+            Some([left,right]) => {
                 let div = match nn.div {
                     Some(b) => b,
                     None => return closure,
@@ -94,7 +94,7 @@ pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb>(
 
                 match rect.get_range(axis).contains_ext(*div) {
                     core::cmp::Ordering::Greater => {
-                        for a in right.as_slice_mut() {
+                        for a in right.into_slice(){
                             for b in a.get_mut().bots.iter_mut() {
                                 closure(b)
                             }
@@ -102,7 +102,7 @@ pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb>(
                         rect_recurse(axis.next(), left, rect, closure)
                     }
                     core::cmp::Ordering::Less => {
-                        for a in left.as_slice_mut() {
+                        for a in left.into_slice() {
                             for b in a.get_mut().bots.iter_mut() {
                                 closure(b)
                             }
@@ -128,28 +128,27 @@ mod mutable {
     use super::*;
     use crate::query::colfind::oned::get_section_mut;
 
-    rect!(VistrMut<N>, PMut<N::T>, get_section_mut, get_mut);
-    pub fn for_all_intersect_rect_mut<A: Axis, T: Aabb>(
-        tree: &mut DinoTree<A, T>,
+    rect!(VistrMut<'a,N>, PMut<'a,N::T>, get_section_mut, get_mut);
+    pub fn for_all_intersect_rect_mut<'a,A: Axis, T: Aabb>(
+        tree: &'a mut DinoTree<A, T>,
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(PMut<T>),
+        mut closure: impl FnMut(PMut<'a,T>),
     ) {
-        let mut f = |a: PMut<T>| {
-            if rect.get_intersect_rect(a.get()).is_some() {
-                closure(a);
-            }
-        };
-
+        
         let axis = tree.axis();
         let ta = tree.vistr_mut();
 
-        self::rect_recurse(axis, ta, rect, &mut f);
+        self::rect_recurse(axis, ta, rect, &mut |a| {
+            if rect.get_intersect_rect(a.get()).is_some() {
+                closure(a);
+            }
+        });
     }
 
-    pub fn naive_for_all_in_rect_mut<T: Aabb>(
-        bots: PMut<[T]>,
+    pub fn naive_for_all_in_rect_mut<'a,T: Aabb>(
+        bots: PMut<'a,[T]>,
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(PMut<T>),
+        mut closure: impl FnMut(PMut<'a,T>),
     ) {
         for b in bots.iter_mut() {
             if rect.contains_rect(b.get()) {
@@ -158,10 +157,10 @@ mod mutable {
         }
     }
 
-    pub fn naive_for_all_intersect_rect_mut<T: Aabb>(
-        bots: PMut<[T]>,
+    pub fn naive_for_all_intersect_rect_mut<'a,T: Aabb>(
+        bots: PMut<'a,[T]>,
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(PMut<T>),
+        mut closure: impl FnMut(PMut<'a,T>),
     ) {
         for b in bots.iter_mut() {
             if rect.get_intersect_rect(b.get()).is_some() {
@@ -169,19 +168,18 @@ mod mutable {
             }
         }
     }
-    pub fn for_all_in_rect_mut<A: Axis, T: Aabb>(
-        tree: &mut DinoTree<A, T>,
+    pub fn for_all_in_rect_mut<'a,A: Axis, T: Aabb>(
+        tree: &'a mut DinoTree<A, T>,
         rect: &Rect<T::Num>,
-        mut closure: impl FnMut(PMut<T>),
+        mut closure: impl FnMut(PMut<'a,T>),
     ) {
-        let mut f = |a: PMut<T>| {
+        let axis = tree.axis();
+        let ta = tree.vistr_mut();
+        self::rect_recurse(axis, ta, rect, &mut |a| {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }
-        };
-        let axis = tree.axis();
-        let ta = tree.vistr_mut();
-        self::rect_recurse(axis, ta, rect, &mut f);
+        });
     }
 }
 
@@ -196,14 +194,13 @@ mod constant {
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&'a T),
     ) {
-        let mut f = |a: &'a T| {
+        let axis = tree.axis();
+        let ta = tree.vistr();
+        self::rect_recurse(axis, ta, rect, &mut |a| {
             if rect.get_intersect_rect(a.get()).is_some() {
                 closure(a);
             }
-        };
-        let axis = tree.axis();
-        let ta = tree.vistr();
-        self::rect_recurse(axis, ta, rect, &mut f);
+        });
     }
 
     pub fn for_all_in_rect<'a, A: Axis, T: Aabb>(
@@ -211,15 +208,14 @@ mod constant {
         rect: &Rect<T::Num>,
         mut closure: impl FnMut(&'a T),
     ) {
-        let mut f = |a: &'a T| {
+        
+        let axis = tree.axis();
+        let ta = tree.vistr();
+        self::rect_recurse(axis, ta, rect, &mut |a| {
             if rect.contains_rect(a.get()) {
                 closure(a);
             }
-        };
-
-        let axis = tree.axis();
-        let ta = tree.vistr();
-        self::rect_recurse(axis, ta, rect, &mut f);
+        });
     }
 }
 

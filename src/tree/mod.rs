@@ -77,9 +77,9 @@ mod notsorted {
 
         #[inline(always)]
         pub fn vistr_mut(&mut self) -> VistrMut<NodeMut<'a, T>> {
-            VistrMut {
-                inner: self.0.inner.vistr_mut(),
-            }
+            
+            self.0.inner.vistr_mut()
+            
         }
     }
     impl<'a, A: Axis, T: Aabb + HasInner> NotSorted<'a, A, T> {
@@ -425,10 +425,10 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
     ///assert_eq!(bots[0].inner,1);
     ///
     ///```
-    pub fn for_all_not_in_rect_mut(
-        &mut self,
+    pub fn for_all_not_in_rect_mut<'b>(
+        &'b mut self,
         rect: &Rect<T::Num>,
-        mut func: impl FnMut(&mut T::Inner),
+        mut func: impl FnMut(&'b mut T::Inner),
     ) {
         rect::for_all_not_in_rect_mut(self, rect, move |a| (func)(a.into_inner()));
     }
@@ -446,10 +446,10 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
     ///assert_eq!(bots[0].inner,1);
     ///
     ///```
-    pub fn for_all_intersect_rect_mut(
-        &mut self,
+    pub fn for_all_intersect_rect_mut<'b>(
+        &'b mut self,
         rect: &Rect<T::Num>,
-        mut func: impl FnMut(&mut T::Inner),
+        mut func: impl FnMut(&'b mut T::Inner),
     ) {
         rect::for_all_intersect_rect_mut(self, rect, move |a| (func)(a.into_inner()));
     }
@@ -467,10 +467,10 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
     ///assert_eq!(bots[0].inner,1);
     ///
     ///```
-    pub fn for_all_in_rect_mut(
-        &mut self,
+    pub fn for_all_in_rect_mut<'b>(
+        &'b mut self,
         rect: &Rect<T::Num>,
-        mut func: impl FnMut(&mut T::Inner),
+        mut func: impl FnMut(&'b mut T::Inner),
     ) {
         rect::for_all_in_rect_mut(self, rect, move |a| (func)(a.into_inner()));
     }
@@ -568,9 +568,7 @@ impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
     ///```
     #[must_use]
     pub fn vistr_mut(&mut self) -> VistrMut<NodeMut<'a, T>> {
-        VistrMut {
-            inner: self.inner.vistr_mut(),
-        }
+        self.inner.vistr_mut()
     }
 
     /// # Examples
@@ -903,6 +901,8 @@ pub mod node {
     ///change anything.
     pub type Vistr<'a, N> = compt::dfs_order::Vistr<'a, N, compt::dfs_order::PreOrder>;
 
+    pub type VistrMut<'a,N>=compt::dfs_order::VistrMut<'a,N,compt::dfs_order::PreOrder>;
+    /*
     mod vistr_mut {
         use crate::inner_prelude::*;
 
@@ -971,6 +971,7 @@ pub mod node {
         }
     }
     pub use vistr_mut::VistrMut;
+    */
 
     ///Expose a node trait api to hide the lifetime of NodeMut.
     ///This way query algorithms do not need to worry about this lifetime.
