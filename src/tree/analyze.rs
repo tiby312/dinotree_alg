@@ -61,8 +61,7 @@ pub mod bbox_helper {
 
         DinoTree {
             inner: compt::dfs_order::CompleteTreeContainer::from_preorder(nodes).unwrap(),
-            axis: tree.axis,
-            bots: b,
+            axis: tree.axis
         }
     }
 }
@@ -167,9 +166,9 @@ impl Assert {
         Ok(())
     }
 
-    pub fn find_intersections_mut<A: Axis, T: Aabb + HasInner>(tree: &mut DinoTree<A, T>) {
+    pub fn find_intersections_mut<A: Axis, T: Aabb + HasInner>(tree: &mut DinoTreeWrap<A, T>) {
         let mut res_dino = Vec::new();
-        tree.find_intersections_mut(|a, b| {
+        tree.get_tree_mut().find_intersections_mut(|a, b| {
             let a = a as *const _ as usize;
             let b = b as *const _ as usize;
             let k = if a < b { (a, b) } else { (b, a) };
@@ -192,7 +191,7 @@ impl Assert {
     }
 
     pub fn k_nearest_mut<Acc, A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTree<A, T>,
+        tree: &mut DinoTreeWrap<A, T>,
         point: Vec2<T::Num>,
         num: usize,
         acc: &mut Acc,
@@ -208,7 +207,7 @@ impl Assert {
             .map(|a| (a.bot as *const _ as usize, a.mag))
             .collect::<Vec<_>>();
 
-        let mut r = tree.k_nearest_mut(point, num, acc, broad, fine, rect);
+        let mut r = tree.get_tree_mut().k_nearest_mut(point, num, acc, broad, fine, rect);
         let mut res_dino: Vec<_> = r
             .drain(..)
             .map(|a| (a.bot as *const _ as usize, a.mag))
@@ -222,7 +221,7 @@ impl Assert {
     }
 
     pub fn raycast_mut<Acc, A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTree<A, T>,
+        tree: &mut DinoTreeWrap<A, T>,
         ray: axgeom::Ray<T::Num>,
         start: &mut Acc,
         mut broad: impl FnMut(&mut Acc, &Ray<T::Num>, &Rect<T::Num>) -> CastResult<T::Num>,
@@ -247,7 +246,7 @@ impl Assert {
         }
 
         let mut res_dino = Vec::new();
-        match tree.raycast_mut(ray, start, broad, fine, border) {
+        match tree.get_tree_mut().raycast_mut(ray, start, broad, fine, border) {
             RayCastResult::Hit((bots, mag)) => {
                 for a in bots.iter() {
                     let j = (*a) as *const _ as usize;
@@ -277,11 +276,11 @@ impl Assert {
     }
 
     pub fn for_all_in_rect_mut<A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTree<A, T>,
+        tree: &mut DinoTreeWrap<A, T>,
         rect: &axgeom::Rect<T::Num>,
     ) {
         let mut res_dino = Vec::new();
-        tree.for_all_in_rect_mut(rect, |a| {
+        tree.get_tree_mut().for_all_in_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
@@ -300,11 +299,11 @@ impl Assert {
     /// Panics if the result differs from the naive solution.
     /// Should never panic unless invariants of the tree data struct have been violated.
     pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTree<A, T>,
+        tree: &mut DinoTreeWrap<A, T>,
         rect: &axgeom::Rect<T::Num>,
     ) {
         let mut res_dino = Vec::new();
-        tree.for_all_not_in_rect_mut(rect, |a| {
+        tree.get_tree_mut().for_all_not_in_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
@@ -321,11 +320,11 @@ impl Assert {
     }
 
     pub fn for_all_intersect_rect_mut<A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTree<A, T>,
+        tree: &mut DinoTreeWrap<A, T>,
         rect: &axgeom::Rect<T::Num>,
     ) {
         let mut res_dino = Vec::new();
-        tree.for_all_intersect_rect_mut(rect, |a| {
+        tree.get_tree_mut().for_all_intersect_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 

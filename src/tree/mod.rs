@@ -95,11 +95,110 @@ mod notsorted {
 
 use crate::query::*;
 
+
+pub use self::wrap::DinoTreeWrap;
+mod wrap{
+    use super::*;
+    pub struct DinoTreeWrap<'a,A:Axis,T:Aabb>{
+        inner:DinoTree<'a,A,T>,
+        bots:PMutPtr<[T]>
+    }
+    impl<'a, T: Aabb> DinoTreeWrap<'a, DefaultA, T> {
+        /// # Examples
+        ///
+        ///```
+        ///let mut bots = [axgeom::rect(0,10,0,10)];
+        ///let tree = dinotree_alg::DinoTree::new(&mut bots);
+        ///
+        ///```
+        pub fn new(bots: &'a mut [T]) -> DinoTreeWrap<'a, DefaultA, T> {
+            DinoTreeWrap::new_inner(bots,|bots|DinoTree::new(bots))
+        }
+    }
+        
+    impl<'a, T: Aabb + Send + Sync> DinoTreeWrap<'a, DefaultA, T> {
+        /// # Examples
+        ///
+        ///```
+        ///let mut bots = [axgeom::rect(0,10,0,10)];
+        ///let tree = dinotree_alg::DinoTree::new_par(&mut bots);
+        ///
+        ///```
+        pub fn new_par(bots: &'a mut [T]) -> DinoTreeWrap<'a, DefaultA, T> {
+            DinoTreeWrap::new_inner(bots,|bots|DinoTree::new_par(bots))
+        }
+    }
+    
+    impl<'a, A: Axis, T: Aabb> DinoTreeWrap<'a, A, T> {
+        /// # Examples
+        ///
+        ///```
+        ///let mut bots = [axgeom::rect(0,10,0,10)];
+        ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
+        ///
+        ///```
+        pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTreeWrap<'a, A, T> {
+            DinoTreeWrap::new_inner(bots,|bots|DinoTree::with_axis(axis,bots))
+        }
+    }
+
+    impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeWrap<'a, A, T> {
+        /// # Examples
+        ///
+        ///```
+        ///let mut bots = [axgeom::rect(0,10,0,10)];
+        ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
+        ///
+        ///```
+        pub fn with_axis_par(axis: A, bots: &'a mut [T]) -> DinoTreeWrap<'a, A, T> {
+            DinoTreeWrap::new_inner(bots,|bots|DinoTree::with_axis_par(axis,bots))
+        }
+    }
+
+    
+    impl<'a,A:Axis,T:Aabb> DinoTreeWrap<'a,A,T>{
+        fn new_inner(arr:&'a mut [T], func:impl FnOnce(&'a mut [T])->DinoTree<'a,A,T>)->DinoTreeWrap<'a,A,T>{
+            let bots=PMut::new(arr).as_ptr();
+            let inner=func(arr);
+            //TODO pick one bot in a node and assert it is within the arr.
+            DinoTreeWrap{inner,bots}
+        }
+        pub fn get_tree(&self)->&DinoTree<'a,A,T>{
+            &self.inner
+        }
+        
+
+        pub fn get_tree_mut(&mut self)->&mut DinoTree<'a,A,T>{
+            &mut self.inner
+        }
+        
+        ///Returns the elements in the tree in the order
+        ///they are arranged internally in the tree.
+        #[must_use]
+        #[inline(always)]
+        pub fn get_bots(&self) -> &[T] {
+            &unsafe { self.bots.as_mut() }
+        }
+
+        ///Returns the elements in the tree in the order
+        ///they are arranged internally in the tree.
+        ///The elements are prevented from being mutated
+        ///such that their aabb changes through use of
+        ///the PMut pointer type.
+        #[must_use]
+        #[inline(always)]
+        pub fn get_bots_mut(&mut self) -> PMut<[T]> {
+            unsafe { self.bots.as_mut() }
+        }
+    
+
+    }
+}
+
 ///The data structure this crate revoles around.
 pub struct DinoTree<'a, A: Axis, T: Aabb> {
     axis: A,
-    inner: compt::dfs_order::CompleteTreeContainer<NodeMut<'a, T>, compt::dfs_order::PreOrder>,
-    bots: PMutPtr<[T]>,
+    inner: compt::dfs_order::CompleteTreeContainer<NodeMut<'a, T>, compt::dfs_order::PreOrder>
 }
 
 ///The type of the axis of the first node in the dinotree.
@@ -518,25 +617,6 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
 }
 
 impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
-    ///Returns the elements in the tree in the order
-    ///they are arranged internally in the tree.
-    #[must_use]
-    #[inline(always)]
-    pub fn get_bots(&self) -> &[T] {
-        &unsafe { self.bots.as_mut() }
-    }
-
-    ///Returns the elements in the tree in the order
-    ///they are arranged internally in the tree.
-    ///The elements are prevented from being mutated
-    ///such that their aabb changes through use of
-    ///the PMut pointer type.
-    #[must_use]
-    #[inline(always)]
-    pub fn get_bots_mut(&mut self) -> PMut<[T]> {
-        unsafe { self.bots.as_mut() }
-    }
-
     /// # Examples
     ///
     ///```
@@ -727,7 +807,6 @@ mod builder {
     impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
         ///Build not sorted in parallel
         pub fn build_not_sorted_par(&mut self) -> NotSorted<'a, A, T> {
-            let b = PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
@@ -742,14 +821,12 @@ mod builder {
             );
             NotSorted(DinoTree {
                 axis: self.axis,
-                inner,
-                bots: b,
+                inner
             })
         }
 
         ///Build in parallel
         pub fn build_par(&mut self) -> DinoTree<'a, A, T> {
-            let b = PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
@@ -764,8 +841,7 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner,
-                bots: b,
+                inner
             }
         }
     }
@@ -807,7 +883,6 @@ mod builder {
 
         ///Build not sorted sequentially
         pub fn build_not_sorted_seq(&mut self) -> NotSorted<'a, A, T> {
-            let b = PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let inner = create_tree_seq(
@@ -820,14 +895,12 @@ mod builder {
             );
             NotSorted(DinoTree {
                 axis: self.axis,
-                inner,
-                bots: b,
+                inner
             })
         }
 
         ///Build sequentially
         pub fn build_seq(&mut self) -> DinoTree<'a, A, T> {
-            let b = PMut::new(self.bots).as_ptr();
             let mut bots: &mut [T] = &mut [];
             core::mem::swap(&mut bots, &mut self.bots);
             let inner = create_tree_seq(
@@ -841,7 +914,6 @@ mod builder {
             DinoTree {
                 axis: self.axis,
                 inner,
-                bots: b,
             }
         }
 
@@ -884,8 +956,7 @@ mod builder {
             );
             DinoTree {
                 axis: self.axis,
-                inner,
-                bots: b,
+                inner
             }
         }
     }
@@ -902,7 +973,7 @@ pub mod node {
     pub type Vistr<'a, N> = compt::dfs_order::Vistr<'a, N, compt::dfs_order::PreOrder>;
 
     pub type VistrMut<'a,N>=compt::dfs_order::VistrMut<'a,N,compt::dfs_order::PreOrder>;
-    /*
+    /* TODO use this???
     mod vistr_mut {
         use crate::inner_prelude::*;
 
