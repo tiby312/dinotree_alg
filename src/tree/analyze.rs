@@ -41,7 +41,6 @@ pub mod bbox_helper {
     ) -> DinoTree<'a, A, BBox<N, T>> {
         let mut bots = &mut bots.0 as &'a mut [_];
 
-        let b = PMut::new(bots).as_ptr();
         let nodes: Vec<_> = tree
             .inner
             .get_nodes()
