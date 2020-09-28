@@ -180,7 +180,7 @@ pub trait Queries{
     /// let border=rect(0,100,0,100);
     /// let mut bots =[rect(0,10,0,10)];
     /// let tree=DinoTree::new(&mut bots);
-    /// tree.draw(&mut Drawer,&border);
+    /// tree.draw_divider(&mut Drawer,&border);
     /// ```
     ///
     fn draw_divider(&self,drawer: &mut impl graphics::DividerDrawer<N = Self::Num>, rect: &Rect<Self::Num>){
@@ -618,12 +618,12 @@ impl<'a,A:Axis,T:Aabb> Queries for DinoTree<'a,A,T>{
 
     #[inline(always)]
     fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
-        DinoTree::vistr_mut(self)
+        VistrMut{inner:self.inner.vistr_mut()}
     }
 
     #[inline(always)]
     fn vistr(&self)->Vistr<NodeMut<'a,T>>{
-        DinoTree::vistr(self)
+        self.inner.vistr()
     }
 }
 
