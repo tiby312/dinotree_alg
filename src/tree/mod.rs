@@ -196,32 +196,6 @@ impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a, A, T> {
     }
 }
 
-impl<A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'_, A, T> {
-    #[cfg(feature = "nbody")]
-    pub fn nbody_mut<X: query::nbody::NodeMassTrait<Num = T::Num, Item = T> + Send + Sync>(
-        &mut self,
-        ncontext: &X,
-        rect: Rect<T::Num>,
-    ) where
-        X::No: Send,
-    {
-        query::nbody::nbody(self, ncontext, rect)
-    }
-}
-
-impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a, A, T> {
-    #[cfg(feature = "nbody")]
-    pub fn nbody_mut_par<X: query::nbody::NodeMassTrait<Num = T::Num, Item = T> + Sync + Send>(
-        &mut self,
-        ncontext: &X,
-        rect: Rect<T::Num>,
-    ) where
-        X::No: Send,
-    {
-        query::nbody::nbody_par(self, ncontext, rect)
-    }
-}
-
 impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
     /// # Examples
     ///
@@ -266,7 +240,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
             fine,
             _p: PhantomData,
         };
-        raycast::raycast_mut(self, border, ray, &mut rtrait)
+        raycast::raycast_mut(self.axis(),self.vistr_mut(), border, ray, &mut rtrait)
     }
 
     /// # Examples
@@ -313,7 +287,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
             fine,
             _p: PhantomData,
         };
-        k_nearest::k_nearest_mut(self, point, num, &mut foo, border)
+        k_nearest::k_nearest_mut(self.axis(),self.vistr_mut(), point, num, &mut foo, border)
     }
 
     /// # Examples
@@ -481,6 +455,65 @@ pub trait DinoTreeTrait{
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
     }
 
+    fn find_intersections_par_ext<B: Send + Sync>(
+        &mut self,
+        split: impl Fn(&mut B) -> B + Send + Sync + Copy,
+        fold: impl Fn(&mut B, B) + Send + Sync + Copy,
+        collision: impl Fn(&mut B, &mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner) + Send + Sync + Copy,
+        acc: B,
+    ) -> B where Self::T:HasInner+Send+Sync,Self::N:Send+Sync{
+        struct Foo<T, A, B, C, D> {
+            _p: PhantomData<T>,
+            acc: A,
+            split: B,
+            fold: C,
+            collision: D,
+        }
+
+        impl<T: Aabb + HasInner, A, B, C, D: Fn(&mut A, &mut T::Inner, &mut T::Inner)> ColMulti
+            for Foo<T, A, B, C, D>
+        {
+            type T = T;
+            fn collide(&mut self, mut a: PMut<Self::T>, mut b: PMut<Self::T>) {
+                (self.collision)(&mut self.acc, a.inner_mut(), b.inner_mut())
+            }
+        }
+        impl<T, A, B: Fn(&mut A) -> A + Copy, C: Fn(&mut A, A) + Copy, D: Copy> Splitter
+            for Foo<T, A, B, C, D>
+        {
+            fn div(&mut self) -> Self {
+                let acc = (self.split)(&mut self.acc);
+                Foo {
+                    _p: PhantomData,
+                    acc,
+                    split: self.split,
+                    fold: self.fold,
+                    collision: self.collision,
+                }
+            }
+
+            fn add(&mut self, b: Self) {
+                (self.fold)(&mut self.acc, b.acc)
+            }
+
+            fn node_start(&mut self) {}
+
+            fn node_end(&mut self) {}
+        }
+
+        let foo = Foo {
+            _p: PhantomData,
+            acc,
+            split,
+            fold,
+            collision,
+        };
+
+        let foo = query::colfind::QueryBuilder::new(self.axis(),self.vistr_mut()).query_splitter_par(foo);
+        foo.acc
+    }
+
+
     #[must_use]
     fn multi_rect(&mut self) -> rect::MultiRectMut<Self::A, Self::N> {
         rect::MultiRectMut::new(self.axis(),self.vistr_mut())
@@ -493,6 +526,75 @@ pub trait DinoTreeTrait{
     fn for_all_in_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) {
         rect::for_all_in_rect(self.axis(),self.vistr(), rect, func);
     }
+
+    #[must_use]
+    fn raycast_mut<Acc>(
+        &mut self,
+        ray: axgeom::Ray<Self::Num>,
+        start: &mut Acc,
+        broad: impl FnMut(&mut Acc, &Ray<Self::Num>, &Rect<Self::Num>) -> CastResult<Self::Num>,
+        fine: impl FnMut(&mut Acc, &Ray<Self::Num>, &Self::T) -> CastResult<Self::Num>,
+        border: Rect<Self::Num>,
+    ) -> raycast::RayCastResult<<Self::T as HasInner>::Inner, Self::Num> where Self::T:HasInner{
+        let mut rtrait = raycast::RayCastClosure {
+            a: start,
+            broad,
+            fine,
+            _p: PhantomData,
+        };
+        raycast::raycast_mut(self.axis(),self.vistr_mut(), border, ray, &mut rtrait)
+    }
+
+    
+    #[must_use]
+    fn k_nearest_mut<Acc>(
+        &mut self,
+        point: Vec2<Self::Num>,
+        num: usize,
+        start: &mut Acc,
+        broad: impl FnMut(&mut Acc, Vec2<Self::Num>, &Rect<Self::Num>) -> Self::Num,
+        fine: impl FnMut(&mut Acc, Vec2<Self::Num>, &Self::T) -> Self::Num,
+        border: Rect<Self::Num>,
+    ) -> Vec<k_nearest::KnearestResult<<Self::T as HasInner>::Inner, Self::Num>> where Self::T:HasInner {
+        let mut foo = k_nearest::KnearestClosure {
+            acc: start,
+            broad,
+            fine,
+            _p: PhantomData,
+        };
+        k_nearest::k_nearest_mut(self.axis(),self.vistr_mut(), point, num, &mut foo, border)
+    }
+
+
+    
+    //#[cfg(feature = "nbody")]
+    fn nbody_mut<X: query::nbody::NodeMassTrait<Num = Self::Num, Item = Self::T> + Send + Sync>(
+        &mut self,
+        ncontext: &X,
+        rect: Rect<Self::Num>,
+    ) where
+        X::No: Send,
+        Self::N:Send+Sync,
+        Self::T:HasInner+Send+Sync
+    {
+        query::nbody::nbody(self.axis(),self.vistr_mut(), ncontext, rect)
+    }
+
+
+    //#[cfg(feature = "nbody")]
+    fn nbody_mut_par<X: query::nbody::NodeMassTrait<Num = Self::Num, Item = Self::T> + Sync + Send>(
+        &mut self,
+        ncontext: &X,
+        rect: Rect<Self::Num>,
+    ) where
+        X::No: Send,
+        Self::N:Send+Sync,
+        Self::T:HasInner+Send+Sync
+    {
+        query::nbody::nbody_par(self.axis(),self.vistr_mut(), ncontext, rect)
+    }
+
+
     
 }
 impl<'a,A:Axis,T:Aabb+HasInner> DinoTreeTrait for DinoTree<'a,A,T>{
