@@ -116,7 +116,7 @@ impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a, A, T> {
         &mut self,
         func: impl Fn(&mut T::Inner, &mut T::Inner) + Send + Sync + Copy,
     ) {
-        query::colfind::QueryBuilder::new(self)
+        query::colfind::QueryBuilder::new(self.axis,self.vistr_mut())
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
     }
 
@@ -191,7 +191,7 @@ impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> DinoTree<'a, A, T> {
             collision,
         };
 
-        let foo = query::colfind::QueryBuilder::new(self).query_splitter_par(foo);
+        let foo = query::colfind::QueryBuilder::new(self.axis,self.vistr_mut()).query_splitter_par(foo);
         foo.acc
     }
 }
@@ -381,7 +381,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
         rect: &Rect<T::Num>,
         mut func: impl FnMut(&'b mut T::Inner),
     ) {
-        rect::for_all_intersect_rect_mut(self, rect, move |a| (func)(a.into_inner()));
+        rect::for_all_intersect_rect_mut(self.axis,self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
 
     /// # Examples
@@ -402,7 +402,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
         rect: &Rect<T::Num>,
         mut func: impl FnMut(&'b mut T::Inner),
     ) {
-        rect::for_all_in_rect_mut(self, rect, move |a| (func)(a.into_inner()));
+        rect::for_all_in_rect_mut(self.axis,self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
 
     /// Find all aabb intersections
@@ -421,7 +421,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
     ///assert_eq!(bots[1].inner,1);
     ///```
     pub fn find_intersections_mut(&mut self, mut func: impl FnMut(&mut T::Inner, &mut T::Inner)) {
-        colfind::QueryBuilder::new(self)
+        colfind::QueryBuilder::new(self.axis,self.vistr_mut())
             .query_seq(move |a, b| func(a.into_inner(), b.into_inner()));
     }
 
@@ -443,7 +443,72 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
     ///assert_eq!(bots[1].inner,1);
     ///```
     pub fn find_intersections_pmut(&mut self, mut func: impl FnMut(PMut<T>, PMut<T>)) {
-        colfind::QueryBuilder::new(self).query_seq(move |a, b| func(a, b));
+        colfind::QueryBuilder::new(self.axis,self.vistr_mut()).query_seq(move |a, b| func(a, b));
+    }
+}
+
+
+
+
+
+pub trait DinoTreeTrait{
+    type A:Axis;
+    type N:Node<T=Self::T,Num=Self::Num>;
+    type T:Aabb<Num=Self::Num>;
+    type Num:Num;
+
+    fn vistr_mut(&mut self)->VistrMut<Self::N>;
+    fn vistr(&self)->Vistr<Self::N>;
+    fn axis(&self)->Self::A;
+        
+    fn draw_divider(&self,drawer: &mut impl graphics::DividerDrawer<N = Self::Num>, rect: &Rect<Self::Num>){
+        graphics::draw(self.axis(),self.vistr(), drawer, rect)
+    }
+
+    fn find_intersections_mut(
+        &mut self,
+        mut func: impl FnMut(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner),
+    ) where Self::T:HasInner{
+        query::colfind::QueryBuilder::new(self.axis(),self.vistr_mut())
+            .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
+    }
+
+    fn find_intersections_mut_par(
+        &mut self,
+        mut func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
+    ) where Self::N:Send+Sync,Self::T:HasInner+Send+Sync{
+        query::colfind::QueryBuilder::new(self.axis(),self.vistr_mut())
+            .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
+    }
+
+    #[must_use]
+    fn multi_rect(&mut self) -> rect::MultiRectMut<Self::A, Self::N> {
+        rect::MultiRectMut::new(self.axis(),self.vistr_mut())
+    }
+
+    fn for_all_intersect_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) {
+        rect::for_all_intersect_rect(self.axis(),self.vistr(), rect, func);
+    }
+
+    fn for_all_in_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) {
+        rect::for_all_in_rect(self.axis(),self.vistr(), rect, func);
+    }
+    
+}
+impl<'a,A:Axis,T:Aabb+HasInner> DinoTreeTrait for DinoTree<'a,A,T>{
+    type A=A;
+    type N=NodeMut<'a,T>;
+    type T=T;
+    type Num=T::Num;
+    
+    fn axis(&self)->Self::A{
+        self.axis
+    }
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
+        DinoTree::vistr_mut(self)
+    }
+    fn vistr(&self)->Vistr<NodeMut<'a,T>>{
+        DinoTree::vistr(self)
     }
 }
 
@@ -567,7 +632,7 @@ impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
     /// ```
     ///
     pub fn draw(&self, drawer: &mut impl graphics::DividerDrawer<N = T::Num>, rect: &Rect<T::Num>) {
-        graphics::draw(self, drawer, rect)
+        graphics::draw(self.axis,self.vistr(), drawer, rect)
     }
 
     /// # Examples
@@ -583,8 +648,8 @@ impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
     ///assert_eq!(res,Err(dinotree_alg::query::RectIntersectErr));
     ///```
     #[must_use]
-    pub fn multi_rect<'b>(&'b mut self) -> rect::MultiRectMut<'b, 'a, A, T> {
-        rect::MultiRectMut::new(self)
+    pub fn multi_rect<'b>(&'b mut self) -> rect::MultiRectMut<'b, A, NodeMut<'a,T>> {
+        rect::MultiRectMut::new(self.axis,self.vistr_mut())
     }
     /// # Examples
     ///
@@ -601,7 +666,7 @@ impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
     ///
     ///```
     pub fn for_all_intersect_rect<'b>(&'b self, rect: &Rect<T::Num>, func: impl FnMut(&'b T)) {
-        rect::for_all_intersect_rect(self, rect, func);
+        rect::for_all_intersect_rect(self.axis,self.vistr(), rect, func);
     }
 
     /// # Examples
@@ -618,7 +683,7 @@ impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///
     pub fn for_all_in_rect<'b>(&'b self, rect: &Rect<T::Num>, func: impl FnMut(&'b T)) {
-        rect::for_all_in_rect(self, rect, func);
+        rect::for_all_in_rect(self.axis,self.vistr(), rect, func);
     }
 }
 

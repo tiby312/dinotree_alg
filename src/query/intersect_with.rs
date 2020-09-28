@@ -22,8 +22,11 @@ pub fn intersect_with_mut<A: Axis, T: Aabb, X: Aabb<Num = T::Num>>(
 
     for mut i in PMut::new(b).iter_mut() {
         let rect = *i.get();
+        /*
         for_all_intersect_rect_mut(tree, &rect, |a| {
             func(a, i.as_mut());
         });
+        */
+        unimplemented!();
     }
 }
