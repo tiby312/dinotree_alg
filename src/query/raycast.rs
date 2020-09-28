@@ -305,14 +305,14 @@ mod mutable {
         }
     }
 
-    pub fn raycast_mut<'a, A: Axis, T: Aabb + HasInner>(
-        tree: &'a mut DinoTree<A, T>,
-        rect: Rect<T::Num>,
-        ray: Ray<T::Num>,
-        rtrait: &mut impl RayCast<N = T::Num, T = T>,
-    ) -> RayCastResult<'a, T::Inner, T::Num> {
-        let axis = tree.axis();
-        let dt = tree.vistr_mut().with_depth(Depth(0));
+    pub fn raycast_mut<'a, A: Axis, N:Node>(
+        axis:A,
+        vistr:VistrMut<'a,N>,
+        rect: Rect<N::Num>,
+        ray: Ray<N::Num>,
+        rtrait: &mut impl RayCast<N = N::Num, T = N::T>,
+    ) -> RayCastResult<'a, <N::T as HasInner>::Inner, N::Num> where N::T:HasInner{
+        let dt = vistr.with_depth(Depth(0));
 
         let closest = Closest { closest: None };
         let mut blap = Blap {

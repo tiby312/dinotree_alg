@@ -621,54 +621,55 @@ trait Bok2 {
 ///Parallel version.
 pub fn nbody_par<
     A: Axis,
-    T: Aabb + HasInner + Send + Sync,
-    N: NodeMassTrait<Num = T::Num, Item = T> + Sync + Send,
+    N:Node+Send+Sync,
+    NO: NodeMassTrait<Num = N::Num, Item = N::T> + Sync + Send,
 >(
-    t1: &mut DinoTree<A, T>,
-    ncontext: &N,
-    rect: Rect<T::Num>,
+    axis:A,
+    mut vistr:VistrMut<N>,
+    ncontext: &NO,
+    rect: Rect<N::Num>,
 ) where
-    N::No: Send,
+    N::T:HasInner+Send+Sync,
+    NO::No: Send,
 {
-    let axis = t1.axis();
 
     let mut misc_nodes = Vec::new();
-    buildtree(axis, t1.vistr_mut(), &mut misc_nodes, ncontext, rect);
+    buildtree(axis, vistr.create_wrap_mut(), &mut misc_nodes, ncontext, rect);
 
     let mut misc_tree = compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
     {
         let k = par::SWITCH_SEQUENTIAL_DEFAULT;
-        let par = par::compute_level_switch_sequential(k, t1.get_height());
+        let par = par::compute_level_switch_sequential(k, vistr.get_height());
 
-        let d = misc_tree.vistr_mut().zip(t1.vistr_mut());
+        let d = misc_tree.vistr_mut().zip(vistr.create_wrap_mut());
         recc(par, axis, d, ncontext);
     }
 
-    apply_tree(axis, misc_tree.vistr().zip(t1.vistr_mut()), ncontext);
+    apply_tree(axis, misc_tree.vistr().zip(vistr), ncontext);
 }
 
 ///Sequential version.
 pub fn nbody<
     A: Axis,
-    T: Aabb + HasInner + Send + Sync,
-    N: NodeMassTrait<Num = T::Num, Item = T> + Send + Sync,
+    N:Node+Send+Sync,
+    NO: NodeMassTrait<Num = N::Num, Item = N::T> + Send + Sync,
 >(
-    t1: &mut DinoTree<A, T>,
-    ncontext: &N,
-    rect: Rect<T::Num>,
-) {
-    let axis = t1.axis();
-
+    axis:A,
+    mut vistr:VistrMut<N>,
+    ncontext: &NO,
+    rect: Rect<N::Num>,
+) where N::T:HasInner + Send + Sync{
+    
     let mut misc_nodes = Vec::new();
 
-    buildtree(axis, t1.vistr_mut(), &mut misc_nodes, ncontext, rect);
+    buildtree(axis, vistr.create_wrap_mut(), &mut misc_nodes, ncontext, rect);
 
     let mut misc_tree = compt::dfs_order::CompleteTreeContainer::from_preorder(misc_nodes).unwrap();
 
-    let d = misc_tree.vistr_mut().zip(t1.vistr_mut());
+    let d = misc_tree.vistr_mut().zip(vistr.create_wrap_mut());
     recc(par::Sequential, axis, d, ncontext);
 
-    let d = misc_tree.vistr().zip(t1.vistr_mut());
+    let d = misc_tree.vistr().zip(vistr);
     apply_tree(axis, d, ncontext);
 }

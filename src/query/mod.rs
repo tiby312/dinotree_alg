@@ -17,7 +17,7 @@ pub use crate::query::k_nearest::KnearestResult;
 pub use crate::query::raycast::RayCastResult;
 pub use crate::query::rect::{MultiRectMut, RectIntersectErr};
 
-#[cfg(feature = "nbody")]
+//#[cfg(feature = "nbody")]
 pub use crate::query::nbody::NodeMassTrait;
 
 ///aabb broadphase collision detection
@@ -36,7 +36,7 @@ pub(crate) mod raycast;
 pub(crate) mod intersect_with;
 
 ///[EXPERIMENTAL] Contains all nbody code.
-#[cfg(feature = "nbody")]
+//#[cfg(feature = "nbody")]
 pub(crate) mod nbody;
 
 ///Contains rect code.
