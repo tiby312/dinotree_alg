@@ -311,7 +311,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
         other: &mut [X],
         func: impl Fn(&mut T::Inner, &mut X::Inner),
     ) {
-        intersect_with::intersect_with_mut(self, other, move |a, b| {
+        intersect_with::intersect_with_mut(self.axis(),self.vistr_mut(), other, move |a, b| {
             (func)(a.into_inner(), b.into_inner())
         })
     }
@@ -334,7 +334,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> DinoTree<'a, A, T> {
         rect: &Rect<T::Num>,
         mut func: impl FnMut(&'b mut T::Inner),
     ) {
-        rect::for_all_not_in_rect_mut(self, rect, move |a| (func)(a.into_inner()));
+        rect::for_all_not_in_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
 
     /// # Examples
@@ -455,6 +455,10 @@ pub trait DinoTreeTrait{
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
     }
 
+    fn find_intersections_pmut(&mut self, mut func: impl FnMut(PMut<Self::T>, PMut<Self::T>)) {
+        colfind::QueryBuilder::new(self.axis(),self.vistr_mut()).query_seq(move |a, b| func(a, b));
+    }
+
     fn find_intersections_par_ext<B: Send + Sync>(
         &mut self,
         split: impl Fn(&mut B) -> B + Send + Sync + Copy,
@@ -526,6 +530,29 @@ pub trait DinoTreeTrait{
     fn for_all_in_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) {
         rect::for_all_in_rect(self.axis(),self.vistr(), rect, func);
     }
+    fn for_all_not_in_rect_mut<'b>(
+        &'b mut self,
+        rect: &Rect<Self::Num>,
+        mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
+    ) where Self::T:HasInner{
+        rect::for_all_not_in_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
+    }
+    fn for_all_intersect_rect_mut<'b>(
+        &'b mut self,
+        rect: &Rect<Self::Num>,
+        mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
+    ) where Self::T:HasInner{
+        rect::for_all_intersect_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
+    }
+    fn for_all_in_rect_mut<'b>(
+        &'b mut self,
+        rect: &Rect<Self::Num>,
+        mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
+    ) where Self::T:HasInner{
+        rect::for_all_in_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
+    }
+
+
 
     #[must_use]
     fn raycast_mut<Acc>(
@@ -592,6 +619,16 @@ pub trait DinoTreeTrait{
         Self::T:HasInner+Send+Sync
     {
         query::nbody::nbody_par(self.axis(),self.vistr_mut(), ncontext, rect)
+    }
+
+    fn intersect_with_mut<X: Aabb<Num = Self::Num> + HasInner>(
+        &mut self,
+        other: &mut [X],
+        func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut X::Inner),
+    ) where Self::T:HasInner{
+        intersect_with::intersect_with_mut(self.axis(),self.vistr_mut(), other, move |a, b| {
+            (func)(a.into_inner(), b.into_inner())
+        })
     }
 
 

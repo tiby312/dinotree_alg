@@ -65,10 +65,11 @@ pub fn naive_for_all_not_in_rect_mut<'a,T: Aabb>(
     }
 }
 
-pub fn for_all_not_in_rect_mut<'a,A: Axis, T: Aabb>(
-    tree: &'a mut DinoTree<A, T>,
-    rect: &Rect<T::Num>,
-    closure: impl FnMut(PMut<'a,T>),
+pub fn for_all_not_in_rect_mut<'a,A: Axis,N:Node>(
+    axis:A,
+    vistr:VistrMut<'a,N>,
+    rect: &Rect<N::Num>,
+    closure: impl FnMut(PMut<'a,N::T>),
 ) {
     fn rect_recurse<'a,A: Axis, N: Node, F: FnMut(PMut<'a,N::T>)>(
         axis: A,
@@ -118,7 +119,7 @@ pub fn for_all_not_in_rect_mut<'a,A: Axis, T: Aabb>(
             None => closure,
         }
     }
-    rect_recurse(tree.axis(), tree.vistr_mut(), rect, closure);
+    rect_recurse(axis, vistr, rect, closure);
 }
 
 pub use constant::*;
