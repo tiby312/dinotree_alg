@@ -70,6 +70,7 @@ mod inner_prelude {
     pub(crate) use super::*;
     pub(crate) use crate::tree;
     pub(crate) use crate::tree::analyze::*;
+    pub(crate) use crate::tree::Queries;
     pub use alloc::vec::Vec;
     pub use axgeom::*;
     pub(crate) use compt::Visitor;

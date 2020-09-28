@@ -79,8 +79,9 @@ pub struct Assert;
 impl Assert {
     ///Returns false if the tree's invariants are not met.
     #[must_use]
-    pub fn tree_invariants<A: Axis, T: Aabb>(tree: &DinoTree<A, T>) -> bool {
-        Self::inner(tree.axis(), tree.vistr().with_depth(compt::Depth(0))).is_ok()
+    pub fn tree_invariants<A: Axis, N:Node>(axis:A,vistr:Vistr<N>) -> bool {
+        use crate::tree::Queries;
+        Self::inner(axis, vistr.with_depth(compt::Depth(0))).is_ok()
     }
 
     fn inner<A: Axis, N: Node>(axis: A, iter: compt::LevelIter<Vistr<N>>) -> Result<(), ()> {

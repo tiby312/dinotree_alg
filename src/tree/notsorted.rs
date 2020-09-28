@@ -57,9 +57,7 @@ impl<'a, A: Axis, T: Aabb> NotSorted<'a, A, T> {
 
     #[inline(always)]
     pub fn vistr_mut(&mut self) -> VistrMut<NodeMut<'a, T>> {
-        
-        self.0.inner.vistr_mut()
-        
+        VistrMut{inner:self.0.inner.vistr_mut()}
     }
 }
 impl<'a, A: Axis, T: Aabb + HasInner> NotSorted<'a, A, T> {
