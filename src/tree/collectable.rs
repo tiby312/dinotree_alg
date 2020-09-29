@@ -65,10 +65,10 @@ mod test{
             CollectableDinoTree{tree}
         }
         
-        pub fn collect_intersections_list<D: Send + Sync>(
-            &mut self,
+        pub fn collect_intersections_list<'c,D: Send + Sync>(
+            &'c mut self,
             mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
-        ) -> BotCollision<'a, T, D> {
+        ) -> BotCollision2<'c, T, D> {
             
             let cols = create_collision_list(&mut self.tree, |a, b| {
                 match func(a, b) {
@@ -76,19 +76,48 @@ mod test{
                     None => None,
                 }
             });
-            BotCollision {
+            BotCollision2 {
                 cols,
-                _p: PhantomData,
-                orig: myptr(self.get_bots_mut()),
             }
         }
     }
+    
+    pub struct BotCollision2<'a, T, D> {
+        cols: Vec<(&'a mut T, &'a mut T, D)>
+    }
+    impl<'a,T,D> BotCollision2<'a,T,D>{
+        pub fn for_every_pair_mut<'b, A: Axis, N: Num>(
+            &'b mut self,
+            mut func: impl FnMut(&mut T, &mut T, &mut D),
+        ) {
+            for (a, b, d) in self.cols.iter_mut() {
+                func(a, b, d)
+            }
+        }
+    }
+    
+    fn create_collision_list<'a, A: Axis, T: Aabb + HasInner, D>(
+        tree: &mut DinoTree<A, T>,
+        mut func: impl FnMut(&mut T::Inner, &mut T::Inner) -> Option<D>,
+    ) -> Vec<D> {
+        let mut nodes: Vec<_> = Vec::new();
+        
+        Queries::find_intersections_mut(tree,|a, b| {
+            if let Some(d) = func(a, b) {
+                nodes.push(d);
+            }
+        });
+
+        nodes
+    }
+
 
     
     
 }
 
 
+/*
 pub struct CollectableDinoTree<'a, A: Axis, N: Num, T> {
     bots: &'a mut [T],
     tree: DinoTreeOwned<A, BBox<N, MyPtr<T>>>,
@@ -257,6 +286,9 @@ impl<'a, T: Send + Sync, D: Send + Sync> SingleCollisionList<'a, T, D> {
     }
 }
 
+
+
+
 pub struct BotCollision<'a, T, D> {
     _p: PhantomData<&'a mut T>,
     cols: Vec<(MyPtr<T>, MyPtr<T>, D)>,
@@ -410,3 +442,5 @@ fn create_collision_list_par<'a, A: Axis, T: Aabb + HasInner + Send + Sync, D: S
 
     nodes
 }
+
+*/
