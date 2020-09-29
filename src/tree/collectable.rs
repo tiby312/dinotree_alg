@@ -46,64 +46,71 @@
 
 use super::*;
 
-mod test{
-    use super::*;
-    pub struct CollectableDinoTree<'a,'b, A: Axis, N: Num, T> {
-        tree: DinoTree<'a,A, BBox<N, &'b mut T>>,
-    } 
-    
-    //------------------------------------------------------------
-    //TODO make it deref to DinoTree
-    //------------------------------------------------------------
+pub struct CollectableDinoTree<'a,'b, A: Axis, N: Num, T> {
+    tree: DinoTree<'a,A, BBox<N, &'b mut T>>,
+} 
+impl<'a,'b,A:Axis,N:Num,T> core::ops::Deref for CollectableDinoTree<'a,'b,A,N,T> {
+    type Target = DinoTree<'a,A,BBox<N,&'b mut T>>;
 
-    impl<'a,'b,A:Axis,N:Num,T> CollectableDinoTree<'a,'b, A, N, T>{
-        fn with_axis(axis:A,bots:&'a mut [BBox<N,&'b mut T>])->CollectableDinoTree<'a,'b,A,N,T>{
-            let tree=DinoTree::with_axis(axis,bots);
-            CollectableDinoTree{tree}
-        }
-        
-        pub fn collect_intersections_list<'c,D: Send + Sync>(
-            &'c mut self,
-            mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
-        ) -> IntersectionList<'c, T, D> {
-            let mut cols: Vec<_> = Vec::new();
-        
-            Queries::find_intersections_mut(&mut self.tree,|a, b| {
-                if let Some(d) = func(a, b) {
-                    //We use unsafe to collect mutable references of
-                    //all colliding pairs.
-                    //This is safe to do because the user is forced
-                    //to iterate through all the colliding pairs
-                    //one at a time.
-                    let a=unsafe{&mut *(*a as *mut T)};
-                    let b=unsafe{&mut *(*b as *mut T)};
-                    
-                    cols.push((a,b,d));
-                }
-            });
-
-            IntersectionList {
-                cols,
-            }
-        }
+    fn deref(&self) -> &Self::Target {
+        &self.tree
     }
-    
-    pub struct IntersectionList<'a, T, D> {
-        cols: Vec<(&'a mut T, &'a mut T, D)>
+}
+impl<'a,'b,A:Axis,N:Num,T> core::ops::DerefMut for CollectableDinoTree<'a,'b,A,N,T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.tree
     }
-    impl<'a,T,D> IntersectionList<'a,T,D>{
-        pub fn for_every_pair_mut<'b, A: Axis, N: Num>(
-            &'b mut self,
-            mut func: impl FnMut(&mut T, &mut T, &mut D),
-        ) {
-            for (a, b, d) in self.cols.iter_mut() {
-                func(a, b, d)
-            }
-        }
-    }
-
 
 }
+
+impl<'a,'b,A:Axis,N:Num,T> CollectableDinoTree<'a,'b, A, N, T>{
+    pub fn with_axis(axis:A,bots:&'a mut [BBox<N,&'b mut T>])->CollectableDinoTree<'a,'b,A,N,T>{
+        let tree=DinoTree::with_axis(axis,bots);
+        CollectableDinoTree{tree}
+    }
+    
+    pub fn collect_intersections_list<'c,D: Send + Sync>(
+        &'c mut self,
+        mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
+    ) -> IntersectionList<'c, T, D> {
+        let mut cols: Vec<_> = Vec::new();
+    
+        Queries::find_intersections_mut(&mut self.tree,|a, b| {
+            if let Some(d) = func(a, b) {
+                //We use unsafe to collect mutable references of
+                //all colliding pairs.
+                //This is safe to do because the user is forced
+                //to iterate through all the colliding pairs
+                //one at a time.
+                let a=unsafe{&mut *(*a as *mut T)};
+                let b=unsafe{&mut *(*b as *mut T)};
+                
+                cols.push((a,b,d));
+            }
+        });
+
+        IntersectionList {
+            cols,
+        }
+    }
+}
+
+pub struct IntersectionList<'a, T, D> {
+    cols: Vec<(&'a mut T, &'a mut T, D)>
+}
+impl<'a,T,D> IntersectionList<'a,T,D>{
+    pub fn for_every_pair_mut<'b, A: Axis, N: Num>(
+        &'b mut self,
+        mut func: impl FnMut(&mut T, &mut T, &mut D),
+    ) {
+        for (a, b, d) in self.cols.iter_mut() {
+            func(a, b, d)
+        }
+    }
+}
+
+
+
 
 
 /*

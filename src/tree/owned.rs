@@ -46,14 +46,6 @@ impl<T: ?Sized> Clone for MyPtr<T> {
 }
 impl<T: ?Sized> Copy for MyPtr<T> {}
 
-impl<T: ?Sized> MyPtr<T> {
-    pub unsafe fn as_mut(&mut self) -> &mut T {
-        self.0.as_mut()
-    }
-    pub fn as_ptr(&self) -> *const T {
-        self.0.as_ptr()
-    }
-}
 unsafe impl<T: ?Sized> Send for MyPtr<T> {}
 unsafe impl<T: ?Sized> Sync for MyPtr<T> {}
 
@@ -190,6 +182,8 @@ pub struct DinoTreeOwned<A: Axis, T: Aabb> {
     tree: DinoTreeOwn<A, T>,
     bots: Vec<T>,
 }
+
+
 
 impl<T: Aabb> DinoTreeOwned<DefaultA, T> {
     pub fn new(bots: Vec<T>) -> DinoTreeOwned<DefaultA, T> {
