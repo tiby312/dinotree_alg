@@ -11,6 +11,7 @@
 //! in a finite area.
 //!
 use crate::query::inner_prelude::*;
+use super::tools;
 
 pub trait NodeMassTrait: Clone {
     type No: Copy + Send;

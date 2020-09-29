@@ -1,4 +1,5 @@
-use crate::query::colfind::ColMulti;
+//use crate::query::colfind::ColMulti;
+use super::ColMulti;
 use crate::query::inner_prelude::*;
 use crate::util::PreVecMut;
 

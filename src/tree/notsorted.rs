@@ -34,7 +34,7 @@ impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> NotSorted<'a, A, T> {
         &mut self,
         func: impl Fn(&mut T::Inner, &mut T::Inner) + Send + Sync + Copy,
     ) {
-        colfind::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
+        query::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
     }
 }
@@ -65,7 +65,7 @@ impl<'a, A: Axis, T: Aabb + HasInner> NotSorted<'a, A, T> {
         &mut self,
         mut func: impl FnMut(&mut T::Inner, &mut T::Inner),
     ) {
-        colfind::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
+        query::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
             .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
     }
 }

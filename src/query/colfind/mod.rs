@@ -7,6 +7,7 @@ pub(crate) mod oned;
 use self::inner::*;
 use self::node_handle::*;
 use crate::query::inner_prelude::*;
+use super::tools;
 
 ///Used for the advanced algorithms.
 ///Trait that user implements to handling aabb collisions.
