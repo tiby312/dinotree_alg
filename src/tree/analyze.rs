@@ -3,9 +3,6 @@
 
 use crate::inner_prelude::*;
 
-//pub use crate::query::colfind::ColMulti;
-//pub use crate::query::colfind::NotSortedQueryBuilder;
-//pub use crate::query::colfind::QueryBuilder;
 pub use crate::tree::node;
 pub use crate::tree::notsorted::NotSorted;
 pub use crate::tree::par;

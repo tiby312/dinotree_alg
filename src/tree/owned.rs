@@ -110,6 +110,7 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(axis: A, bots: &mut [T]) -> Di
     }
 }
 
+
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`
 pub struct DinoTreeOwnedBBoxPtr<A: Axis, N: Num, T> {
     tree: DinoTreeOwned<A, BBox<N, MyPtr<T>>>,
@@ -170,7 +171,7 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
     }
 }
 
-///The data structure this crate revoles around.
+
 pub(crate) struct DinoTreeOwn<A: Axis, T: Aabb> {
     axis: A,
     _inner: compt::dfs_order::CompleteTreeContainer<NodePtr<T>, compt::dfs_order::PreOrder>,
@@ -221,7 +222,7 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, T> {
         unsafe { &mut *(&mut self.tree as *mut _ as *mut _) }
     }
-    pub fn get_bots(&self) -> &[T] {
+    pub fn get_elements(&self) -> &[T] {
         &self.bots
     }
 
@@ -232,7 +233,7 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         self.tree = make_owned(axis, &mut self.bots);
     }
 
-    pub fn get_bots_mut(&mut self) -> PMut<[T]> {
+    pub fn get_elements_mut(&mut self) -> PMut<[T]> {
         PMut::new(&mut self.bots)
     }
 }
