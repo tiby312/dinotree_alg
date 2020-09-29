@@ -51,31 +51,9 @@ impl<'a,A:Axis,T:Aabb> NotSortedQueries for DinoTree<'a,A,T>{
     }
 }
 
-/*
-impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> NotSorted<'a, A, T> {
-    pub fn find_intersections_mut_par(
-        &mut self,
-        func: impl Fn(&mut T::Inner, &mut T::Inner) + Send + Sync + Copy,
-    ) {
-        query::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
-            .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
-    }
-}
-*/
 impl<'a, A: Axis, T: Aabb> NotSorted<'a, A, T> {
     #[inline(always)]
     pub fn get_height(&self) -> usize {
         self.0.get_height()
     }
 }
-/*
-impl<'a, A: Axis, T: Aabb + HasInner> NotSorted<'a, A, T> {
-    pub fn find_intersections_mut(
-        &mut self,
-        mut func: impl FnMut(&mut T::Inner, &mut T::Inner),
-    ) {
-        query::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
-            .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
-    }
-}
-*/

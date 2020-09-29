@@ -96,6 +96,7 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<'a, A, T> {
     }
 }
 
+
 impl<'a,A:Axis,T:Aabb> Queries for DinoTree<'a,A,T>{
     type A=A;
     type N=NodeMut<'a,T>;
@@ -115,6 +116,51 @@ impl<'a,A:Axis,T:Aabb> Queries for DinoTree<'a,A,T>{
     #[inline(always)]
     fn vistr(&self)->Vistr<NodeMut<'a,T>>{
         self.inner.vistr()
+    }
+}
+
+
+
+pub struct IntersectionList<'a, T, D> {
+    cols: Vec<(&'a mut T, &'a mut T, D)>
+}
+impl<'a,T,D> IntersectionList<'a,T,D>{
+    pub fn for_every_pair_mut<'b, A: Axis, N: Num>(
+        &'b mut self,
+        mut func: impl FnMut(&mut T, &mut T, &mut D),
+    ) {
+        for (a, b, d) in self.cols.iter_mut() {
+            func(a, b, d)
+        }
+    }
+}
+
+
+impl<'a,'b,A:Axis,N:Num,T> DinoTree<'a,A,BBox<N,&'b mut T>>{
+    
+    pub fn collect_intersections_list<'c,D: Send + Sync>(
+        &'c mut self,
+        mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
+    ) -> IntersectionList<'c, T, D> {
+        let mut cols: Vec<_> = Vec::new();
+    
+        Queries::find_intersections_mut(self,|a, b| {
+            if let Some(d) = func(a, b) {
+                //We use unsafe to collect mutable references of
+                //all colliding pairs.
+                //This is safe to do because the user is forced
+                //to iterate through all the colliding pairs
+                //one at a time.
+                let a=unsafe{&mut *(*a as *mut T)};
+                let b=unsafe{&mut *(*b as *mut T)};
+                
+                cols.push((a,b,d));
+            }
+        });
+
+        IntersectionList {
+            cols,
+        }
     }
 }
 

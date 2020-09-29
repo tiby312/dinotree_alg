@@ -46,6 +46,7 @@
 
 use super::*;
 
+/*
 pub struct CollectableDinoTree<'a,'b, A: Axis, N: Num, T> {
     tree: DinoTree<'a,A, BBox<N, &'b mut T>>,
 } 
@@ -109,6 +110,7 @@ impl<'a,T,D> IntersectionList<'a,T,D>{
     }
 }
 
+*/
 
 
 
