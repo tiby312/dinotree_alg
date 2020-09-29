@@ -39,6 +39,7 @@ unsafe impl<N: Num, T> Aabb for &mut BBox<N, T> {
         &self.rect
     }
 }
+
 unsafe impl<N: Num, T> HasInner for &mut BBox<N, T> {
     type Inner = T;
 
