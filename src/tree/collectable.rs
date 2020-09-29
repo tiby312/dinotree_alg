@@ -49,6 +49,46 @@ use owned::myptr;
 use owned::MyPtr;
 use owned::*;
 
+mod test{
+    use super::*;
+    pub struct CollectableDinoTree<'a,'b, A: Axis, N: Num, T> {
+        tree: DinoTree<'a,A, BBox<N, &'b mut T>>,
+    } 
+    
+    //------------------------------------------------------------
+    //TODO make it deref to DinoTree
+    //------------------------------------------------------------
+
+    impl<'a,'b,A:Axis,N:Num,T> CollectableDinoTree<'a,'b, A, N, T>{
+        fn with_axis(axis:A,bots:&'a mut [BBox<N,&'b mut T>])->CollectableDinoTree<'a,'b,A,N,T>{
+            let tree=DinoTree::with_axis(axis,bots);
+            CollectableDinoTree{tree}
+        }
+        
+        pub fn collect_intersections_list<D: Send + Sync>(
+            &mut self,
+            mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
+        ) -> BotCollision<'a, T, D> {
+            
+            let cols = create_collision_list(&mut self.tree, |a, b| {
+                match func(a, b) {
+                    Some(d) => Some((*a, *b, d)),
+                    None => None,
+                }
+            });
+            BotCollision {
+                cols,
+                _p: PhantomData,
+                orig: myptr(self.get_bots_mut()),
+            }
+        }
+    }
+
+    
+    
+}
+
+
 pub struct CollectableDinoTree<'a, A: Axis, N: Num, T> {
     bots: &'a mut [T],
     tree: DinoTreeOwned<A, BBox<N, MyPtr<T>>>,
@@ -68,6 +108,10 @@ impl<'a, N: Num, T> CollectableDinoTree<'a, DefaultA, N, T> {
         CollectableDinoTree { bots, tree }
     }
 }
+
+
+
+
 impl<'a, A: Axis, N: Num, T> CollectableDinoTree<'a, A, N, T> {
     pub fn get_bots(&self) -> &[T] {
         self.bots

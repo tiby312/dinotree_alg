@@ -55,6 +55,28 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeWrap<'a, A, T> {
     }
 }
 
+impl<'a,A:Axis,T:Aabb> Queries for DinoTreeWrap<'a,A,T>{
+    type A=A;
+    type N=NodeMut<'a,T>;
+    type T=T;
+    type Num=T::Num;
+    
+    #[inline(always)]
+    fn axis(&self)->Self::A{
+        self.get_tree().axis
+    }
+
+    #[inline(always)]
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
+        VistrMut{inner:self.get_tree_mut().inner.vistr_mut()}
+    }
+
+    #[inline(always)]
+    fn vistr(&self)->Vistr<NodeMut<'a,T>>{
+        self.get_tree().inner.vistr()
+    }
+}
+
 
 impl<'a,A:Axis,T:Aabb> DinoTreeWrap<'a,A,T>{
     fn new_inner(arr:&'a mut [T], func:impl FnOnce(&'a mut [T])->DinoTree<'a,A,T>)->DinoTreeWrap<'a,A,T>{

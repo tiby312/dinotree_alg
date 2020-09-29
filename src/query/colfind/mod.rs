@@ -84,7 +84,7 @@ pub struct NotSortedQueryBuilder<'a, A: Axis, N: Node> {
 
 impl<'a, A: Axis, N:Node + Send + Sync> NotSortedQueryBuilder<'a, A, N> where N::T:Send+Sync{
     #[inline(always)]
-    pub fn query_par(self, func: impl Fn(PMut<N::T>, PMut<N::T>) + Copy + Send + Sync) {
+    pub fn query_par(self, func: impl Fn(PMut<N::T>, PMut<N::T>) + Clone + Send + Sync) {
         let b = inner::QueryFn::new(func);
         let mut sweeper = HandleNoSorted::new(b);
         let par = par::compute_level_switch_sequential(self.switch_height, self.vistr.get_height());

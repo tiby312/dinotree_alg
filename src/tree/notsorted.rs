@@ -29,6 +29,29 @@ impl<'a, A: Axis, T: Aabb> NotSorted<'a, A, T> {
     }
 }
 
+impl<'a,A:Axis,T:Aabb> NotSortedQueries for DinoTree<'a,A,T>{
+    type A=A;
+    type N=NodeMut<'a,T>;
+    type T=T;
+    type Num=T::Num;
+    
+    #[inline(always)]
+    fn axis(&self)->Self::A{
+        self.axis
+    }
+
+    #[inline(always)]
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
+        VistrMut{inner:self.inner.vistr_mut()}
+    }
+
+    #[inline(always)]
+    fn vistr(&self)->Vistr<NodeMut<'a,T>>{
+        self.inner.vistr()
+    }
+}
+
+/*
 impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> NotSorted<'a, A, T> {
     pub fn find_intersections_mut_par(
         &mut self,
@@ -38,28 +61,14 @@ impl<'a, A: Axis, T: Aabb + HasInner + Send + Sync> NotSorted<'a, A, T> {
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
     }
 }
-
+*/
 impl<'a, A: Axis, T: Aabb> NotSorted<'a, A, T> {
-    #[inline(always)]
-    pub fn axis(&self) -> A {
-        self.0.axis()
-    }
-
     #[inline(always)]
     pub fn get_height(&self) -> usize {
         self.0.get_height()
     }
-
-    #[inline(always)]
-    pub fn vistr(&self) -> Vistr<NodeMut<'a, T>> {
-        self.0.inner.vistr()
-    }
-
-    #[inline(always)]
-    pub fn vistr_mut(&mut self) -> VistrMut<NodeMut<'a, T>> {
-        VistrMut{inner:self.0.inner.vistr_mut()}
-    }
 }
+/*
 impl<'a, A: Axis, T: Aabb + HasInner> NotSorted<'a, A, T> {
     pub fn find_intersections_mut(
         &mut self,
@@ -69,3 +78,4 @@ impl<'a, A: Axis, T: Aabb + HasInner> NotSorted<'a, A, T> {
             .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut()));
     }
 }
+*/

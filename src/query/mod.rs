@@ -23,6 +23,7 @@ pub use crate::query::nbody::NodeMassTrait;
 ///aabb broadphase collision detection
 mod colfind;
 pub use colfind::NotSortedQueryBuilder;
+pub use colfind::QueryBuilder;
 
 
 ///Provides functionality to draw the dividers of a dinotree.
@@ -47,10 +48,45 @@ mod rect;
 ///Contains misc tools
 mod tools;
 
-
-
-
 use self::inner_prelude::*;
+
+//Queries that can be performed on a tree that is not sorted
+pub trait NotSortedQueries{
+    type A:Axis;
+    type N:Node<T=Self::T,Num=Self::Num>;
+    type T:Aabb<Num=Self::Num>;
+    type Num:Num;
+    #[must_use]
+    fn vistr_mut(&mut self)->VistrMut<Self::N>;
+
+    #[must_use]
+    fn vistr(&self)->Vistr<Self::N>;
+  
+    #[must_use]
+    fn axis(&self)->Self::A;
+  
+    fn new_colfind_builder(&mut self)->NotSortedQueryBuilder<Self::A,Self::N>{
+        NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
+    }
+
+    fn find_intersections_mut(
+        &mut self,
+        mut func: impl FnMut(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner),
+    ) where Self::T:HasInner{
+        query::colfind::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
+            .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
+    }
+
+    fn find_intersections_mut_par(
+        &mut self,
+        mut func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
+    ) where Self::N:Send+Sync,Self::T:HasInner+Send+Sync{
+        query::colfind::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
+            .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
+    }
+
+}
+
 
 ///A collection of query functions 
 pub trait Queries{
@@ -106,7 +142,9 @@ pub trait Queries{
     #[must_use]
     fn axis(&self)->Self::A;
         
-
+    fn new_colfind_builder(&mut self)->QueryBuilder<Self::A,Self::N>{
+        QueryBuilder::new(self.axis(),self.vistr_mut())
+    }
     /// # Examples
     ///
     /// ```
@@ -582,8 +620,8 @@ pub struct Assert;
 impl Assert {
     ///Returns false if the tree's invariants are not met.
     #[must_use]
-    pub fn tree_invariants<A: Axis, N:Node>(axis:A,vistr:Vistr<N>) -> bool {
-        Self::inner(axis, vistr.with_depth(compt::Depth(0))).is_ok()
+    pub fn tree_invariants(a:&impl Queries) -> bool {
+        Self::inner(a.axis(), a.vistr().with_depth(compt::Depth(0))).is_ok()
     }
 
     fn inner<A: Axis, N: Node>(axis: A, iter: compt::LevelIter<Vistr<N>>) -> Result<(), ()> {
@@ -669,8 +707,9 @@ impl Assert {
     }
 
     pub fn find_intersections_mut<A: Axis, T: Aabb + HasInner>(tree: &mut DinoTreeWrap<A, T>) {
+        use Queries;
         let mut res_dino = Vec::new();
-        tree.get_tree_mut().find_intersections_mut(|a, b| {
+        tree.find_intersections_mut(|a, b| {
             let a = a as *const _ as usize;
             let b = b as *const _ as usize;
             let k = if a < b { (a, b) } else { (b, a) };
