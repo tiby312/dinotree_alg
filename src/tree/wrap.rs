@@ -55,25 +55,17 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeWrap<'a, A, T> {
     }
 }
 
-impl<'a,A:Axis,T:Aabb> Queries for DinoTreeWrap<'a,A,T>{
-    type A=A;
-    type N=NodeMut<'a,T>;
-    type T=T;
-    type Num=T::Num;
-    
-    #[inline(always)]
-    fn axis(&self)->Self::A{
-        self.get_tree().axis
-    }
+impl<'a,'b,A:Axis,T:Aabb> core::ops::Deref for DinoTreeWrap<'a,A,T> {
+    type Target = DinoTree<'a,A,T>;
 
-    #[inline(always)]
-    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
-        VistrMut{inner:self.get_tree_mut().inner.vistr_mut()}
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
+}
 
-    #[inline(always)]
-    fn vistr(&self)->Vistr<NodeMut<'a,T>>{
-        self.get_tree().inner.vistr()
+impl<'a,'b,A:Axis,T:Aabb> core::ops::DerefMut for DinoTreeWrap<'a,A,T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
     }
 }
 

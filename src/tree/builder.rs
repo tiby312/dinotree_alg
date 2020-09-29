@@ -2,6 +2,10 @@
 use super::*;
 
 ///Builder pattern for dinotree.
+///For most usecases, the user is suggested to use
+///the built in new() functions to create the tree.
+///This is provided in cases the user wants more control
+///on the behavior of the tree for benching and debuging purposes.
 pub struct DinoTreeBuilder<'a, A: Axis, T> {
     axis: A,
     bots: &'a mut [T],

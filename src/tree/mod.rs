@@ -7,8 +7,10 @@ mod tests;
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`.
 pub mod owned;
 
+/*
 ///A verion of dinotree where the user can collect and store queries to use later.
-pub mod collectable;
+///mod collectable;
+*/
 
 pub mod analyze;
 
@@ -122,6 +124,12 @@ impl<'a,A:Axis,T:Aabb> Queries for DinoTree<'a,A,T>{
 
 
 pub struct IntersectionList<'a, T, D> {
+    ///See collect_intersections_list()
+    ///The same elements can be part of
+    ///multiple intersecting pairs.
+    ///So pointer aliasing rules are not
+    ///being met if we were to just use this
+    ///vec according to its type signature.
     cols: Vec<(&'a mut T, &'a mut T, D)>
 }
 impl<'a,T,D> IntersectionList<'a,T,D>{
@@ -144,7 +152,7 @@ impl<'a,'b,A:Axis,N:Num,T> DinoTree<'a,A,BBox<N,&'b mut T>>{
     ) -> IntersectionList<'c, T, D> {
         let mut cols: Vec<_> = Vec::new();
     
-        Queries::find_intersections_mut(self,|a, b| {
+        self.find_intersections_mut(|a, b| {
             if let Some(d) = func(a, b) {
                 //We use unsafe to collect mutable references of
                 //all colliding pairs.
@@ -201,7 +209,7 @@ impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
 }
 
 
-use self::builder::DinoTreeBuilder;
+pub use self::builder::DinoTreeBuilder;
 mod builder;
 
 pub(crate) use self::node::*;

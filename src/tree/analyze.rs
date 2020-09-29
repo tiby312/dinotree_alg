@@ -3,11 +3,10 @@
 
 use crate::inner_prelude::*;
 
-pub use crate::tree::node;
-pub use crate::tree::notsorted::NotSorted;
-pub use crate::tree::par;
-
-pub use crate::tree::builder::DinoTreeBuilder;
+//pub use crate::tree::node;
+//pub use crate::tree::notsorted::NotSorted;
+//pub use crate::tree::par;
+//pub use crate::tree::builder::DinoTreeBuilder;
 
 ///Helper module for creating Vecs of different types of BBoxes.
 pub mod bbox_helper {

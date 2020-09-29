@@ -88,8 +88,8 @@ use axgeom::*;
 
 ///Contains generic code used in all dinotree versions
 //pub use self::tree::{DinoTree,analyze,collectable,owned,DefaultA,default_axis};
-pub use self::tree::*;
-mod tree;
+//pub use self::tree::*;
+pub mod tree;
 
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
@@ -101,7 +101,7 @@ mod bbox;
 pub use crate::bbox::*;
 
 ///Generic slice utillity functions.
-pub mod util;
+mod util;
 
 ///The underlying number type used for the dinotree.
 ///It is auto implemented by all types that satisfy the type constraints.

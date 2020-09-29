@@ -29,7 +29,7 @@ impl<'a, A: Axis, T: Aabb> NotSorted<'a, A, T> {
     }
 }
 
-impl<'a,A:Axis,T:Aabb> NotSortedQueries for DinoTree<'a,A,T>{
+impl<'a,A:Axis,T:Aabb> NotSortedQueries for NotSorted<'a,A,T>{
     type A=A;
     type N=NodeMut<'a,T>;
     type T=T;
@@ -37,17 +37,17 @@ impl<'a,A:Axis,T:Aabb> NotSortedQueries for DinoTree<'a,A,T>{
     
     #[inline(always)]
     fn axis(&self)->Self::A{
-        self.axis
+        self.0.axis()
     }
 
     #[inline(always)]
     fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
-        VistrMut{inner:self.inner.vistr_mut()}
+        self.0.vistr_mut()
     }
 
     #[inline(always)]
     fn vistr(&self)->Vistr<NodeMut<'a,T>>{
-        self.inner.vistr()
+        self.0.vistr()
     }
 }
 
