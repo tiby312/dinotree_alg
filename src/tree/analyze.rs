@@ -2,7 +2,6 @@
 //! to help analyze and measure their performance.
 
 use crate::inner_prelude::*;
-use crate::query::*;
 
 //pub use crate::query::colfind::ColMulti;
 //pub use crate::query::colfind::NotSortedQueryBuilder;

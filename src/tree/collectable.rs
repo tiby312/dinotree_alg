@@ -45,9 +45,6 @@
 //!```
 
 use super::*;
-use owned::myptr;
-use owned::MyPtr;
-use owned::*;
 
 mod test{
     use super::*;
@@ -68,24 +65,33 @@ mod test{
         pub fn collect_intersections_list<'c,D: Send + Sync>(
             &'c mut self,
             mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
-        ) -> BotCollision2<'c, T, D> {
-            
-            let cols = create_collision_list(&mut self.tree, |a, b| {
-                match func(a, b) {
-                    Some(d) => Some((*a, *b, d)),
-                    None => None,
+        ) -> IntersectionList<'c, T, D> {
+            let mut cols: Vec<_> = Vec::new();
+        
+            Queries::find_intersections_mut(&mut self.tree,|a, b| {
+                if let Some(d) = func(a, b) {
+                    //We use unsafe to collect mutable references of
+                    //all colliding pairs.
+                    //This is safe to do because the user is forced
+                    //to iterate through all the colliding pairs
+                    //one at a time.
+                    let a=unsafe{&mut *(*a as *mut T)};
+                    let b=unsafe{&mut *(*b as *mut T)};
+                    
+                    cols.push((a,b,d));
                 }
             });
-            BotCollision2 {
+
+            IntersectionList {
                 cols,
             }
         }
     }
     
-    pub struct BotCollision2<'a, T, D> {
+    pub struct IntersectionList<'a, T, D> {
         cols: Vec<(&'a mut T, &'a mut T, D)>
     }
-    impl<'a,T,D> BotCollision2<'a,T,D>{
+    impl<'a,T,D> IntersectionList<'a,T,D>{
         pub fn for_every_pair_mut<'b, A: Axis, N: Num>(
             &'b mut self,
             mut func: impl FnMut(&mut T, &mut T, &mut D),
@@ -95,25 +101,8 @@ mod test{
             }
         }
     }
-    
-    fn create_collision_list<'a, A: Axis, T: Aabb + HasInner, D>(
-        tree: &mut DinoTree<A, T>,
-        mut func: impl FnMut(&mut T::Inner, &mut T::Inner) -> Option<D>,
-    ) -> Vec<D> {
-        let mut nodes: Vec<_> = Vec::new();
-        
-        Queries::find_intersections_mut(tree,|a, b| {
-            if let Some(d) = func(a, b) {
-                nodes.push(d);
-            }
-        });
-
-        nodes
-    }
 
 
-    
-    
 }
 
 

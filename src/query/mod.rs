@@ -79,7 +79,7 @@ pub trait NotSortedQueries{
 
     fn find_intersections_mut_par(
         &mut self,
-        mut func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
+        func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
     ) where Self::N:Send+Sync,Self::T:HasInner+Send+Sync{
         query::colfind::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
@@ -223,7 +223,7 @@ pub trait Queries{
     ///```
     fn find_intersections_mut_par(
         &mut self,
-        mut func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
+        func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
     ) where Self::N:Send+Sync,Self::T:HasInner+Send+Sync{
         query::colfind::QueryBuilder::new(self.axis(),self.vistr_mut())
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
@@ -707,7 +707,6 @@ impl Assert {
     }
 
     pub fn find_intersections_mut<A: Axis, T: Aabb + HasInner>(tree: &mut DinoTreeWrap<A, T>) {
-        use Queries;
         let mut res_dino = Vec::new();
         tree.find_intersections_mut(|a, b| {
             let a = a as *const _ as usize;
