@@ -152,7 +152,8 @@ pub struct IntersectionList<'a, T, D> {
     ///So pointer aliasing rules are not
     ///being met if we were to just use this
     ///vec according to its type signature.
-    cols: Vec<(&'a mut T, &'a mut T, D)>
+    cols: Vec<(*mut T, *mut T, D)>,
+    _p:PhantomData<&'a mut T>
 }
 impl<'a,T,D> IntersectionList<'a,T,D>{
     pub fn for_every_pair_mut<'b, A: Axis, N: Num>(
@@ -160,7 +161,7 @@ impl<'a,T,D> IntersectionList<'a,T,D>{
         mut func: impl FnMut(&mut T, &mut T, &mut D),
     ) {
         for (a, b, d) in self.cols.iter_mut() {
-            func(a, b, d)
+            func(unsafe{&mut **a}, unsafe{&mut **b}, d)
         }
     }
 }
@@ -168,10 +169,12 @@ impl<'a,T,D> IntersectionList<'a,T,D>{
 
 impl<'a,'b,A:Axis,N:Num,T> DinoTree<A,NodeMut<'a, BBox<N,&'b mut T>>>{
     
+
+    ///We have to invalidate the tree because we broke alias rules
     pub fn collect_intersections_list<'c,D: Send + Sync>(
-        &'c mut self,
+        mut self,
         mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
-    ) -> IntersectionList<'c, T, D> {
+    ) -> IntersectionList<'b, T, D> {
         let mut cols: Vec<_> = Vec::new();
     
         self.find_intersections_mut(|a, b| {
@@ -181,8 +184,8 @@ impl<'a,'b,A:Axis,N:Num,T> DinoTree<A,NodeMut<'a, BBox<N,&'b mut T>>>{
                 //This is safe to do because the user is forced
                 //to iterate through all the colliding pairs
                 //one at a time.
-                let a=unsafe{&mut *(*a as *mut T)};
-                let b=unsafe{&mut *(*b as *mut T)};
+                let a=*a as *mut T;
+                let b=*b as *mut T;
                 
                 cols.push((a,b,d));
             }
@@ -190,9 +193,11 @@ impl<'a,'b,A:Axis,N:Num,T> DinoTree<A,NodeMut<'a, BBox<N,&'b mut T>>>{
 
         IntersectionList {
             cols,
+            _p:PhantomData
         }
     }
 }
+
 
 
 impl< A: Axis, N:Node> DinoTree< A, N> {
