@@ -29,10 +29,7 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
             self.height,
             self.rebal_strat,
         );
-        NotSorted(DinoTree {
-            axis: self.axis,
-            inner
-        })
+        NotSorted(inner)
     }
 
     ///Build in parallel
@@ -40,7 +37,7 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
         let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
-        let inner = create_tree_par(
+        create_tree_par(
             self.axis,
             dlevel,
             bots,
@@ -48,11 +45,7 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
             &mut SplitterEmpty,
             self.height,
             self.rebal_strat,
-        );
-        DinoTree {
-            axis: self.axis,
-            inner
-        }
+        )
     }
 }
 
@@ -103,28 +96,21 @@ impl<'a, A: Axis, T: Aabb> DinoTreeBuilder<'a, A, T> {
             self.height,
             self.rebal_strat,
         );
-        NotSorted(DinoTree {
-            axis: self.axis,
-            inner
-        })
+        NotSorted(inner)
     }
 
     ///Build sequentially
     pub fn build_seq(&mut self) -> DinoTree< A, NodeMut<'a,T>> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
-        let inner = create_tree_seq(
+        create_tree_seq(
             self.axis,
             bots,
             DefaultSorter,
             &mut SplitterEmpty,
             self.height,
             self.rebal_strat,
-        );
-        DinoTree {
-            axis: self.axis,
-            inner,
-        }
+        )
     }
 
     #[inline(always)]
@@ -155,17 +141,13 @@ impl<'a, A: Axis, T: Aabb> DinoTreeBuilder<'a, A, T> {
     ) -> DinoTree< A, NodeMut<'a,T>> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
-        let inner = create_tree_seq(
+        create_tree_seq(
             self.axis,
             bots,
             DefaultSorter,
             splitter,
             self.height,
             self.rebal_strat,
-        );
-        DinoTree {
-            axis: self.axis,
-            inner
-        }
+        )
     }
 }

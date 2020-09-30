@@ -9,7 +9,7 @@ pub mod owned;
 
 
 ///A verion of dinotree where the user can collect and store queries to use later.
-mod collectable;
+pub mod collectable;
 
 pub mod analyze;
 
@@ -56,6 +56,7 @@ pub mod slice_swap{
 pub struct DinoTree<A: Axis, N:Node> {
     axis: A,
     inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
+    orig:PMutPtr<[N::T]>
 }
 
 ///The type of the axis of the first node in the dinotree.
@@ -210,6 +211,18 @@ impl< A: Axis, N:Node> DinoTree< A, N> {
     #[inline(always)]
     pub fn get_height(&self) -> usize {
         self.inner.get_height()
+    }
+
+    
+    pub fn get_elements(&self)->&[N::T]{
+        //Safe to do since we have to borrow the whole tree,
+        //so the tree mutable references cannot be in use
+        unsafe{&*self.orig.as_mut()}
+    }
+    pub fn get_elements_mut(&mut self)->PMut<[N::T]>{
+        //Safe to do since we have to borrow the whole tree,
+        //so the tree mutable references cannot be in use
+        unsafe{self.orig.as_mut()}
     }
 
     /// # Examples
@@ -411,7 +424,9 @@ fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
     splitter: &mut K,
     height: usize,
     binstrat: BinStrat,
-) -> compt::dfs_order::CompleteTreeContainer<NodeMut<'a, T>, compt::dfs_order::PreOrder> {
+) -> DinoTree<A,NodeMut<'a,T>> {
+    let orig=PMut::new(rest).as_ptr();
+
     let num_bots = rest.len();
 
     let mut nodes = Vec::with_capacity(tree::nodes_left(0, height));
@@ -432,7 +447,7 @@ fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
         .fold(0, move |acc, a| acc + a.range.len());
     debug_assert_eq!(k, num_bots);
 
-    tree
+    DinoTree{axis:div_axis,inner:tree,orig}
 }
 
 fn create_tree_par<
@@ -449,7 +464,9 @@ fn create_tree_par<
     splitter: &mut K,
     height: usize,
     binstrat: BinStrat,
-) -> compt::dfs_order::CompleteTreeContainer<NodeMut<'a, T>, compt::dfs_order::PreOrder> {
+) ->DinoTree<A,NodeMut<'a,T>> {
+    let orig=PMut::new(rest).as_ptr();
+
     let num_bots = rest.len();
 
     let mut nodes = Vec::with_capacity(tree::nodes_left(0, height));
@@ -470,7 +487,11 @@ fn create_tree_par<
         .fold(0, move |acc, a| acc + a.range.len());
     debug_assert_eq!(k, num_bots);
 
-    tree
+    DinoTree{
+        axis:div_axis,
+        inner:tree,
+        orig
+    }
 }
 
 struct Recurser<'a, T: Aabb, K: Splitter, S: Sorter> {

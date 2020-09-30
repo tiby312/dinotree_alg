@@ -8,6 +8,7 @@ use crate::inner_prelude::*;
 //pub use crate::tree::par;
 //pub use crate::tree::builder::DinoTreeBuilder;
 
+/*
 ///Helper module for creating Vecs of different types of BBoxes.
 pub mod bbox_helper {
     use crate::inner_prelude::*;
@@ -59,7 +60,7 @@ pub mod bbox_helper {
         }
     }
 }
-
+*/
 
 ///Expose a common Sorter trait so that we may have two version of the tree
 ///where one implementation actually does sort the tree, while the other one

@@ -97,6 +97,8 @@ impl<T: Aabb> Node for NodePtr< T> {
 }
 
 fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
+    let orig=PMut::new(bots).as_ptr();
+
     let inner = DinoTree::with_axis(axis, bots);
     let inner: Vec<_> = inner
         .inner
@@ -112,6 +114,7 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<
     DinoTree {
         axis,
         inner,
+        orig
     }
 }
 /* TODO
