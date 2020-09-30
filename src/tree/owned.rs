@@ -57,7 +57,7 @@ unsafe impl<T: Aabb> Send for NodePtr<T> {}
 unsafe impl<T: Aabb> Sync for NodePtr<T> {}
 
 ///A Node in a dinotree.
-pub(crate) struct NodePtr<T: Aabb> {
+pub struct NodePtr<T: Aabb> {
     _range: PMutPtr<[T]>,
 
     //range is empty iff cont is none.
@@ -70,7 +70,33 @@ pub(crate) struct NodePtr<T: Aabb> {
     _div: Option<T::Num>,
 }
 
-fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
+impl<T: Aabb> Node for NodePtr< T> {
+    type T = T;
+    type Num = T::Num;
+    fn get(&self) -> NodeRef<Self::T> {
+        //TODO point as struct impl
+        unimplemented!();
+        /*
+        NodeRef {
+            bots: self._range.as_ref(),
+            cont: &self._cont,
+            div: &self._div,
+        }
+        */
+    }
+    fn get_mut(&mut self) -> NodeRefMut<Self::T> {
+        unimplemented!();
+        /*
+        NodeRefMut {
+            bots: self._range.as_mut(),
+            cont: &self._cont,
+            div: &self._div,
+        }
+        */
+    }
+}
+
+fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
     let inner = DinoTree::with_axis(axis, bots);
     let inner: Vec<_> = inner
         .inner
@@ -83,13 +109,12 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTreeOwn {
+    DinoTree {
         axis,
-        _inner: inner,
-        _bots: PMut::new(bots).as_ptr(),
+        inner,
     }
 }
-
+/* TODO
 fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(axis: A, bots: &mut [T]) -> DinoTreeOwn<A, T> {
     let inner = DinoTree::with_axis_par(axis, bots);
     let inner: Vec<_> = inner
@@ -109,7 +134,8 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(axis: A, bots: &mut [T]) -> Di
         _bots: PMut::new(bots).as_ptr(),
     }
 }
-
+*/
+/*
 
 ///An owned dinotree componsed of `(Rect<N>,*mut T)`
 pub struct DinoTreeOwnedBBoxPtr<A: Axis, N: Num, T> {
@@ -170,17 +196,12 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
         &mut self.bots
     }
 }
+*/
 
-
-pub(crate) struct DinoTreeOwn<A: Axis, T: Aabb> {
-    axis: A,
-    _inner: compt::dfs_order::CompleteTreeContainer<NodePtr<T>, compt::dfs_order::PreOrder>,
-    _bots: PMutPtr<[T]>,
-}
 
 ///An owned dinotree componsed of `T:Aabb`
 pub struct DinoTreeOwned<A: Axis, T: Aabb> {
-    tree: DinoTreeOwn<A, T>,
+    tree: DinoTree<A, NodePtr<T>>,
     bots: Vec<T>,
 }
 
@@ -191,11 +212,13 @@ impl<T: Aabb> DinoTreeOwned<DefaultA, T> {
         Self::with_axis(default_axis(), bots)
     }
 }
+/* TODO fix
 impl<T: Aabb + Send + Sync> DinoTreeOwned<DefaultA, T> {
     pub fn new_par(bots: Vec<T>) -> DinoTreeOwned<DefaultA, T> {
         Self::with_axis_par(default_axis(), bots)
     }
 }
+
 
 impl<A: Axis, T: Aabb + Send + Sync> DinoTreeOwned<A, T> {
     ///Create an owned dinotree in one thread.
@@ -206,6 +229,20 @@ impl<A: Axis, T: Aabb + Send + Sync> DinoTreeOwned<A, T> {
         }
     }
 }
+*/
+
+
+
+impl<A:Axis,T:Aabb> core::ops::Deref for DinoTreeOwned<A,T> {
+    type Target = DinoTree<A,NodePtr<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tree
+        //TODO get rid of this???
+        //unsafe{&*(self.tree as *const _ as *const _)}
+    }
+}
+
 impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     ///Create an owned dinotree in one thread.
     pub fn with_axis(axis: A, mut bots: Vec<T>) -> DinoTreeOwned<A, T> {
