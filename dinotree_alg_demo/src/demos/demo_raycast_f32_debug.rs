@@ -40,7 +40,7 @@ pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
             .draw();
 
         if check_naive {
-            analyze::Assert::raycast_mut(
+            Assert::raycast_mut(
                 tree,
                 ray,
                 &mut rects,

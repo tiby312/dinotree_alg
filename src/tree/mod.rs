@@ -7,10 +7,9 @@ mod tests;
 ///that are in its tree (as a self-referential struct). Composed of `(Rect<N>,*mut T)`.
 pub mod owned;
 
-/*
+
 ///A verion of dinotree where the user can collect and store queries to use later.
-///mod collectable;
-*/
+mod collectable;
 
 pub mod analyze;
 
@@ -25,16 +24,38 @@ pub(crate) use self::notsorted::NotSorted;
 use crate::query::*;
 
 
-pub use self::wrap::DinoTreeWrap;
-mod wrap;
+/*
+pub use self::slice_swap::SliceSwap;
+pub mod slice_swap{
+    use core::marker::PhantomData;
+    pub struct SliceSwap<'a,X1,X2>{
+        x1:X1,
+        x2:X2,
+        _p:PhantomData<&'a mut usize>
+    }
+    
+    impl<'a,X1,X2> SliceSwap<'a,X1,X2>{
+        pub fn new<T>(arr:&'a mut [T],func1:impl FnOnce(&'a mut [T])->X1,func2:impl FnOnce(&'a mut [T])->X2)->SliceSwap<'a,X1,X2>{
+            let arr2=unsafe{&mut *(arr as *mut _)};
+            SliceSwap{x1:func1(arr),x2:func2(arr2),_p:PhantomData}
+        }
 
+        pub fn x1(&mut self)->&mut X1{
+            &mut self.x1
+        }
 
+        pub fn x2(&mut self)->&mut X2{
+            &mut self.x2
+        }
+    }
+}
+*/
 
 
 ///The data structure this crate revoles around.
-pub struct DinoTree<'a, A: Axis, T: Aabb> {
+pub struct DinoTree<A: Axis, N:Node> {
     axis: A,
-    inner: compt::dfs_order::CompleteTreeContainer<NodeMut<'a, T>, compt::dfs_order::PreOrder>
+    inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
 }
 
 ///The type of the axis of the first node in the dinotree.
@@ -46,7 +67,7 @@ pub const fn default_axis() -> YAXIS {
     YAXIS
 }
 
-impl<'a, T: Aabb> DinoTree<'a, DefaultA, T> {
+impl<'a, T: Aabb> DinoTree<DefaultA,NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -54,12 +75,12 @@ impl<'a, T: Aabb> DinoTree<'a, DefaultA, T> {
     ///let tree = dinotree_alg::DinoTree::new(&mut bots);
     ///
     ///```
-    pub fn new(bots: &'a mut [T]) -> DinoTree<'a, DefaultA, T> {
+    pub fn new(bots: &'a mut [T]) -> DinoTree< DefaultA, NodeMut<'a, T>> {
         DinoTreeBuilder::new(bots).build_seq()
     }
 }
 
-impl<'a, T: Aabb + Send + Sync> DinoTree<'a, DefaultA, T> {
+impl<'a, T: Aabb + Send + Sync> DinoTree<DefaultA, NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -67,12 +88,12 @@ impl<'a, T: Aabb + Send + Sync> DinoTree<'a, DefaultA, T> {
     ///let tree = dinotree_alg::DinoTree::new_par(&mut bots);
     ///
     ///```
-    pub fn new_par(bots: &'a mut [T]) -> DinoTree<'a, DefaultA, T> {
+    pub fn new_par(bots: &'a mut [T]) -> DinoTree<DefaultA, NodeMut<'a, T>> {
         DinoTreeBuilder::new(bots).build_par()
     }
 }
 
-impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
+impl<'a, A: Axis, T: Aabb> DinoTree<A, NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -80,12 +101,12 @@ impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
     ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
-    pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTree<'a, A, T> {
+    pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTree<A, NodeMut<'a, T>> {
         DinoTreeBuilder::with_axis(axis, bots).build_seq()
     }
 }
 
-impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<'a, A, T> {
+impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree< A, NodeMut<'a, T>> {
     /// # Examples
     ///
     ///```
@@ -93,17 +114,17 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree<'a, A, T> {
     ///let tree = dinotree_alg::DinoTree::with_axis(axgeom::XAXIS,&mut bots);
     ///
     ///```
-    pub fn with_axis_par(axis: A, bots: &'a mut [T]) -> DinoTree<'a, A, T> {
+    pub fn with_axis_par(axis: A, bots: &'a mut [T]) -> DinoTree< A, NodeMut<'a,T>> {
         DinoTreeBuilder::with_axis(axis, bots).build_par()
     }
 }
 
 
-impl<'a,A:Axis,T:Aabb> Queries for DinoTree<'a,A,T>{
+impl<A:Axis,N:Node> Queries for DinoTree<A,N>{
     type A=A;
-    type N=NodeMut<'a,T>;
-    type T=T;
-    type Num=T::Num;
+    type N=N;
+    type T=N::T;
+    type Num=N::Num;
     
     #[inline(always)]
     fn axis(&self)->Self::A{
@@ -111,12 +132,12 @@ impl<'a,A:Axis,T:Aabb> Queries for DinoTree<'a,A,T>{
     }
 
     #[inline(always)]
-    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
+    fn vistr_mut(&mut self)->VistrMut<N>{
         VistrMut{inner:self.inner.vistr_mut()}
     }
 
     #[inline(always)]
-    fn vistr(&self)->Vistr<NodeMut<'a,T>>{
+    fn vistr(&self)->Vistr<N>{
         self.inner.vistr()
     }
 }
@@ -144,7 +165,7 @@ impl<'a,T,D> IntersectionList<'a,T,D>{
 }
 
 
-impl<'a,'b,A:Axis,N:Num,T> DinoTree<'a,A,BBox<N,&'b mut T>>{
+impl<'a,'b,A:Axis,N:Num,T> DinoTree<A,NodeMut<'a, BBox<N,&'b mut T>>>{
     
     pub fn collect_intersections_list<'c,D: Send + Sync>(
         &'c mut self,
@@ -173,7 +194,7 @@ impl<'a,'b,A:Axis,N:Num,T> DinoTree<'a,A,BBox<N,&'b mut T>>{
 }
 
 
-impl<'a, A: Axis, T: Aabb> DinoTree<'a, A, T> {
+impl< A: Axis, N:Node> DinoTree< A, N> {
 
     /// # Examples
     ///

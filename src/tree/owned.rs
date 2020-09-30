@@ -215,11 +215,11 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         }
     }
 
-    pub fn as_tree(&self) -> &DinoTree<A, T> {
+    pub fn as_tree(&self) -> &DinoTree<A, NodeMut<T>> {
         unsafe { &*(&self.tree as *const _ as *const _) }
     }
 
-    pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, T> {
+    pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, NodeMut<T>> {
         unsafe { &mut *(&mut self.tree as *mut _ as *mut _) }
     }
     pub fn get_elements(&self) -> &[T] {

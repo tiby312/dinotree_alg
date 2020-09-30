@@ -18,6 +18,6 @@ fn test1() {
             .collect();
 
         let mut tree=DinoTreeWrap::new(&mut bots);
-        analyze::Assert::find_intersections_mut(&mut tree);
+        query::Assert::find_intersections_mut(&mut tree);
     }
 }

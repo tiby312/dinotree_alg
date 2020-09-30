@@ -44,7 +44,7 @@ pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
     let mut tree = DinoTreeOwnedBBoxPtr::new(bots, |bot| bot.rect.inner_try_into().unwrap());
 
     let mut rects = canvas.rects();
-    for bot in tree.as_owned().get_bots().iter() {
+    for bot in tree.as_owned().get_elements().iter() {
         rects.add(bot.get().inner_into().into());
     }
     let rect_save = rects.save(canvas);
@@ -91,7 +91,7 @@ pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
             .collect();
 
         if check_naive {
-            analyze::Assert::k_nearest_mut(
+            Assert::k_nearest_mut(
                 tree.as_owned_mut().as_tree_mut(),
                 cursor,
                 3,

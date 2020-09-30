@@ -47,7 +47,6 @@ pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
 
         if check_naive {
             let tree = tree.as_owned_mut().as_tree_mut();
-            use analyze::Assert;
             Assert::for_all_in_rect_mut(tree, &r1);
             Assert::for_all_in_rect_mut(tree, &r2);
             Assert::for_all_intersect_rect_mut(tree, &r1);

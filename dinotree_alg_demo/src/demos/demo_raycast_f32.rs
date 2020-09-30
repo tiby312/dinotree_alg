@@ -61,7 +61,7 @@ pub fn make_demo(dim: Rect<F32n>, canvas: &mut SimpleCanvas) -> Demo {
                 let mut radius = radius;
 
                 if check_naive {
-                    analyze::Assert::raycast_mut(
+                    Assert::raycast_mut(
                         tree,
                         ray,
                         &mut radius,

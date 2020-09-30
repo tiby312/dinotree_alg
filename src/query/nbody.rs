@@ -52,6 +52,11 @@ pub trait NodeMassTrait: Clone {
     ) -> Self::No;
 }
 
+///Naive version simply visits every pair.
+pub fn naive_mut<T: Aabb>(bots: PMut<[T]>, func: impl FnMut(PMut<T>, PMut<T>)) {
+    tools::for_every_pair(bots, func);
+}
+
 use compt::dfs_order;
 type CombinedVistr<'a, N, J> =
     compt::Zip<dfs_order::Vistr<'a, N, dfs_order::PreOrder>, VistrMut<'a, J>>;

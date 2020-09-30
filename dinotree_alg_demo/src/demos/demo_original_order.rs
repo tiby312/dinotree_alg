@@ -88,7 +88,7 @@ pub fn make_demo(dim: Rect<F32n>) -> Demo {
         });
 
         if check_naive {
-            analyze::Assert::find_intersections_mut(&mut tree);
+            Assert::find_intersections_mut(&mut tree);
         }
 
         let mut circles = canvas.circles();

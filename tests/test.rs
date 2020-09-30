@@ -5,7 +5,7 @@ extern crate dinotree_alg;
 use compt::*;
 
 use axgeom::*;
-use dinotree_alg::analyze::par::*;
+use dinotree_alg::par::*;
 use dinotree_alg::*;
 
 ///Convenience function to create a `(Rect<N>,&mut T)` from a `T` and a Rect<N> generating function.

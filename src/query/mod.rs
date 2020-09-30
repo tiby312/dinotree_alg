@@ -38,8 +38,10 @@ mod raycast;
 ///Allows user to intersect the tree with a seperate group of bots.
 mod intersect_with;
 
+/*
 ///[EXPERIMENTAL] Contains all nbody code.
 //#[cfg(feature = "nbody")]
+*/
 mod nbody;
 
 ///Contains rect code.
@@ -705,10 +707,11 @@ impl Assert {
         }
         Ok(())
     }
-
+    /*
     pub fn find_intersections_mut<A: Axis, T: Aabb + HasInner>(tree: &mut DinoTreeWrap<A, T>) {
+    
         let mut res_dino = Vec::new();
-        tree.find_intersections_mut(|a, b| {
+        sl.x1().find_intersections_mut(|a, b| {
             let a = a as *const _ as usize;
             let b = b as *const _ as usize;
             let k = if a < b { (a, b) } else { (b, a) };
@@ -716,7 +719,7 @@ impl Assert {
         });
 
         let mut res_naive = Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).find_intersections_mut(|a, b| {
+        NaiveAlgs::new(*sl.x2()).find_intersections_mut(|a, b| {
             let a = a as *const _ as usize;
             let b = b as *const _ as usize;
             let k = if a < b { (a, b) } else { (b, a) };
@@ -730,6 +733,7 @@ impl Assert {
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
 
+    
     pub fn k_nearest_mut<Acc, A: Axis, T: Aabb + HasInner>(
         tree: &mut DinoTreeWrap<A, T>,
         point: Vec2<T::Num>,
@@ -879,6 +883,7 @@ impl Assert {
         assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
+    */
 }
 
 ///Provides the naive implementation of the dinotree api.
@@ -963,7 +968,7 @@ impl<'a, T: Aabb> NaiveAlgs<'a, T> {
         NaiveAlgs { bots }
     }
 
-    #[cfg(feature = "nbody")]
+    //#[cfg(feature = "nbody")]
     pub fn nbody(&mut self, func: impl FnMut(PMut<T>, PMut<T>)) {
         nbody::naive_mut(self.bots.as_mut(), func);
     }

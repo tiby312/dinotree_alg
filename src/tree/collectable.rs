@@ -114,8 +114,10 @@ impl<'a,T,D> IntersectionList<'a,T,D>{
 
 
 
+use crate::owned::DinoTreeOwned;
+use crate::owned::MyPtr;
+use crate::owned::myptr;
 
-/*
 pub struct CollectableDinoTree<'a, A: Axis, N: Num, T> {
     bots: &'a mut [T],
     tree: DinoTreeOwned<A, BBox<N, MyPtr<T>>>,
@@ -138,6 +140,21 @@ impl<'a, N: Num, T> CollectableDinoTree<'a, DefaultA, N, T> {
 
 
 
+impl<'a,A:Axis,N:Num+'a,T> core::ops::Deref for CollectableDinoTree<'a,A,N,T> {
+    type Target = DinoTree<A,NodeMut<'a,BBox<N,&'a mut T>>>;
+
+    fn deref(&self) -> &Self::Target {
+        //TODO get rid of this???
+        unsafe{&*(self.tree.as_tree() as *const _ as *const _)}
+    }
+}
+
+impl<'a,A:Axis,N:Num+'a,T> core::ops::DerefMut for CollectableDinoTree<'a,A,N,T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe{&mut *(self.tree.as_tree_mut() as *mut _ as *mut _)}
+    }
+}
+
 
 impl<'a, A: Axis, N: Num, T> CollectableDinoTree<'a, A, N, T> {
     pub fn get_bots(&self) -> &[T] {
@@ -146,13 +163,13 @@ impl<'a, A: Axis, N: Num, T> CollectableDinoTree<'a, A, N, T> {
     pub fn get_bots_mut(&mut self) -> &mut [T] {
         self.bots
     }
-
+    /*
     pub fn get_mut(&mut self) -> &mut DinoTree<A, BBox<N, &mut T>> {
         let k = self.tree.as_tree_mut() as *mut _;
         let j = k as *mut DinoTree<A, BBox<N, &mut T>>;
         unsafe { &mut *j }
     }
-
+    
     pub fn collect_all<D>(
         &mut self,
         mut func: impl FnMut(&Rect<N>, &mut T) -> Option<D>,
@@ -191,8 +208,10 @@ impl<'a, A: Axis, N: Num, T> CollectableDinoTree<'a, A, N, T> {
             orig: myptr(self.get_bots_mut()),
         }
     }
+    */
 }
 
+/*
 impl<'a, A: Axis + Send + Sync, N: Num + Send + Sync, T: Send + Sync>
     CollectableDinoTree<'a, A, N, T>
 {

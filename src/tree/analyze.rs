@@ -17,7 +17,7 @@ pub mod bbox_helper {
 
     ///Convenience function to create a list of `(Rect<N>,T)` from a `(Rect<N>,&mut T)`. `T` must implement Copy.
     pub fn generate_direct<A: Axis, N: Num, T: Copy>(
-        tree: &DinoTree<A, BBox<N, &mut T>>,
+        tree: &DinoTree<A, NodeMut<BBox<N, &mut T>>>,
     ) -> IntoDirectHelper<N, T> {
         IntoDirectHelper(
             tree.inner
@@ -31,9 +31,9 @@ pub mod bbox_helper {
 
     ///Take a DinoTree of `(Rect<N>,&mut T)` and creates a new one of type `(Rect<N>,T)`
     pub fn into_direct<'a, A: Axis, N: Num, T>(
-        tree: &DinoTree<'a, A, BBox<N, &mut T>>,
+        tree: &DinoTree<A, NodeMut<'a,BBox<N, &mut T>>>,
         bots: &'a mut IntoDirectHelper<N, T>,
-    ) -> DinoTree<'a, A, BBox<N, T>> {
+    ) -> DinoTree< A, NodeMut<'a,BBox<N, T>>> {
         let mut bots = &mut bots.0 as &'a mut [_];
 
         let nodes: Vec<_> = tree

@@ -83,13 +83,16 @@ mod inner_prelude {
 }
 
 pub mod query;
+pub use query::Queries;
 
 use axgeom::*;
 
 ///Contains generic code used in all dinotree versions
 //pub use self::tree::{DinoTree,analyze,collectable,owned,DefaultA,default_axis};
 //pub use self::tree::*;
-pub mod tree;
+mod tree;
+pub use tree::*;
+
 
 ///A collection of 1d functions that operate on lists of 2d objects.
 mod oned;
@@ -101,7 +104,7 @@ mod bbox;
 pub use crate::bbox::*;
 
 ///Generic slice utillity functions.
-mod util;
+pub mod util;
 
 ///The underlying number type used for the dinotree.
 ///It is auto implemented by all types that satisfy the type constraints.
