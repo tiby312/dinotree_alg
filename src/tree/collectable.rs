@@ -145,13 +145,13 @@ impl<'a,A:Axis,N:Num+'a,T> core::ops::Deref for CollectableDinoTree<'a,A,N,T> {
 
     fn deref(&self) -> &Self::Target {
         //TODO get rid of this???
-        unsafe{&*(self.tree.as_tree() as *const _ as *const _)}
+        unsafe{&*(&self.tree as *const _ as *const _)}
     }
 }
 
 impl<'a,A:Axis,N:Num+'a,T> core::ops::DerefMut for CollectableDinoTree<'a,A,N,T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe{&mut *(self.tree.as_tree_mut() as *mut _ as *mut _)}
+        unsafe{&mut *(&mut self.tree as *mut _ as *mut _)}
     }
 }
 

@@ -235,11 +235,13 @@ impl<A: Axis, T: Aabb + Send + Sync> DinoTreeOwned<A, T> {
 
 impl<A:Axis,T:Aabb> core::ops::Deref for DinoTreeOwned<A,T> {
     type Target = DinoTree<A,NodePtr<T>>;
-
     fn deref(&self) -> &Self::Target {
         &self.tree
-        //TODO get rid of this???
-        //unsafe{&*(self.tree as *const _ as *const _)}
+    }
+}
+impl<A:Axis,T:Aabb> core::ops::DerefMut for DinoTreeOwned<A,T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.tree
     }
 }
 
@@ -252,13 +254,6 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         }
     }
 
-    pub fn as_tree(&self) -> &DinoTree<A, NodeMut<T>> {
-        unsafe { &*(&self.tree as *const _ as *const _) }
-    }
-
-    pub fn as_tree_mut(&mut self) -> &mut DinoTree<A, NodeMut<T>> {
-        unsafe { &mut *(&mut self.tree as *mut _ as *mut _) }
-    }
     pub fn get_elements(&self) -> &[T] {
         &self.bots
     }
