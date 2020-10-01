@@ -8,6 +8,7 @@ mod tests;
 pub mod owned;
 
 
+pub mod assert;
 
 pub mod analyze;
 
@@ -27,6 +28,13 @@ pub struct DinoTreeIndPtr<'a,A:Axis,N:Num,T>{
     orig:*mut [T],
     _p:PhantomData<&'a mut T>
 }
+
+impl<'a,N:Num,T> DinoTreeIndPtr<'a,DefaultA,N,T>{
+    pub fn new(arr:&'a mut [T],func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<'a,DefaultA,N,T>{
+        DinoTreeIndPtr::with_axis(default_axis(),arr,func)
+    }
+}
+
 impl<'a,A:Axis,N:Num,T> DinoTreeIndPtr<'a,A,N,T>{
     pub fn with_axis(axis:A,arr:&'a mut [T],mut func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<'a,A,N,T>{
         let orig=arr as *mut _;
@@ -62,6 +70,7 @@ pub struct DinoTreePtr<'a,A:Axis,T:Aabb>{
     orig:*mut [T],
     _p:PhantomData<&'a mut T>
 }
+
 impl<'a,A:Axis,T:Aabb> core::ops::Deref for DinoTreePtr<'a,A,T>{
     type Target=DinoTree<A,NodeMut<'a,T>>;
     fn deref(&self)->&Self::Target{
@@ -69,6 +78,19 @@ impl<'a,A:Axis,T:Aabb> core::ops::Deref for DinoTreePtr<'a,A,T>{
         unsafe{&*(&self.inner as *const _ as *const _)}
     }
 }
+impl<'a,A:Axis,T:Aabb> core::ops::DerefMut for DinoTreePtr<'a,A,T>{
+    fn deref_mut(&mut self)->&mut Self::Target{
+        //TODO do these in one place
+        unsafe{&mut *(&mut self.inner as *mut _ as *mut _)}
+    }
+}
+
+impl<'a,T:Aabb> DinoTreePtr<'a,DefaultA,T>{
+    pub fn new(arr:&'a mut [T])->DinoTreePtr<'a,DefaultA,T>{
+        DinoTreePtr::with_axis(default_axis(),arr)
+    }
+}
+
 impl<'a,A:Axis,T:Aabb> DinoTreePtr<'a,A,T>{
     pub fn with_axis(a:A,arr:&'a mut [T])->DinoTreePtr<'a,A,T>{
         let inner=owned::make_owned(a,arr);

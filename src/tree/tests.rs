@@ -16,7 +16,7 @@ fn test() {
 
     let mut tree = DinoTree::new(&mut bots);
     
-    assert!(query::Assert::tree_invariants(&tree));
+    assert!(assert::Assert::tree_invariants(&tree));
     
     assert_length(tree.vistr_mut().dfs_preorder_iter());
     assert_length(tree.vistr().dfs_preorder_iter());

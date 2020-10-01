@@ -17,7 +17,7 @@ fn test1() {
             })
             .collect();
 
-        let mut tree=DinoTreeWrap::new(&mut bots);
-        query::Assert::find_intersections_mut(&mut tree);
+        let mut tree=DinoTreePtr::new(&mut bots);
+        assert::Assert::find_intersections_mut(&mut tree);
     }
 }
