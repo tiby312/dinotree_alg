@@ -214,21 +214,6 @@ impl<T: Aabb> DinoTreeOwned<DefaultA, T> {
     }
 }
 
-
-/*
-impl<A:Axis,T:Aabb> core::ops::Deref for DinoTreeOwned<A,T> {
-    type Target = DinoTree<A,NodePtr<T>>;
-    fn deref(&self) -> &Self::Target {
-        &self.tree
-    }
-}
-impl<A:Axis,T:Aabb> core::ops::DerefMut for DinoTreeOwned<A,T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.tree
-    }
-}
-*/
-
 impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     ///Create an owned dinotree in one thread.
     pub fn with_axis(axis: A, mut bots: Vec<T>) -> DinoTreeOwned<A, T> {
@@ -240,13 +225,20 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
 
     ///Cant use Deref because of lifetime
     pub fn as_tree(&self)->&DinoTree<A,NodeMut<T>>{
-        unimplemented!()
+        unsafe{&*(&self.tree as *const _ as *const _)}
+    }
+
+    ///Cant use Deref because of lifetime
+    pub fn as_tree_mut(&mut self)->&mut DinoTree<A,NodeMut<T>>{
+        unsafe{&mut *(&mut self.tree as *mut _ as *mut _)}
     }
 
     pub fn get_elements(&self) -> &[T] {
         &self.bots
     }
-
+    pub fn get_elements_mut(&mut self) -> PMut<[T]> {
+        PMut::new(&mut self.bots)
+    }
     pub fn rebuild(&mut self, mut func: impl FnMut(&mut [T])) {
         func(&mut self.bots);
 
@@ -254,7 +246,4 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
         self.tree = make_owned(axis, &mut self.bots);
     }
 
-    pub fn get_elements_mut(&mut self) -> PMut<[T]> {
-        PMut::new(&mut self.bots)
-    }
 }
