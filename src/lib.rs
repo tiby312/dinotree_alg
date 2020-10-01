@@ -84,6 +84,7 @@ mod inner_prelude {
 
 pub mod query;
 pub use query::Queries;
+pub use query::QueriesInner;
 
 use axgeom::*;
 
