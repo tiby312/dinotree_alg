@@ -119,7 +119,7 @@ impl<'a,A:Axis,T:Aabb> DinoTreePtr<'a,A,T>{
     }
 }
 
-pub(crate) struct DinoTreeInner<A: Axis, N:Node> {
+pub(crate) struct DinoTreeInner<A: Axis, N> {
     axis: A,
     inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>
 }

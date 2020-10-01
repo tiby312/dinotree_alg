@@ -21,10 +21,10 @@
 //! use dinotree_alg::{*,owned::*};
 //! use axgeom::*;
 //!
-//! fn not_lifetimed()->DinoTreeOwnedBBoxPtr<DefaultA,i32,Vec2<i32>>
+//! fn not_lifetimed()->DinoTreeOwnedInd<DefaultA,i32,Vec2<i32>>
 //! {
 //!     let rect=vec![vec2(0,10),vec2(3,30)];
-//!     DinoTreeOwnedBBoxPtr::new(rect,|&p|{
+//!     DinoTreeOwnedInd::new(rect,|&p|{
 //!         let radius=vec2(10,10);
 //!         Rect::from_point(p,radius)
 //!     })
@@ -68,32 +68,6 @@ pub struct NodePtr<T: Aabb> {
     //for leafs:
     //  div is none
     _div: Option<T::Num>,
-}
-
-impl<T: Aabb> Node for NodePtr< T> {
-    type T = T;
-    type Num = T::Num;
-    fn get(&self) -> NodeRef<Self::T> {
-        //TODO point as struct impl
-        unimplemented!();
-        /*
-        NodeRef {
-            bots: self._range.as_ref(),
-            cont: &self._cont,
-            div: &self._div,
-        }
-        */
-    }
-    fn get_mut(&mut self) -> NodeRefMut<Self::T> {
-        unimplemented!();
-        /*
-        NodeRefMut {
-            bots: self._range.as_mut(),
-            cont: &self._cont,
-            div: &self._div,
-        }
-        */
-    }
 }
 
 pub(crate) fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeInner<A, NodePtr<T>> {
@@ -200,6 +174,56 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
 }
 */
 
+pub struct DinoTreeOwnedInd<A: Axis,N:Num, T> {
+    inner:DinoTreeOwned<A,BBox<N,*mut T>>,
+    bots:Vec<T>
+}
+
+
+impl<N:Num,T> DinoTreeOwnedInd<DefaultA,N, T> {
+    pub fn new(bots: Vec<T>,mut func:impl FnMut(&T)->Rect<N>) -> DinoTreeOwnedInd<DefaultA, N,T> {
+        Self::with_axis(default_axis(), bots,func)
+    }    
+}
+
+impl<A:Axis,N:Num,T> DinoTreeOwnedInd<A,N,T>{
+    ///Create an owned dinotree in one thread.
+    pub fn with_axis(axis: A, mut bots: Vec<T>,mut func:impl FnMut(&T)->Rect<N>) -> DinoTreeOwnedInd<A,N, T> {
+        let bbox = bots
+            .iter_mut()
+            .map(|b| BBox::new(func(b), b as *mut _))
+            .collect();
+        
+        let inner= DinoTreeOwned::with_axis(axis,bbox);
+        
+        
+        DinoTreeOwnedInd {
+            inner,
+            bots,
+        }
+        
+    }
+
+    ///Cant use Deref because of lifetime
+    pub fn as_tree(&self)->&DinoTree<A,BBox<N,&mut T>>{
+        unsafe{&*(self.inner.as_tree() as *const _ as *const _)}
+    }
+
+    ///Cant use Deref because of lifetime
+    pub fn as_tree_mut(&mut self)->&mut DinoTree<A,BBox<N,&mut T>>{
+        unsafe{&mut *(self.inner.as_tree_mut() as *mut _ as *mut _)}
+    }
+
+    
+    pub fn get_elements(&self) -> &[T] {
+        &self.bots
+    }
+    pub fn get_elements_mut(&mut self) -> &mut [T] {
+        &mut self.bots
+    }
+}
+
+
 
 ///An owned dinotree componsed of `T:Aabb`
 pub struct DinoTreeOwned<A: Axis, T: Aabb> {
@@ -207,12 +231,11 @@ pub struct DinoTreeOwned<A: Axis, T: Aabb> {
     bots: Vec<T>,
 }
 
-
-
 impl<T: Aabb> DinoTreeOwned<DefaultA, T> {
     pub fn new(bots: Vec<T>) -> DinoTreeOwned<DefaultA, T> {
         Self::with_axis(default_axis(), bots)
     }
+    
 }
 
 impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
