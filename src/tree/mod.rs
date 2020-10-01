@@ -57,8 +57,12 @@ impl<'a,A:Axis,N:Num,T> DinoTreeIndPtr<'a,A,N,T>{
     pub fn get_elements_mut(&mut self)->&'a mut [T]{
         unsafe{&mut *self.orig}
     }
-    pub fn as_tree(&mut self)->DinoTreePtr<A,BBox<N,&mut T>>{
-        
+    pub fn get_tree_elements_mut(&mut self)->PMut<[BBox<N,&mut T>]>{
+        //unsafe{&mut *(self.inner.get_elements_mut() as *mut _ as *mut _)}
+        unimplemented!();
+
+    }
+    pub fn get_tree_elements(&self)->&[BBox<N,&mut T>]{
         unimplemented!();
     }
 }
@@ -184,12 +188,15 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree< A, NodeMut<'a, T>> {
     }
 }
 
+
+impl<'a,A:Axis,T:Aabb+HasInner> QueriesInner<'a> for DinoTree<A,NodeMut<'a,T>>{
+    type Inner=T::Inner;
+}
 ///TODO use this insead
-impl<'a,A:Axis,T:Aabb+HasInner> Queries<'a> for DinoTree<A,NodeMut<'a,T>>{
+impl<'a,A:Axis,T:Aabb> Queries<'a> for DinoTree<A,NodeMut<'a,T>>{
     type A=A;
     type T=T;
     type Num=T::Num;
-    type Inner=T::Inner;
     
     #[inline(always)]
     fn axis(&self)->Self::A{

@@ -90,103 +90,9 @@ pub trait NotSortedQueries<'a>{
 
 }
 
-
-pub trait Queries<'a>{
-    type A:Axis;
-    type T:Aabb<Num=Self::Num>+'a + HasInner<Inner=Self::Inner>;
-    type Num:Num;
+pub trait QueriesInner<'a>:Queries<'a> where Self::T:HasInner<Inner=Self::Inner>{
     type Inner;
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///use compt::Visitor;
-    ///for mut b in tree.vistr_mut().dfs_preorder_iter().flat_map(|n|n.get_mut().bots.iter_mut()){
-    ///    *b.inner_mut()+=1;    
-    ///}
-    ///assert_eq!(bots[0].inner,1);
-    ///```
-    #[must_use]
-    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,Self::T>>;
-
-    
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots = [axgeom::rect(0,10,0,10)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///use compt::Visitor;
-    ///let mut test = Vec::new();
-    ///for b in tree.vistr().dfs_preorder_iter().flat_map(|n|n.get().bots.iter()){
-    ///    test.push(b);
-    ///}
-    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
-    ///```
-    #[must_use]
-    fn vistr(&self)->Vistr<NodeMut<'a,Self::T>>;
-   
-    
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots = [axgeom::rect(0,10,0,10)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///
-    ///use axgeom::Axis;
-    ///assert!(tree.axis().is_equal_to(default_axis()));
-    ///```
-    #[must_use]
-    fn axis(&self)->Self::A;
-
-
-    fn new_colfind_builder(&mut self)->QueryBuilder<Self::A,NodeMut<'a,Self::T>>{
-        QueryBuilder::new(self.axis(),self.vistr_mut())
-    }
-
-    
-    /// # Examples
-    ///
-    /// ```
-    /// use dinotree_alg::*;
-    /// use axgeom::*;
-    ///
-    /// struct Drawer;
-    /// impl dinotree_alg::query::DividerDrawer for Drawer{
-    ///     type N=i32;
-    ///     fn draw_divider<A:Axis>(
-    ///             &mut self,
-    ///             axis:A,
-    ///             div:Self::N,
-    ///             cont:[Self::N;2],
-    ///             length:[Self::N;2],
-    ///             depth:usize)
-    ///     {
-    ///         if axis.is_xaxis(){
-    ///             //draw vertical line
-    ///         }else{
-    ///             //draw horizontal line
-    ///         }
-    ///     }
-    /// }
-    ///
-    /// let border=rect(0,100,0,100);
-    /// let mut bots =[rect(0,10,0,10)];
-    /// let tree=DinoTree::new(&mut bots);
-    /// tree.draw_divider(&mut Drawer,&border);
-    /// ```
-    ///
-    fn draw_divider(&self,drawer: &mut impl graphics::DividerDrawer<N = Self::Num>, rect: &Rect<Self::Num>){
-        graphics::draw(self.axis(),self.vistr(), drawer, rect)
-    }
-   
-    
+        
     /// Find all aabb intersections
     /// # Examples
     ///
@@ -211,6 +117,7 @@ pub trait Queries<'a>{
             .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
     }
 
+    
     /// Find all intersections in parallel
     ///
     /// # Examples
@@ -236,27 +143,6 @@ pub trait Queries<'a>{
     }
 
     
-    /// Find all aabb intersections and return a PMut<T> of it. Unlike the regular `find_intersections_mut`, this allows the
-    /// user to access a read only reference of the AABB.
-    ///
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///tree.find_intersections_pmut(|mut a,mut b|{
-    ///    *a.inner_mut()+=1;
-    ///    *b.inner_mut()+=1;
-    ///});
-    ///
-    ///assert_eq!(bots[0].inner,1);
-    ///assert_eq!(bots[1].inner,1);
-    ///```
-    fn find_intersections_pmut(&mut self, mut func: impl FnMut(PMut<Self::T>, PMut<Self::T>)) {
-        colfind::QueryBuilder::new(self.axis(),self.vistr_mut()).query_seq(move |a, b| func(a, b));
-    }
-
     
     /// Allows the user to potentially collect some aspect of every intersection in parallel.
     ///
@@ -333,64 +219,6 @@ pub trait Queries<'a>{
         foo.acc
     }
 
-    
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots1);
-    ///let mut multi = tree.multi_rect();
-    ///
-    ///multi.for_all_in_rect_mut(axgeom::rect(0,10,0,10),|a|{}).unwrap();
-    ///let res = multi.for_all_in_rect_mut(axgeom::rect(5,15,5,15),|a|{});
-    ///assert_eq!(res,Err(dinotree_alg::query::RectIntersectErr));
-    ///```
-    #[must_use]
-    fn multi_rect(&mut self) -> rect::MultiRectMut<Self::A, NodeMut<'a,Self::T>> {
-        rect::MultiRectMut::new(self.axis(),self.vistr_mut())
-    }
-
-    
-    
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///let mut test = Vec::new();
-    ///tree.for_all_intersect_rect(&axgeom::rect(9,20,9,20),|a|{
-    ///    test.push(a);
-    ///});
-    ///
-    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
-    ///
-    ///```
-    fn for_all_intersect_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b
-     Self::T)) where 'a:'b{
-        rect::for_all_intersect_rect(self.axis(),self.vistr(), rect, func);
-    }
-
-    
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
-    ///let mut tree = DinoTree::new(&mut bots);
-    ///let mut test = Vec::new();
-    ///tree.for_all_in_rect(&axgeom::rect(0,20,0,20),|a|{
-    ///    test.push(a);
-    ///});
-    ///
-    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
-    ///
-    fn for_all_in_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) where 'a:'b{
-        rect::for_all_in_rect(self.axis(),self.vistr(), rect, func);
-    }
-
-    
     /// # Examples
     ///
     ///```
@@ -553,6 +381,210 @@ pub trait Queries<'a>{
     }
 
 
+
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut bots2 = [bbox(axgeom::rect(5,15,5,15),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots1);
+    ///
+    ///tree.intersect_with_mut(&mut bots2,|a,b|{
+    ///    *a+=1;
+    ///    *b+=2;    
+    ///});
+    ///
+    ///assert_eq!(bots1[0].inner,1);
+    ///assert_eq!(bots2[0].inner,2);
+    ///```
+    fn intersect_with_mut<X: Aabb<Num = Self::Num> + HasInner>(
+        &mut self,
+        other: &mut [X],
+        func: impl Fn(&mut Self::Inner, &mut X::Inner),
+    ) where Self::T:HasInner{
+        intersect_with::intersect_with_mut(self.axis(),self.vistr_mut(), other, move |a, b| {
+            (func)(a.into_inner(), b.into_inner())
+        })
+    }  
+   
+}
+
+pub trait Queries<'a>{
+    type A:Axis;
+    type T:Aabb<Num=Self::Num>+'a;
+    type Num:Num;
+
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use compt::Visitor;
+    ///for mut b in tree.vistr_mut().dfs_preorder_iter().flat_map(|n|n.get_mut().bots.iter_mut()){
+    ///    *b.inner_mut()+=1;    
+    ///}
+    ///assert_eq!(bots[0].inner,1);
+    ///```
+    #[must_use]
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,Self::T>>;
+
+    
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use compt::Visitor;
+    ///let mut test = Vec::new();
+    ///for b in tree.vistr().dfs_preorder_iter().flat_map(|n|n.get().bots.iter()){
+    ///    test.push(b);
+    ///}
+    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
+    ///```
+    #[must_use]
+    fn vistr(&self)->Vistr<NodeMut<'a,Self::T>>;
+   
+    
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///
+    ///use axgeom::Axis;
+    ///assert!(tree.axis().is_equal_to(default_axis()));
+    ///```
+    #[must_use]
+    fn axis(&self)->Self::A;
+
+
+    fn new_colfind_builder(&mut self)->QueryBuilder<Self::A,NodeMut<'a,Self::T>>{
+        QueryBuilder::new(self.axis(),self.vistr_mut())
+    }
+
+
+    /// # Examples
+    ///
+    /// ```
+    /// use dinotree_alg::*;
+    /// use axgeom::*;
+    ///
+    /// struct Drawer;
+    /// impl dinotree_alg::query::DividerDrawer for Drawer{
+    ///     type N=i32;
+    ///     fn draw_divider<A:Axis>(
+    ///             &mut self,
+    ///             axis:A,
+    ///             div:Self::N,
+    ///             cont:[Self::N;2],
+    ///             length:[Self::N;2],
+    ///             depth:usize)
+    ///     {
+    ///         if axis.is_xaxis(){
+    ///             //draw vertical line
+    ///         }else{
+    ///             //draw horizontal line
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// let border=rect(0,100,0,100);
+    /// let mut bots =[rect(0,10,0,10)];
+    /// let tree=DinoTree::new(&mut bots);
+    /// tree.draw_divider(&mut Drawer,&border);
+    /// ```
+    ///
+    fn draw_divider(&self,drawer: &mut impl graphics::DividerDrawer<N = Self::Num>, rect: &Rect<Self::Num>){
+        graphics::draw(self.axis(),self.vistr(), drawer, rect)
+    }
+   
+
+
+    
+    /// Find all aabb intersections and return a PMut<T> of it. Unlike the regular `find_intersections_mut`, this allows the
+    /// user to access a read only reference of the AABB.
+    ///
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots = [bbox(axgeom::rect(0,10,0,10),0u8),bbox(axgeom::rect(5,15,5,15),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///tree.find_intersections_pmut(|mut a,mut b|{
+    ///    *a.inner_mut()+=1;
+    ///    *b.inner_mut()+=1;
+    ///});
+    ///
+    ///assert_eq!(bots[0].inner,1);
+    ///assert_eq!(bots[1].inner,1);
+    ///```
+    fn find_intersections_pmut(&mut self, mut func: impl FnMut(PMut<Self::T>, PMut<Self::T>)) {
+        colfind::QueryBuilder::new(self.axis(),self.vistr_mut()).query_seq(move |a, b| func(a, b));
+    }
+ 
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
+    ///let mut tree = DinoTree::new(&mut bots1);
+    ///let mut multi = tree.multi_rect();
+    ///
+    ///multi.for_all_in_rect_mut(axgeom::rect(0,10,0,10),|a|{}).unwrap();
+    ///let res = multi.for_all_in_rect_mut(axgeom::rect(5,15,5,15),|a|{});
+    ///assert_eq!(res,Err(dinotree_alg::query::RectIntersectErr));
+    ///```
+    #[must_use]
+    fn multi_rect(&mut self) -> rect::MultiRectMut<Self::A, NodeMut<'a,Self::T>> {
+        rect::MultiRectMut::new(self.axis(),self.vistr_mut())
+    }
+
+    
+    
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let mut test = Vec::new();
+    ///tree.for_all_intersect_rect(&axgeom::rect(9,20,9,20),|a|{
+    ///    test.push(a);
+    ///});
+    ///
+    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
+    ///
+    ///```
+    fn for_all_intersect_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b
+     Self::T)) where 'a:'b{
+        rect::for_all_intersect_rect(self.axis(),self.vistr(), rect, func);
+    }
+
+    
+    /// # Examples
+    ///
+    ///```
+    ///use dinotree_alg::*;
+    ///let mut bots = [axgeom::rect(0,10,0,10),axgeom::rect(20,30,20,30)];
+    ///let mut tree = DinoTree::new(&mut bots);
+    ///let mut test = Vec::new();
+    ///tree.for_all_in_rect(&axgeom::rect(0,20,0,20),|a|{
+    ///    test.push(a);
+    ///});
+    ///
+    ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
+    ///
+    fn for_all_in_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) where 'a:'b{
+        rect::for_all_in_rect(self.axis(),self.vistr(), rect, func);
+    }
+
     
     //#[cfg(feature = "nbody")]
     fn nbody_mut<X: query::nbody::NodeMassTrait<Num = Self::Num, Item = Self::T> + Send + Sync>(
@@ -581,32 +613,6 @@ pub trait Queries<'a>{
     }
 
 
-
-    /// # Examples
-    ///
-    ///```
-    ///use dinotree_alg::*;
-    ///let mut bots1 = [bbox(axgeom::rect(0,10,0,10),0u8)];
-    ///let mut bots2 = [bbox(axgeom::rect(5,15,5,15),0u8)];
-    ///let mut tree = DinoTree::new(&mut bots1);
-    ///
-    ///tree.intersect_with_mut(&mut bots2,|a,b|{
-    ///    *a+=1;
-    ///    *b+=2;    
-    ///});
-    ///
-    ///assert_eq!(bots1[0].inner,1);
-    ///assert_eq!(bots2[0].inner,2);
-    ///```
-    fn intersect_with_mut<X: Aabb<Num = Self::Num> + HasInner>(
-        &mut self,
-        other: &mut [X],
-        func: impl Fn(&mut Self::Inner, &mut X::Inner),
-    ) where Self::T:HasInner{
-        intersect_with::intersect_with_mut(self.axis(),self.vistr_mut(), other, move |a, b| {
-            (func)(a.into_inner(), b.into_inner())
-        })
-    } 
 
 }
 

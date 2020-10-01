@@ -134,6 +134,7 @@ unsafe impl<N: Num> Aabb for Rect<N> {
     }
 }
 
+
 ///Trait exposes an api where you can return a read-only reference to the axis-aligned bounding box
 ///and at the same time return a mutable reference to a seperate inner section.
 ///
@@ -143,6 +144,7 @@ unsafe impl<N: Num> Aabb for Rect<N> {
 ///
 ///We have no easy way to ensure that the Inner type only points to the inner portion of a AABB
 ///so we mark this trait as unsafe.
+//TODO make this not unsafe
 pub unsafe trait HasInner: Aabb {
     type Inner;
     #[inline(always)]
