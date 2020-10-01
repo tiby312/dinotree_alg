@@ -97,8 +97,7 @@ impl<T: Aabb> Node for NodePtr< T> {
 }
 
 fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
-    let orig=PMut::new(bots).as_ptr();
-
+    
     let inner = DinoTree::with_axis(axis, bots);
     let inner: Vec<_> = inner
         .inner
@@ -113,8 +112,7 @@ fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
     DinoTree {
         axis,
-        inner,
-        orig
+        inner
     }
 }
 /* TODO
@@ -215,24 +213,6 @@ impl<T: Aabb> DinoTreeOwned<DefaultA, T> {
         Self::with_axis(default_axis(), bots)
     }
 }
-/* TODO fix
-impl<T: Aabb + Send + Sync> DinoTreeOwned<DefaultA, T> {
-    pub fn new_par(bots: Vec<T>) -> DinoTreeOwned<DefaultA, T> {
-        Self::with_axis_par(default_axis(), bots)
-    }
-}
-
-
-impl<A: Axis, T: Aabb + Send + Sync> DinoTreeOwned<A, T> {
-    ///Create an owned dinotree in one thread.
-    pub fn with_axis_par(axis: A, mut bots: Vec<T>) -> DinoTreeOwned<A, T> {
-        DinoTreeOwned {
-            tree: make_owned_par(axis, &mut bots),
-            bots,
-        }
-    }
-}
-*/
 
 
 

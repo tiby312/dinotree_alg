@@ -8,8 +8,6 @@ mod tests;
 pub mod owned;
 
 
-///A verion of dinotree where the user can collect and store queries to use later.
-pub mod collectable;
 
 pub mod analyze;
 
@@ -24,39 +22,46 @@ pub(crate) use self::notsorted::NotSorted;
 use crate::query::*;
 
 
-/*
-pub use self::slice_swap::SliceSwap;
-pub mod slice_swap{
-    use core::marker::PhantomData;
-    pub struct SliceSwap<'a,X1,X2>{
-        x1:X1,
-        x2:X2,
-        _p:PhantomData<&'a mut usize>
+pub struct DinoTreeIndPtr<A:Axis,N:Num,T>{
+    inner:owned::DinoTreeOwned<A,BBox<N,*mut T>>,
+    orig:*mut [T]
+}
+impl<A:Axis,N:Num,T> DinoTreeIndPtr<A,N,T>{
+    fn with_axis<'a>(arr:&'a mut [T],func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<A,N,T>{
+        unimplemented!();
     }
-    
-    impl<'a,X1,X2> SliceSwap<'a,X1,X2>{
-        pub fn new<T>(arr:&'a mut [T],func1:impl FnOnce(&'a mut [T])->X1,func2:impl FnOnce(&'a mut [T])->X2)->SliceSwap<'a,X1,X2>{
-            let arr2=unsafe{&mut *(arr as *mut _)};
-            SliceSwap{x1:func1(arr),x2:func2(arr2),_p:PhantomData}
-        }
-
-        pub fn x1(&mut self)->&mut X1{
-            &mut self.x1
-        }
-
-        pub fn x2(&mut self)->&mut X2{
-            &mut self.x2
-        }
+    fn get_elements_mut(&mut self)->&mut [T]{
+        unimplemented!();
+    }
+    fn as_tree<'a>(&'a mut self,arr:&'a mut [T])->DinoTree<A,NodeMut<'a,BBox<N,&mut T>>>{
+        unimplemented!();
     }
 }
-*/
+
+
+pub struct DinoTreePtr<'a,A:Axis,T:Aabb>{
+    inner:DinoTree<A,owned::NodePtr<T>>,
+    orig:*const [T],
+    _p:PhantomData<&'a mut T>
+}
+
+impl<'a,A:Axis,T:Aabb> DinoTreePtr<'a,A,T>{
+    fn with_axis(a:A,arr:&'a mut [T])->DinoTreePtr<'a,A,T>{
+        unimplemented!();
+    }
+    fn get_elements_mut(&mut self)->PMut<'a,[T]>{
+        unimplemented!();
+    }
+    fn as_tree(&'a mut self,arr:PMut<'a,[T]>)->DinoTree<A,NodeMut<'a,T>>{
+        unimplemented!();
+    }
+}
 
 
 ///The data structure this crate revoles around.
 pub struct DinoTree<A: Axis, N:Node> {
     axis: A,
-    inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>,
-    orig:PMutPtr<[N::T]>
+    inner: compt::dfs_order::CompleteTreeContainer<N, compt::dfs_order::PreOrder>
 }
 
 ///The type of the axis of the first node in the dinotree.
@@ -105,7 +110,10 @@ impl<'a, A: Axis, T: Aabb> DinoTree<A, NodeMut<'a, T>> {
     pub fn with_axis(axis: A, bots: &'a mut [T]) -> DinoTree<A, NodeMut<'a, T>> {
         DinoTreeBuilder::with_axis(axis, bots).build_seq()
     }
+
 }
+
+
 
 impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree< A, NodeMut<'a, T>> {
     /// # Examples
@@ -170,9 +178,8 @@ impl<'a,T,D> IntersectionList<'a,T,D>{
 impl<'a,'b,A:Axis,N:Num,T> DinoTree<A,NodeMut<'a, BBox<N,&'b mut T>>>{
     
 
-    ///We have to invalidate the tree because we broke alias rules
     pub fn collect_intersections_list<'c,D: Send + Sync>(
-        mut self,
+        &mut self,
         mut func: impl FnMut(&mut T, &mut T) -> Option<D> + Send + Sync,
     ) -> IntersectionList<'b, T, D> {
         let mut cols: Vec<_> = Vec::new();
@@ -219,16 +226,6 @@ impl< A: Axis, N:Node> DinoTree< A, N> {
     }
 
     
-    pub fn get_elements(&self)->&[N::T]{
-        //Safe to do since we have to borrow the whole tree,
-        //so the tree mutable references cannot be in use
-        unsafe{&*self.orig.as_mut()}
-    }
-    pub fn get_elements_mut(&mut self)->PMut<[N::T]>{
-        //Safe to do since we have to borrow the whole tree,
-        //so the tree mutable references cannot be in use
-        unsafe{self.orig.as_mut()}
-    }
 
     /// # Examples
     ///
@@ -430,7 +427,6 @@ fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
     height: usize,
     binstrat: BinStrat,
 ) -> DinoTree<A,NodeMut<'a,T>> {
-    let orig=PMut::new(rest).as_ptr();
 
     let num_bots = rest.len();
 
@@ -452,7 +448,7 @@ fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
         .fold(0, move |acc, a| acc + a.range.len());
     debug_assert_eq!(k, num_bots);
 
-    DinoTree{axis:div_axis,inner:tree,orig}
+    DinoTree{axis:div_axis,inner:tree}
 }
 
 fn create_tree_par<
@@ -470,7 +466,6 @@ fn create_tree_par<
     height: usize,
     binstrat: BinStrat,
 ) ->DinoTree<A,NodeMut<'a,T>> {
-    let orig=PMut::new(rest).as_ptr();
 
     let num_bots = rest.len();
 
@@ -494,8 +489,7 @@ fn create_tree_par<
 
     DinoTree{
         axis:div_axis,
-        inner:tree,
-        orig
+        inner:tree
     }
 }
 
