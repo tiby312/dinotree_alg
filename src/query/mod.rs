@@ -90,6 +90,21 @@ pub trait NotSortedQueries{
 }
 
 
+pub trait Queries2<'a>{
+    type A:Axis;
+    type T:Aabb<Num=Self::Num>;
+    type Num:Num;
+    #[must_use]
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,Self::T>>;
+
+    #[must_use]
+    fn vistr(&self)->Vistr<NodeMut<'a,Self::T>>;
+   
+    #[must_use]
+    fn axis(&self)->Self::A;
+   
+}
+
 ///A collection of query functions 
 pub trait Queries{
     type A:Axis;

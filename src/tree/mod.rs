@@ -180,6 +180,28 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree< A, NodeMut<'a, T>> {
     }
 }
 
+///TODO use this insead
+impl<'a,A:Axis,T:Aabb> Queries2<'a> for DinoTree<A,NodeMut<'a,T>>{
+    type A=A;
+    type T=T;
+    type Num=T::Num;
+    
+    #[inline(always)]
+    fn axis(&self)->Self::A{
+        self.axis
+    }
+
+    #[inline(always)]
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
+        VistrMut{inner:self.inner.vistr_mut()}
+    }
+
+    #[inline(always)]
+    fn vistr(&self)->Vistr<NodeMut<'a,T>>{
+        self.inner.vistr()
+    }
+}
+
 
 impl<A:Axis,N:Node> Queries for DinoTree<A,N>{
     type A=A;
