@@ -30,9 +30,7 @@ impl<A:Axis,N:Num,T> DinoTreeIndPtr<A,N,T>{
     fn with_axis<'a>(arr:&'a mut [T],func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<A,N,T>{
         unimplemented!();
     }
-    fn get_elements_mut(&mut self)->&mut [T]{
-        unimplemented!();
-    }
+    
     fn as_tree<'a>(&'a mut self,arr:&'a mut [T])->DinoTree<A,NodeMut<'a,BBox<N,&mut T>>>{
         unimplemented!();
     }
