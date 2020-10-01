@@ -96,7 +96,7 @@ impl<T: Aabb> Node for NodePtr< T> {
     }
 }
 
-fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
+pub fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
     
     let inner = DinoTree::with_axis(axis, bots);
     let inner: Vec<_> = inner
@@ -215,7 +215,7 @@ impl<T: Aabb> DinoTreeOwned<DefaultA, T> {
 }
 
 
-
+/*
 impl<A:Axis,T:Aabb> core::ops::Deref for DinoTreeOwned<A,T> {
     type Target = DinoTree<A,NodePtr<T>>;
     fn deref(&self) -> &Self::Target {
@@ -227,6 +227,7 @@ impl<A:Axis,T:Aabb> core::ops::DerefMut for DinoTreeOwned<A,T> {
         &mut self.tree
     }
 }
+*/
 
 impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     ///Create an owned dinotree in one thread.
@@ -235,6 +236,11 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
             tree: make_owned(axis, &mut bots),
             bots,
         }
+    }
+
+    ///Cant use Deref because of lifetime
+    pub fn as_tree(&self)->&DinoTree<A,NodeMut<T>>{
+        unimplemented!()
     }
 
     pub fn get_elements(&self) -> &[T] {

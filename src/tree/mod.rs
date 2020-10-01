@@ -22,36 +22,59 @@ pub(crate) use self::notsorted::NotSorted;
 use crate::query::*;
 
 
-pub struct DinoTreeIndPtr<A:Axis,N:Num,T>{
+pub struct DinoTreeIndPtr<'a,A:Axis,N:Num,T>{
     inner:owned::DinoTreeOwned<A,BBox<N,*mut T>>,
-    orig:*mut [T]
-}
-impl<A:Axis,N:Num,T> DinoTreeIndPtr<A,N,T>{
-    fn with_axis<'a>(arr:&'a mut [T],func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<A,N,T>{
-        unimplemented!();
-    }
-    
-    fn as_tree<'a>(&'a mut self,arr:&'a mut [T])->DinoTree<A,NodeMut<'a,BBox<N,&mut T>>>{
-        unimplemented!();
-    }
-}
-
-
-pub struct DinoTreePtr<'a,A:Axis,T:Aabb>{
-    inner:DinoTree<A,owned::NodePtr<T>>,
-    orig:*const [T],
+    orig:*mut [T],
     _p:PhantomData<&'a mut T>
 }
+impl<'a,A:Axis,N:Num,T> DinoTreeIndPtr<'a,A,N,T>{
+    fn with_axis(axis:A,arr:&'a mut [T],mut func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<'a,A,N,T>{
+        let orig=arr as *mut _;
+        let bbox = arr
+        .iter_mut()
+        .map(|b| BBox::new(func(b), b as *mut _))
+        .collect();
 
+        let inner=owned::DinoTreeOwned::with_axis(axis,bbox);
+
+        DinoTreeIndPtr{
+            inner,
+            orig,
+            _p:PhantomData
+        }
+    }
+}
+impl<'a,A:Axis,N:Num+'a,T> core::ops::Deref for DinoTreeIndPtr<'a,A,N,T>{
+    type Target=DinoTree<A,NodeMut<'a,BBox<N,&'a mut T>>>;
+    fn deref(&self)->&Self::Target{
+        //TODO do these in one place
+        unsafe{&*(self.inner.as_tree() as *const _ as *const _)}
+    }
+}
+pub struct DinoTreePtr<'a,A:Axis,T:Aabb>{
+    inner:DinoTree<A,owned::NodePtr<T>>,
+    orig:*mut [T],
+    _p:PhantomData<&'a mut T>
+}
+impl<'a,A:Axis,T:Aabb> core::ops::Deref for DinoTreePtr<'a,A,T>{
+    type Target=DinoTree<A,NodeMut<'a,T>>;
+    fn deref(&self)->&Self::Target{
+        //TODO do these in one place
+        unsafe{&*(&self.inner as *const _ as *const _)}
+    }
+}
 impl<'a,A:Axis,T:Aabb> DinoTreePtr<'a,A,T>{
     fn with_axis(a:A,arr:&'a mut [T])->DinoTreePtr<'a,A,T>{
-        unimplemented!();
+        let inner=owned::make_owned(a,arr);
+        let orig=arr as *mut _;
+        DinoTreePtr{
+            inner,
+            orig,
+            _p:PhantomData
+        }        
     }
     fn get_elements_mut(&mut self)->PMut<'a,[T]>{
-        unimplemented!();
-    }
-    fn as_tree(&'a mut self,arr:PMut<'a,[T]>)->DinoTree<A,NodeMut<'a,T>>{
-        unimplemented!();
+        PMut::new(unsafe{&mut *self.orig})
     }
 }
 
