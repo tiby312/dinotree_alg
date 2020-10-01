@@ -256,7 +256,7 @@ pub trait QueriesInner<'a>:Queries<'a> where Self::T:HasInner<Inner=Self::Inner>
     fn for_all_intersect_rect_mut<'b>(
         &'b mut self,
         rect: &Rect<Self::Num>,
-        mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
+        mut func: impl FnMut(&'b mut Self::Inner),
     ) where 'a:'b{
         rect::for_all_intersect_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
@@ -279,7 +279,7 @@ pub trait QueriesInner<'a>:Queries<'a> where Self::T:HasInner<Inner=Self::Inner>
     fn for_all_in_rect_mut<'b>(
         &'b mut self,
         rect: &Rect<Self::Num>,
-        mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
+        mut func: impl FnMut(&'b mut Self::Inner),
     ) where 'a:'b{
         rect::for_all_in_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
@@ -403,7 +403,7 @@ pub trait QueriesInner<'a>:Queries<'a> where Self::T:HasInner<Inner=Self::Inner>
         &mut self,
         other: &mut [X],
         func: impl Fn(&mut Self::Inner, &mut X::Inner),
-    ) where Self::T:HasInner{
+    ){
         intersect_with::intersect_with_mut(self.axis(),self.vistr_mut(), other, move |a, b| {
             (func)(a.into_inner(), b.into_inner())
         })
