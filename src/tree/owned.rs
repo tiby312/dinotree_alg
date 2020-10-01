@@ -96,10 +96,11 @@ impl<T: Aabb> Node for NodePtr< T> {
     }
 }
 
-pub fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, NodePtr<T>> {
+pub(crate) fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTreeInner<A, NodePtr<T>> {
     
     let inner = DinoTree::with_axis(axis, bots);
     let inner: Vec<_> = inner
+        .inner
         .inner
         .into_nodes()
         .drain(..)
@@ -110,7 +111,7 @@ pub fn make_owned<A: Axis, T: Aabb>(axis: A, bots: &mut [T]) -> DinoTree<A, Node
         })
         .collect();
     let inner = compt::dfs_order::CompleteTreeContainer::from_preorder(inner).unwrap();
-    DinoTree {
+    DinoTreeInner {
         axis,
         inner
     }
@@ -202,7 +203,7 @@ impl<A: Axis, N: Num, T> DinoTreeOwnedBBoxPtr<A, N, T> {
 
 ///An owned dinotree componsed of `T:Aabb`
 pub struct DinoTreeOwned<A: Axis, T: Aabb> {
-    tree: DinoTree<A, NodePtr<T>>,
+    tree: DinoTreeInner<A, NodePtr<T>>,
     bots: Vec<T>,
 }
 
@@ -224,12 +225,12 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     }
     
     ///Cant use Deref because of lifetime
-    pub fn as_tree(&self)->&DinoTree<A,NodeMut<T>>{
+    pub fn as_tree(&self)->&DinoTree<A,T>{
         unsafe{&*(&self.tree as *const _ as *const _)}
     }
 
     ///Cant use Deref because of lifetime
-    pub fn as_tree_mut(&mut self)->&mut DinoTree<A,NodeMut<T>>{
+    pub fn as_tree_mut(&mut self)->&mut DinoTree<A,T>{
         unsafe{&mut *(&mut self.tree as *mut _ as *mut _)}
     }
 

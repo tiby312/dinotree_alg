@@ -5,31 +5,31 @@ use super::*;
 /// along an axis at each level. Construction of `NotSorted` is faster than `DinoTree` since it does not have to
 /// sort bots that belong to each node along an axis. But most query algorithms can usually take advantage of this
 /// extra property.
-pub struct NotSorted<A: Axis, N:Node>(pub(crate) DinoTree<A, N>);
+pub struct NotSorted<'a,A: Axis, T:Aabb>(pub(crate) DinoTree<'a,A, T>);
 
-impl<'a, T: Aabb + Send + Sync> NotSorted<DefaultA, NodeMut<'a,T>> {
-    pub fn new_par(bots: &'a mut [T]) -> NotSorted< DefaultA, NodeMut<'a,T>> {
+impl<'a, T: Aabb + Send + Sync> NotSorted<'a,DefaultA, T> {
+    pub fn new_par(bots: &'a mut [T]) -> NotSorted< 'a,DefaultA, T> {
         DinoTreeBuilder::new(bots).build_not_sorted_par()
     }
 }
-impl<'a, T: Aabb> NotSorted< DefaultA, NodeMut<'a,T>> {
-    pub fn new(bots: &'a mut [T]) -> NotSorted< DefaultA, NodeMut<'a,T>> {
+impl<'a, T: Aabb> NotSorted<'a, DefaultA, T> {
+    pub fn new(bots: &'a mut [T]) -> NotSorted<'a, DefaultA, T> {
         DinoTreeBuilder::new(bots).build_not_sorted_seq()
     }
 }
 
-impl< 'a,A: Axis, T: Aabb + Send + Sync> NotSorted<A, NodeMut<'a,T>> {
-    pub fn with_axis_par(axis: A, bots: &'a mut [T]) -> NotSorted< A, NodeMut<'a,T>> {
+impl< 'a,A: Axis, T: Aabb + Send + Sync> NotSorted<'a,A,T> {
+    pub fn with_axis_par(axis: A, bots: &'a mut [T]) -> NotSorted<'a, A, T> {
         DinoTreeBuilder::with_axis(axis, bots).build_not_sorted_par()
     }
 }
-impl<'a, A: Axis, T: Aabb> NotSorted< A, NodeMut<'a,T>> {
-    pub fn with_axis(axis: A, bots: &'a mut [T]) -> NotSorted< A, NodeMut<'a,T>> {
+impl<'a, A: Axis, T: Aabb> NotSorted<'a, A, T> {
+    pub fn with_axis(axis: A, bots: &'a mut [T]) -> NotSorted<'a, A,T> {
         DinoTreeBuilder::with_axis(axis, bots).build_not_sorted_seq()
     }
 }
 
-impl<'a,A:Axis,T:Aabb+HasInner> NotSortedQueries<'a> for NotSorted<A,NodeMut<'a,T>>{
+impl<'a,A:Axis,T:Aabb+HasInner> NotSortedQueries<'a> for NotSorted<'a,A,T>{
     type A=A;
     type T=T;
     type Num=T::Num;
@@ -51,7 +51,7 @@ impl<'a,A:Axis,T:Aabb+HasInner> NotSortedQueries<'a> for NotSorted<A,NodeMut<'a,
     }
 }
 
-impl<A: Axis, N:Node> NotSorted< A, N> {
+impl<'a,A: Axis, T:Aabb> NotSorted< 'a,A, T> {
     #[inline(always)]
     pub fn get_height(&self) -> usize {
         self.0.get_height()

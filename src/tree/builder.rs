@@ -16,7 +16,7 @@ pub struct DinoTreeBuilder<'a, A: Axis, T> {
 
 impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
     ///Build not sorted in parallel
-    pub fn build_not_sorted_par(&mut self) -> NotSorted<A, NodeMut<'a,T>> {
+    pub fn build_not_sorted_par(&mut self) -> NotSorted<'a,A, T> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
         let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
@@ -33,7 +33,7 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTreeBuilder<'a, A, T> {
     }
 
     ///Build in parallel
-    pub fn build_par(&mut self) -> DinoTree< A,NodeMut<'a, T>> {
+    pub fn build_par(&mut self) -> DinoTree<'a, A,T> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
         let dlevel = par::compute_level_switch_sequential(self.height_switch_seq, self.height);
@@ -85,7 +85,7 @@ impl<'a, A: Axis, T: Aabb> DinoTreeBuilder<'a, A, T> {
     }
 
     ///Build not sorted sequentially
-    pub fn build_not_sorted_seq(&mut self) -> NotSorted<A, NodeMut<'a,T>> {
+    pub fn build_not_sorted_seq(&mut self) -> NotSorted<'a,A, T> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
         let inner = create_tree_seq(
@@ -100,7 +100,7 @@ impl<'a, A: Axis, T: Aabb> DinoTreeBuilder<'a, A, T> {
     }
 
     ///Build sequentially
-    pub fn build_seq(&mut self) -> DinoTree< A, NodeMut<'a,T>> {
+    pub fn build_seq(&mut self) -> DinoTree< 'a,A, T> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
         create_tree_seq(
@@ -138,7 +138,7 @@ impl<'a, A: Axis, T: Aabb> DinoTreeBuilder<'a, A, T> {
     pub fn build_with_splitter_seq<S: Splitter>(
         &mut self,
         splitter: &mut S,
-    ) -> DinoTree< A, NodeMut<'a,T>> {
+    ) -> DinoTree<'a, A,T> {
         let bots=core::mem::replace(&mut self.bots,&mut []);
 
         create_tree_seq(
@@ -165,7 +165,7 @@ fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
     splitter: &mut K,
     height: usize,
     binstrat: BinStrat,
-) -> DinoTree<A,NodeMut<'a,T>> {
+) -> DinoTree<'a,A,T> {
 
     let num_bots = rest.len();
 
@@ -187,7 +187,7 @@ fn create_tree_seq<'a, A: Axis, T: Aabb, K: Splitter>(
         .fold(0, move |acc, a| acc + a.range.len());
     debug_assert_eq!(k, num_bots);
 
-    DinoTree{axis:div_axis,inner:tree}
+    DinoTree{inner:DinoTreeInner{axis:div_axis,inner:tree}}
 }
 
 fn create_tree_par<
@@ -204,7 +204,7 @@ fn create_tree_par<
     splitter: &mut K,
     height: usize,
     binstrat: BinStrat,
-) ->DinoTree<A,NodeMut<'a,T>> {
+) ->DinoTree<'a,A,T> {
 
     let num_bots = rest.len();
 
@@ -226,10 +226,10 @@ fn create_tree_par<
         .fold(0, move |acc, a| acc + a.range.len());
     debug_assert_eq!(k, num_bots);
 
-    DinoTree{
+    DinoTree{inner:DinoTreeInner{
         axis:div_axis,
         inner:tree
-    }
+    }}
 }
 
 struct Recurser<'a, T: Aabb, K: Splitter, S: Sorter> {
