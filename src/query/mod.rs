@@ -53,36 +53,37 @@ mod tools;
 use self::inner_prelude::*;
 
 //Queries that can be performed on a tree that is not sorted
-pub trait NotSortedQueries{
+pub trait NotSortedQueries<'a>{
     type A:Axis;
-    type N:Node<T=Self::T,Num=Self::Num>;
-    type T:Aabb<Num=Self::Num>;
+    type T:Aabb<Num=Self::Num>+HasInner<Inner=Self::Inner>+'a;
     type Num:Num;
-    #[must_use]
-    fn vistr_mut(&mut self)->VistrMut<Self::N>;
+    type Inner;
 
     #[must_use]
-    fn vistr(&self)->Vistr<Self::N>;
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,Self::T>>;
+
+    #[must_use]
+    fn vistr(&self)->Vistr<NodeMut<'a,Self::T>>;
   
     #[must_use]
     fn axis(&self)->Self::A;
   
-    fn new_colfind_builder(&mut self)->NotSortedQueryBuilder<Self::A,Self::N>{
+    fn new_colfind_builder(&mut self)->NotSortedQueryBuilder<Self::A,NodeMut<'a,Self::T>>{
         NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
     }
 
     fn find_intersections_mut(
         &mut self,
-        mut func: impl FnMut(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner),
-    ) where Self::T:HasInner{
+        mut func: impl FnMut(&mut Self::Inner, &mut Self::Inner),
+    ){
         query::colfind::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
             .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
     }
 
     fn find_intersections_mut_par(
         &mut self,
-        func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
-    ) where Self::N:Send+Sync,Self::T:HasInner+Send+Sync{
+        func: impl Fn(&mut Self::Inner, &mut Self::Inner)+Clone+Send+Sync,
+    ) where Self::T:Send+Sync{
         query::colfind::NotSortedQueryBuilder::new(self.axis(),self.vistr_mut())
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
     }
@@ -90,28 +91,12 @@ pub trait NotSortedQueries{
 }
 
 
-pub trait Queries2<'a>{
+pub trait Queries<'a>{
     type A:Axis;
-    type T:Aabb<Num=Self::Num>;
+    type T:Aabb<Num=Self::Num>+'a + HasInner<Inner=Self::Inner>;
     type Num:Num;
-    #[must_use]
-    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,Self::T>>;
+    type Inner;
 
-    #[must_use]
-    fn vistr(&self)->Vistr<NodeMut<'a,Self::T>>;
-   
-    #[must_use]
-    fn axis(&self)->Self::A;
-   
-}
-
-///A collection of query functions 
-pub trait Queries{
-    type A:Axis;
-    type N:Node<T=Self::T,Num=Self::Num>;
-    type T:Aabb<Num=Self::Num>;
-    type Num:Num;
-    
     /// # Examples
     ///
     ///```
@@ -126,7 +111,7 @@ pub trait Queries{
     ///assert_eq!(bots[0].inner,1);
     ///```
     #[must_use]
-    fn vistr_mut(&mut self)->VistrMut<Self::N>;
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,Self::T>>;
 
     
     /// # Examples
@@ -144,8 +129,9 @@ pub trait Queries{
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///```
     #[must_use]
-    fn vistr(&self)->Vistr<Self::N>;
-
+    fn vistr(&self)->Vistr<NodeMut<'a,Self::T>>;
+   
+    
     /// # Examples
     ///
     ///```
@@ -158,10 +144,13 @@ pub trait Queries{
     ///```
     #[must_use]
     fn axis(&self)->Self::A;
-        
-    fn new_colfind_builder(&mut self)->QueryBuilder<Self::A,Self::N>{
+
+
+    fn new_colfind_builder(&mut self)->QueryBuilder<Self::A,NodeMut<'a,Self::T>>{
         QueryBuilder::new(self.axis(),self.vistr_mut())
     }
+
+    
     /// # Examples
     ///
     /// ```
@@ -196,7 +185,8 @@ pub trait Queries{
     fn draw_divider(&self,drawer: &mut impl graphics::DividerDrawer<N = Self::Num>, rect: &Rect<Self::Num>){
         graphics::draw(self.axis(),self.vistr(), drawer, rect)
     }
-
+   
+    
     /// Find all aabb intersections
     /// # Examples
     ///
@@ -212,15 +202,14 @@ pub trait Queries{
     ///assert_eq!(bots[0].inner,1);
     ///assert_eq!(bots[1].inner,1);
     ///```
+
     fn find_intersections_mut(
         &mut self,
-        mut func: impl FnMut(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner),
-    ) where Self::T:HasInner{
+        mut func: impl FnMut(&mut Self::Inner, &mut Self::Inner),
+    ){
         query::colfind::QueryBuilder::new(self.axis(),self.vistr_mut())
             .query_seq(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
     }
-
-
 
     /// Find all intersections in parallel
     ///
@@ -240,12 +229,13 @@ pub trait Queries{
     ///```
     fn find_intersections_mut_par(
         &mut self,
-        func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner)+Clone+Send+Sync,
-    ) where Self::N:Send+Sync,Self::T:HasInner+Send+Sync{
+        func: impl Fn(&mut Self::Inner, &mut Self::Inner)+Clone+Send+Sync,
+    ) where Self::T:Send+Sync{
         query::colfind::QueryBuilder::new(self.axis(),self.vistr_mut())
             .query_par(move |mut a, mut b| func(a.inner_mut(), b.inner_mut())); 
     }
 
+    
     /// Find all aabb intersections and return a PMut<T> of it. Unlike the regular `find_intersections_mut`, this allows the
     /// user to access a read only reference of the AABB.
     ///
@@ -267,6 +257,7 @@ pub trait Queries{
         colfind::QueryBuilder::new(self.axis(),self.vistr_mut()).query_seq(move |a, b| func(a, b));
     }
 
+    
     /// Allows the user to potentially collect some aspect of every intersection in parallel.
     ///
     /// # Examples
@@ -288,9 +279,9 @@ pub trait Queries{
         &mut self,
         split: impl Fn(&mut B) -> B + Send + Sync + Copy,
         fold: impl Fn(&mut B, B) + Send + Sync + Copy,
-        collision: impl Fn(&mut B, &mut <Self::T as HasInner>::Inner, &mut <Self::T as HasInner>::Inner) + Send + Sync + Copy,
+        collision: impl Fn(&mut B, &mut Self::Inner, &mut Self::Inner) + Send + Sync + Copy,
         acc: B,
-    ) -> B where Self::T:HasInner+Send+Sync,Self::N:Send+Sync{
+    ) -> B where Self::T:Send+Sync{
         struct Foo<T, A, B, C, D> {
             _p: PhantomData<T>,
             acc: A,
@@ -342,6 +333,7 @@ pub trait Queries{
         foo.acc
     }
 
+    
     /// # Examples
     ///
     ///```
@@ -355,10 +347,11 @@ pub trait Queries{
     ///assert_eq!(res,Err(dinotree_alg::query::RectIntersectErr));
     ///```
     #[must_use]
-    fn multi_rect(&mut self) -> rect::MultiRectMut<Self::A, Self::N> {
+    fn multi_rect(&mut self) -> rect::MultiRectMut<Self::A, NodeMut<'a,Self::T>> {
         rect::MultiRectMut::new(self.axis(),self.vistr_mut())
     }
 
+    
     
     /// # Examples
     ///
@@ -374,10 +367,12 @@ pub trait Queries{
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///
     ///```
-    fn for_all_intersect_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) {
+    fn for_all_intersect_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b
+     Self::T)) where 'a:'b{
         rect::for_all_intersect_rect(self.axis(),self.vistr(), rect, func);
     }
 
+    
     /// # Examples
     ///
     ///```
@@ -391,7 +386,7 @@ pub trait Queries{
     ///
     ///assert_eq!(test[0],&axgeom::rect(0,10,0,10));
     ///
-    fn for_all_in_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) {
+    fn for_all_in_rect<'b>(&'b self, rect: &Rect<Self::Num>, func: impl FnMut(&'b Self::T)) where 'a:'b{
         rect::for_all_in_rect(self.axis(),self.vistr(), rect, func);
     }
 
@@ -412,12 +407,11 @@ pub trait Queries{
     fn for_all_not_in_rect_mut<'b>(
         &'b mut self,
         rect: &Rect<Self::Num>,
-        mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
-    ) where Self::T:HasInner{
+        mut func: impl FnMut(&'b mut Self::Inner),
+    ) where 'a:'b{
         rect::for_all_not_in_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
 
-    
     /// # Examples
     ///
     ///```
@@ -435,10 +429,11 @@ pub trait Queries{
         &'b mut self,
         rect: &Rect<Self::Num>,
         mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
-    ) where Self::T:HasInner{
+    ) where 'a:'b{
         rect::for_all_intersect_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
 
+    
     
     /// # Examples
     ///
@@ -457,11 +452,12 @@ pub trait Queries{
         &'b mut self,
         rect: &Rect<Self::Num>,
         mut func: impl FnMut(&'b mut <Self::T as HasInner>::Inner),
-    ) where Self::T:HasInner{
+    ) where 'a:'b{
         rect::for_all_in_rect_mut(self.axis(),self.vistr_mut(), rect, move |a| (func)(a.into_inner()));
     }
 
 
+    
     /// # Examples
     ///
     ///```
@@ -491,14 +487,14 @@ pub trait Queries{
     ///assert_eq!(counter,3);
     ///```
     #[must_use]
-    fn raycast_mut<Acc>(
-        &mut self,
+    fn raycast_mut<'b,Acc>(
+        &'b mut self,
         ray: axgeom::Ray<Self::Num>,
         start: &mut Acc,
         broad: impl FnMut(&mut Acc, &Ray<Self::Num>, &Rect<Self::Num>) -> CastResult<Self::Num>,
         fine: impl FnMut(&mut Acc, &Ray<Self::Num>, &Self::T) -> CastResult<Self::Num>,
         border: Rect<Self::Num>,
-    ) -> raycast::RayCastResult<<Self::T as HasInner>::Inner, Self::Num> where Self::T:HasInner{
+    ) -> raycast::RayCastResult<'b ,Self::Inner, Self::Num> where 'a:'b {
         let mut rtrait = raycast::RayCastClosure {
             a: start,
             broad,
@@ -508,7 +504,7 @@ pub trait Queries{
         raycast::raycast_mut(self.axis(),self.vistr_mut(), border, ray, &mut rtrait)
     }
 
-
+    
     /// # Examples
     ///
     ///```
@@ -538,15 +534,15 @@ pub trait Queries{
     ///assert_eq!(counter,3);
     ///```
     #[must_use]
-    fn k_nearest_mut<Acc>(
-        &mut self,
+    fn k_nearest_mut<'b, Acc>(
+        &'b mut self,
         point: Vec2<Self::Num>,
         num: usize,
         start: &mut Acc,
         broad: impl FnMut(&mut Acc, Vec2<Self::Num>, &Rect<Self::Num>) -> Self::Num,
         fine: impl FnMut(&mut Acc, Vec2<Self::Num>, &Self::T) -> Self::Num,
         border: Rect<Self::Num>,
-    ) -> Vec<k_nearest::KnearestResult<<Self::T as HasInner>::Inner, Self::Num>> where Self::T:HasInner {
+    ) -> Vec<k_nearest::KnearestResult<'b,Self::Inner, Self::Num>> where 'a:'b {
         let mut foo = k_nearest::KnearestClosure {
             acc: start,
             broad,
@@ -565,11 +561,11 @@ pub trait Queries{
         rect: Rect<Self::Num>,
     ) where
         X::No: Send,
-        Self::N:Send+Sync,
         Self::T:HasInner+Send+Sync
     {
         query::nbody::nbody(self.axis(),self.vistr_mut(), ncontext, rect)
     }
+
 
 
     //#[cfg(feature = "nbody")]
@@ -579,11 +575,11 @@ pub trait Queries{
         rect: Rect<Self::Num>,
     ) where
         X::No: Send,
-        Self::N:Send+Sync,
         Self::T:HasInner+Send+Sync
     {
         query::nbody::nbody_par(self.axis(),self.vistr_mut(), ncontext, rect)
     }
+
 
 
     /// # Examples
@@ -605,17 +601,14 @@ pub trait Queries{
     fn intersect_with_mut<X: Aabb<Num = Self::Num> + HasInner>(
         &mut self,
         other: &mut [X],
-        func: impl Fn(&mut <Self::T as HasInner>::Inner, &mut X::Inner),
+        func: impl Fn(&mut Self::Inner, &mut X::Inner),
     ) where Self::T:HasInner{
         intersect_with::intersect_with_mut(self.axis(),self.vistr_mut(), other, move |a, b| {
             (func)(a.into_inner(), b.into_inner())
         })
     } 
-    
+
 }
-
-
-
 
 pub fn find_collisions_sweep_mut<A: Axis, T: Aabb + HasInner>(
     bots: &mut [T],

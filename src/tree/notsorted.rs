@@ -29,24 +29,24 @@ impl<'a, A: Axis, T: Aabb> NotSorted< A, NodeMut<'a,T>> {
     }
 }
 
-impl<A:Axis,N:Node> NotSortedQueries for NotSorted<A,N>{
+impl<'a,A:Axis,T:Aabb+HasInner> NotSortedQueries<'a> for NotSorted<A,NodeMut<'a,T>>{
     type A=A;
-    type N=N;
-    type T=N::T;
-    type Num=N::Num;
-    
+    type T=T;
+    type Num=T::Num;
+    type Inner=T::Inner;
+
     #[inline(always)]
     fn axis(&self)->Self::A{
         self.0.axis()
     }
 
     #[inline(always)]
-    fn vistr_mut(&mut self)->VistrMut<N>{
+    fn vistr_mut(&mut self)->VistrMut<NodeMut<'a,T>>{
         self.0.vistr_mut()
     }
 
     #[inline(always)]
-    fn vistr(&self)->Vistr<N>{
+    fn vistr(&self)->Vistr<NodeMut<'a,T>>{
         self.0.vistr()
     }
 }

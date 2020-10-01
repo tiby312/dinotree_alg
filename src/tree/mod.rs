@@ -54,8 +54,12 @@ impl<'a,A:Axis,N:Num,T> DinoTreeIndPtr<'a,A,N,T>{
     pub fn get_elements(&self)->&[T]{
         unsafe{&*self.orig}
     }
-    pub fn get_elements_mut(&mut self)->PMut<'a,[T]>{
-        PMut::new(unsafe{&mut *self.orig})
+    pub fn get_elements_mut(&mut self)->&'a mut [T]{
+        unsafe{&mut *self.orig}
+    }
+    pub fn as_tree(&mut self)->DinoTreePtr<A,BBox<N,&mut T>>{
+        
+        unimplemented!();
     }
 }
 impl<'a,A:Axis,N:Num+'a,T> core::ops::Deref for DinoTreeIndPtr<'a,A,N,T>{
@@ -181,10 +185,11 @@ impl<'a, A: Axis, T: Aabb + Send + Sync> DinoTree< A, NodeMut<'a, T>> {
 }
 
 ///TODO use this insead
-impl<'a,A:Axis,T:Aabb> Queries2<'a> for DinoTree<A,NodeMut<'a,T>>{
+impl<'a,A:Axis,T:Aabb+HasInner> Queries<'a> for DinoTree<A,NodeMut<'a,T>>{
     type A=A;
     type T=T;
     type Num=T::Num;
+    type Inner=T::Inner;
     
     #[inline(always)]
     fn axis(&self)->Self::A{
@@ -201,30 +206,6 @@ impl<'a,A:Axis,T:Aabb> Queries2<'a> for DinoTree<A,NodeMut<'a,T>>{
         self.inner.vistr()
     }
 }
-
-
-impl<A:Axis,N:Node> Queries for DinoTree<A,N>{
-    type A=A;
-    type N=N;
-    type T=N::T;
-    type Num=N::Num;
-    
-    #[inline(always)]
-    fn axis(&self)->Self::A{
-        self.axis
-    }
-
-    #[inline(always)]
-    fn vistr_mut(&mut self)->VistrMut<N>{
-        VistrMut{inner:self.inner.vistr_mut()}
-    }
-
-    #[inline(always)]
-    fn vistr(&self)->Vistr<N>{
-        self.inner.vistr()
-    }
-}
-
 
 
 pub struct IntersectionList<'a, T, D> {

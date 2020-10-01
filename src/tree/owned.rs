@@ -222,7 +222,7 @@ impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
             bots,
         }
     }
-
+    
     ///Cant use Deref because of lifetime
     pub fn as_tree(&self)->&DinoTree<A,NodeMut<T>>{
         unsafe{&*(&self.tree as *const _ as *const _)}

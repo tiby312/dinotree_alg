@@ -7,7 +7,7 @@ pub struct Assert;
 impl Assert {
     ///Returns false if the tree's invariants are not met.
     #[must_use]
-    pub fn tree_invariants(a:&impl Queries) -> bool {
+    pub fn tree_invariants<'a>(a:&impl Queries<'a>) -> bool {
         Self::inner(a.axis(), a.vistr().with_depth(compt::Depth(0))).is_ok()
     }
 
@@ -117,11 +117,11 @@ impl Assert {
         assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
-    /*
+    
 
     
     pub fn k_nearest_mut<Acc, A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTreeWrap<A, T>,
+        tree: &mut DinoTreePtr<A, T>,
         point: Vec2<T::Num>,
         num: usize,
         acc: &mut Acc,
@@ -129,7 +129,7 @@ impl Assert {
         mut fine: impl FnMut(&mut Acc, Vec2<T::Num>, &T) -> T::Num,
         rect: Rect<T::Num>,
     ) {
-        let bots = tree.get_bots_mut();
+        let bots = tree.get_elements_mut();
 
         let mut res_naive = NaiveAlgs::new(bots)
             .k_nearest_mut(point, num, acc, &mut broad, &mut fine)
@@ -137,7 +137,7 @@ impl Assert {
             .map(|a| (a.bot as *const _ as usize, a.mag))
             .collect::<Vec<_>>();
 
-        let mut r = tree.get_tree_mut().k_nearest_mut(point, num, acc, broad, fine, rect);
+        let mut r = tree.k_nearest_mut(point, num, acc, broad, fine, rect);
         let mut res_dino: Vec<_> = r
             .drain(..)
             .map(|a| (a.bot as *const _ as usize, a.mag))
@@ -149,9 +149,10 @@ impl Assert {
         assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
+    
 
     pub fn raycast_mut<Acc, A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTreeWrap<A, T>,
+        tree: &mut DinoTreePtr<A, T>,
         ray: axgeom::Ray<T::Num>,
         start: &mut Acc,
         mut broad: impl FnMut(&mut Acc, &Ray<T::Num>, &Rect<T::Num>) -> CastResult<T::Num>,
@@ -160,7 +161,7 @@ impl Assert {
     ) where
         <T as Aabb>::Num: core::fmt::Debug,
     {
-        let bots = tree.get_bots_mut();
+        let bots = tree.get_elements_mut();
 
         let mut res_naive = Vec::new();
         match NaiveAlgs::new(bots).raycast_mut(ray, start, &mut broad, &mut fine, border) {
@@ -176,7 +177,7 @@ impl Assert {
         }
 
         let mut res_dino = Vec::new();
-        match tree.get_tree_mut().raycast_mut(ray, start, broad, fine, border) {
+        match tree.raycast_mut(ray, start, broad, fine, border) {
             RayCastResult::Hit((bots, mag)) => {
                 for a in bots.iter() {
                     let j = (*a) as *const _ as usize;
@@ -205,17 +206,19 @@ impl Assert {
         );
     }
 
+    
+
     pub fn for_all_in_rect_mut<A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTreeWrap<A, T>,
+        tree: &mut DinoTreePtr<A, T>,
         rect: &axgeom::Rect<T::Num>,
     ) {
         let mut res_dino = Vec::new();
-        tree.get_tree_mut().for_all_in_rect_mut(rect, |a| {
+        tree.for_all_in_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
         let mut res_naive = Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).for_all_in_rect_mut(rect, |a| {
+        NaiveAlgs::new(tree.get_elements_mut()).for_all_in_rect_mut(rect, |a| {
             res_naive.push(a as *const _ as usize);
         });
 
@@ -225,20 +228,21 @@ impl Assert {
         assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
+    
 
     /// Panics if the result differs from the naive solution.
     /// Should never panic unless invariants of the tree data struct have been violated.
     pub fn for_all_not_in_rect_mut<A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTreeWrap<A, T>,
+        tree: &mut DinoTreePtr<A, T>,
         rect: &axgeom::Rect<T::Num>,
     ) {
         let mut res_dino = Vec::new();
-        tree.get_tree_mut().for_all_not_in_rect_mut(rect, |a| {
+        tree.for_all_not_in_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
         let mut res_naive = Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).for_all_not_in_rect_mut(rect, |a| {
+        NaiveAlgs::new(tree.get_elements_mut()).for_all_not_in_rect_mut(rect, |a| {
             res_naive.push(a as *const _ as usize);
         });
 
@@ -248,18 +252,19 @@ impl Assert {
         assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
+    
 
     pub fn for_all_intersect_rect_mut<A: Axis, T: Aabb + HasInner>(
-        tree: &mut DinoTreeWrap<A, T>,
+        tree: &mut DinoTreePtr<A, T>,
         rect: &axgeom::Rect<T::Num>,
     ) {
         let mut res_dino = Vec::new();
-        tree.get_tree_mut().for_all_intersect_rect_mut(rect, |a| {
+        tree.for_all_intersect_rect_mut(rect, |a| {
             res_dino.push(a as *const _ as usize);
         });
 
         let mut res_naive = Vec::new();
-        NaiveAlgs::new(tree.get_bots_mut()).for_all_intersect_rect_mut(rect, |a| {
+        NaiveAlgs::new(tree.get_elements_mut()).for_all_intersect_rect_mut(rect, |a| {
             res_naive.push(a as *const _ as usize);
         });
 
@@ -269,5 +274,5 @@ impl Assert {
         assert_eq!(res_naive.len(), res_dino.len());
         assert!(res_naive.iter().eq(res_dino.iter()));
     }
-    */
+    
 }
