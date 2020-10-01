@@ -28,7 +28,7 @@ pub struct DinoTreeIndPtr<'a,A:Axis,N:Num,T>{
     _p:PhantomData<&'a mut T>
 }
 impl<'a,A:Axis,N:Num,T> DinoTreeIndPtr<'a,A,N,T>{
-    fn with_axis(axis:A,arr:&'a mut [T],mut func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<'a,A,N,T>{
+    pub fn with_axis(axis:A,arr:&'a mut [T],mut func:impl FnMut(&mut T)->Rect<N>)->DinoTreeIndPtr<'a,A,N,T>{
         let orig=arr as *mut _;
         let bbox = arr
         .iter_mut()
@@ -42,6 +42,12 @@ impl<'a,A:Axis,N:Num,T> DinoTreeIndPtr<'a,A,N,T>{
             orig,
             _p:PhantomData
         }
+    }
+    pub fn get_elements(&self)->&[T]{
+        unsafe{&*self.orig}
+    }
+    pub fn get_elements_mut(&mut self)->PMut<'a,[T]>{
+        PMut::new(unsafe{&mut *self.orig})
     }
 }
 impl<'a,A:Axis,N:Num+'a,T> core::ops::Deref for DinoTreeIndPtr<'a,A,N,T>{
@@ -64,7 +70,7 @@ impl<'a,A:Axis,T:Aabb> core::ops::Deref for DinoTreePtr<'a,A,T>{
     }
 }
 impl<'a,A:Axis,T:Aabb> DinoTreePtr<'a,A,T>{
-    fn with_axis(a:A,arr:&'a mut [T])->DinoTreePtr<'a,A,T>{
+    pub fn with_axis(a:A,arr:&'a mut [T])->DinoTreePtr<'a,A,T>{
         let inner=owned::make_owned(a,arr);
         let orig=arr as *mut _;
         DinoTreePtr{
@@ -73,7 +79,10 @@ impl<'a,A:Axis,T:Aabb> DinoTreePtr<'a,A,T>{
             _p:PhantomData
         }        
     }
-    fn get_elements_mut(&mut self)->PMut<'a,[T]>{
+    pub fn get_elements(&self)->&[T]{
+        unsafe{&*self.orig}
+    }
+    pub fn get_elements_mut(&mut self)->PMut<'a,[T]>{
         PMut::new(unsafe{&mut *self.orig})
     }
 }
