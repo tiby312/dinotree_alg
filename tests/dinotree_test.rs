@@ -17,7 +17,7 @@ fn test1() {
             })
             .collect();
 
-        let mut tree=DinoTreePtr::new(&mut bots);
+        let mut tree=collections::DinoTreeRef::new(&mut bots);
         assert::Assert::find_intersections_mut(&mut tree);
     }
 }
