@@ -35,26 +35,104 @@
 //! ```
 
 use super::*;
-use core::ptr::NonNull;
 
-#[repr(transparent)]
-pub(crate) struct MyPtr<T: ?Sized>(NonNull<T>);
-impl<T: ?Sized> Clone for MyPtr<T> {
-    fn clone(&self) -> Self {
-        MyPtr(self.0)
+pub struct DinoTreeRefInd<'a,A:Axis,N:Num,T>{
+    inner:DinoTreeOwned<A,BBox<N,*mut T>>,
+    orig:*mut [T],
+    _p:PhantomData<&'a mut T>
+}
+
+impl<'a,N:Num,T> DinoTreeRefInd<'a,DefaultA,N,T>{
+    pub fn new(arr:&'a mut [T],func:impl FnMut(&mut T)->Rect<N>)->DinoTreeRefInd<'a,DefaultA,N,T>{
+        DinoTreeRefInd::with_axis(default_axis(),arr,func)
     }
 }
-impl<T: ?Sized> Copy for MyPtr<T> {}
 
-unsafe impl<T: ?Sized> Send for MyPtr<T> {}
-unsafe impl<T: ?Sized> Sync for MyPtr<T> {}
+impl<'a,A:Axis,N:Num,T> DinoTreeRefInd<'a,A,N,T>{
+    pub fn with_axis(axis:A,arr:&'a mut [T],mut func:impl FnMut(&mut T)->Rect<N>)->DinoTreeRefInd<'a,A,N,T>{
+        let orig=arr as *mut _;
+        let bbox = arr
+        .iter_mut()
+        .map(|b| BBox::new(func(b), b as *mut _))
+        .collect();
 
-pub(crate) fn myptr<T: ?Sized>(a: &mut T) -> MyPtr<T> {
-    MyPtr(unsafe { NonNull::new_unchecked(a as *mut _) })
+        let inner=DinoTreeOwned::with_axis(axis,bbox);
+
+        DinoTreeRefInd{
+            inner,
+            orig,
+            _p:PhantomData
+        }
+    }
+    pub fn get_elements(&self)->&[T]{
+        unsafe{&*self.orig}
+    }
+    pub fn get_elements_mut(&mut self)->&'a mut [T]{
+        unsafe{&mut *self.orig}
+    }
+    pub fn get_tree_elements_mut(&mut self)->PMut<[BBox<N,&mut T>]>{
+        //unsafe{&mut *(self.inner.get_elements_mut() as *mut _ as *mut _)}
+        unimplemented!();
+
+    }
+    pub fn get_tree_elements(&self)->&[BBox<N,&mut T>]{
+        unimplemented!();
+    }
 }
 
-unsafe impl<T: Aabb> Send for NodePtr<T> {}
-unsafe impl<T: Aabb> Sync for NodePtr<T> {}
+
+impl<'a,A:Axis,N:Num+'a,T> core::ops::Deref for DinoTreeRefInd<'a,A,N,T>{
+    type Target=DinoTree<'a,A,BBox<N,&'a mut T>>;
+    fn deref(&self)->&Self::Target{
+        //TODO do these in one place
+        unsafe{&*(self.inner.as_tree() as *const _ as *const _)}
+    }
+}
+pub struct DinoTreeRef<'a,A:Axis,T:Aabb>{
+    inner:DinoTreeInner<A,NodePtr<T>>,
+    orig:*mut [T],
+    _p:PhantomData<&'a mut T>
+}
+
+impl<'a,A:Axis,T:Aabb> core::ops::Deref for DinoTreeRef<'a,A,T>{
+    type Target=DinoTree<'a,A,T>;
+    fn deref(&self)->&Self::Target{
+        //TODO do these in one place
+        unsafe{&*(&self.inner as *const _ as *const _)}
+    }
+}
+impl<'a,A:Axis,T:Aabb> core::ops::DerefMut for DinoTreeRef<'a,A,T>{
+    fn deref_mut(&mut self)->&mut Self::Target{
+        //TODO do these in one place
+        unsafe{&mut *(&mut self.inner as *mut _ as *mut _)}
+    }
+}
+
+impl<'a,T:Aabb> DinoTreeRef<'a,DefaultA,T>{
+    pub fn new(arr:&'a mut [T])->DinoTreeRef<'a,DefaultA,T>{
+        DinoTreeRef::with_axis(default_axis(),arr)
+    }
+}
+
+impl<'a,A:Axis,T:Aabb> DinoTreeRef<'a,A,T>{
+    pub fn with_axis(a:A,arr:&'a mut [T])->DinoTreeRef<'a,A,T>{
+        let inner=make_owned(a,arr);
+        let orig=arr as *mut _;
+        DinoTreeRef{
+            inner,
+            orig,
+            _p:PhantomData
+        }        
+    }
+    pub fn get_elements(&self)->&[T]{
+        unsafe{&*self.orig}
+    }
+    pub fn get_elements_mut(&mut self)->PMut<'a,[T]>{
+        PMut::new(unsafe{&mut *self.orig})
+    }
+}
+
+
 
 ///A Node in a dinotree.
 pub(crate) struct NodePtr<T: Aabb> {

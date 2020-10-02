@@ -107,6 +107,12 @@ pub use crate::bbox::*;
 ///Generic slice utillity functions.
 pub mod util;
 
+
+pub mod prelude{
+    pub use query::*;
+    pub use super::*;
+}
+
 ///The underlying number type used for the dinotree.
 ///It is auto implemented by all types that satisfy the type constraints.
 ///Notice that no arithmatic is possible. The tree is constructed

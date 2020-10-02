@@ -1,4 +1,5 @@
 use super::*;
+use tree::builder::DinoTreeBuilder;
 
 ///A version of dinotree where the elements are not sorted along each axis, like a KD Tree.
 /// For comparison, a normal kd-tree is provided by `NotSorted`. In this tree, the elements are not sorted

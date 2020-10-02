@@ -1,5 +1,6 @@
 
 use super::*;
+use collections::DinoTreeRef;
 
 /// Collection of functions that panics if the dinotree result differs from the naive solution.
 /// Should never panic unless invariants of the tree data struct have been violated.    
