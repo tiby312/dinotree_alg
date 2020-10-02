@@ -39,11 +39,6 @@ pub(crate) struct PMutPtr<T: ?Sized> {
 unsafe impl<T: ?Sized> Send for PMutPtr<T> {}
 unsafe impl<T: ?Sized> Sync for PMutPtr<T> {}
 
-impl<T: ?Sized> PMutPtr<T> {
-    pub unsafe fn as_mut<'a>(&'a self) -> PMut<'a, T> {
-        PMut::new(&mut *self.inner.as_ptr())
-    }
-}
 
 ///A protected mutable reference.
 ///See the pmut module documentation for more explanation.

@@ -36,6 +36,12 @@
 
 use super::*;
 
+
+struct ThreadPtr<T>(*mut T);
+unsafe impl<T> Send for ThreadPtr<T>{}
+unsafe impl<T> Sync for ThreadPtr<T>{}
+
+
 pub struct DinoTreeRefInd<'a,A:Axis,N:Num,T>{
     inner:DinoTreeOwned<A,BBox<N,*mut T>>,
     orig:*mut [T],
@@ -192,23 +198,42 @@ fn make_owned_par<A: Axis, T: Aabb + Send + Sync>(axis: A, bots: &mut [T]) -> Di
 
 
 pub struct DinoTreeOwnedInd<A: Axis,N:Num, T> {
-    inner:DinoTreeOwned<A,BBox<N,*mut T>>,
+    inner:DinoTreeOwned<A,BBox<N,ThreadPtr<T>>>,
     bots:Vec<T>
 }
 
+impl<N:Num,T:Send+Sync> DinoTreeOwnedInd<DefaultA,N,T>{
+    pub fn new_par(bots: Vec<T>,func:impl FnMut(&T)->Rect<N>) -> DinoTreeOwnedInd<DefaultA,N, T> {
+        DinoTreeOwnedInd::with_axis_par(default_axis(),bots,func)
+    }
+}
+impl<A:Axis,N:Num,T:Send+Sync> DinoTreeOwnedInd<A,N,T>{
+    pub fn with_axis_par(axis: A, mut bots: Vec<T>,mut func:impl FnMut(&T)->Rect<N>) -> DinoTreeOwnedInd<A,N, T> {
+        let bbox = bots
+            .iter_mut()
+            .map(|b| BBox::new(func(b), ThreadPtr(b as *mut _) ))
+            .collect();
+        
+        let inner= DinoTreeOwned::with_axis_par(axis,bbox); 
+        DinoTreeOwnedInd {
+            inner,
+            bots,
+        }
+        
+    }
+}
 
 impl<N:Num,T> DinoTreeOwnedInd<DefaultA,N, T> {
-    pub fn new(bots: Vec<T>,mut func:impl FnMut(&T)->Rect<N>) -> DinoTreeOwnedInd<DefaultA, N,T> {
+    pub fn new(bots: Vec<T>,func:impl FnMut(&T)->Rect<N>) -> DinoTreeOwnedInd<DefaultA, N,T> {
         Self::with_axis(default_axis(), bots,func)
     }    
 }
-
 impl<A:Axis,N:Num,T> DinoTreeOwnedInd<A,N,T>{
     ///Create an owned dinotree in one thread.
     pub fn with_axis(axis: A, mut bots: Vec<T>,mut func:impl FnMut(&T)->Rect<N>) -> DinoTreeOwnedInd<A,N, T> {
         let bbox = bots
             .iter_mut()
-            .map(|b| BBox::new(func(b), b as *mut _))
+            .map(|b| BBox::new(func(b), ThreadPtr(b as *mut _)))
             .collect();
         
         let inner= DinoTreeOwned::with_axis(axis,bbox); 
@@ -246,13 +271,25 @@ pub struct DinoTreeOwned<A: Axis, T: Aabb> {
     bots: Vec<T>,
 }
 
+impl<T: Aabb+Send+Sync> DinoTreeOwned<DefaultA, T> {
+    pub fn new_par(bots:Vec<T>)->DinoTreeOwned<DefaultA,T>{
+        DinoTreeOwned::with_axis_par(default_axis(),bots)
+    }
+}
+impl<A: Axis, T: Aabb+Send+Sync> DinoTreeOwned<A, T> {
+    pub fn with_axis_par(axis:A,mut bots:Vec<T>)->DinoTreeOwned<A,T>{
+        DinoTreeOwned{
+            tree:make_owned_par(axis,&mut bots),
+            bots
+        }
+    }
+}
 impl<T: Aabb> DinoTreeOwned<DefaultA, T> {
     pub fn new(bots: Vec<T>) -> DinoTreeOwned<DefaultA, T> {
         Self::with_axis(default_axis(), bots)
     }
     
 }
-
 impl<A: Axis, T: Aabb> DinoTreeOwned<A, T> {
     ///Create an owned dinotree in one thread.
     pub fn with_axis(axis: A, mut bots: Vec<T>) -> DinoTreeOwned<A, T> {
